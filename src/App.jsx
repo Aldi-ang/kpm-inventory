@@ -91,9 +91,9 @@ const convertToBks = (qty, unit, product) => {
 
 // --- SUB-COMPONENTS ---
 
-const LoginScreen = ({ onLogin, error }) => (
+const LoginScreen = ({ onLogin, onGuestLogin, error }) => (
   <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center animate-fade-in-up">
       <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6"><Lock size={40} className="text-orange-500" /></div>
       <h1 className="text-2xl font-bold text-slate-800 mb-2">KPM Inventory</h1>
       <p className="text-slate-500 mb-8">Secure Inventory Management System</p>
@@ -105,9 +105,23 @@ const LoginScreen = ({ onLogin, error }) => (
         </div>
       )}
 
-      <button onClick={onLogin} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" /> Sign in with Google
-      </button>
+      <div className="space-y-3">
+        <button onClick={onLogin} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl hover:bg-slate-50 hover:border-orange-500 transition-all flex items-center justify-center gap-3">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" /> 
+            Sign in with Google
+        </button>
+
+        <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-slate-200"></div>
+            <span className="flex-shrink-0 mx-4 text-slate-400 text-xs uppercase font-bold">OR</span>
+            <div className="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <button onClick={onGuestLogin} className="w-full bg-slate-100 border-2 border-slate-200 text-slate-600 font-bold py-3 px-4 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3">
+            <User size={20} /> 
+            Enter as Guest (Anonymous)
+        </button>
+      </div>
     </div>
   </div>
 );
@@ -777,9 +791,7 @@ const HistoryReportView = ({ transactions, onDelete }) => {
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto">
-       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
-          <ArrowRight className="rotate-180" size={20}/> Back to Folders
-       </button>
+       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
 
        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
           {/* Formal Header */}
@@ -895,9 +907,9 @@ export default function KPMInventoryApp() {
     // Add safety timeout for auth to prevent infinite loading state
     const authTimeout = setTimeout(() => {
         if (authStatus === 'loading') {
-            setAuthStatus('pending'); // Fallback state if auth hangs
+            setAuthStatus('unauthenticated'); // Force login screen if loading takes too long
         }
-    }, 8000);
+    }, 3000);
 
     const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
         clearTimeout(authTimeout);
@@ -995,6 +1007,10 @@ export default function KPMInventoryApp() {
       try { await signInWithPopup(auth, googleProvider); } catch (error) { console.error("Login failed", error); }
   };
 
+  const handleGuestLogin = async () => {
+      try { await signInAnonymously(auth); } catch (error) { console.error("Guest login failed", error); }
+  };
+
   const handleLogout = async () => {
       await signOut(auth);
       setAuthStatus('unauthenticated');
@@ -1005,10 +1021,9 @@ export default function KPMInventoryApp() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
           <p>Loading App...</p>
-          <button onClick={() => window.location.reload()} className="mt-8 text-xs text-slate-500 hover:text-white">Takes too long? Reload</button>
       </div>
   );
-  if (authStatus === 'unauthenticated') return <LoginScreen onLogin={handleLogin} />;
+  if (authStatus === 'unauthenticated') return <LoginScreen onLogin={handleLogin} onGuestLogin={handleGuestLogin} />;
   if (authStatus === 'pending') return <PendingApprovalScreen email={user.email} onLogout={handleLogout} />;
 
   // --- MAIN APP (If Approved) ---
