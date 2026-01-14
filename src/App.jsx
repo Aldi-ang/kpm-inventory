@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, FileText, Settings, Sun, Moon, Search, Plus, Trash2, 
   Save, X, Upload, Download,
   User, Lock, ClipboardList, Maximize2, History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Menu, Phone, Edit, Folder, ChevronLeft, Image as ImageIcon,
-  Wallet, RotateCcw, Truck, AlertCircle, LogOut, Users, RefreshCcw, Move, Crop, ArrowRight
+  Wallet, RotateCcw, Truck, AlertCircle, LogOut, LogIn, Users, RefreshCcw, Move, Crop, ArrowRight, MessageSquare
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -290,6 +290,23 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
   const frontImage = images.front || product.image;
   const backImage = product.useFrontForBack ? frontImage : images.back;
 
+  const BoxSlider = ({ label, val, axis }) => (
+    <div className="flex flex-col gap-1">
+        <div className="flex justify-between text-[10px] text-white/70 uppercase font-bold">
+            <span>{label}</span>
+            <span>{val}mm</span>
+        </div>
+        <input 
+            type="range" min="10" max="300" step="1"
+            value={val}
+            onChange={(e) => handleDimensionsChange({ ...dimensions, [axis]: parseInt(e.target.value) })}
+            className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-orange-500"
+            onMouseDown={(e) => e.stopPropagation()} 
+            onTouchStart={(e) => e.stopPropagation()}
+        />
+    </div>
+  );
+
   return (
     <div 
       className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4 overflow-hidden"
@@ -307,6 +324,31 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
          </button>
          <button onClick={() => handleZoom(0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20" title="Zoom In"><ZoomIn size={18}/></button>
       </div>
+
+      {isAdmin && (
+        <div 
+            className="absolute top-8 left-8 z-50 bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl w-48 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
+        >
+            <div className="flex justify-between items-center mb-3">
+                <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                    <Maximize2 size={12} className="text-orange-500"/> Dimensions
+                </h4>
+                <button 
+                    onClick={handleReset} 
+                    className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors"
+                    title="Reset View & Rotation"
+                >
+                    <RefreshCcw size={10} /> Reset
+                </button>
+            </div>
+            <div className="space-y-4">
+                <BoxSlider label="Width" val={dimensions.w} axis="w" />
+                <BoxSlider label="Height" val={dimensions.h} axis="h" />
+                <BoxSlider label="Depth" val={dimensions.d} axis="d" />
+            </div>
+        </div>
+      )}
 
       <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0">
         <h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2>
@@ -331,6 +373,17 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-slate-300")}</div>
         </div>
       </div>
+
+      <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
+        <div className="flex justify-between items-start mb-2 font-mono text-xs text-orange-300">
+           <span>STOCK: {product.stock} Bks</span>
+           <span>TYPE: {product.type}</span>
+           <span>CUKAI: {product.taxStamp}</span>
+        </div>
+        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">
+          "{product.description || "A standard pack of cigarettes. No unusual properties detected."}"
+        </p>
+      </div>
     </div>
   );
 };
@@ -345,6 +398,13 @@ const ReturnModal = ({ transaction, onClose, onConfirm }) => {
     }
     setReturnQtys(initial);
   }, [transaction]);
+
+  const handleQtyChange = (productId, val, max) => {
+    let newQty = parseInt(val) || 0;
+    if (newQty < 0) newQty = 0;
+    if (newQty > max) newQty = max;
+    setReturnQtys(prev => ({ ...prev, [productId]: newQty }));
+  };
 
   const handleConfirm = () => {
     onConfirm(returnQtys);
@@ -364,7 +424,7 @@ const ReturnModal = ({ transaction, onClose, onConfirm }) => {
                   </div>
                   <div className="flex items-center gap-2">
                       <span className="text-xs text-orange-500 font-bold">Qty:</span>
-                      <input type="number" value={returnQtys[item.productId] || 0} onChange={(e) => setReturnQtys({...returnQtys, [item.productId]: Math.min(item.qty, Math.max(0, parseInt(e.target.value)||0))})} className="w-16 p-1 rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white text-center"/>
+                      <input type="number" value={returnQtys[item.productId] || 0} onChange={(e) => handleQtyChange(item.productId, e.target.value, item.qty)} className="w-16 p-1 rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white text-center"/>
                   </div>
                </div>
             ))}
@@ -402,6 +462,7 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
 
     const customerData = useMemo(() => {
         const customers = {};
+        
         const sortedTransactions = [...transactions].sort((a, b) => {
             const tA = a.timestamp?.seconds || 0;
             const tB = b.timestamp?.seconds || 0;
@@ -524,113 +585,6 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
     );
 };
 
-const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
-    const [editingId, setEditingId] = useState(null);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!formData.name.trim()) return;
-        try {
-            if (editingId) {
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() });
-                await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`);
-                triggerCapy("Customer updated successfully!");
-                setEditingId(null);
-            } else {
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), { ...formData, name: formData.name.trim(), createdAt: serverTimestamp() });
-                await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`);
-                triggerCapy("Customer added to directory!");
-            }
-            setFormData({ name: '', phone: '', address: '' });
-        } catch (err) { console.error(err); }
-    };
-
-    const handleEdit = (c) => { setFormData({ name: c.name, phone: c.phone, address: c.address }); setEditingId(c.id); };
-    const handleDelete = async (id, name) => { if (window.confirm("Delete this customer profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted customer: ${name}`); } };
-
-    return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', address:''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/></div>
-                        <div className="flex-1 w-full"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." /></div>
-                        <div className="flex-[2] w-full"><label className="text-xs font-bold text-slate-500 uppercase">Address</label><input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1" /></div>
-                        <button className={`text-white px-6 py-2 rounded-lg font-bold h-10 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update' : 'Add'}</button>
-                    </div>
-                </form>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{customers.map(c => (<div key={c.id} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex justify-between items-start ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}><div><h3 className="font-bold text-lg dark:text-white">{c.name}</h3>{c.phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone size={12}/> {c.phone}</p>}{c.address && <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {c.address}</p>}</div><div className="flex gap-2"><button onClick={() => handleEdit(c)} className="text-slate-400 hover:text-blue-500"><Edit size={16}/></button><button onClick={() => handleDelete(c.id, c.name)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button></div></div>))}</div>
-        </div>
-    );
-};
-
-const HistoryReportView = ({ transactions, onDelete }) => {
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const customerStats = useMemo(() => {
-    const stats = {};
-    transactions.forEach(t => {
-      const name = t.customerName || 'Unknown';
-      if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] };
-      stats[name].count += 1;
-      if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; 
-      if (t.date > stats[name].lastDate) stats[name].lastDate = t.date;
-      stats[name].history.push(t);
-    });
-    return Object.values(stats).sort((a,b) => b.total - a.total);
-  }, [transactions]);
-
-  if (!selectedCustomer) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction History Reports</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {customerStats.map(c => (
-            <div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group">
-              <button onClick={(e) => { e.stopPropagation(); onDelete(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>
-              <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div>
-              <h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3>
-              <div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const groupedByMonth = selectedCustomer.history.reduce((groups, t) => {
-    const date = new Date(t.date);
-    const key = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(t);
-    return groups;
-  }, {});
-
-  return (
-    <div className="animate-fade-in max-w-4xl mx-auto">
-       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
-       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
-          <div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div>
-          <div className="p-8">
-             {Object.entries(groupedByMonth).map(([month, trans]) => (
-                <div key={month} className="mb-8 last:mb-0">
-                   <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3>
-                   <div className="overflow-x-auto">
-                       <table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead>
-                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody>
-                       </table>
-                   </div>
-                </div>
-             ))}
-          </div>
-       </div>
-    </div>
-  );
-};
-
 // --- CUSTOM GRAPH TOOLTIP ---
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -654,153 +608,377 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// --- MAIN APP COMPONENT ---
+// --- COMPONENT: CUSTOMER MANAGEMENT ---
+const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
+    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+    const [editingId, setEditingId] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.name.trim()) return;
+        
+        try {
+            if (editingId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), {
+                    ...formData,
+                    name: formData.name.trim(),
+                    updatedAt: serverTimestamp()
+                });
+                await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`);
+                triggerCapy("Customer updated successfully!");
+                setEditingId(null);
+            } else {
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), {
+                    ...formData,
+                    name: formData.name.trim(),
+                    createdAt: serverTimestamp()
+                });
+                await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`);
+                triggerCapy("Customer added to directory!");
+            }
+            setFormData({ name: '', phone: '', address: '' });
+        } catch (err) { console.error(err); }
+    };
+
+    const handleEdit = (customer) => {
+        setFormData({ name: customer.name, phone: customer.phone, address: customer.address });
+        setEditingId(customer.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
+    };
+
+    const handleDelete = async (id, name) => {
+        if (window.confirm("Delete this customer profile?")) {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id));
+            logAudit("CUSTOMER_DELETE", `Deleted customer: ${name}`);
+        }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
+            
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>
+                        {editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', address:''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}
+                    </div>
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 w-full">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Store Name</label>
+                            <input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/>
+                        </div>
+                        <div className="flex-1 w-full">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Phone</label>
+                            <input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." />
+                        </div>
+                        <div className="flex-[2] w-full">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
+                            <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1" />
+                        </div>
+                        <button className={`text-white px-6 py-2 rounded-lg font-bold h-10 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>
+                            {editingId ? 'Update' : 'Add'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customers.map(c => (
+                    <div key={c.id} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex justify-between items-start ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                        <div>
+                            <h3 className="font-bold text-lg dark:text-white">{c.name}</h3>
+                            {c.phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone size={12}/> {c.phone}</p>}
+                            {c.address && <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {c.address}</p>}
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleEdit(c)} className="text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
+                            <button onClick={() => handleDelete(c.id, c.name)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- COMPONENT: HISTORY REPORT VIEW ---
+const HistoryReportView = ({ transactions, onDelete }) => {
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // Group transactions by customer
+  const customerStats = useMemo(() => {
+    const stats = {};
+    transactions.forEach(t => {
+      const name = t.customerName || 'Unknown';
+      if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] };
+      stats[name].count += 1;
+      // Calculate total value (Sales only for revenue, Returns subtract)
+      if (t.type === 'SALE' || t.type === 'RETURN') {
+         stats[name].total += t.total || 0; 
+      }
+      if (t.date > stats[name].lastDate) stats[name].lastDate = t.date;
+      stats[name].history.push(t);
+    });
+    return Object.values(stats).sort((a,b) => b.total - a.total);
+  }, [transactions]);
+
+  if (!selectedCustomer) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction History Reports</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {customerStats.map(c => (
+            <div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group">
+              {/* Delete Button */}
+              <button 
+                onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onDelete(c.name); 
+                }} 
+                className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"
+                title="Delete Folder & Data"
+              >
+                <Trash2 size={16} />
+              </button>
+              
+              <div className="flex items-start justify-between mb-4">
+                 <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                    <Folder size={24} />
+                 </div>
+                 <span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span>
+              </div>
+              <h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3>
+              <div className="flex justify-between items-end mt-4">
+                 <div>
+                    <p className="text-xs text-slate-500 uppercase">Lifetime Value</p>
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-xs text-slate-500 uppercase">Transactions</p>
+                    <p className="font-bold dark:text-white">{c.count}</p>
+                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Report View: Group by Month
+  const groupedByMonth = selectedCustomer.history.reduce((groups, t) => {
+    const date = new Date(t.date);
+    const key = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+    return groups;
+  }, {});
+
+  return (
+    <div className="animate-fade-in max-w-4xl mx-auto">
+       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+          <ArrowRight className="rotate-180" size={20}/> Back to Folders
+       </button>
+
+       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
+          {/* Formal Header */}
+          <div className="bg-slate-900 text-white p-8">
+             <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p>
+                    <h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm opacity-70">Total Lifetime Value</p>
+                    <p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p>
+                </div>
+             </div>
+          </div>
+
+          <div className="p-8">
+             {Object.entries(groupedByMonth).map(([month, trans]) => (
+                <div key={month} className="mb-8 last:mb-0">
+                   <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3>
+                   <div className="overflow-x-auto">
+                       <table className="w-full text-sm text-left">
+                           <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
+                               <tr>
+                                   <th className="p-3">Date</th>
+                                   <th className="p-3">Type</th>
+                                   <th className="p-3">Details</th>
+                                   <th className="p-3 text-right">Amount</th>
+                               </tr>
+                           </thead>
+                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                               {trans.map(t => (
+                                   <tr key={t.id}>
+                                       <td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td>
+                                       <td className="p-3">
+                                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                               t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' :
+                                               t.type === 'RETURN' ? 'bg-red-100 text-red-700' :
+                                               'bg-blue-100 text-blue-700'
+                                           }`}>
+                                               {t.type.replace('_', ' ')}
+                                           </span>
+                                       </td>
+                                       <td className="p-3 text-slate-600 dark:text-slate-300">
+                                            {t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}
+                                            {t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}
+                                       </td>
+                                       <td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>
+                                           {formatRupiah(t.amountPaid || t.total)}
+                                       </td>
+                                   </tr>
+                               ))}
+                           </tbody>
+                       </table>
+                   </div>
+                </div>
+             ))}
+          </div>
+       </div>
+    </div>
+  );
+};
+
+/**
+ * MAIN APP COMPONENT
+ */
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
-  const [authStatus, setAuthStatus] = useState('loading');
-  const [loginError, setLoginError] = useState(null);
+  const [authStatus, setAuthStatus] = useState('loading'); 
   const [isAdmin, setIsAdmin] = useState(false);
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(true);
-  const [showCapyMsg, setShowCapyMsg] = useState(true);
-  const [capyMsg, setCapyMsg] = useState("Connecting to database...");
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Data State
+  // Data States
   const [inventory, setInventory] = useState([]);
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState([]); // New Customers State
   const [transactions, setTransactions] = useState([]);
   const [samplings, setSamplings] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
-  
-  // App Settings
-  const [appSettings, setAppSettings] = useState({ 
-    mascotImage: '', 
-    adminEmail: '',
-    companyName: 'KPM Inventory'
-  });
-  
-  const [editCompanyName, setEditCompanyName] = useState('');
-  const [currentUserEmail, setCurrentUserEmail] = useState('');
-  
-  // Capybara Custom Messages
-  const [capyMessages, setCapyMessages] = useState([
-    "Welcome back, Boss! Stock looks good today.",
-    "Checking the inventory...",
-    "Don't forget to record samples!",
-    "Sales are looking up!",
-    "Need to restock soon?"
-  ]);
-  const [newMessage, setNewMessage] = useState("");
+  const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessage: '' });
 
+  // UI States
   const [editingProduct, setEditingProduct] = useState(null);
   const [examiningProduct, setExaminingProduct] = useState(null);
   const [returningTransaction, setReturningTransaction] = useState(null);
-  
   const [tempImages, setTempImages] = useState({}); 
   const [searchTerm, setSearchTerm] = useState("");
   const [useFrontForBack, setUseFrontForBack] = useState(false);
   const [boxDimensions, setBoxDimensions] = useState({ w: 55, h: 90, d: 22 });
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const [activeCropContext, setActiveCropContext] = useState(null); 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // Capybara Message State
+  const [capyMsg, setCapyMsg] = useState("Connecting to database...");
+  const [showCapyMsg, setShowCapyMsg] = useState(false);
+  const [editMascotMessage, setEditMascotMessage] = useState("");
 
-  // --- AUTH & DATA SYNC ---
+  // Capybara Custom Messages (Fallback)
+  const capyMessages = [
+    "Welcome back, Boss! Stock looks good today.",
+    "Checking the inventory...",
+    "Don't forget to record samples!",
+    "Sales are looking up!",
+    "Need to restock soon?"
+  ];
+
+  // --- AUTHENTICATION FLOW ---
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+    // Add safety timeout for auth to prevent infinite loading state
+    const authTimeout = setTimeout(() => {
+        if (authStatus === 'loading') {
+            setAuthStatus('pending'); // Fallback state if auth hangs
         }
-      } catch (error) {
-        console.error("Auth Error:", error);
-      }
-    };
-    initAuth();
-    
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if(currentUser) {
-          triggerCapy("Connected securely to Cloud!");
-          if (currentUser.email === ADMIN_EMAIL) {
-              setIsAdmin(true);
-              setAuthStatus('approved');
-          } else {
-              setAuthStatus('approved'); 
-          }
-      } else {
-          setAuthStatus('unauthenticated');
-      }
+    }, 8000);
+
+    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+        clearTimeout(authTimeout);
+        if (!currentUser) {
+            setUser(null);
+            setAuthStatus('unauthenticated');
+            return;
+        }
+
+        setUser(currentUser);
+        const adminStatus = currentUser.email === ADMIN_EMAIL;
+        setIsAdmin(adminStatus);
+        
+        // Check if Admin
+        if (adminStatus) {
+            setAuthStatus('approved');
+            try {
+                const adminRef = doc(db, 'artifacts', appId, 'metadata', 'users', currentUser.uid);
+                setDoc(adminRef, { email: currentUser.email, status: 'approved', lastLogin: serverTimestamp() }, { merge: true });
+            } catch(e) { console.error("Admin setup error", e); }
+        } else {
+            const userRef = doc(db, 'artifacts', appId, 'metadata', 'users', currentUser.uid);
+            onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.status === 'approved') setAuthStatus('approved');
+                    else setAuthStatus('pending');
+                    updateDoc(userRef, { lastLogin: serverTimestamp() });
+                } else {
+                    setDoc(userRef, { 
+                        email: currentUser.email || 'anonymous', 
+                        status: 'pending', 
+                        createdAt: serverTimestamp(),
+                        lastLogin: serverTimestamp()
+                    });
+                    setAuthStatus('pending');
+                }
+            }, (error) => {
+                console.error("Auth check failed", error);
+                setAuthStatus('pending'); 
+            });
+        }
     });
-    return () => unsubscribe();
+    return () => { unsubAuth(); clearTimeout(authTimeout); };
   }, []);
 
-  // --- FIRESTORE SYNC ---
+  // --- DATA SYNC (Only if Approved) ---
   useEffect(() => {
-    if (!user) return;
+    if (authStatus !== 'approved' || !user) return;
 
-    // 1. Settings
-    const settingsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general');
-    const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAppSettings(data);
-        setEditCompanyName(data.companyName || 'KPM Inventory');
-        if (data.mascotImage) setCapyMsg("Data synced!");
-      } else {
-        setDoc(settingsRef, { companyName: "KPM Inventory", mascotImage: "" });
-      }
+    const basePath = `artifacts/${appId}/users/${user.uid}`;
+    
+    const unsubSettings = onSnapshot(doc(db, basePath, 'settings', 'general'), (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            setAppSettings(data);
+            setEditMascotMessage(data.mascotMessage || "");
+            if (data.mascotMessage) {
+                // If customized message exists, show it
+                setCapyMsg(data.mascotMessage);
+                setShowCapyMsg(true);
+                setTimeout(() => setShowCapyMsg(false), 5000);
+            }
+        } else {
+            setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
+        }
     });
 
-    // 2. Inventory
-    const invRef = collection(db, 'artifacts', appId, 'users', user.uid, 'products');
-    const unsubInv = onSnapshot(invRef, (snap) => {
-        setInventory(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
-    // 3. Transactions
-    const transRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), orderBy('timestamp', 'desc'));
-    const unsubTrans = onSnapshot(transRef, (snap) => {
-        setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 4. Samplings
-    const sampRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'samplings'), orderBy('timestamp', 'desc'));
-    const unsubSamp = onSnapshot(sampRef, (snap) => {
-        setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 5. Audit Logs
-    const logRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'audit_logs'), orderBy('timestamp', 'desc'));
-    const unsubLogs = onSnapshot(logRef, (snap) => {
-        setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 6. Customers
-    const custRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), orderBy('name', 'asc'));
-    const unsubCust = onSnapshot(custRef, (snap) => {
-        setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // Load Local Settings
     const savedTheme = localStorage.getItem('kpm_theme');
-    const savedEmail = localStorage.getItem('kpm_user_email');
-    if (savedEmail) setCurrentUserEmail(savedEmail);
     if (savedTheme === 'light') setDarkMode(false);
 
     return () => {
-        unsubSettings();
-        unsubInv();
-        unsubTrans();
-        unsubSamp();
-        unsubLogs();
-        unsubCust();
+        unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust();
     };
-  }, [user]);
+  }, [user, authStatus]);
 
   useEffect(() => {
     if (darkMode) {
@@ -812,20 +990,9 @@ export default function KPMInventoryApp() {
     }
   }, [darkMode]);
 
-  useEffect(() => { localStorage.setItem('kpm_user_email', currentUserEmail); }, [currentUserEmail]);
-
   // --- ACTIONS ---
-
-  const handleLogin = () => {
-      setLoginError(null);
-      signInWithPopup(auth, googleProvider).catch(error => {
-          console.error(error);
-          let msg = "Login failed. Please try again.";
-          if (error.code === 'auth/unauthorized-domain') msg = "Unauthorized Domain. Please add this domain to your Firebase Console.";
-          else if (error.code === 'auth/popup-closed-by-user') msg = "Login cancelled.";
-          else if (error.message) msg = error.message;
-          setLoginError(msg);
-      });
+  const handleLogin = async () => {
+      try { await signInWithPopup(auth, googleProvider); } catch (error) { console.error("Login failed", error); }
   };
 
   const handleLogout = async () => {
@@ -833,103 +1000,56 @@ export default function KPMInventoryApp() {
       setAuthStatus('unauthenticated');
   };
 
+  // --- RENDER LOGIC ---
+  if (authStatus === 'loading') return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
+          <p>Loading App...</p>
+          <button onClick={() => window.location.reload()} className="mt-8 text-xs text-slate-500 hover:text-white">Takes too long? Reload</button>
+      </div>
+  );
+  if (authStatus === 'unauthenticated') return <LoginScreen onLogin={handleLogin} />;
+  if (authStatus === 'pending') return <PendingApprovalScreen email={user.email} onLogout={handleLogout} />;
+
+  // --- MAIN APP (If Approved) ---
+  
   const logAudit = async (action, details) => {
-      if (!user) return;
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'audit_logs'), {
-              action, details, timestamp: serverTimestamp()
-          });
-      } catch (err) { console.error("Audit fail", err); }
+      try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_logs`), { action, details, timestamp: serverTimestamp() }); } catch (err) {}
   };
 
   const triggerCapy = (msg) => {
-    const message = msg || capyMessages[Math.floor(Math.random() * capyMessages.length)];
+    // Priority: msg arg -> custom saved message -> random message
+    const message = msg || appSettings.mascotMessage || capyMessages[Math.floor(Math.random() * capyMessages.length)];
     setCapyMsg(message);
     setShowCapyMsg(true);
     setTimeout(() => setShowCapyMsg(false), 4000);
   };
 
-  const handleAddMessage = () => { if (newMessage.trim()) { setCapyMessages(p => [...p, newMessage.trim()]); setNewMessage(""); } };
-  const handleDeleteMessage = (idx) => { setCapyMessages(p => p.filter((_, i) => i !== idx)); };
-  const handleCropConfirm = (base64) => { if (!activeCropContext) return; if (activeCropContext.type === 'mascot') { const newSettings = { ...appSettings, mascotImage: base64 }; setAppSettings(newSettings); if(user) { setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general'), newSettings, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); } triggerCapy("Profile picture updated!"); } else if (activeCropContext.type === 'product') { setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); } setCropImageSrc(null); setActiveCropContext(null); };
-  const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', aspectRatio: 1, face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
-  const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
-  const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
-  const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general'), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
-  
-  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const numFields = ['qtyPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'priceDistBal', 'priceDistPack', 'priceGrosir', 'priceRetail', 'priceEcer', 'stock']; numFields.forEach(field => data[field] = Number(data[field]) || 0); let finalImages = editingProduct?.images || {}; if (isAdmin) { finalImages = { ...finalImages, ...tempImages }; if (finalImages.front) data.image = finalImages.front; data.images = finalImages; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; } else { if (editingProduct) { data.images = editingProduct.images; data.image = editingProduct.image; data.dimensions = editingProduct.dimensions; data.name = editingProduct.name; data.type = editingProduct.type; data.taxStamp = editingProduct.taxStamp; data.useFrontForBack = editingProduct.useFrontForBack; } } data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'products'), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added to our stash!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
-  const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
-  const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed from existence."); } catch (err) { triggerCapy("Delete failed"); } } };
-  const handleSamplingSubmit = async (e) => { e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const productId = formData.get('productId'); const qty = parseInt(formData.get('qty')); const reason = formData.get('reason'); const product = inventory.find(i => i.id === productId); if (!product) return; if (product.stock < qty) { alert("Not enough stock for sampling!"); return; } try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const newStock = prodDoc.data().stock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'samplings')); transaction.set(newSampleRef, { date: getCurrentDate(), productName: product.name, qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of ${product.name}`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } };
-  const handleOpnameChange = (id, val) => { setOpnameData(prev => ({ ...prev, [id]: val })); };
-  const handleOpnameSubmit = async () => { if (!user) return; const updates = []; inventory.forEach(item => { const actual = opnameData[item.id]; if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); } }); if (updates.length === 0) { triggerCapy("No changes to save!"); return; } if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; try { await runTransaction(db, async (transaction) => { updates.forEach(update => { const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'products', update.id); transaction.update(ref, { stock: update.new }); }); }); updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); setOpnameData({}); triggerCapy("Stock Opname saved successfully!"); } catch (err) { console.error(err); alert("Failed to update stock: " + err.message); } };
-  const addToCart = (product) => { setCart(prev => { const existing = prev.find(item => item.productId === product.id); if (existing) return prev.map(item => item.productId === product.id ? { ...item, qty: item.qty + 1 } : item); return [...prev, { productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: 'Retail', calculatedPrice: product.priceRetail, product }]; }); };
-  const updateCartItem = (productId, field, value) => { setCart(prev => prev.map(item => { if (item.productId === productId) { const newItem = { ...item, [field]: value }; const { unit, priceTier: tier, product: prod } = newItem; let base = 0; if (tier === 'Ecer') base = prod.priceEcer || 0; if (tier === 'Retail') base = prod.priceRetail || 0; if (tier === 'Grosir') base = prod.priceGrosir || 0; let mult = 1; if (unit === 'Slop') mult = prod.packsPerSlop || 10; if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); newItem.calculatedPrice = base * mult; return newItem; } return item; })); };
-  const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
-
-  const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => {
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), {
-              date: getCurrentDate(),
-              customerName: customerName.trim(), 
-              paymentType: "Cash",
-              itemsPaid,
-              amountPaid,
-              type: 'CONSIGNMENT_PAYMENT',
-              timestamp: serverTimestamp()
-          });
-          await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`);
-          triggerCapy("Payment recorded! Stock updated.");
-      } catch (err) { console.error(err); }
-  };
-
-  const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => {
-      try {
-          await runTransaction(db, async (trans) => {
-              for(const item of itemsReturned) {
-                  const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', item.productId);
-                  const prodDoc = await trans.get(prodRef);
-                  if(prodDoc.exists()) {
-                      trans.update(prodRef, { stock: prodDoc.data().stock + item.qty });
-                  }
-              }
-              const returnRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-              trans.set(returnRef, {
-                  date: getCurrentDate(),
-                  customerName: customerName.trim(),
-                  items: itemsReturned,
-                  total: -refundValue,
-                  type: 'RETURN',
-                  timestamp: serverTimestamp()
-              });
-          });
-          await logAudit("RETURN", `Processed return from ${customerName}`);
-          triggerCapy("Goods returned to inventory.");
-      } catch (err) { console.error(err); }
-  };
-
-  const handleAddGoodsToCustomer = (customerName) => {
-      alert(`Go to Sales POS and select 'Titip' payment for ${customerName}`);
-      setActiveTab('sales');
+  const handleSaveMascotMessage = async () => {
+      if(user) { 
+          await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessage: editMascotMessage }, {merge: true}); 
+          logAudit("SETTINGS_UPDATE", "Updated Mascot Message"); 
+      } 
+      triggerCapy(editMascotMessage); // Test it immediately
   };
 
   const handleDeleteConsignmentData = async (customerName) => {
-      if(!window.confirm(`Are you sure you want to delete ALL consignment history for ${customerName}?`)) return;
+      if(!window.confirm(`Delete ALL history for ${customerName}?`)) return;
       try {
-          const targets = transactions.filter(t => t.customerName === customerName && (t.type === 'CONSIGNMENT_PAYMENT' || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
+          const targets = transactions.filter(t => t.customerName === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
           for(const t of targets) {
-              await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', t.id));
+             await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id));
           }
-          triggerCapy("Consignment data cleared.");
-      } catch(err) { console.error(err); }
+          logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`);
+      } catch(err) {}
   };
-  
+
   const handleDeleteHistory = async (customerName) => {
-      if(!window.confirm(`Delete folder for "${customerName}"? \n\nWARNING: This will permanently delete ALL transaction history (Sales, Returns, Payments) for this customer.`)) return;
+      if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return;
       try {
           const targets = transactions.filter(t => t.customerName === customerName);
           for (const t of targets) {
-              await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', t.id));
+              await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id));
           }
           await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`);
           triggerCapy(`Deleted ${targets.length} records for ${customerName}`);
@@ -938,6 +1058,34 @@ export default function KPMInventoryApp() {
           alert("Error deleting history.");
       }
   };
+
+  const handleExportCSV = () => {
+    const headers = ["ID,Name,Category,Stock,Price(Retail)\n"];
+    const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n");
+    const blob = new Blob([headers + csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory_${getCurrentDate()}.csv`;
+    a.click();
+    logAudit("EXPORT", "Downloaded Inventory CSV");
+  };
+
+  // ... (Existing handlers for Crop, Mascot, Product Save remain unchanged) ...
+  const handleCropConfirm = (base64) => { if (!activeCropContext) return; if (activeCropContext.type === 'mascot') { const newSettings = { ...appSettings, mascotImage: base64 }; setAppSettings(newSettings); if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); } triggerCapy("Profile picture updated!"); } else if (activeCropContext.type === 'product') { setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); } setCropImageSrc(null); setActiveCropContext(null); };
+  const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', aspectRatio: 1, face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
+  const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
+  const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
+  const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
+  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const numFields = ['qtyPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'priceDistBal', 'priceDistPack', 'priceGrosir', 'priceRetail', 'priceEcer', 'stock']; numFields.forEach(field => data[field] = Number(data[field]) || 0); let finalImages = editingProduct?.images || {}; if (isAdmin) { finalImages = { ...finalImages, ...tempImages }; if (finalImages.front) data.image = finalImages.front; data.images = finalImages; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; } else { if (editingProduct) { data.images = editingProduct.images; data.image = editingProduct.image; data.dimensions = editingProduct.dimensions; data.name = editingProduct.name; data.type = editingProduct.type; data.taxStamp = editingProduct.taxStamp; data.useFrontForBack = editingProduct.useFrontForBack; } } data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added to our stash!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
+  const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
+  const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed from existence."); } catch (err) { triggerCapy("Delete failed"); } } };
+  const handleSamplingSubmit = async (e) => { e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const productId = formData.get('productId'); const qty = parseInt(formData.get('qty')); const reason = formData.get('reason'); const product = inventory.find(i => i.id === productId); if (!product) return; if (product.stock < qty) { alert("Not enough stock for sampling!"); return; } try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const newStock = prodDoc.data().stock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`)); transaction.set(newSampleRef, { date: getCurrentDate(), productName: product.name, qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of ${product.name}`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } };
+  const handleOpnameChange = (id, val) => { setOpnameData(prev => ({ ...prev, [id]: val })); };
+  const handleOpnameSubmit = async () => { if (!user) return; const updates = []; inventory.forEach(item => { const actual = opnameData[item.id]; if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); } }); if (updates.length === 0) { triggerCapy("No changes to save!"); return; } if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; try { await runTransaction(db, async (transaction) => { updates.forEach(update => { const ref = doc(db, `artifacts/${appId}/users/${user.uid}/products`, update.id); transaction.update(ref, { stock: update.new }); }); }); updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); setOpnameData({}); triggerCapy("Stock Opname saved successfully!"); } catch (err) { console.error(err); alert("Failed to update stock: " + err.message); } };
+  const addToCart = (product) => { setCart(prev => { const existing = prev.find(item => item.productId === product.id); if (existing) return prev.map(item => item.productId === product.id ? { ...item, qty: item.qty + 1 } : item); return [...prev, { productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: 'Retail', calculatedPrice: product.priceRetail, product }]; }); };
+  const updateCartItem = (productId, field, value) => { setCart(prev => prev.map(item => { if (item.productId === productId) { const newItem = { ...item, [field]: value }; const { unit, priceTier: tier, product: prod } = newItem; let base = 0; if (tier === 'Ecer') base = prod.priceEcer || 0; if (tier === 'Retail') base = prod.priceRetail || 0; if (tier === 'Grosir') base = prod.priceGrosir || 0; let mult = 1; if (unit === 'Slop') mult = prod.packsPerSlop || 10; if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); newItem.calculatedPrice = base * mult; return newItem; } return item; })); };
+  const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
 
   const processTransaction = async (e) => {
     e.preventDefault();
@@ -952,23 +1100,19 @@ export default function KPMInventoryApp() {
     try {
         await runTransaction(db, async (firestoreTrans) => {
              for (const item of cart) {
-                 const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', item.productId);
+                 const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId);
                  const prodDoc = await firestoreTrans.get(prodRef);
                  if(!prodDoc.exists()) throw `Product ${item.name} not found`;
-                 
                  const prodData = prodDoc.data();
                  let mult = 1;
                  if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10;
                  if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10);
                  if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10);
-                 
                  const qtyToDeduct = item.qty * mult;
                  if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`;
-                 
                  firestoreTrans.update(prodRef, { stock: prodData.stock - qtyToDeduct });
              }
-             
-             const transRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
+             const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`));
              firestoreTrans.set(transRef, {
                  date: getCurrentDate(),
                  customerName,
@@ -979,13 +1123,10 @@ export default function KPMInventoryApp() {
                  timestamp: serverTimestamp()
              });
         });
-
         await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`);
         setCart([]);
         triggerCapy("Transaction complete & Saved!");
-    } catch(err) {
-        alert(err);
-    }
+    } catch(err) { alert(err); }
   };
 
   const executeReturn = async (returnQtys) => {
@@ -1003,18 +1144,6 @@ export default function KPMInventoryApp() {
     if (itemsToReturn.length === 0) { setReturningTransaction(null); return; }
     handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue);
     setReturningTransaction(null);
-  };
-
-  const handleExportCSV = () => {
-    const headers = ["ID,Name,Category,Stock,Price(Retail)\n"];
-    const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n");
-    const blob = new Blob([headers + csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inventory_${getCurrentDate()}.csv`;
-    a.click();
-    logAudit("EXPORT", "Downloaded Inventory CSV");
   };
 
   const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * i.priceDistPack), 0);
@@ -1036,16 +1165,6 @@ export default function KPMInventoryApp() {
           keys: Array.from(customers)
       };
   }, [transactions]);
-
-  // --- RENDER LOGIC ---
-  if (authStatus === 'loading') return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-          <p>Loading App...</p>
-      </div>
-  );
-  if (authStatus === 'unauthenticated') return <LoginScreen onLogin={handleLogin} error={loginError}/>;
-  if (authStatus === 'pending') return <PendingApprovalScreen email={user.email} onLogout={handleLogout} />;
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
@@ -1111,21 +1230,31 @@ export default function KPMInventoryApp() {
             ))}
         </div>
         
+        {/* SIDEBAR FOOTER: LOGIN / LOGOUT */}
         <div className="p-4 border-t border-slate-800">
-            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} text-xs text-slate-500`}>
-                <ShieldCheck size={14} className="text-green-500"/>
-                {!isSidebarCollapsed && <span>Secure Cloud Sync</span>}
-            </div>
+            {user?.isAnonymous ? (
+                <button onClick={handleLogin} className={`flex items-center text-emerald-400 hover:text-emerald-300 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}>
+                    <LogIn size={20} />
+                    {!isSidebarCollapsed && <span className="text-sm font-bold">Login Admin</span>}
+                </button>
+            ) : (
+                <button onClick={handleLogout} className={`flex items-center text-red-500 hover:text-red-400 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}>
+                    <LogOut size={20} />
+                    {!isSidebarCollapsed && <span className="text-sm font-bold">Sign Out</span>}
+                </button>
+            )}
         </div>
       </nav>
 
       <main className={`transition-all duration-300 ${isSidebarCollapsed ? 'pl-20' : 'pl-64'} min-h-screen bg-slate-50 dark:bg-slate-900`}>
+        {/* MOBILE HEADER */}
         <div className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-30 ml-[-5rem] sm:ml-0"> 
           <div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings.companyName || 'KPM Inventory'}</h1></div>
           <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
         </div>
 
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          {/* DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1134,7 +1263,7 @@ export default function KPMInventoryApp() {
                   <h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
                 </div>
                 <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
-                  <p className="text-orange-100 text-sm font-medium">Total Sales</p>
+                  <p className="text-orange-100 text-sm font-medium">Net Sales (Revenue)</p>
                   <h3 className="text-3xl font-bold mt-1">
                     {formatRupiah(
                       transactions
@@ -1170,6 +1299,7 @@ export default function KPMInventoryApp() {
             </div>
           )}
 
+          {/* INVENTORY */}
           {activeTab === 'inventory' && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex gap-4">
@@ -1240,6 +1370,7 @@ export default function KPMInventoryApp() {
 
                                             return (
                                                 <div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden">
+                                                    {/* Display Area - Click to Edit or Upload */}
                                                     <div 
                                                         className="w-full h-full cursor-pointer" 
                                                         onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}
@@ -1252,6 +1383,8 @@ export default function KPMInventoryApp() {
                                                             </div>
                                                         )}
                                                     </div>
+
+                                                    {/* Hidden File Input */}
                                                     <input 
                                                         id={`file-${face}`} 
                                                         type="file" 
@@ -1259,6 +1392,8 @@ export default function KPMInventoryApp() {
                                                         onChange={(e) => handleProductFaceUpload(e, face)} 
                                                         className="hidden" 
                                                     />
+
+                                                    {/* Hover Overlay Actions */}
                                                     {imgSource && (
                                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                                                             <button 
@@ -1301,6 +1436,7 @@ export default function KPMInventoryApp() {
             </div>
           )}
 
+          {/* STOCK OPNAME */}
           {activeTab === 'stock_opname' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2>
@@ -1348,11 +1484,10 @@ export default function KPMInventoryApp() {
             </div>
           )}
 
+          {/* SAMPLING */}
           {activeTab === 'sampling' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2>
-              
-              {/* Sampling Form */}
               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
                   <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
@@ -1364,29 +1499,17 @@ export default function KPMInventoryApp() {
                   <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button>
                 </form>
               </div>
-
-              {/* Sampling History Table */}
               <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                    <tr>
-                      <th className="p-4">Date</th>
-                      <th className="p-4">Product</th>
-                      <th className="p-4">Qty</th>
-                      <th className="p-4">Notes</th>
-                    </tr>
+                    <tr><th className="p-4">Date</th><th className="p-4">Product</th><th className="p-4">Qty</th><th className="p-4">Notes</th></tr>
                   </thead>
                   <tbody>
                     {samplings.length === 0 ? (
                         <tr><td colSpan="4" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>
                     ) : (
                         samplings.map(s => (
-                          <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                            <td className="p-4 dark:text-slate-300">{s.date}</td>
-                            <td className="p-4 font-bold dark:text-white">{s.productName}</td>
-                            <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
-                            <td className="p-4 text-slate-500">{s.reason}</td>
-                          </tr>
+                          <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"><td className="p-4 dark:text-slate-300">{s.date}</td><td className="p-4 font-bold dark:text-white">{s.productName}</td><td className="p-4 text-red-500 font-bold">-{s.qty}</td><td className="p-4 text-slate-500">{s.reason}</td></tr>
                         ))
                     )}
                   </tbody>
@@ -1395,78 +1518,41 @@ export default function KPMInventoryApp() {
             </div>
           )}
 
-          {/* NEW TAB: CONSIGNMENT (TITIP) */}
-          {activeTab === 'consignment' && (
-              <ConsignmentView 
-                  transactions={transactions} 
-                  inventory={inventory}
-                  onAddGoods={handleAddGoodsToCustomer}
-                  onPayment={handleConsignmentPayment}
-                  onReturn={handleConsignmentReturn}
-                  onDeleteConsignment={handleDeleteConsignmentData}
-              />
-          )}
-
-          {/* CUSTOMER PROFILES */}
-          {activeTab === 'customers' && (
-              <CustomerManagement 
-                  customers={customers} 
-                  db={db} 
-                  appId={appId} 
-                  user={user} 
-                  logAudit={logAudit} 
-                  triggerCapy={triggerCapy} 
-              />
-          )}
-
-          {/* SALES POS */}
+          {/* OTHER TABS */}
+          {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} />}
+          {activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} />}
           {activeTab === 'sales' && (
              <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
                 <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-orange-500 flex flex-col items-center text-center"><h4 className="font-bold truncate dark:text-white w-full">{item.name}</h4><div className="w-12 h-12 my-2 rounded bg-slate-100 dark:bg-slate-700 overflow-hidden">{(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-2 text-slate-300"/>}</div><p className="text-xs text-emerald-500 font-bold">{formatRupiah(item.priceRetail)}</p></div>))}</div></div>
-                <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700">
-                    <form onSubmit={processTransaction}>
-                        <div className="mb-3 relative">
-                            <input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/>
-                            <datalist id="customersList">
-                                {customers.map(c => <option key={c.id} value={c.name} />)}
-                            </datalist>
-                        </div>
-                        <select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
+                <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div><select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
              </div>
           )}
-
-          {activeTab === 'transactions' && (
-             <HistoryReportView transactions={transactions} onDelete={handleDeleteHistory} />
-          )}
-
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} onDelete={handleDeleteHistory} />}
           {activeTab === 'audit' && (
-            <div className="space-y-6 animate-fade-in">
-              <h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2>
-              <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                    <tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map(log => (
-                      <tr key={log.id} className="border-b dark:border-slate-700">
-                        <td className="p-4 font-bold text-orange-500">{log.action}</td>
-                        <td className="p-4 dark:text-slate-300">{log.details}</td>
-                        <td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr></thead><tbody>{auditLogs.map(log => (<tr key={log.id} className="border-b dark:border-slate-700"><td className="p-4 font-bold text-orange-500">{log.action}</td><td className="p-4 dark:text-slate-300">{log.details}</td><td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td></tr>))}</tbody></table></div></div>
           )}
 
+          {/* SETTINGS TAB */}
           {activeTab === 'settings' && (
              <div className="animate-fade-in max-w-2xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6"><h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3><label className="block text-sm text-slate-500 mb-2">Google Account Email</label><input type="email" placeholder="Enter your email to unlock features..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail} onChange={(e) => setCurrentUserEmail(e.target.value)}/><p className="text-xs text-slate-400 mt-2">Sign in via email: <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">adikaryasukses99@gmail.com</code> to unlock Admin features.</p></div>
+                
+                {/* Editable Mascot Message (Admin Only) */}
+                <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Message</h3>
+                        {!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}
+                    </div>
+                    <div className="flex gap-2">
+                        <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="What should the Capybara say?" value={editMascotMessage} onChange={(e) => setEditMascotMessage(e.target.value)}/>
+                        <button onClick={handleSaveMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save</button>
+                    </div>
+                </div>
+
                 <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white">Company Identity</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex gap-2"><input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName} onChange={(e) => setEditCompanyName(e.target.value)}/><button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save Name</button></div></div>
                 <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div></div>
+                {isAdmin && <AdminUserManager db={db} appId={appId} />}
              </div>
           )}
         </div>
