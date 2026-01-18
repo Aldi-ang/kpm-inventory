@@ -53,7 +53,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 let analytics;
 try {
-  // Safe init for analytics to prevent white screen if blocked by ad-blockers
   analytics = getAnalytics(app);
 } catch (e) {
   console.warn("Analytics blocked or failed to load");
@@ -64,7 +63,7 @@ const googleProvider = new GoogleAuthProvider();
 const appId = "cello-inventory-manager";
 
 // --- CONSTANTS ---
-const ADMIN_EMAIL = "adikaryasukses99@gmail.com";
+const ADMIN_PASS = "KomuroMangetsu02";
 
 // --- UTILITIES ---
 const formatRupiah = (number) => {
@@ -87,7 +86,7 @@ const getRandomColor = (str) => {
     return '#' + "00000".substring(0, 6 - c.length) + c;
 };
 
-// Unit Conversion Helper: Returns equivalent Bks
+// Unit Conversion Helper
 const convertToBks = (qty, unit, product) => {
     const packsPerSlop = product?.packsPerSlop || 10;
     const slopsPerBal = product?.slopsPerBal || 20;
@@ -758,6 +757,8 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
                 t.items.forEach(item => {
                     const product = getProduct(item.productId);
                     const bksQty = convertToBks(item.qty, item.unit, product);
+                    // Use composite key to separate different price tiers/units if needed
+                    // For now, let's group by product + tier
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`;
                     
                     if(!customers[name].items[itemKey]) {
@@ -777,6 +778,10 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
                 t.items.forEach(item => {
                     const product = getProduct(item.productId);
                     const bksQty = convertToBks(item.qty, item.unit, product);
+                    // Find matching item key or reduce from any available batch of same product?
+                    // To imply exact match, we assume return transaction stores tier info if possible.
+                    // If not, we try to reduce from any batch. 
+                    // Simplified: Try finding exact key, else find any key with product id.
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`;
                     if(customers[name].items[itemKey]) {
                         customers[name].items[itemKey].qty -= bksQty;
@@ -1238,7 +1243,7 @@ export default function KPMInventoryApp() {
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
-        // Automatic Admin Check based on Email - NO PASSWORD REQUIRED
+        // Automatic Admin Check (No Password) - Based on email
         if (currentUser?.email === ADMIN_EMAIL) {
             setIsAdmin(true);
         } else {
@@ -1429,7 +1434,7 @@ export default function KPMInventoryApp() {
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
                 <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
-                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail || ""} disabled/>
+                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={user?.email || ""} disabled/>
                 <p className="text-xs text-slate-400 mt-2">
                     {isAdmin ? "You have Full Admin Access." : "Standard User Access."}
                 </p>
