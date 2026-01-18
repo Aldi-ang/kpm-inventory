@@ -53,6 +53,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 let analytics;
 try {
+  // Safe init for analytics to prevent white screen if blocked by ad-blockers
   analytics = getAnalytics(app);
 } catch (e) {
   console.warn("Analytics blocked or failed to load");
@@ -63,7 +64,7 @@ const googleProvider = new GoogleAuthProvider();
 const appId = "cello-inventory-manager";
 
 // --- CONSTANTS ---
-const ADMIN_PASS = "KomuroMangetsu02";
+const ADMIN_EMAIL = "adikaryasukses99@gmail.com";
 
 // --- UTILITIES ---
 const formatRupiah = (number) => {
@@ -86,7 +87,7 @@ const getRandomColor = (str) => {
     return '#' + "00000".substring(0, 6 - c.length) + c;
 };
 
-// Unit Conversion Helper
+// Unit Conversion Helper: Returns equivalent Bks
 const convertToBks = (qty, unit, product) => {
     const packsPerSlop = product?.packsPerSlop || 10;
     const slopsPerBal = product?.slopsPerBal || 20;
@@ -1243,7 +1244,7 @@ export default function KPMInventoryApp() {
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
-        // Automatic Admin Check (No Password) - Based on email
+        // Automatic Admin Check (No Password)
         if (currentUser?.email === ADMIN_EMAIL) {
             setIsAdmin(true);
         } else {
@@ -1349,7 +1350,7 @@ export default function KPMInventoryApp() {
   const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, inventory.find(p=>p.id===item.productId)) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); await logAudit("RETURN", `Return from ${customerName}`); triggerCapy("Return Processed!"); } catch(err) { console.error(err); } };
   const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales POS and select 'Titip' payment for ${name}`); setActiveTab('sales'); };
   
-  // FIX: Separate handler for Sampling to prevent form submission default behavior causing page reload
+  // FIX: Separate handler for Sampling to prevent white screen crashes
   const handleSamplingSubmit = async (e) => { 
     e.preventDefault(); 
     if (!user) return; 
@@ -1425,7 +1426,7 @@ export default function KPMInventoryApp() {
   // SETTINGS CRASH FIX: Guard clause for rendering Settings content
   const renderSettings = () => {
       // Prevents trying to access user.email if user is null (e.g. logging out)
-      if (!user) return null; 
+      if (!user) return <div className="text-center p-8 text-slate-500">Loading user profile...</div>; 
 
       return (
         <div className="animate-fade-in max-w-2xl mx-auto">
@@ -1434,7 +1435,7 @@ export default function KPMInventoryApp() {
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
                 <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
-                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={user?.email || ""} disabled/>
+                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail || ""} disabled/>
                 <p className="text-xs text-slate-400 mt-2">
                     {isAdmin ? "You have Full Admin Access." : "Standard User Access."}
                 </p>
