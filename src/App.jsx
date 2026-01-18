@@ -839,8 +839,8 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
                     productId: item.productId, 
                     name: item.name, 
                     qty, 
-                    priceTier: item.priceTier, // Pass tier info for history
-                    calculatedPrice: item.calculatedPrice, // Price is per Bks here
+                    priceTier: item.priceTier,
+                    calculatedPrice: item.calculatedPrice, 
                     unit: 'Bks' 
                 });
                 totalValue += (item.calculatedPrice * qty);
@@ -1178,22 +1178,6 @@ const HistoryReportView = ({ transactions, onDelete }) => {
   );
 };
 
-// --- FEATURES ---
-
-const AdminUserManager = ({ db, appId }) => {
-    const [users, setUsers] = useState([]);
-    useEffect(() => onSnapshot(collection(db, `artifacts/${appId}/metadata/users`), s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()})))), [db, appId]);
-    const toggle = async (uid, status) => updateDoc(doc(db, `artifacts/${appId}/metadata/users`, uid), { status: status==='approved'?'pending':'approved' });
-    return (
-        <div className="overflow-hidden mt-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm">
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-700 font-bold dark:text-white">User Access Management</div>
-            <table className="w-full text-sm text-left">
-                <tbody>{users.map(u => (<tr key={u.id} className="border-b dark:border-slate-700"><td className="p-4 font-medium dark:text-white">{u.email}</td><td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${u.status==='approved'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{u.status}</span></td><td className="p-4 text-right"><button onClick={()=>toggle(u.id, u.status)} className="text-blue-500 hover:underline">{u.status==='approved'?'Revoke':'Approve'}</button></td></tr>))}</tbody>
-            </table>
-        </div>
-    );
-};
-
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
@@ -1350,7 +1334,7 @@ export default function KPMInventoryApp() {
   const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, inventory.find(p=>p.id===item.productId)) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); await logAudit("RETURN", `Return from ${customerName}`); triggerCapy("Return Processed!"); } catch(err) { console.error(err); } };
   const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales POS and select 'Titip' payment for ${name}`); setActiveTab('sales'); };
   
-  // FIX: Separate handler for Sampling to prevent white screen crashes
+  // FIX: Separate handler for Sampling to prevent form submission default behavior causing page reload
   const handleSamplingSubmit = async (e) => { 
     e.preventDefault(); 
     if (!user) return; 
@@ -1426,7 +1410,7 @@ export default function KPMInventoryApp() {
   // SETTINGS CRASH FIX: Guard clause for rendering Settings content
   const renderSettings = () => {
       // Prevents trying to access user.email if user is null (e.g. logging out)
-      if (!user) return <div className="text-center p-8 text-slate-500">Loading user profile...</div>; 
+      if (!user) return <div className="p-8 text-center text-slate-500">Loading user profile...</div>; 
 
       return (
         <div className="animate-fade-in max-w-2xl mx-auto">
