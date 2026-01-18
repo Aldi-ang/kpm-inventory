@@ -5,7 +5,8 @@ import {
   Save, X, Upload, RotateCcw, Camera, Download,
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
-  History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder
+  History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
+  Key, MessageSquare, LogIn, LogOut
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -17,7 +18,10 @@ import { getAnalytics } from "firebase/analytics";
 import { 
   getAuth, 
   signInAnonymously, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -47,14 +51,22 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+let analytics;
+try {
+  // Safe init for analytics to prevent white screen if blocked by ad-blockers
+  analytics = getAnalytics(app);
+} catch (e) {
+  console.warn("Analytics blocked or failed to load");
+}
 const auth = getAuth(app);
 const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 const appId = "cello-inventory-manager";
 
-/**
- * UTILITIES
- */
+// --- CONSTANTS ---
+const ADMIN_EMAIL = "adikaryasukses99@gmail.com";
+
+// --- UTILITIES ---
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -77,7 +89,6 @@ const getRandomColor = (str) => {
 
 // Unit Conversion Helper: Returns equivalent Bks
 const convertToBks = (qty, unit, product) => {
-    // Default to 10 packs per slop if not defined
     const packsPerSlop = product?.packsPerSlop || 10;
     const slopsPerBal = product?.slopsPerBal || 20;
     const balsPerCarton = product?.balsPerCarton || 4;
@@ -85,7 +96,7 @@ const convertToBks = (qty, unit, product) => {
     if (unit === 'Slop') return qty * packsPerSlop;
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-    return qty; // Default to Bks/Ecer
+    return qty; 
 };
 
 /**
@@ -747,8 +758,6 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
                 t.items.forEach(item => {
                     const product = getProduct(item.productId);
                     const bksQty = convertToBks(item.qty, item.unit, product);
-                    // Use composite key to separate different price tiers/units if needed
-                    // For now, let's group by product + tier
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`;
                     
                     if(!customers[name].items[itemKey]) {
@@ -768,10 +777,6 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
                 t.items.forEach(item => {
                     const product = getProduct(item.productId);
                     const bksQty = convertToBks(item.qty, item.unit, product);
-                    // Find matching item key or reduce from any available batch of same product?
-                    // To imply exact match, we assume return transaction stores tier info if possible.
-                    // If not, we try to reduce from any batch. 
-                    // Simplified: Try finding exact key, else find any key with product id.
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`;
                     if(customers[name].items[itemKey]) {
                         customers[name].items[itemKey].qty -= bksQty;
@@ -994,7 +999,6 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
     );
 };
 
-// --- CUSTOM GRAPH TOOLTIP ---
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const total = payload.reduce((sum, entry) => sum + entry.value, 0);
@@ -1017,7 +1021,6 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// --- COMPONENT: CUSTOMER MANAGEMENT ---
 const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
     const [editingId, setEditingId] = useState(null);
@@ -1025,22 +1028,17 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name.trim()) return;
-        
         try {
             if (editingId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), {
-                    ...formData,
-                    name: formData.name.trim(),
-                    updatedAt: serverTimestamp()
+                    ...formData, name: formData.name.trim(), updatedAt: serverTimestamp()
                 });
                 await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`);
                 triggerCapy("Customer updated successfully!");
                 setEditingId(null);
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), {
-                    ...formData,
-                    name: formData.name.trim(),
-                    createdAt: serverTimestamp()
+                    ...formData, name: formData.name.trim(), createdAt: serverTimestamp()
                 });
                 await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`);
                 triggerCapy("Customer added to directory!");
@@ -1111,21 +1109,15 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy 
     );
 };
 
-// --- COMPONENT: HISTORY REPORT VIEW ---
 const HistoryReportView = ({ transactions, onDelete }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-
-  // Group transactions by customer
   const customerStats = useMemo(() => {
     const stats = {};
     transactions.forEach(t => {
       const name = t.customerName || 'Unknown';
       if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] };
       stats[name].count += 1;
-      // Calculate total value (Sales only for revenue, Returns subtract)
-      if (t.type === 'SALE' || t.type === 'RETURN') {
-         stats[name].total += t.total || 0; 
-      }
+      if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; 
       if (t.date > stats[name].lastDate) stats[name].lastDate = t.date;
       stats[name].history.push(t);
     });
@@ -1139,35 +1131,10 @@ const HistoryReportView = ({ transactions, onDelete }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {customerStats.map(c => (
             <div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group">
-              {/* Delete Button */}
-              <button 
-                onClick={(e) => { 
-                    e.stopPropagation(); 
-                    onDelete(c.name); 
-                }} 
-                className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"
-                title="Delete Folder & Data"
-              >
-                <Trash2 size={16} />
-              </button>
-              
-              <div className="flex items-start justify-between mb-4">
-                 <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                    <Folder size={24} />
-                 </div>
-                 <span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span>
-              </div>
+              <button onClick={(e) => { e.stopPropagation(); onDelete(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>
+              <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div>
               <h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3>
-              <div className="flex justify-between items-end mt-4">
-                 <div>
-                    <p className="text-xs text-slate-500 uppercase">Lifetime Value</p>
-                    <p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase">Transactions</p>
-                    <p className="font-bold dark:text-white">{c.count}</p>
-                 </div>
-              </div>
+              <div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div>
             </div>
           ))}
         </div>
@@ -1175,7 +1142,6 @@ const HistoryReportView = ({ transactions, onDelete }) => {
     );
   }
 
-  // Report View: Group by Month
   const groupedByMonth = selectedCustomer.history.reduce((groups, t) => {
     const date = new Date(t.date);
     const key = date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -1186,62 +1152,16 @@ const HistoryReportView = ({ transactions, onDelete }) => {
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto">
-       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
-          <ArrowRight className="rotate-180" size={20}/> Back to Folders
-       </button>
-
+       <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
-          {/* Formal Header */}
-          <div className="bg-slate-900 text-white p-8">
-             <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p>
-                    <h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1>
-                </div>
-                <div className="text-right">
-                    <p className="text-sm opacity-70">Total Lifetime Value</p>
-                    <p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p>
-                </div>
-             </div>
-          </div>
-
+          <div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div>
           <div className="p-8">
              {Object.entries(groupedByMonth).map(([month, trans]) => (
                 <div key={month} className="mb-8 last:mb-0">
                    <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3>
                    <div className="overflow-x-auto">
-                       <table className="w-full text-sm text-left">
-                           <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
-                               <tr>
-                                   <th className="p-3">Date</th>
-                                   <th className="p-3">Type</th>
-                                   <th className="p-3">Details</th>
-                                   <th className="p-3 text-right">Amount</th>
-                               </tr>
-                           </thead>
-                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                               {trans.map(t => (
-                                   <tr key={t.id}>
-                                       <td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td>
-                                       <td className="p-3">
-                                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                               t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' :
-                                               t.type === 'RETURN' ? 'bg-red-100 text-red-700' :
-                                               'bg-blue-100 text-blue-700'
-                                           }`}>
-                                               {t.type.replace('_', ' ')}
-                                           </span>
-                                       </td>
-                                       <td className="p-3 text-slate-600 dark:text-slate-300">
-                                            {t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}
-                                            {t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}
-                                       </td>
-                                       <td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>
-                                           {formatRupiah(t.amountPaid || t.total)}
-                                       </td>
-                                   </tr>
-                               ))}
-                           </tbody>
+                       <table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead>
+                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody>
                        </table>
                    </div>
                 </div>
@@ -1252,141 +1172,118 @@ const HistoryReportView = ({ transactions, onDelete }) => {
   );
 };
 
-/**
- * MAIN APP COMPONENT
- */
+// --- FEATURES ---
+
+const AdminUserManager = ({ db, appId }) => {
+    const [users, setUsers] = useState([]);
+    useEffect(() => onSnapshot(collection(db, `artifacts/${appId}/metadata/users`), s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()})))), [db, appId]);
+    const toggle = async (uid, status) => updateDoc(doc(db, `artifacts/${appId}/metadata/users`, uid), { status: status==='approved'?'pending':'approved' });
+    return (
+        <div className="overflow-hidden mt-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-sm">
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-700 font-bold dark:text-white">User Access Management</div>
+            <table className="w-full text-sm text-left">
+                <tbody>{users.map(u => (<tr key={u.id} className="border-b dark:border-slate-700"><td className="p-4 font-medium dark:text-white">{u.email}</td><td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${u.status==='approved'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{u.status}</span></td><td className="p-4 text-right"><button onClick={()=>toggle(u.id, u.status)} className="text-blue-500 hover:underline">{u.status==='approved'?'Revoke':'Approve'}</button></td></tr>))}</tbody>
+            </table>
+        </div>
+    );
+};
+
+// --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(true);
-  const [showCapyMsg, setShowCapyMsg] = useState(true);
-  const [capyMsg, setCapyMsg] = useState("Connecting to database...");
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Data State
+  // Data States
   const [inventory, setInventory] = useState([]);
-  const [customers, setCustomers] = useState([]); // New Customers State
+  const [customers, setCustomers] = useState([]); 
   const [transactions, setTransactions] = useState([]);
   const [samplings, setSamplings] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
-  
-  // App Settings
-  const [appSettings, setAppSettings] = useState({ 
-    mascotImage: '', 
-    adminEmail: '',
-    companyName: 'KPM Inventory'
-  });
-  
-  const [editCompanyName, setEditCompanyName] = useState('');
-  const [currentUserEmail, setCurrentUserEmail] = useState('');
-  
-  // Capybara Custom Messages
-  const [capyMessages, setCapyMessages] = useState([
-    "Welcome back, Boss! Stock looks good today.",
-    "Checking the inventory...",
-    "Don't forget to record samples!",
-    "Sales are looking up!",
-    "Need to restock soon?"
-  ]);
-  const [newMessage, setNewMessage] = useState("");
+  const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessage: '' });
 
+  // UI States
   const [editingProduct, setEditingProduct] = useState(null);
   const [examiningProduct, setExaminingProduct] = useState(null);
   const [returningTransaction, setReturningTransaction] = useState(null);
-  
   const [tempImages, setTempImages] = useState({}); 
   const [searchTerm, setSearchTerm] = useState("");
   const [useFrontForBack, setUseFrontForBack] = useState(false);
   const [boxDimensions, setBoxDimensions] = useState({ w: 55, h: 90, d: 22 });
   const [cropImageSrc, setCropImageSrc] = useState(null);
   const [activeCropContext, setActiveCropContext] = useState(null); 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // Capybara Message
+  const [capyMsg, setCapyMsg] = useState("Welcome to KPM Inventory!");
+  const [showCapyMsg, setShowCapyMsg] = useState(false);
+  
+  // Feature State
+  const [editMascotMessage, setEditMascotMessage] = useState("");
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
 
-  // --- AUTH & DATA SYNC ---
+  const capyMessages = [
+    "Welcome back, Boss! Stock looks good today.",
+    "Checking the inventory...",
+    "Don't forget to record samples!",
+    "Sales are looking up!",
+    "Need to restock soon?"
+  ];
+
+  // --- AUTHENTICATION FLOW ---
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
+    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+        setUser(currentUser);
+        // Automatic Admin Check based on Email - NO PASSWORD REQUIRED
+        if (currentUser?.email === ADMIN_EMAIL) {
+            setIsAdmin(true);
         } else {
-          await signInAnonymously(auth);
+            setIsAdmin(false);
         }
-      } catch (error) {
-        console.error("Auth Error:", error);
-      }
-    };
-    initAuth();
-    
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if(currentUser) {
-          triggerCapy("Connected securely to Cloud!");
-      }
+
+        if (currentUser?.email) setCurrentUserEmail(currentUser.email);
     });
-    return () => unsubscribe();
+    return () => unsubAuth();
   }, []);
 
-  // --- FIRESTORE SYNC ---
+  // --- DATA SYNC ---
   useEffect(() => {
-    if (!user) return;
+    if (!user || !user.uid) return;
 
-    // 1. Settings
-    const settingsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general');
-    const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAppSettings(data);
-        setEditCompanyName(data.companyName || 'KPM Inventory');
-        if (data.mascotImage) setCapyMsg("Data synced!");
-      } else {
-        setDoc(settingsRef, { companyName: "KPM Inventory", mascotImage: "" });
-      }
+    const basePath = `artifacts/${appId}/users/${user.uid}`;
+    
+    const unsubSettings = onSnapshot(doc(db, basePath, 'settings', 'general'), (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            setAppSettings(data);
+            // Safe fallback with optional chaining
+            setEditMascotMessage(data?.mascotMessage || "");
+            setEditCompanyName(data?.companyName || "KPM Inventory");
+            if (data?.mascotMessage) {
+                setCapyMsg(data.mascotMessage);
+                setShowCapyMsg(true);
+                setTimeout(() => setShowCapyMsg(false), 5000);
+            }
+        } else {
+            setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
+        }
     });
 
-    // 2. Inventory
-    const invRef = collection(db, 'artifacts', appId, 'users', user.uid, 'products');
-    const unsubInv = onSnapshot(invRef, (snap) => {
-        setInventory(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
+    const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
-    // 3. Transactions
-    const transRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), orderBy('timestamp', 'desc'));
-    const unsubTrans = onSnapshot(transRef, (snap) => {
-        setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 4. Samplings
-    const sampRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'samplings'), orderBy('timestamp', 'desc'));
-    const unsubSamp = onSnapshot(sampRef, (snap) => {
-        setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 5. Audit Logs
-    const logRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'audit_logs'), orderBy('timestamp', 'desc'));
-    const unsubLogs = onSnapshot(logRef, (snap) => {
-        setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // 6. Customers
-    const custRef = query(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), orderBy('name', 'asc'));
-    const unsubCust = onSnapshot(custRef, (snap) => {
-        setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
-    // Load Local Settings
     const savedTheme = localStorage.getItem('kpm_theme');
-    const savedEmail = localStorage.getItem('kpm_user_email');
-    if (savedEmail) setCurrentUserEmail(savedEmail);
     if (savedTheme === 'light') setDarkMode(false);
 
     return () => {
-        unsubSettings();
-        unsubInv();
-        unsubTrans();
-        unsubSamp();
-        unsubLogs();
-        unsubCust();
+        unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust();
     };
   }, [user]);
 
@@ -1400,281 +1297,187 @@ export default function KPMInventoryApp() {
     }
   }, [darkMode]);
 
-  useEffect(() => { localStorage.setItem('kpm_user_email', currentUserEmail); }, [currentUserEmail]);
+  const handleLogin = async () => {
+      try { await signInWithPopup(auth, googleProvider); } catch (error) { console.error("Login failed", error); alert("Login failed: " + error.message); }
+  };
+
+  const handleLogout = async () => {
+      await signOut(auth);
+      setUser(null);
+      setInventory([]);
+      setTransactions([]);
+  };
 
   // --- ACTIONS ---
-
-  const logAudit = async (action, details) => {
-      if (!user) return;
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'audit_logs'), {
-              action, details, timestamp: serverTimestamp()
-          });
-      } catch (err) { console.error("Audit fail", err); }
+  const logAudit = async (action, details) => { try { if(user) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_logs`), { action, details, timestamp: serverTimestamp() }); } catch (err) {} };
+  const triggerCapy = (msg) => { const message = msg || appSettings?.mascotMessage || capyMessages[Math.floor(Math.random() * capyMessages.length)]; setCapyMsg(message); setShowCapyMsg(true); setTimeout(() => setShowCapyMsg(false), 4000); };
+  
+  const handleSaveMascotMessage = async () => { 
+      if(user) { 
+          await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessage: editMascotMessage }, {merge: true}); 
+          logAudit("SETTINGS_UPDATE", "Updated Mascot Message"); 
+          triggerCapy(editMascotMessage); 
+      } 
   };
-
-  const triggerCapy = (msg) => {
-    const message = msg || capyMessages[Math.floor(Math.random() * capyMessages.length)];
-    setCapyMsg(message);
-    setShowCapyMsg(true);
-    setTimeout(() => setShowCapyMsg(false), 4000);
-  };
-
-  // ... (Existing handlers for Crop, Mascot, Product Save remain unchanged) ...
-  const handleAddMessage = () => { if (newMessage.trim()) { setCapyMessages(p => [...p, newMessage.trim()]); setNewMessage(""); } };
-  const handleDeleteMessage = (idx) => { setCapyMessages(p => p.filter((_, i) => i !== idx)); };
-  const handleCropConfirm = (base64) => { if (!activeCropContext) return; if (activeCropContext.type === 'mascot') { const newSettings = { ...appSettings, mascotImage: base64 }; setAppSettings(newSettings); if(user) { setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general'), newSettings, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); } triggerCapy("Profile picture updated!"); } else if (activeCropContext.type === 'product') { setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); } setCropImageSrc(null); setActiveCropContext(null); };
-  const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', aspectRatio: 1, face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
+  
+  const handleDeleteConsignmentData = async (customerName) => { if(!window.confirm(`Delete ALL history for ${customerName}?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN')); for(const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`); } catch(err) {} };
+  const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
+  const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
+  const handleCropConfirm = (base64) => { if (!activeCropContext) return; if (activeCropContext.type === 'mascot') { const newSettings = { ...appSettings, mascotImage: base64 }; setAppSettings(newSettings); if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); } triggerCapy("Profile picture updated!"); } else if (activeCropContext.type === 'product') { setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); } setCropImageSrc(null); setActiveCropContext(null); };
+  const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
-  const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'general'), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
-  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const numFields = ['qtyPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'priceDistBal', 'priceDistPack', 'priceGrosir', 'priceRetail', 'priceEcer', 'stock']; numFields.forEach(field => data[field] = Number(data[field]) || 0); let finalImages = editingProduct?.images || {}; if (isAdmin) { finalImages = { ...finalImages, ...tempImages }; if (finalImages.front) data.image = finalImages.front; data.images = finalImages; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; } else { if (editingProduct) { data.images = editingProduct.images; data.image = editingProduct.image; data.dimensions = editingProduct.dimensions; data.name = editingProduct.name; data.type = editingProduct.type; data.taxStamp = editingProduct.taxStamp; data.useFrontForBack = editingProduct.useFrontForBack; } } data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'products'), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added to our stash!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
-  const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
-  const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'products', id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed from existence."); } catch (err) { triggerCapy("Delete failed"); } } };
-  const handleSamplingSubmit = async (e) => { e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const productId = formData.get('productId'); const qty = parseInt(formData.get('qty')); const reason = formData.get('reason'); const product = inventory.find(i => i.id === productId); if (!product) return; if (product.stock < qty) { alert("Not enough stock for sampling!"); return; } try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const newStock = prodDoc.data().stock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'samplings')); transaction.set(newSampleRef, { date: getCurrentDate(), productName: product.name, qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of ${product.name}`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } };
+  const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
+  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const numFields = ['stock', 'priceRetail', 'priceGrosir', 'priceEcer']; numFields.forEach(field => data[field] = Number(data[field]) || 0); data.images = { ...(editingProduct?.images || {}), ...tempImages }; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
+  const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
+  const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed."); } catch (err) { triggerCapy("Delete failed"); } } };
   const handleOpnameChange = (id, val) => { setOpnameData(prev => ({ ...prev, [id]: val })); };
-  const handleOpnameSubmit = async () => { if (!user) return; const updates = []; inventory.forEach(item => { const actual = opnameData[item.id]; if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); } }); if (updates.length === 0) { triggerCapy("No changes to save!"); return; } if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; try { await runTransaction(db, async (transaction) => { updates.forEach(update => { const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'products', update.id); transaction.update(ref, { stock: update.new }); }); }); updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); setOpnameData({}); triggerCapy("Stock Opname saved successfully!"); } catch (err) { console.error(err); alert("Failed to update stock: " + err.message); } };
+  const handleOpnameSubmit = async () => { if (!user) return; const updates = []; inventory.forEach(item => { const actual = opnameData[item.id]; if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); } }); if (updates.length === 0) { triggerCapy("No changes to save!"); return; } if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; try { await runTransaction(db, async (transaction) => { updates.forEach(update => { const ref = doc(db, `artifacts/${appId}/users/${user.uid}/products`, update.id); transaction.update(ref, { stock: update.new }); }); }); updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); setOpnameData({}); triggerCapy("Stock Opname saved successfully!"); } catch (err) { console.error(err); alert("Failed to update stock: " + err.message); } };
   const addToCart = (product) => { setCart(prev => { const existing = prev.find(item => item.productId === product.id); if (existing) return prev.map(item => item.productId === product.id ? { ...item, qty: item.qty + 1 } : item); return [...prev, { productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: 'Retail', calculatedPrice: product.priceRetail, product }]; }); };
   const updateCartItem = (productId, field, value) => { setCart(prev => prev.map(item => { if (item.productId === productId) { const newItem = { ...item, [field]: value }; const { unit, priceTier: tier, product: prod } = newItem; let base = 0; if (tier === 'Ecer') base = prod.priceEcer || 0; if (tier === 'Retail') base = prod.priceRetail || 0; if (tier === 'Grosir') base = prod.priceGrosir || 0; let mult = 1; if (unit === 'Slop') mult = prod.packsPerSlop || 10; if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); newItem.calculatedPrice = base * mult; return newItem; } return item; })); };
   const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
 
-  // --- NEW CONSIGNMENT ACTIONS ---
-  const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => {
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'), {
-              date: getCurrentDate(),
-              customerName: customerName.trim(), // Ensure Name Consistency
-              paymentType: "Cash",
-              itemsPaid, // List of what was sold
-              amountPaid,
-              type: 'CONSIGNMENT_PAYMENT',
-              timestamp: serverTimestamp()
-          });
-          await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`);
-          triggerCapy("Payment recorded! Stock updated.");
-      } catch (err) { console.error(err); }
-  };
+  const processTransaction = async (e) => { e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const customerName = formData.get('customerName').trim(); const total = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); const paymentType = formData.get('paymentType'); if(!customerName) { alert("Customer Name is required!"); return; } try { await runTransaction(db, async (firestoreTrans) => { for (const item of cart) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await firestoreTrans.get(prodRef); if(!prodDoc.exists()) throw `Product ${item.name} not found`; const prodData = prodDoc.data(); let mult = 1; if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); const qtyToDeduct = item.qty * mult; if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; firestoreTrans.update(prodRef, { stock: prodData.stock - qtyToDeduct }); } const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); firestoreTrans.set(transRef, { date: getCurrentDate(), customerName, paymentType: paymentType, items: cart, total, type: 'SALE', timestamp: serverTimestamp() }); }); await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`); setCart([]); triggerCapy("Transaction complete & Saved!"); } catch(err) { alert(err); } };
+  const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
 
-  const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => {
-      try {
-          await runTransaction(db, async (trans) => {
-              // 1. Restore Stock (convert inputs to Bks for storage)
-              for(const item of itemsReturned) {
-                  const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', item.productId);
-                  const prodDoc = await trans.get(prodRef);
-                  if(prodDoc.exists()) {
-                      // itemsReturned from Consignment View are already normalized to Bks by the UI input logic
-                      // but we should verify the unit passed. In ConsignmentView submitAction, we force unit: 'Bks'.
-                      // So 1 unit = 1 Bks.
-                      trans.update(prodRef, { stock: prodDoc.data().stock + item.qty });
-                  }
-              }
-              // 2. Record Return Transaction
-              const returnRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-              trans.set(returnRef, {
-                  date: getCurrentDate(),
-                  customerName: customerName.trim(), // Ensure Name Consistency
-                  items: itemsReturned,
-                  total: -refundValue,
-                  type: 'RETURN',
-                  timestamp: serverTimestamp()
-              });
-          });
-          await logAudit("RETURN", `Processed return from ${customerName}`);
-          triggerCapy("Goods returned to inventory.");
-      } catch (err) { console.error(err); }
-  };
-
-  const handleAddGoodsToCustomer = (customerName) => {
-      // Switch tab and hint user
-      alert(`Go to Sales POS and select 'Titip' payment for ${customerName}`);
-      setActiveTab('sales');
-  };
-
-  const handleDeleteConsignmentData = async (customerName) => {
-      if(!window.confirm(`Are you sure you want to delete ALL consignment history for ${customerName}?`)) return;
-      try {
-          // Note: In a real app with large data, this should be done carefully or via backend.
-          // Here we filter locally loaded transactions.
-          const targets = transactions.filter(t => t.customerName === customerName && (t.type === 'CONSIGNMENT_PAYMENT' || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
-          
-          for(const t of targets) {
-              await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', t.id));
-          }
-          triggerCapy("Consignment data cleared.");
-      } catch(err) { console.error(err); }
-  };
+  const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`), { date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() }); await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`); triggerCapy("Payment recorded!"); } catch (err) { console.error(err); } };
+  const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, inventory.find(p=>p.id===item.productId)) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); await logAudit("RETURN", `Return from ${customerName}`); triggerCapy("Return Processed!"); } catch(err) { console.error(err); } };
+  const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales POS and select 'Titip' payment for ${name}`); setActiveTab('sales'); };
   
-  // New: Delete entire customer history folder
-  const handleDeleteHistory = async (customerName) => {
-      if(!window.confirm(`Delete folder for "${customerName}"? \n\nWARNING: This will permanently delete ALL transaction history (Sales, Returns, Payments) for this customer.`)) return;
-
-      try {
-          // Identify transactions to delete
-          const targets = transactions.filter(t => t.customerName === customerName);
-          
-          // Delete sequentially
-          for (const t of targets) {
-              await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'transactions', t.id));
-          }
-
-          await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`);
-          triggerCapy(`Deleted ${targets.length} records for ${customerName}`);
-      } catch (err) {
-          console.error(err);
-          alert("Error deleting history.");
-      }
-  };
-
-  const processTransaction = async (e) => {
-    e.preventDefault();
-    if (!user) return;
-    const formData = new FormData(e.target);
-    const customerName = formData.get('customerName').trim();
-    const total = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0);
-    const paymentType = formData.get('paymentType');
+  // FIX: Separate handler for Sampling to prevent form submission default behavior causing page reload
+  const handleSamplingSubmit = async (e) => { 
+    e.preventDefault(); 
+    if (!user) return; 
     
-    if(!customerName) { alert("Customer Name is required!"); return; }
-
-    try {
-        await runTransaction(db, async (firestoreTrans) => {
-             // Check stock for all items
-             for (const item of cart) {
-                 const prodRef = doc(db, 'artifacts', appId, 'users', user.uid, 'products', item.productId);
-                 const prodDoc = await firestoreTrans.get(prodRef);
-                 if(!prodDoc.exists()) throw `Product ${item.name} not found`;
-                 
-                 const prodData = prodDoc.data();
-                 let mult = 1;
-                 if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10;
-                 if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10);
-                 if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10);
-                 
-                 const qtyToDeduct = item.qty * mult;
-                 if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`;
-                 
-                 firestoreTrans.update(prodRef, { stock: prodData.stock - qtyToDeduct });
-             }
-             
-             // Create transaction record
-             const transRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'transactions'));
-             firestoreTrans.set(transRef, {
-                 date: getCurrentDate(),
-                 customerName,
-                 paymentType: paymentType,
-                 items: cart,
-                 total,
-                 type: 'SALE',
-                 timestamp: serverTimestamp()
-             });
-        });
-
-        await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`);
-        setCart([]);
-        triggerCapy("Transaction complete & Saved!");
-    } catch(err) {
-        alert(err);
+    // Explicitly get values to ensure they exist
+    const formData = new FormData(e.target); 
+    const productId = formData.get('productId'); 
+    const qty = parseInt(formData.get('qty')); 
+    const reason = formData.get('reason'); 
+    
+    if (!productId || isNaN(qty) || qty <= 0) {
+      alert("Please select a valid product and quantity.");
+      return;
     }
+
+    try { 
+        await runTransaction(db, async (transaction) => { 
+            const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, productId); 
+            const prodDoc = await transaction.get(prodRef); 
+            if (!prodDoc.exists()) throw "Product doesn't exist!"; 
+            
+            const currentStock = prodDoc.data().stock || 0;
+            const newStock = currentStock - qty; 
+            
+            if(newStock < 0) throw "Not enough stock!"; 
+            
+            transaction.update(prodRef, { stock: newStock }); 
+            const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`)); 
+            transaction.set(newSampleRef, { 
+                date: getCurrentDate(), 
+                productName: inventory.find(i=>i.id===productId)?.name || 'Unknown', 
+                qty, 
+                reason, 
+                timestamp: serverTimestamp() 
+            }); 
+        }); 
+        await logAudit("SAMPLING_ADD", `Sampled ${qty} of item`); 
+        triggerCapy("Sample recorded. Stock updated."); 
+        e.target.reset(); 
+    } catch (err) { 
+        console.error(err); 
+        alert("Transaction failed: " + err); 
+    } 
   };
 
-  // Re-used for history view returns (general)
-  const executeReturn = async (returnQtys) => {
-    if (!returningTransaction || !user) return;
-    const trans = returningTransaction;
-    let totalRefundValue = 0;
-    const itemsToReturn = [];
-    trans.items.forEach(item => {
-        const qty = returnQtys[item.productId] || 0;
-        if (qty > 0) {
-            totalRefundValue += (item.calculatedPrice * qty);
-            // We need to normalize return units to Bks for the Consignment Logic to work perfectly
-            // If original transaction was in Slops, and we return 1, that means 1 Slop is returning.
-            // handleConsignmentReturn expects 'Bks' if we want simple addition, OR we pass the unit and convert inside.
-            // Let's pass the unit as is, and ensure handleConsignmentReturn converts it for stock, 
-            // AND ensure ConsignmentView converts it for holding count.
-            itemsToReturn.push({ ...item, qty });
-        }
-    });
-    if (itemsToReturn.length === 0) { setReturningTransaction(null); return; }
-    handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue);
-    setReturningTransaction(null);
-  };
-
-  const handleExportCSV = () => {
-    const headers = ["ID,Name,Category,Stock,Price(Retail)\n"];
-    const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n");
-    const blob = new Blob([headers + csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inventory_${getCurrentDate()}.csv`;
-    a.click();
-    logAudit("EXPORT", "Downloaded Inventory CSV");
-  };
-
-  const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * i.priceDistPack), 0);
+  const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * (i.priceRetail || 0)), 0);
   const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
   
-  // ADMIN CHECK: Only this email allows editing
-  const isAdmin = currentUserEmail.trim() === 'adikaryasukses99@gmail.com';
-
-  // --- CHART DATA PREP ---
   const chartData = React.useMemo(() => {
       const dataMap = {};
       const customers = new Set();
-
-      // Only process SALE transactions for performance graph
       transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').forEach(t => {
           const date = t.date;
           if (!dataMap[date]) dataMap[date] = { date };
-          
-          if (!dataMap[date][t.customerName]) dataMap[date][t.customerName] = 0;
-          
-          // Returns subtract from sales in the graph
-          const value = t.type === 'RETURN' ? t.total : t.total; // t.total is already negative for returns in DB? 
-          // Check logic: earlier return logic set total: -refundValue. Correct.
-          
-          dataMap[date][t.customerName] += value;
-          customers.add(t.customerName);
+          const cName = (t.customerName || 'Unknown').trim();
+          if (!dataMap[date][cName]) dataMap[date][cName] = 0;
+          dataMap[date][cName] += t.total;
+          customers.add(cName);
       });
-
-      return {
-          data: Object.values(dataMap).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-7), // Last 7 days
-          keys: Array.from(customers)
-      };
+      return { data: Object.values(dataMap).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-7), keys: Array.from(customers) };
   }, [transactions]);
 
+  const handleEditMascotMsgChange = (e) => {
+    setEditMascotMessage(e.target.value);
+  };
+  const handleEditCompNameChange = (e) => {
+    setEditCompanyName(e.target.value);
+  };
+
+  // Explicitly defined class strings for margin to prevent dynamic CSS conflicts causing layout shrink
+  const mainContentClass = isSidebarCollapsed ? 'ml-20' : 'ml-64';
+
+  // SETTINGS CRASH FIX: Guard clause for rendering Settings content
+  const renderSettings = () => {
+      // Prevents trying to access user.email if user is null (e.g. logging out)
+      if (!user) return null; 
+
+      return (
+        <div className="animate-fade-in max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
+            {/* User Profile */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
+                <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
+                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail || ""} disabled/>
+                <p className="text-xs text-slate-400 mt-2">
+                    {isAdmin ? "You have Full Admin Access." : "Standard User Access."}
+                </p>
+                
+                {/* Auto Admin Status Display */}
+                {isAdmin && (
+                    <div className="mt-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-3 rounded text-sm font-bold flex justify-between items-center">
+                        <span><Key size={14} className="inline mr-2"/> Admin Features Unlocked</span>
+                    </div>
+                )}
+            </div>
+            
+            {/* Editable Mascot Message (Admin Only) */}
+            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Message</h3>
+                    {!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}
+                </div>
+                <div className="flex gap-2">
+                    <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="What should the Capybara say?" value={editMascotMessage || ""} onChange={handleEditMascotMsgChange}/>
+                    <button onClick={handleSaveMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save</button>
+                </div>
+            </div>
+
+            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white">Company Identity</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex gap-2"><input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName || ""} onChange={handleEditCompNameChange}/><button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save Name</button></div></div>
+            
+            {/* Profile Picture (Admin Only) */}
+            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div></div>
+            
+            {isAdmin && <AdminUserManager db={db} appId={appId} />}
+        </div>
+      );
+  }
+
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+    <div className={`min-h-screen flex ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
-      
-      {cropImageSrc && (
-        <ImageCropper 
-          imageSrc={cropImageSrc} 
-          onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} 
-          onCrop={handleCropConfirm}
-          dimensions={boxDimensions}
-          onDimensionsChange={setBoxDimensions}
-          face={activeCropContext?.face || 'front'}
-        />
-      )}
-      
-      {returningTransaction && (
-         <ReturnModal 
-            transaction={returningTransaction} 
-            onClose={() => setReturningTransaction(null)} 
-            onConfirm={executeReturn} 
-         />
-      )}
+      {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
+      {returningTransaction && <ReturnModal transaction={returningTransaction} onClose={() => setReturningTransaction(null)} onConfirm={executeReturn} />}
 
       {/* SIDEBAR */}
       <nav className={`fixed left-0 top-0 h-screen bg-slate-900 text-slate-300 border-r border-slate-800 z-40 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'} shadow-xl`}>
         <div className="flex-none p-4 flex items-center justify-between border-b border-slate-800 h-16">
            {!isSidebarCollapsed && (
                <div className="flex items-center gap-2 overflow-hidden">
-                 <img src={appSettings.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
-                 <h1 className="font-bold text-sm text-white truncate">{appSettings.companyName || 'KPM'}</h1>
+                 <img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                 <h1 className="font-bold text-sm text-white truncate">{appSettings?.companyName || 'KPM'}</h1>
                </div>
            )}
            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 hover:bg-slate-700 rounded text-slate-400">
@@ -1708,381 +1511,346 @@ export default function KPMInventoryApp() {
             ))}
         </div>
         
-        <div className="p-4 border-t border-slate-800">
-            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} text-xs text-slate-500`}>
-                <ShieldCheck size={14} className="text-green-500"/>
-                {!isSidebarCollapsed && <span>Secure Cloud Sync</span>}
+        {/* SIDEBAR FOOTER: LOGOUT */}
+        {user && (
+            <div className="p-4 border-t border-slate-800">
+                <button onClick={() => signOut(auth)} className={`flex items-center text-red-500 hover:text-red-400 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}>
+                    <LogOut size={20} />
+                    {!isSidebarCollapsed && <span className="text-sm font-bold">Sign Out</span>}
+                </button>
             </div>
-        </div>
+        )}
       </nav>
 
-      <main className={`transition-all duration-300 ${isSidebarCollapsed ? 'pl-20' : 'pl-64'} min-h-screen bg-slate-50 dark:bg-slate-900`}>
-        {/* MOBILE HEADER (Visible only on small screens) */}
+      {/* MAIN CONTENT AREA - FIXED MARGINS */}
+      <main className={`flex-1 ${mainContentClass} p-6 md:p-8 transition-all duration-300 min-h-screen bg-slate-50 dark:bg-slate-900 overflow-x-hidden`}>
+        {/* MOBILE HEADER */}
         <div className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-30 ml-[-5rem] sm:ml-0"> 
-           {/* Note: margin adjustment needed because sidebar is fixed. For proper mobile responsiveness, sidebar should be overlay or hidden. 
-               For this update, I'm prioritizing the requested desktop functionality but keeping mobile header present. */}
-          <div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings.companyName || 'KPM Inventory'}</h1></div>
+          <div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings?.companyName || 'KPM Inventory'}</h1></div>
           <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
         </div>
 
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-          
-          {/* DASHBOARD */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
-                  <p className="text-emerald-100 text-sm font-medium">Inventory Value</p>
-                  <h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
-                </div>
-                <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
-                  <p className="text-orange-100 text-sm font-medium">Total Sales</p>
-                  <h3 className="text-3xl font-bold mt-1">
-                    {formatRupiah(
-                      transactions
-                        .filter(t => t.type === 'SALE' || t.type === 'RETURN')
-                        .reduce((acc, t) => acc + (t.total || 0), 0)
-                    )}
-                  </h3>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
-                <h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3>
-                <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData.data}>
-                            <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
-                            <XAxis dataKey="date" fontSize={12} stroke="#94a3b8"/>
-                            <YAxis fontSize={12} stroke="#94a3b8"/>
-                            <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
-                            <Legend />
-                            {chartData.keys.map((key, index) => (
-                                <Bar 
-                                    key={key} 
-                                    dataKey={key} 
-                                    stackId="a" 
-                                    fill={getRandomColor(key)} 
-                                    radius={index === chartData.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                                />
-                            ))}
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="max-w-7xl mx-auto">
+          {/* HEADER AREA WITH SIGN IN BUTTON */}
+          <div className="flex justify-between items-center mb-8">
+             <h1 className="text-2xl font-bold capitalize">{activeTab.replace('_', ' ')}</h1>
+             <div className="flex items-center gap-3">
+               {!user ? (
+                   <button onClick={() => signInWithPopup(auth, googleProvider)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all dark:text-white">
+                       <LogIn size={18} className="text-blue-500" />
+                       Sign In with Google
+                   </button>
+               ) : (
+                   <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                       <span className="text-xs font-medium dark:text-slate-300 truncate max-w-[150px]">{user.email}</span>
+                   </div>
+               )}
+               <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                   {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
+               </button>
+             </div>
+          </div>
 
-          {/* INVENTORY */}
-          {activeTab === 'inventory' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex gap-4">
-                <input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                <button onClick={handleExportCSV} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white px-4 rounded-xl flex items-center gap-2 hover:bg-slate-200"><Download size={20}/> Export</button>
-                <button onClick={() => { setEditingProduct({}); setTempImages({}); setBoxDimensions({w:55, h:90, d:22}); setUseFrontForBack(false); }} className="bg-orange-500 text-white px-4 rounded-xl flex items-center gap-2"><Plus size={20}/> Add</button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredInventory.map(item => (
-                  <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700 shadow-sm p-4">
-                      <div className="flex gap-3 mb-4">
-                        <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden shrink-0">
-                          {(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-4 text-slate-400"/>}
-                        </div>
-                        <div>
-                           <h3 className="font-bold leading-tight dark:text-white">{item.name}</h3>
-                           <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span>
-                           <p className="text-emerald-500 font-bold mt-1">{item.stock} Bks</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                         <button onClick={() => setExaminingProduct(item)} className="flex-1 bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white">Examine</button>
-                         <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
-                         <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+          {!user ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                  <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-3xl max-w-lg shadow-xl border border-slate-200 dark:border-slate-700">
+                      <Lock className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                      <h2 className="text-2xl font-bold dark:text-white mb-2">Welcome to KPM Inventory</h2>
+                      <p className="text-slate-500 mb-6">Please sign in using the button in the top right to access your inventory, sales, and analytics.</p>
+                      <div className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-900 p-3 rounded-lg">
+                          Secure Cloud Sync • Real-time Updates • Admin Controls
                       </div>
                   </div>
-                ))}
               </div>
-              {editingProduct && (
-                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                  <div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
-                    {!isAdmin && (
-                        <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg flex items-center gap-3">
-                            <Lock className="text-blue-500" />
-                            <div><h4 className="font-bold text-sm text-blue-600 dark:text-blue-400">View Only Mode</h4><p className="text-xs text-slate-500">Only Admin can edit product details, images, and dimensions.</p></div>
+          ) : (
+              <>
+                {/* DASHBOARD */}
+                {activeTab === 'dashboard' && (
+                    <div className="space-y-6 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
+                        <p className="text-emerald-100 text-sm font-medium">Inventory Value</p>
+                        <h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
                         </div>
-                    )}
-                    <form onSubmit={handleSaveProduct}>
-                       <div className="flex justify-between mb-4"><h2 className="text-xl font-bold dark:text-white">Product Details</h2><button type="button" onClick={() => setEditingProduct(null)}><X className="dark:text-white"/></button></div>
-                       <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                             <input name="name" defaultValue={editingProduct.name} required placeholder="Merk Rokok" className={`w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/>
-                             
-                             {isAdmin && (
-                                <>
-                                <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 flex items-center justify-between"><div className="text-xs"><span className="font-bold text-orange-500 block">DIMENSIONS</span><span className="text-slate-400">{boxDimensions.w}mm x {boxDimensions.h}mm x {boxDimensions.d}mm</span></div><div className="text-[10px] text-slate-400 italic">Edit via "EDIT" on images below</div></div>
-                                <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-3">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs font-bold text-orange-500 block">3D TEXTURES</span>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={useFrontForBack} onChange={(e) => setUseFrontForBack(e.target.checked)} className="w-3 h-3 accent-orange-500" />
-                                            <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold uppercase">Front = Back</span>
-                                        </label>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-center">
-                                        {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
-                                            const imgSource = tempImages[face] || (editingProduct.images ? editingProduct.images[face] : null);
-                                            const isBackDisabled = face === 'back' && useFrontForBack;
-                                            
-                                            if (isBackDisabled) {
-                                                return (
-                                                    <div key={face} className="bg-slate-50 dark:bg-slate-800 rounded h-16 border dark:border-slate-700 flex flex-col items-center justify-center opacity-50">
-                                                        <span className="text-[10px] uppercase text-slate-400 font-bold">{face}</span>
-                                                        <span className="text-[8px] text-slate-400">(Linked to Front)</span>
-                                                    </div>
-                                                );
-                                            }
+                        <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+                        <p className="text-orange-100 text-sm font-medium">Net Sales (Revenue)</p>
+                        <h3 className="text-3xl font-bold mt-1">
+                            {formatRupiah(
+                            transactions
+                                .filter(t => t.type === 'SALE' || t.type === 'RETURN')
+                                .reduce((acc, t) => acc + (t.total || 0), 0)
+                            )}
+                        </h3>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
+                        <h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData.data}>
+                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
+                                    <XAxis dataKey="date" fontSize={12} stroke="#94a3b8"/>
+                                    <YAxis fontSize={12} stroke="#94a3b8"/>
+                                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
+                                    <Legend />
+                                    {chartData.keys.map((key, index) => (
+                                        <Bar 
+                                            key={key} 
+                                            dataKey={key} 
+                                            stackId="a" 
+                                            fill={getRandomColor(key)} 
+                                            radius={index === chartData.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                        />
+                                    ))}
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                    </div>
+                )}
 
-                                            return (
-                                                <div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden">
-                                                    {/* Display Area - Click to Edit or Upload */}
-                                                    <div 
-                                                        className="w-full h-full cursor-pointer" 
-                                                        onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}
-                                                    >
-                                                        {imgSource ? (
-                                                            <img src={imgSource} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-[10px] uppercase text-slate-400 hover:text-orange-500 transition-colors">
-                                                                <Upload size={12} className="mr-1"/> {face}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Hidden File Input */}
-                                                    <input 
-                                                        id={`file-${face}`} 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        onChange={(e) => handleProductFaceUpload(e, face)} 
-                                                        className="hidden" 
-                                                    />
-
-                                                    {/* Hover Overlay Actions */}
-                                                    {imgSource && (
-                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                                                            <button 
-                                                                type="button"
-                                                                onClick={(e) => { e.stopPropagation(); handleEditExisting(face, imgSource); }}
-                                                                className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
-                                                                title="Edit/Crop Existing"
-                                                            >
-                                                                <Crop size={12}/>
-                                                            </button>
-                                                            <button 
-                                                                type="button"
-                                                                onClick={(e) => { e.stopPropagation(); document.getElementById(`file-${face}`).click(); }}
-                                                                className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
-                                                                title="Replace File"
-                                                            >
-                                                                <Replace size={12}/>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                {/* INVENTORY */}
+                {activeTab === 'inventory' && (
+                    <div className="space-y-6 animate-fade-in">
+                    <div className="flex gap-4">
+                        <input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <button onClick={handleExportCSV} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white px-4 rounded-xl flex items-center gap-2 hover:bg-slate-200"><Download size={20}/> Export</button>
+                        <button onClick={() => { setEditingProduct({}); setTempImages({}); setBoxDimensions({w:55, h:90, d:22}); setUseFrontForBack(false); }} className="bg-orange-500 text-white px-4 rounded-xl flex items-center gap-2"><Plus size={20}/> Add</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredInventory.map(item => (
+                        <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700 shadow-sm p-4">
+                            <div className="flex gap-3 mb-4">
+                                <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden shrink-0">
+                                {(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-4 text-slate-400"/>}
                                 </div>
-                                </>
-                             )}
-                             <textarea name="description" defaultValue={editingProduct.description} placeholder="Lore" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20 text-sm"/>
-                          </div>
-                          <div className="space-y-3">
-                             <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
-                             <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p><input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/></div>
-                          </div>
-                       </div>
-                       {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
-                    </form>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STOCK OPNAME */}
-          {activeTab === 'stock_opname' && (
-            <div className="space-y-6 animate-fade-in">
-              <h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2>
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                    <tr>
-                      <th className="p-4">Product</th>
-                      <th className="p-4 text-center">System Stock</th>
-                      <th className="p-4 text-center">Physical Stock</th>
-                      <th className="p-4 text-center">Variance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {inventory.map(item => {
-                       const actual = opnameData[item.id] !== undefined ? opnameData[item.id] : item.stock;
-                       const diff = actual - item.stock;
-                       return (
-                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                           <td className="p-4 font-medium dark:text-white">{item.name}</td>
-                           <td className="p-4 text-center dark:text-slate-300">{item.stock}</td>
-                           <td className="p-4 text-center">
-                             <input 
-                               type="number" 
-                               min="0"
-                               value={actual}
-                               onChange={(e) => handleOpnameChange(item.id, parseInt(e.target.value))}
-                               className={`w-20 p-2 text-center border rounded ${diff !== 0 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'dark:bg-slate-800 dark:border-slate-600'} dark:text-white`}
-                             />
-                           </td>
-                           <td className={`p-4 text-center font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>
-                             {diff > 0 ? `+${diff}` : diff}
-                           </td>
-                         </tr>
-                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex justify-end">
-                 <button onClick={handleOpnameSubmit} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
-                   <Save size={20} /> Save Adjustments
-                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* SAMPLING */}
-          {activeTab === 'sampling' && (
-            <div className="space-y-6 animate-fade-in">
-              <h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2>
-              
-              {/* Sampling Form */}
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
-                <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
-                  <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
-                    <option value="">Select Product...</option>
-                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
-                  </select>
-                  <input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
-                  <input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
-                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button>
-                </form>
-              </div>
-
-              {/* Sampling History Table */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                    <tr>
-                      <th className="p-4">Date</th>
-                      <th className="p-4">Product</th>
-                      <th className="p-4">Qty</th>
-                      <th className="p-4">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {samplings.length === 0 ? (
-                        <tr><td colSpan="4" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>
-                    ) : (
-                        samplings.map(s => (
-                          <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                            <td className="p-4 dark:text-slate-300">{s.date}</td>
-                            <td className="p-4 font-bold dark:text-white">{s.productName}</td>
-                            <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
-                            <td className="p-4 text-slate-500">{s.reason}</td>
-                          </tr>
-                        ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* NEW TAB: CONSIGNMENT (TITIP) */}
-          {activeTab === 'consignment' && (
-              <ConsignmentView 
-                  transactions={transactions} 
-                  inventory={inventory}
-                  onAddGoods={handleAddGoodsToCustomer}
-                  onPayment={handleConsignmentPayment}
-                  onReturn={handleConsignmentReturn}
-                  onDeleteConsignment={handleDeleteConsignmentData}
-              />
-          )}
-
-          {/* CUSTOMER PROFILES */}
-          {activeTab === 'customers' && (
-              <CustomerManagement 
-                  customers={customers} 
-                  db={db} 
-                  appId={appId} 
-                  user={user} 
-                  logAudit={logAudit} 
-                  triggerCapy={triggerCapy} 
-              />
-          )}
-
-          {/* SALES POS */}
-          {activeTab === 'sales' && (
-             <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
-                <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-orange-500 flex flex-col items-center text-center"><h4 className="font-bold truncate dark:text-white w-full">{item.name}</h4><div className="w-12 h-12 my-2 rounded bg-slate-100 dark:bg-slate-700 overflow-hidden">{(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-2 text-slate-300"/>}</div><p className="text-xs text-emerald-500 font-bold">{formatRupiah(item.priceRetail)}</p></div>))}</div></div>
-                <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700">
-                    <form onSubmit={processTransaction}>
-                        <div className="mb-3 relative">
-                            <input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/>
-                            <datalist id="customersList">
-                                {customers.map(c => <option key={c.id} value={c.name} />)}
-                            </datalist>
+                                <div>
+                                <h3 className="font-bold leading-tight dark:text-white">{item.name}</h3>
+                                <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span>
+                                <p className="text-emerald-500 font-bold mt-1">{item.stock} Bks</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setExaminingProduct(item)} className="flex-1 bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white">Examine</button>
+                                <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
+                                <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                            </div>
                         </div>
-                        <select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
-             </div>
-          )}
+                        ))}
+                    </div>
+                    {editingProduct && (
+                        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+                            {!isAdmin && (
+                                <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg flex items-center gap-3">
+                                    <Lock className="text-blue-500" />
+                                    <div><h4 className="font-bold text-sm text-blue-600 dark:text-blue-400">View Only Mode</h4><p className="text-xs text-slate-500">Only Admin can edit product details, images, and dimensions.</p></div>
+                                </div>
+                            )}
+                            <form onSubmit={handleSaveProduct}>
+                            <div className="flex justify-between mb-4"><h2 className="text-xl font-bold dark:text-white">Product Details</h2><button type="button" onClick={() => setEditingProduct(null)}><X className="dark:text-white"/></button></div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <input name="name" defaultValue={editingProduct.name} required placeholder="Merk Rokok" className={`w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/>
+                                    
+                                    {isAdmin && (
+                                        <>
+                                        <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 flex items-center justify-between"><div className="text-xs"><span className="font-bold text-orange-500 block">DIMENSIONS</span><span className="text-slate-400">{boxDimensions.w}mm x {boxDimensions.h}mm x {boxDimensions.d}mm</span></div><div className="text-[10px] text-slate-400 italic">Edit via "EDIT" on images below</div></div>
+                                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-3">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-bold text-orange-500 block">3D TEXTURES</span>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" checked={useFrontForBack} onChange={(e) => setUseFrontForBack(e.target.checked)} className="w-3 h-3 accent-orange-500" />
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold uppercase">Front = Back</span>
+                                                </label>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
+                                                    const imgSource = tempImages[face] || (editingProduct.images ? editingProduct.images[face] : null);
+                                                    const isBackDisabled = face === 'back' && useFrontForBack;
+                                                    
+                                                    if (isBackDisabled) {
+                                                        return (
+                                                            <div key={face} className="bg-slate-50 dark:bg-slate-800 rounded h-16 border dark:border-slate-700 flex flex-col items-center justify-center opacity-50">
+                                                                <span className="text-[10px] uppercase text-slate-400 font-bold">{face}</span>
+                                                                <span className="text-[8px] text-slate-400">(Linked to Front)</span>
+                                                            </div>
+                                                        );
+                                                    }
 
-          {activeTab === 'transactions' && (
-             <HistoryReportView transactions={transactions} onDelete={handleDeleteHistory} />
-          )}
+                                                    return (
+                                                        <div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden">
+                                                            {/* Display Area - Click to Edit or Upload */}
+                                                            <div 
+                                                                className="w-full h-full cursor-pointer" 
+                                                                onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}
+                                                            >
+                                                                {imgSource ? (
+                                                                    <img src={imgSource} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-[10px] uppercase text-slate-400 hover:text-orange-500 transition-colors">
+                                                                        <Upload size={12} className="mr-1"/> {face}
+                                                                    </div>
+                                                                )}
+                                                            </div>
 
-          {activeTab === 'audit' && (
-            <div className="space-y-6 animate-fade-in">
-              <h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2>
-              <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                    <tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map(log => (
-                      <tr key={log.id} className="border-b dark:border-slate-700">
-                        <td className="p-4 font-bold text-orange-500">{log.action}</td>
-                        <td className="p-4 dark:text-slate-300">{log.details}</td>
-                        <td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                                                            {/* Hidden File Input */}
+                                                            <input 
+                                                                id={`file-${face}`} 
+                                                                type="file" 
+                                                                accept="image/*" 
+                                                                onChange={(e) => handleProductFaceUpload(e, face)} 
+                                                                className="hidden" 
+                                                            />
 
-          {activeTab === 'settings' && (
-             <div className="animate-fade-in max-w-2xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6"><h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3><label className="block text-sm text-slate-500 mb-2">Google Account Email</label><input type="email" placeholder="Enter your email to unlock features..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail} onChange={(e) => setCurrentUserEmail(e.target.value)}/><p className="text-xs text-slate-400 mt-2">Sign in via email: <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">adikaryasukses99@gmail.com</code> to unlock Admin features.</p></div>
-                <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white">Company Identity</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex gap-2"><input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName} onChange={(e) => setEditCompanyName(e.target.value)}/><button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save Name</button></div></div>
-                <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-opacity ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}><div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3>{!isAdmin && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded flex items-center gap-1"><Lock size={12}/> Admin Only</span>}</div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div></div>
-             </div>
+                                                            {/* Hover Overlay Actions */}
+                                                            {imgSource && (
+                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={(e) => { e.stopPropagation(); handleEditExisting(face, imgSource); }}
+                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
+                                                                        title="Edit/Crop Existing"
+                                                                    >
+                                                                        <Crop size={12}/>
+                                                                    </button>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={(e) => { e.stopPropagation(); document.getElementById(`file-${face}`).click(); }}
+                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
+                                                                        title="Replace File"
+                                                                    >
+                                                                        <Replace size={12}/>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        </>
+                                    )}
+                                    <textarea name="description" defaultValue={editingProduct.description} placeholder="Lore" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20 text-sm"/>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
+                                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p><input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/></div>
+                                </div>
+                            </div>
+                            {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
+                            </form>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                )}
+
+                {/* STOCK OPNAME */}
+                {activeTab === 'stock_opname' && (
+                    <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
+                            <tr>
+                            <th className="p-4">Product</th>
+                            <th className="p-4 text-center">System Stock</th>
+                            <th className="p-4 text-center">Physical Stock</th>
+                            <th className="p-4 text-center">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {inventory.map(item => {
+                            const actual = opnameData[item.id] !== undefined ? opnameData[item.id] : item.stock;
+                            const diff = actual - item.stock;
+                            return (
+                                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <td className="p-4 font-medium dark:text-white">{item.name}</td>
+                                <td className="p-4 text-center dark:text-slate-300">{item.stock}</td>
+                                <td className="p-4 text-center">
+                                    <input 
+                                    type="number" 
+                                    min="0"
+                                    value={actual}
+                                    onChange={(e) => handleOpnameChange(item.id, parseInt(e.target.value))}
+                                    className={`w-20 p-2 text-center border rounded ${diff !== 0 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'dark:bg-slate-800 dark:border-slate-600'} dark:text-white`}
+                                    />
+                                </td>
+                                <td className={`p-4 text-center font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>
+                                    {diff > 0 ? `+${diff}` : diff}
+                                </td>
+                                </tr>
+                            );
+                            })}
+                        </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-end">
+                        <button onClick={handleOpnameSubmit} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                        <Save size={20} /> Save Adjustments
+                        </button>
+                    </div>
+                    </div>
+                )}
+
+                {/* SAMPLING */}
+                {activeTab === 'sampling' && (
+                    <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+                        <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
+                        <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
+                            <option value="">Select Product...</option>
+                            {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
+                        </select>
+                        <input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
+                        <input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
+                        <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button>
+                        </form>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
+                        <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
+                            <tr><th className="p-4">Date</th><th className="p-4">Product</th><th className="p-4">Qty</th><th className="p-4">Notes</th></tr>
+                        </thead>
+                        <tbody>
+                            {samplings.length === 0 ? (
+                                <tr><td colSpan="4" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>
+                            ) : (
+                                samplings.map(s => (
+                                <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"><td className="p-4 dark:text-slate-300">{s.date}</td><td className="p-4 font-bold dark:text-white">{s.productName}</td><td className="p-4 text-red-500 font-bold">-{s.qty}</td><td className="p-4 text-slate-500">{s.reason}</td></tr>
+                                ))
+                            )}
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                )}
+
+                {/* OTHER TABS */}
+                {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} />}
+                {activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} />}
+                {activeTab === 'sales' && (
+                    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
+                        <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-orange-500 flex flex-col items-center text-center"><h4 className="font-bold truncate dark:text-white w-full">{item.name}</h4><div className="w-12 h-12 my-2 rounded bg-slate-100 dark:bg-slate-700 overflow-hidden">{(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-2 text-slate-300"/>}</div><p className="text-xs text-emerald-500 font-bold">{formatRupiah(item.priceRetail)}</p></div>))}</div></div>
+                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div><select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
+                    </div>
+                )}
+                {activeTab === 'transactions' && <HistoryReportView transactions={transactions} onDelete={handleDeleteHistory} />}
+                {activeTab === 'audit' && (
+                    <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr></thead><tbody>{auditLogs.map(log => (<tr key={log.id} className="border-b dark:border-slate-700"><td className="p-4 font-bold text-orange-500">{log.action}</td><td className="p-4 dark:text-slate-300">{log.details}</td><td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td></tr>))}</tbody></table></div></div>
+                )}
+
+                {/* SETTINGS TAB - FIXED & CRASH PROOF */}
+                {activeTab === 'settings' && renderSettings()}
+              </>
           )}
         </div>
       </main>
 
-      <CapybaraMascot message={showCapyMsg ? capyMsg : null} onClick={() => triggerCapy()} customImage={appSettings.mascotImage} />
+      <CapybaraMascot message={showCapyMsg ? capyMsg : null} onClick={() => triggerCapy()} customImage={appSettings?.mascotImage} />
     </div>
   );
 }
