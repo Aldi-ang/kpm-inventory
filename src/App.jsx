@@ -6,10 +6,10 @@ import {
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
-  Key, MessageSquare, LogIn, LogOut, ShieldAlert
+  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 
 // --- FIREBASE IMPORTS ---
@@ -17,7 +17,6 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { 
   getAuth, 
-  signInAnonymously, 
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
@@ -35,7 +34,8 @@ import {
   serverTimestamp, 
   query, 
   orderBy,
-  runTransaction
+  runTransaction,
+  writeBatch
 } from "firebase/firestore";
 
 // --- FIREBASE CONFIGURATION ---
@@ -49,14 +49,9 @@ const firebaseConfig = {
   measurementId: "G-CM3Z2Q412T"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 let analytics;
-try {
-  analytics = getAnalytics(app);
-} catch (e) {
-  console.warn("Analytics blocked or failed to load");
-}
+try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
@@ -74,23 +69,20 @@ const formatRupiah = (number) => {
   }).format(number);
 };
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
 const getRandomColor = (str) => {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
+    for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
     const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
     return '#' + "00000".substring(0, 6 - c.length) + c;
 };
 
-// Unit Conversion Helper
 const convertToBks = (qty, unit, product) => {
-    const packsPerSlop = product?.packsPerSlop || 10;
-    const slopsPerBal = product?.slopsPerBal || 20;
-    const balsPerCarton = product?.balsPerCarton || 4;
+    if (!product) return qty;
+    const packsPerSlop = product.packsPerSlop || 10;
+    const slopsPerBal = product.slopsPerBal || 20;
+    const balsPerCarton = product.balsPerCarton || 4;
 
     if (unit === 'Slop') return qty * packsPerSlop;
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
@@ -98,10 +90,33 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
+// --- GLOBAL COMPONENTS ---
+
 /**
- * COMPONENT: IMAGE CROPPER & ROTATOR MODAL
- * (Kept identical to original)
+ * Custom Tooltip for Charts
  */
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const total = payload.reduce((sum, entry) => sum + entry.value, 0);
+    return (
+      <div className="bg-white dark:bg-slate-800 p-4 border dark:border-slate-600 shadow-xl rounded-xl text-sm">
+        <p className="font-bold mb-2 border-b pb-1 dark:border-slate-600 dark:text-white">{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex justify-between items-center gap-4 mb-1">
+             <span style={{ color: entry.color }} className="font-medium">{entry.name}:</span>
+             <span className="font-mono dark:text-slate-300">{formatRupiah(entry.value)}</span>
+          </div>
+        ))}
+        <div className="mt-2 pt-2 border-t dark:border-slate-600 flex justify-between font-bold dark:text-white">
+            <span>Total Sales:</span>
+            <span>{formatRupiah(total)}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChange, face }) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -157,15 +172,17 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
     onCrop(canvas.toDataURL('image/jpeg', 0.8));
   };
-  const DimSlider = ({ label, val, axis, active }) => (
-    <div className={`flex flex-col ${active ? 'opacity-100' : 'opacity-100'}`}>
+  
+  const DimSlider = ({ label, val, axis }) => (
+    <div className="flex flex-col mb-4">
         <div className="flex justify-between items-center mb-1">
             <label className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400">{label}</label>
             <div className="flex items-center gap-1"><input type="number" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: Math.max(1, parseInt(e.target.value) || 0)})} className="w-12 text-right text-xs font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-200 border border-transparent focus:border-orange-500 outline-none"/><span className="text-[10px] text-slate-400">mm</span></div>
         </div>
-        <input type="range" min="1" max={maxDim} step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className="w-full h-3 rounded-full appearance-none cursor-grab active:cursor-grabbing accent-orange-500 bg-orange-100 dark:bg-orange-900/30"/>
+        <input type="range" min="1" max={maxDim} step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className="w-full h-3 rounded-full appearance-none cursor-pointer accent-orange-500 bg-orange-100 dark:bg-orange-900/30"/>
     </div>
   );
+
   return (
     <div className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-fade-in" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
       <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
@@ -188,7 +205,23 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
         <div className="w-full md:w-80 bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 border-l dark:border-slate-700 overflow-y-auto z-40">
             <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700"><div className="flex items-center gap-2"><Maximize2 size={18} className="text-orange-500"/><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">3D Size</h4></div></div>
-                <div className="space-y-5"><DimSlider label="Width" val={dimensions.w} axis="w" active={true} /><DimSlider label="Height" val={dimensions.h} axis="h" active={true} /><DimSlider label="Depth" val={dimensions.d} axis="d" active={true} /></div>
+                <div><DimSlider label="Width" val={dimensions.w} axis="w" /><DimSlider label="Height" val={dimensions.h} axis="h" /><DimSlider label="Depth" val={dimensions.d} axis="d" /></div>
+            </div>
+            <div className="space-y-6">
+                <div>
+                    <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-500 block">ZOOM</label><span className="text-xs text-slate-400">{zoom.toFixed(2)}x</span></div>
+                    <input type="range" min="0.1" max="5" step="0.05" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
+                </div>
+                <div>
+                    <div className="flex justify-between mb-2 items-center">
+                        <label className="text-xs font-bold text-slate-500 block">ROTATE</label>
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => setRotation(r => r - 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCcw size={14} /></button>
+                            <button onClick={() => setRotation(r => r + 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCw size={14} /></button>
+                        </div>
+                    </div>
+                    <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
+                </div>
             </div>
             <div className="mt-auto pt-4 flex gap-3"><button onClick={onCancel} className="px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 dark:text-slate-300 font-bold hover:bg-slate-200 transition-colors">Cancel</button><button onClick={executeCrop} className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-orange-500/40 transition-all transform active:scale-95"><Crop size={20}/> Crop & Save</button></div>
         </div>
@@ -197,55 +230,21 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
   );
 };
 
-/**
- * COMPONENT: ADMIN LOGIN MODAL
- */
 const AdminAuthModal = ({ onClose, onSuccess }) => {
     const [pass, setPass] = useState("");
     const [error, setError] = useState(false);
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (pass === ADMIN_PASS) {
-            onSuccess();
-        } else {
-            setError(true);
-            setTimeout(() => setError(false), 500);
-        }
-    };
-
+    const handleSubmit = (e) => { e.preventDefault(); if (pass === ADMIN_PASS) { onSuccess(); } else { setError(true); setTimeout(() => setError(false), 500); } };
     return (
         <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
             <div className={`bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center ${error ? 'animate-shake' : ''}`}>
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                    <Lock size={32} />
-                </div>
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400"><Lock size={32} /></div>
                 <h2 className="text-xl font-bold dark:text-white mb-1">Admin Access</h2>
-                <p className="text-sm text-slate-500 mb-6 text-center">Enter the secure password to unlock administrative features.</p>
-                
-                <form onSubmit={handleSubmit} className="w-full">
-                    <div className="relative mb-4">
-                        <Key className="absolute left-3 top-3 text-slate-400" size={18} />
-                        <input 
-                            type="password" 
-                            autoFocus
-                            value={pass}
-                            onChange={(e) => setPass(e.target.value)}
-                            className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none transition-all dark:bg-slate-800 dark:text-white font-mono ${error ? 'border-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-600 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-900/20'}`}
-                            placeholder="Password"
-                        />
-                    </div>
-                    <div className="flex gap-3">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                        <button type="submit" className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 shadow-lg shadow-orange-500/30 transition-all">Unlock</button>
-                    </div>
-                </form>
+                <form onSubmit={handleSubmit} className="w-full mt-4"><input type="password" autoFocus value={pass} onChange={(e) => setPass(e.target.value)} className={`w-full p-3 rounded-xl border outline-none dark:bg-slate-800 dark:text-white font-mono ${error ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'}`} placeholder="Password" /><div className="flex gap-3 mt-4"><button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-500">Cancel</button><button type="submit" className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold">Unlock</button></div></form>
             </div>
         </div>
     );
 };
 
-// ... (CapybaraMascot, ExamineModal, ReturnModal, ConsignmentView remain exactly the same as previous)
 const CapybaraMascot = ({ mood = 'happy', message, onClick, customImage }) => {
   const [isBouncing, setIsBouncing] = useState(false);
   useEffect(() => { const interval = setInterval(() => { setIsBouncing(true); setTimeout(() => setIsBouncing(false), 500); }, 5000 + Math.random() * 5000); return () => clearInterval(interval); }, []);
@@ -298,6 +297,14 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.top, "bg-slate-300")}</div>
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-slate-300")}</div>
         </div>
+      </div>
+      <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
+        <div className="flex justify-between items-start mb-2 font-mono text-xs text-orange-300">
+           <span>STOCK: {product.stock} Bks</span>
+           <span>TYPE: {product.type}</span>
+           <span>CUKAI: {product.taxStamp}</span>
+        </div>
+        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || "A standard pack of cigarettes. No unusual properties detected."}"</p>
       </div>
     </div>
   );
@@ -359,8 +366,6 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
     );
 };
 
-const CustomTooltip = ({ active, payload, label }) => { if (active && payload && payload.length) { const total = payload.reduce((sum, entry) => sum + entry.value, 0); return (<div className="bg-white dark:bg-slate-800 p-4 border dark:border-slate-600 shadow-xl rounded-xl text-sm"><p className="font-bold mb-2 border-b pb-1 dark:border-slate-600 dark:text-white">{label}</p>{payload.map((entry, index) => (<div key={index} className="flex justify-between items-center gap-4 mb-1"><span style={{ color: entry.color }} className="font-medium">{entry.name}:</span><span className="font-mono dark:text-slate-300">{formatRupiah(entry.value)}</span></div>))}<div className="mt-2 pt-2 border-t dark:border-slate-600 flex justify-between font-bold dark:text-white"><span>Total Sales:</span><span>{formatRupiah(total)}</span></div></div>); } return null; };
-
 const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
     const [editingId, setEditingId] = useState(null);
@@ -372,10 +377,246 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy 
     );
 };
 
-const HistoryReportView = ({ transactions, onDelete }) => {
+const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [reportView, setReportView] = useState(false);
+  const [rangeType, setRangeType] = useState('daily'); // daily, weekly, monthly, yearly
+  const [targetDate, setTargetDate] = useState(getCurrentDate());
+  const [editingTrans, setEditingTrans] = useState(null);
+
+  // Helper to filter items based on range
+  const filteredTransactions = useMemo(() => {
+      const target = new Date(targetDate);
+      return transactions.filter(t => {
+          const tDate = new Date(t.date);
+          if (rangeType === 'daily') return t.date === targetDate;
+          if (rangeType === 'weekly') {
+              const startOfWeek = new Date(target);
+              startOfWeek.setDate(target.getDate() - target.getDay()); // Sunday start
+              const endOfWeek = new Date(startOfWeek);
+              endOfWeek.setDate(startOfWeek.getDate() + 6);
+              return tDate >= startOfWeek && tDate <= endOfWeek;
+          }
+          if (rangeType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
+          if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
+          return false;
+      }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+  }, [transactions, rangeType, targetDate]);
+
+  // Calculations
+  const stats = useMemo(() => {
+    const totalRev = filteredTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+    const count = filteredTransactions.length;
+    // Item Breakdown with Smart Conversion
+    const items = {};
+    filteredTransactions.forEach(t => {
+        if(t.items) t.items.forEach(i => {
+            const product = inventory.find(p => p.id === i.productId);
+            // SAFETY: Use product directly or fallback empty object to prevent crash
+            const bksQty = convertToBks(i.qty, i.unit, product || {});
+            if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
+            items[i.name].qty += bksQty;
+            items[i.name].val += (i.calculatedPrice * i.qty);
+        });
+    });
+    return { totalRev, count, items, transactions: filteredTransactions };
+  }, [filteredTransactions, inventory]);
+
+  const handleEditSubmit = async (e) => {
+      e.preventDefault();
+      if(!editingTrans || !user) return;
+      const formData = new FormData(e.target);
+      const updates = {
+          date: formData.get('date'),
+          customerName: formData.get('customerName'),
+          total: parseFloat(formData.get('total')) || 0,
+          updatedAt: serverTimestamp()
+      };
+      try {
+          await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), updates);
+          setEditingTrans(null);
+      } catch(err) { alert(err.message); }
+  };
+
+  const generateCSV = () => {
+      const headers = ["Date,Customer,Type,Items,Total\n"];
+      const rows = stats.transactions.map(t => {
+          const itemsStr = t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join('; ') : 'Payment';
+          return `${t.date},"${t.customerName}",${t.type},"${itemsStr}",${t.total || t.amountPaid}`;
+      }).join("\n");
+      const blob = new Blob([headers + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `Report_${rangeType}_${targetDate}.csv`; a.click();
+  };
+
+  const handlePrint = () => {
+      window.print();
+  };
+
+  // Customer Stats Logic (Folder View)
   const customerStats = useMemo(() => { const stats = {}; transactions.forEach(t => { const name = t.customerName || 'Unknown'; if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] }; stats[name].count += 1; if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; if (t.date > stats[name].lastDate) stats[name].lastDate = t.date; stats[name].history.push(t); }); return Object.values(stats).sort((a,b) => b.total - a.total); }, [transactions]);
-  if (!selectedCustomer) { return (<div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction History Reports</h2><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{customerStats.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group"><button onClick={(e) => { e.stopPropagation(); onDelete(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button><div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div><h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3><div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div></div>))}</div></div>); }
+
+  if (reportView) {
+      return (
+        <div className="animate-fade-in max-w-5xl mx-auto">
+             {/* EDIT MODAL */}
+             {editingTrans && (
+                 <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                         <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Transaction</h3>
+                         <form onSubmit={handleEditSubmit} className="space-y-4">
+                             <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingTrans.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                             <div><label className="text-xs font-bold text-slate-500">Customer</label><input name="customerName" defaultValue={editingTrans.customerName} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                             <div><label className="text-xs font-bold text-slate-500">Total Value (Rp)</label><input name="total" type="number" defaultValue={editingTrans.total || editingTrans.amountPaid} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                             <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Changes</button></div>
+                         </form>
+                     </div>
+                 </div>
+             )}
+
+             {/* HEADER CONTROLS (Hidden on Print) */}
+             <div className="print:hidden">
+                <button onClick={() => setReportView(false)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-xl border dark:border-slate-700">
+                        {['daily', 'weekly', 'monthly', 'yearly'].map(t => (
+                            <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{t}</button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
+                        <button onClick={generateCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Export CSV (Excel)"><FileSpreadsheet size={20}/></button>
+                        <button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
+                    </div>
+                </div>
+             </div>
+
+             {/* PRINTABLE REPORT CONTAINER */}
+             <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
+                 {/* PRINT HEADER */}
+                 <div className="flex justify-between items-end mb-8 border-b-2 border-orange-500 pb-4">
+                     <div>
+                         <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">Sales Report</h1>
+                         <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</p>
+                     </div>
+                     <div className="text-right">
+                         <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p>
+                         <h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2>
+                     </div>
+                 </div>
+                 
+                 {/* SUMMARY CARDS */}
+                 <div className="grid grid-cols-3 gap-6 mb-8">
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
+                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p>
+                         <p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p>
+                     </div>
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
+                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p>
+                         <p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p>
+                     </div>
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
+                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Avg Ticket</p>
+                         <p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count > 0 ? formatRupiah(stats.totalRev / stats.count) : '0'}</p>
+                     </div>
+                 </div>
+
+                 {/* PRODUCT BREAKDOWN */}
+                 <div className="mb-8">
+                     <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="text-orange-500"/> Product Performance</h3>
+                     <table className="w-full text-sm text-left border-collapse">
+                         <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
+                             <tr><th className="py-2">Product Name</th><th className="py-2 text-right">Qty (Bks)</th><th className="py-2 text-right">Revenue</th></tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
+                             {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
+                                 <tr key={name}>
+                                     <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
+                                     <td className="py-3 text-right text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
+                                     <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
+                                 </tr>
+                             ))}
+                             {Object.keys(stats.items).length === 0 && <tr><td colSpan="3" className="py-6 text-center text-slate-400 italic">No sales data for this period.</td></tr>}
+                         </tbody>
+                     </table>
+                 </div>
+
+                 {/* TRANSACTION LOG */}
+                 <div>
+                    <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><History size={20} className="text-orange-500"/> Transaction Log</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left border-collapse">
+                            <thead className="bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 text-slate-500 font-bold">
+                                <tr>
+                                    <th className="p-3 rounded-l-lg">Time</th>
+                                    <th className="p-3">Customer</th>
+                                    <th className="p-3">Type</th>
+                                    <th className="p-3 text-right">Total</th>
+                                    <th className="p-3 rounded-r-lg text-right print:hidden">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                {stats.transactions.map(t => (
+                                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                        <td className="p-3 text-slate-500 font-mono text-xs">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : t.date}</td>
+                                        <td className="p-3 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black">{t.customerName}</td>
+                                        <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:print:bg-slate-200 dark:print:text-black border dark:border-slate-600">{t.type}</span></td>
+                                        <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.total || t.amountPaid)}</td>
+                                        <td className="p-3 text-right print:hidden">
+                                            {isAdmin && (
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setEditingTrans(t)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"><Pencil size={14}/></button>
+                                                    <button onClick={() => onDeleteTransaction(t)} className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"><Trash2 size={14}/></button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+             </div>
+             
+             <style>{`
+                @media print {
+                    @page { size: A4; margin: 20mm; }
+                    body { background: white; color: black; }
+                    .print\\:hidden { display: none !important; }
+                    .print\\:shadow-none { box-shadow: none !important; }
+                    .print\\:border-none { border: none !important; }
+                    .print\\:p-0 { padding: 0 !important; }
+                    .dark\\:print\\:text-black { color: black !important; }
+                    .dark\\:print\\:bg-white { background: white !important; }
+                    .dark\\:print\\:bg-slate-100 { background: #f1f5f9 !important; }
+                    .dark\\:print\\:border-slate-300 { border-color: #cbd5e1 !important; }
+                    /* Hide Sidebar and other layout elements */
+                    nav, .capy-mascot { display: none !important; }
+                    main { margin: 0 !important; padding: 0 !important; }
+                }
+             `}</style>
+        </div>
+      );
+  }
+
+  if (!selectedCustomer) { 
+      return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction Reports</h2>
+                <button onClick={() => setReportView(true)} className="w-full md:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl shadow-sm hover:shadow-md hover:border-orange-500 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-white group">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
+                    <span>Open Analytics Dashboard</span>
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customerStats.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group"><button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button><div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div><h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3><div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div></div>))}
+            </div>
+        </div>
+      ); 
+  }
+  
   const groupedByMonth = selectedCustomer.history.reduce((groups, t) => { const date = new Date(t.date); const key = date.toLocaleString('default', { month: 'long', year: 'numeric' }); if (!groups[key]) groups[key] = []; groups[key].push(t); return groups; }, {});
   return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody></table></div></div>))}</div></div></div>);
 };
@@ -396,7 +637,7 @@ export default function KPMInventoryApp() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
-  const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessage: '' });
+  const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
 
   // UI States
   const [editingProduct, setEditingProduct] = useState(null);
@@ -410,28 +651,48 @@ export default function KPMInventoryApp() {
   const [activeCropContext, setActiveCropContext] = useState(null); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  // Capybara Message
+  // Capybara Message Cycle
   const [capyMsg, setCapyMsg] = useState("Welcome to KPM Inventory!");
   const [showCapyMsg, setShowCapyMsg] = useState(false);
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  // Default messages if none are set
+  const defaultMessages = [
+    "Welcome back, Boss! Stock looks good today.",
+    "Checking the inventory... All safe! 🛡️",
+    "Don't forget to record samples!",
+    "Sales are looking up! 📈",
+    "Need to restock soon? Check the list.",
+    "I love organization. And watermelons. 🍉",
+    "Did you know Capybaras are the largest rodents?",
+    "Keep up the good work, team!",
+    "Remember to hydrate while you work! 💧",
+    "Profit margins are looking healthy.",
+    "Scanning for discounts... just kidding!",
+    "Is it time for a coffee break yet? ☕",
+    "Inventory accuracy is key to success!",
+    "You are doing great today! ⭐",
+    "Any new products to add?",
+    "I'm watching the store, don't worry.",
+    "Make sure to update the customer list!",
+    "A tidy inventory is a happy inventory.",
+    "System systems go! 🚀",
+    "Hello from the digital world! 👋"
+  ];
   
+  const activeMessages = (appSettings?.mascotMessages && appSettings.mascotMessages.length > 0) ? appSettings.mascotMessages : defaultMessages;
+
   // Feature State
   const [editMascotMessage, setEditMascotMessage] = useState("");
+  const [newMascotMessage, setNewMascotMessage] = useState("");
   const [editCompanyName, setEditCompanyName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
-  
-  const capyMessages = [
-    "Welcome back, Boss! Stock looks good today.",
-    "Checking the inventory...",
-    "Don't forget to record samples!",
-    "Sales are looking up!",
-    "Need to restock soon?"
-  ];
+  const [editingSample, setEditingSample] = useState(null); // Add this line
 
   // --- AUTHENTICATION FLOW ---
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
-        // MODIFIED: NO AUTO ADMIN. Default to false, require password.
         setIsAdmin(false);
         if (currentUser?.email) setCurrentUserEmail(currentUser.email);
     });
@@ -457,13 +718,7 @@ export default function KPMInventoryApp() {
         if (snap.exists()) {
             const data = snap.data();
             setAppSettings(data);
-            setEditMascotMessage(data?.mascotMessage || "");
             setEditCompanyName(data?.companyName || "KPM Inventory");
-            if (data?.mascotMessage) {
-                setCapyMsg(data.mascotMessage);
-                setShowCapyMsg(true);
-                setTimeout(() => setShowCapyMsg(false), 5000);
-            }
         } else {
             setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
         }
@@ -487,8 +742,46 @@ export default function KPMInventoryApp() {
 
   // --- ACTIONS ---
   const logAudit = async (action, details) => { try { if(user) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_logs`), { action, details, timestamp: serverTimestamp() }); } catch (err) {} };
-  const triggerCapy = (msg) => { const message = msg || appSettings?.mascotMessage || capyMessages[Math.floor(Math.random() * capyMessages.length)]; setCapyMsg(message); setShowCapyMsg(true); setTimeout(() => setShowCapyMsg(false), 4000); };
-  const handleSaveMascotMessage = async () => { if(user) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessage: editMascotMessage }, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Message"); triggerCapy(editMascotMessage); } };
+  
+  const cycleMascotMessage = () => {
+    const nextIndex = (msgIndex + 1) % activeMessages.length;
+    setMsgIndex(nextIndex);
+    const message = activeMessages[nextIndex];
+    setCapyMsg(message);
+    setShowCapyMsg(true);
+    setTimeout(() => setShowCapyMsg(false), 8000); 
+  };
+  
+  const triggerCapy = (msg) => { const message = msg || "Hello!"; setCapyMsg(message); setShowCapyMsg(true); setTimeout(() => setShowCapyMsg(false), 8000); };
+  
+  const handleAddMascotMessage = async () => {
+      if(!newMascotMessage.trim() || !user) return;
+      const currentMessages = appSettings.mascotMessages || [];
+      const updatedMessages = [...currentMessages, newMascotMessage.trim()];
+      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessages: updatedMessages }, {merge: true});
+      setNewMascotMessage("");
+      triggerCapy("New dialogue added!");
+  };
+
+  const handleDeleteMascotMessage = async (msgToDelete) => {
+      if(!user) return;
+      const currentMessages = appSettings.mascotMessages || [];
+      const updatedMessages = currentMessages.filter(m => m !== msgToDelete);
+      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessages: updatedMessages }, {merge: true});
+  };
+
+  // --- NEW: DELETE SINGLE TRANSACTION ---
+  const handleDeleteSingleTransaction = async (transaction) => {
+      if(!window.confirm("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
+      try {
+          await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, transaction.id));
+          logAudit("TRANS_DELETE", `Deleted transaction ${transaction.id} for ${transaction.customerName}`);
+          triggerCapy("Transaction record removed.");
+      } catch(err) {
+          alert(err.message);
+      }
+  };
+
   const handleDeleteConsignmentData = async (customerName) => { if(!window.confirm(`Delete ALL history for ${customerName}?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN')); for(const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`); } catch(err) {} };
   const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
@@ -516,12 +809,136 @@ export default function KPMInventoryApp() {
   const handleSamplingSubmit = async (e) => { 
     e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const productId = formData.get('productId'); const qty = parseInt(formData.get('qty')); const reason = formData.get('reason'); 
     if (!productId || isNaN(qty) || qty <= 0) { alert("Please select a valid product and quantity."); return; }
-    try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const currentStock = prodDoc.data().stock || 0; const newStock = currentStock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`)); transaction.set(newSampleRef, { date: getCurrentDate(), productName: inventory.find(i=>i.id===productId)?.name || 'Unknown', qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of item`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } 
+    try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const currentStock = prodDoc.data().stock || 0; const newStock = currentStock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`)); transaction.set(newSampleRef, { date: getCurrentDate(), productId, productName: inventory.find(i=>i.id===productId)?.name || 'Unknown', qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of item`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } 
+  };
+  
+  const handleDeleteSampling = async (sample) => {
+      if(!user) return;
+      
+      // SAFETY CHECK: Does product ID exist?
+      if(!sample.productId) {
+          if(!window.confirm("This record is corrupted (missing Product ID). Force delete it? Stock will NOT be returned.")) return;
+          try {
+              await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id));
+              triggerCapy("Corrupted record removed.");
+          } catch(e) { alert(e.message); }
+          return;
+      }
+
+      if(!window.confirm(`Delete sample record for ${sample.productName}? Stock will be RETURNED.`)) return;
+      
+      try {
+          await runTransaction(db, async (transaction) => {
+              // 1. Return stock to product
+              const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, sample.productId);
+              const prodDoc = await transaction.get(prodRef);
+              if(prodDoc.exists()) {
+                  transaction.update(prodRef, { stock: prodDoc.data().stock + sample.qty });
+              }
+              // 2. Delete sampling record
+              const sampleRef = doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id);
+              transaction.delete(sampleRef);
+          });
+          logAudit("SAMPLING_DELETE", `Deleted sample for ${sample.productName}. Stock returned.`);
+          triggerCapy("Sampling deleted and stock reverted!");
+      } catch (err) {
+          console.error(err);
+          alert("Failed to delete sample: " + err.message);
+      }
+  };
+
+  const handleUpdateSampling = async (e) => {
+      e.preventDefault();
+      if(!user || !editingSample) return;
+      const formData = new FormData(e.target);
+      const newQty = parseInt(formData.get('qty'));
+      const newReason = formData.get('reason');
+      const newDate = formData.get('date');
+
+      if(isNaN(newQty) || newQty <= 0) return alert("Invalid Qty");
+
+      try {
+          await runTransaction(db, async (t) => {
+              const sampleRef = doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, editingSample.id);
+              const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingSample.productId);
+              
+              // Get current product state
+              const prodDoc = await t.get(prodRef);
+              if(!prodDoc.exists()) throw "Product not found";
+              
+              // Calculate difference: If old was 10 and new is 5, we add 5 back to stock.
+              // If old was 5 and new is 10, we remove 5 more.
+              const qtyDiff = editingSample.qty - newQty; 
+              const currentStock = prodDoc.data().stock;
+              
+              t.update(prodRef, { stock: currentStock + qtyDiff });
+              t.update(sampleRef, { qty: newQty, reason: newReason, date: newDate });
+          });
+          setEditingSample(null);
+          triggerCapy("Sample updated & Stock adjusted!");
+      } catch(err) {
+          alert(err.message);
+      }
+  };
+
+  const handleBackupData = async () => {
+    if(!user) return;
+    const backupData = {
+        meta: { date: new Date().toISOString(), user: user.email },
+        inventory,
+        transactions,
+        customers,
+        samplings,
+        appSettings,
+        auditLogs
+    };
+    const jsonString = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kpm_backup_${getCurrentDate()}.json`;
+    a.click();
+    triggerCapy("Data backup downloaded to your PC!");
+  };
+
+  const handleRestoreData = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+    if(!window.confirm("WARNING: This will attempt to restore data from the file. Existing records with the same IDs will be overwritten. Continue?")) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            if(!data.inventory || !data.transactions) throw new Error("Invalid backup file format");
+            for(const item of data.inventory) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item); }
+            if(data.customers) { for(const cust of data.customers) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, cust.id), cust); } }
+            if(data.transactions) { for(const t of data.transactions) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id), t); } }
+            if(data.appSettings) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings); }
+            triggerCapy("Data restoration complete! Please refresh the page.");
+        } catch (err) { alert("Failed to restore: " + err.message); console.error(err); }
+    };
+    reader.readAsText(file);
+    e.target.value = null; 
   };
 
   const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * (i.priceRetail || 0)), 0);
   const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const chartData = React.useMemo(() => { const dataMap = {}; const customers = new Set(); transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').forEach(t => { const date = t.date; if (!dataMap[date]) dataMap[date] = { date }; const cName = (t.customerName || 'Unknown').trim(); if (!dataMap[date][cName]) dataMap[date][cName] = 0; dataMap[date][cName] += t.total; customers.add(cName); }); return { data: Object.values(dataMap).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-7), keys: Array.from(customers) }; }, [transactions]);
+  
+  const chartData = React.useMemo(() => {
+      const dataMap = {};
+      const customers = new Set();
+      transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').forEach(t => {
+          const date = t.date;
+          if (!dataMap[date]) dataMap[date] = { date };
+          const cName = (t.customerName || 'Unknown').trim();
+          if (!dataMap[date][cName]) dataMap[date][cName] = 0;
+          dataMap[date][cName] += t.total;
+          customers.add(cName);
+      });
+      return { data: Object.values(dataMap).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-7), keys: Array.from(customers) };
+  }, [transactions]);
+
   const handleEditMascotMsgChange = (e) => setEditMascotMessage(e.target.value);
   const handleEditCompNameChange = (e) => setEditCompanyName(e.target.value);
   const mainContentClass = isSidebarCollapsed ? 'ml-20' : 'ml-64';
@@ -531,11 +948,29 @@ export default function KPMInventoryApp() {
       return (
         <div className="animate-fade-in max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
+            
+            {/* BACKUP & RESTORE SECTION */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><DatabaseBackupIcon /> Data Management</h3>
+                <div className="flex gap-4">
+                    <button onClick={handleBackupData} className="flex-1 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 text-indigo-700 dark:text-indigo-300 py-4 rounded-xl border border-indigo-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all">
+                        <Download size={24} />
+                        <span className="font-bold text-sm">Backup to PC</span>
+                        <span className="text-[10px] opacity-70">Download .json file</span>
+                    </button>
+                    <label className="flex-1 bg-emerald-50 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-slate-600 text-emerald-700 dark:text-emerald-300 py-4 rounded-xl border border-emerald-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer">
+                        <UploadCloud size={24} />
+                        <span className="font-bold text-sm">Restore Data</span>
+                        <span className="text-[10px] opacity-70">Select .json file to import</span>
+                        <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
+                    </label>
+                </div>
+            </div>
+
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
                 <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
                 <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail || ""} disabled/>
-                
                 <div className={`mt-4 p-4 rounded-xl border flex justify-between items-center ${isAdmin ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
                     <div>
                         <p className={`font-bold text-sm ${isAdmin ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
@@ -557,14 +992,28 @@ export default function KPMInventoryApp() {
                 </div>
             </div>
             
+            {/* Mascot Settings */}
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
                 {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Message</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Dialogues</h3>
                 </div>
-                <div className="flex gap-2">
-                    <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="What should the Capybara say?" value={editMascotMessage || ""} onChange={handleEditMascotMsgChange}/>
-                    <button onClick={handleSaveMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save</button>
+                
+                <div className="mb-4">
+                    <label className="text-xs font-bold text-slate-500 mb-1 block">Add New Dialogue Line</label>
+                    <div className="flex gap-2">
+                        <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Type a message..." value={newMascotMessage} onChange={(e) => setNewMascotMessage(e.target.value)}/>
+                        <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold flex items-center gap-2"><Plus size={16} /> Add</button>
+                    </div>
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {activeMessages.map((msg, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                            <span className="text-sm dark:text-slate-300 italic">"{msg}"</span>
+                            <button onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -579,85 +1028,426 @@ export default function KPMInventoryApp() {
       );
   }
 
+  const DatabaseBackupIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>;
+
   return (
     <div className={`min-h-screen flex ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+      
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
       {returningTransaction && <ReturnModal transaction={returningTransaction} onClose={() => setReturningTransaction(null)} onConfirm={executeReturn} />}
       {showAdminLogin && <AdminAuthModal onClose={() => setShowAdminLogin(false)} onSuccess={handleAdminAuthSuccess} />}
 
+      {/* SIDEBAR */}
       <nav className={`fixed left-0 top-0 h-screen bg-slate-900 text-slate-300 border-r border-slate-800 z-40 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'} shadow-xl`}>
         <div className="flex-none p-4 flex items-center justify-between border-b border-slate-800 h-16">
-           {!isSidebarCollapsed && (<div className="flex items-center gap-2 overflow-hidden"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm text-white truncate">{appSettings?.companyName || 'KPM'}</h1></div>)}
-           <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 hover:bg-slate-700 rounded text-slate-400">{isSidebarCollapsed ? <Menu size={20}/> : <ChevronLeft size={20}/>}</button>
+           {!isSidebarCollapsed && (
+               <div className="flex items-center gap-2 overflow-hidden">
+                 <img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                 <h1 className="font-bold text-sm text-white truncate">{appSettings?.companyName || 'KPM'}</h1>
+               </div>
+           )}
+           <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 hover:bg-slate-700 rounded text-slate-400">
+               {isSidebarCollapsed ? <Menu size={20}/> : <ChevronLeft size={20}/>}
+           </button>
         </div>
+
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
-            {[{ id: 'dashboard', icon: LayoutDashboard, label: 'Overview' }, { id: 'inventory', icon: Package, label: 'Inventory' }, { id: 'sales', icon: ShoppingCart, label: 'Sales POS' }, { id: 'consignment', icon: Truck, label: 'Titip (Consign)' }, { id: 'stock_opname', icon: ClipboardCheck, label: 'Stock Opname' }, { id: 'customers', icon: Store, label: 'Customers' }, { id: 'sampling', icon: ClipboardList, label: 'Sampling' }, { id: 'transactions', icon: FileText, label: 'Reports' }, { id: 'audit', icon: History, label: 'Audit Logs' }, { id: 'settings', icon: Settings, label: 'Settings' }].map(item => (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center p-3 transition-colors relative group ${activeTab === item.id ? 'bg-orange-600 text-white' : 'hover:bg-slate-800 hover:text-white'} ${isSidebarCollapsed ? 'justify-center' : 'px-4'}`} title={isSidebarCollapsed ? item.label : ''}><item.icon size={20} className="flex-shrink-0" />{!isSidebarCollapsed && <span className="ml-3 text-sm font-medium truncate">{item.label}</span>}{isSidebarCollapsed && <span className="absolute left-16 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none">{item.label}</span>}</button>
+            {[
+                { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' }, 
+                { id: 'inventory', icon: Package, label: 'Inventory' }, 
+                { id: 'sales', icon: ShoppingCart, label: 'Sales POS' }, 
+                { id: 'consignment', icon: Truck, label: 'Titip (Consign)' },
+                { id: 'stock_opname', icon: ClipboardCheck, label: 'Stock Opname' },
+                { id: 'customers', icon: Store, label: 'Customers' },
+                { id: 'sampling', icon: ClipboardList, label: 'Sampling' },
+                { id: 'transactions', icon: FileText, label: 'Reports' }, 
+                { id: 'audit', icon: History, label: 'Audit Logs' },
+                { id: 'settings', icon: Settings, label: 'Settings' }
+            ].map(item => (
+              <button 
+                key={item.id} 
+                onClick={() => setActiveTab(item.id)} 
+                className={`w-full flex items-center p-3 transition-colors relative group ${activeTab === item.id ? 'bg-orange-600 text-white' : 'hover:bg-slate-800 hover:text-white'} ${isSidebarCollapsed ? 'justify-center' : 'px-4'}`}
+                title={isSidebarCollapsed ? item.label : ''}
+              >
+                <item.icon size={20} className="flex-shrink-0" />
+                {!isSidebarCollapsed && <span className="ml-3 text-sm font-medium truncate">{item.label}</span>}
+                {isSidebarCollapsed && <span className="absolute left-16 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none">{item.label}</span>}
+              </button>
             ))}
         </div>
-        {user && (<div className="p-4 border-t border-slate-800"><button onClick={() => signOut(auth)} className={`flex items-center text-red-500 hover:text-red-400 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}><LogOut size={20} />{!isSidebarCollapsed && <span className="text-sm font-bold">Sign Out</span>}</button></div>)}
+        
+        {/* SIDEBAR FOOTER: LOGOUT */}
+        {user && (
+            <div className="p-4 border-t border-slate-800">
+                <button onClick={() => signOut(auth)} className={`flex items-center text-red-500 hover:text-red-400 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}>
+                    <LogOut size={20} />
+                    {!isSidebarCollapsed && <span className="text-sm font-bold">Sign Out</span>}
+                </button>
+            </div>
+        )}
       </nav>
 
+      {/* MAIN CONTENT AREA - FIXED MARGINS */}
       <main className={`flex-1 ${mainContentClass} p-6 md:p-8 transition-all duration-300 min-h-screen bg-slate-50 dark:bg-slate-900 overflow-x-hidden`}>
-        <div className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-30 ml-[-5rem] sm:ml-0"><div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings?.companyName || 'KPM Inventory'}</h1></div><button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button></div>
+        {/* MOBILE HEADER */}
+        <div className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-30 ml-[-5rem] sm:ml-0"> 
+          <div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings?.companyName || 'KPM Inventory'}</h1></div>
+          <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+        </div>
+
         <div className="max-w-7xl mx-auto">
+          {/* HEADER AREA WITH SIGN IN BUTTON */}
           <div className="flex justify-between items-center mb-8">
              <h1 className="text-2xl font-bold capitalize">{activeTab.replace('_', ' ')}</h1>
              <div className="flex items-center gap-3">
                {!user ? (
-                   <button onClick={() => signInWithPopup(auth, googleProvider)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all dark:text-white"><LogIn size={18} className="text-blue-500" /> Sign In with Google</button>
+                   <button onClick={() => signInWithPopup(auth, googleProvider)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all dark:text-white">
+                       <LogIn size={18} className="text-blue-500" />
+                       Sign In with Google
+                   </button>
                ) : (
                    <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                       <div className={`w-2 h-2 rounded-full animate-pulse ${isAdmin ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                        <span className="text-xs font-medium dark:text-slate-300 truncate max-w-[150px]">{user.email}</span>
                    </div>
                )}
-               <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">{darkMode ? <Sun size={20}/> : <Moon size={20}/>}</button>
+               <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                   {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
+               </button>
              </div>
           </div>
 
           {!user ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in"><div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-3xl max-w-lg shadow-xl border border-slate-200 dark:border-slate-700"><Lock className="w-16 h-16 text-slate-400 mx-auto mb-4" /><h2 className="text-2xl font-bold dark:text-white mb-2">Welcome to KPM Inventory</h2><p className="text-slate-500 mb-6">Please sign in using the button in the top right to access your inventory, sales, and analytics.</p><div className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-900 p-3 rounded-lg">Secure Cloud Sync • Real-time Updates • Admin Controls</div></div></div>
+              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                  <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-3xl max-w-lg shadow-xl border border-slate-200 dark:border-slate-700">
+                      <Lock className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                      <h2 className="text-2xl font-bold dark:text-white mb-2">Welcome to KPM Inventory</h2>
+                      <p className="text-slate-500 mb-6">Please sign in using the button in the top right to access your inventory, sales, and analytics.</p>
+                      <div className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-900 p-3 rounded-lg">
+                          Secure Cloud Sync • Real-time Updates • Admin Controls
+                      </div>
+                  </div>
+              </div>
           ) : (
               <>
+                {/* DASHBOARD */}
                 {activeTab === 'dashboard' && (
-                    <div className="space-y-6 animate-fade-in"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg"><p className="text-emerald-100 text-sm font-medium">Inventory Value</p><h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3></div><div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg"><p className="text-orange-100 text-sm font-medium">Net Sales (Revenue)</p><h3 className="text-3xl font-bold mt-1">{formatRupiah(transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').reduce((acc, t) => acc + (t.total || 0), 0))}</h3></div></div><div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm"><h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3><div className="h-80"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData.data}><CartesianGrid strokeDasharray="3 3" opacity={0.1}/><XAxis dataKey="date" fontSize={12} stroke="#94a3b8"/><YAxis fontSize={12} stroke="#94a3b8"/><Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/><Legend />{chartData.keys.map((key, index) => (<Bar key={key} dataKey={key} stackId="a" fill={getRandomColor(key)} radius={index === chartData.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}/>))}</BarChart></ResponsiveContainer></div></div></div>
+                    <div className="space-y-6 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
+                        <p className="text-emerald-100 text-sm font-medium">Inventory Value</p>
+                        <h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
+                        </div>
+                        <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+                        <p className="text-orange-100 text-sm font-medium">Net Sales (Revenue)</p>
+                        <h3 className="text-3xl font-bold mt-1">
+                            {formatRupiah(
+                            transactions
+                                .filter(t => t.type === 'SALE' || t.type === 'RETURN')
+                                .reduce((acc, t) => acc + (t.total || 0), 0)
+                            )}
+                        </h3>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
+                        <h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData.data}>
+                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
+                                    <XAxis dataKey="date" fontSize={12} stroke="#94a3b8"/>
+                                    <YAxis fontSize={12} stroke="#94a3b8"/>
+                                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
+                                    <Legend />
+                                    {chartData.keys.map((key, index) => (
+                                        <Bar 
+                                            key={key} 
+                                            dataKey={key} 
+                                            stackId="a" 
+                                            fill={getRandomColor(key)} 
+                                            radius={index === chartData.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                        />
+                                    ))}
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                    </div>
                 )}
+
+                {/* INVENTORY */}
                 {activeTab === 'inventory' && (
                     <div className="space-y-6 animate-fade-in">
-                    <div className="flex gap-4"><input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /><button onClick={handleExportCSV} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white px-4 rounded-xl flex items-center gap-2 hover:bg-slate-200"><Download size={20}/> Export</button><button onClick={() => { setEditingProduct({}); setTempImages({}); setBoxDimensions({w:55, h:90, d:22}); setUseFrontForBack(false); }} className="bg-orange-500 text-white px-4 rounded-xl flex items-center gap-2"><Plus size={20}/> Add</button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{filteredInventory.map(item => (<div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700 shadow-sm p-4"><div className="flex gap-3 mb-4"><div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden shrink-0">{(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-4 text-slate-400"/>}</div><div><h3 className="font-bold leading-tight dark:text-white">{item.name}</h3><span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span><p className="text-emerald-500 font-bold mt-1">{item.stock} Bks</p></div></div><div className="flex gap-2"><button onClick={() => setExaminingProduct(item)} className="flex-1 bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white">Examine</button><button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button><button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button></div></div>))}</div>
+                    <div className="flex gap-4">
+                        <input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <button onClick={handleExportCSV} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white px-4 rounded-xl flex items-center gap-2 hover:bg-slate-200"><Download size={20}/> Export</button>
+                        <button onClick={() => { setEditingProduct({}); setTempImages({}); setBoxDimensions({w:55, h:90, d:22}); setUseFrontForBack(false); }} className="bg-orange-500 text-white px-4 rounded-xl flex items-center gap-2"><Plus size={20}/> Add</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredInventory.map(item => (
+                        <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700 shadow-sm p-4">
+                            <div className="flex gap-3 mb-4">
+                                <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden shrink-0">
+                                {(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-4 text-slate-400"/>}
+                                </div>
+                                <div>
+                                <h3 className="font-bold leading-tight dark:text-white">{item.name}</h3>
+                                <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span>
+                                <p className="text-emerald-500 font-bold mt-1">{item.stock} Bks</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setExaminingProduct(item)} className="flex-1 bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white">Examine</button>
+                                <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
+                                <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
                     {editingProduct && (
-                        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"><div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
-                            {!isAdmin && (<div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg flex items-center gap-3"><Lock className="text-blue-500" /><div><h4 className="font-bold text-sm text-blue-600 dark:text-blue-400">View Only Mode</h4><p className="text-xs text-slate-500">Only Admin can edit product details, images, and dimensions.</p></div></div>)}
-                            <form onSubmit={handleSaveProduct}><div className="flex justify-between mb-4"><h2 className="text-xl font-bold dark:text-white">Product Details</h2><button type="button" onClick={() => setEditingProduct(null)}><X className="dark:text-white"/></button></div><div className="grid md:grid-cols-2 gap-6"><div className="space-y-3"><input name="name" defaultValue={editingProduct.name} required placeholder="Merk Rokok" className={`w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/>
-                                    {isAdmin && (<><div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 flex items-center justify-between"><div className="text-xs"><span className="font-bold text-orange-500 block">DIMENSIONS</span><span className="text-slate-400">{boxDimensions.w}mm x {boxDimensions.h}mm x {boxDimensions.d}mm</span></div><div className="text-[10px] text-slate-400 italic">Edit via "EDIT" on images below</div></div><div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-3"><div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-orange-500 block">3D TEXTURES</span><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={useFrontForBack} onChange={(e) => setUseFrontForBack(e.target.checked)} className="w-3 h-3 accent-orange-500" /><span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold uppercase">Front = Back</span></label></div><div className="grid grid-cols-3 gap-2 text-center">{['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => { const imgSource = tempImages[face] || (editingProduct.images ? editingProduct.images[face] : null); const isBackDisabled = face === 'back' && useFrontForBack; if (isBackDisabled) return (<div key={face} className="bg-slate-50 dark:bg-slate-800 rounded h-16 border dark:border-slate-700 flex flex-col items-center justify-center opacity-50"><span className="text-[10px] uppercase text-slate-400 font-bold">{face}</span><span className="text-[8px] text-slate-400">(Linked to Front)</span></div>); return (<div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden"><div className="w-full h-full cursor-pointer" onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}>{imgSource ? (<img src={imgSource} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />) : (<div className="w-full h-full flex items-center justify-center text-[10px] uppercase text-slate-400 hover:text-orange-500 transition-colors"><Upload size={12} className="mr-1"/> {face}</div>)}</div><input id={`file-${face}`} type="file" accept="image/*" onChange={(e) => handleProductFaceUpload(e, face)} className="hidden" />{imgSource && (<div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity"><button type="button" onClick={(e) => { e.stopPropagation(); handleEditExisting(face, imgSource); }} className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white" title="Edit/Crop Existing"><Crop size={12}/></button><button type="button" onClick={(e) => { e.stopPropagation(); document.getElementById(`file-${face}`).click(); }} className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white" title="Replace File"><Replace size={12}/></button></div>)}</div>); })}</div></div></>)}
-                                    <textarea name="description" defaultValue={editingProduct.description} placeholder="Lore" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20 text-sm"/></div><div className="space-y-3"><div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div><div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p><input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/></div></div></div>{isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}</form></div></div>
+                        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+                            {!isAdmin && (
+                                <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg flex items-center gap-3">
+                                    <Lock className="text-blue-500" />
+                                    <div><h4 className="font-bold text-sm text-blue-600 dark:text-blue-400">View Only Mode</h4><p className="text-xs text-slate-500">Only Admin can edit product details, images, and dimensions.</p></div>
+                                </div>
+                            )}
+                            <form onSubmit={handleSaveProduct}>
+                            <div className="flex justify-between mb-4"><h2 className="text-xl font-bold dark:text-white">Product Details</h2><button type="button" onClick={() => setEditingProduct(null)}><X className="dark:text-white"/></button></div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <input name="name" defaultValue={editingProduct.name} required placeholder="Merk Rokok" className={`w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/>
+                                    
+                                    {isAdmin && (
+                                        <>
+                                        <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 flex items-center justify-between"><div className="text-xs"><span className="font-bold text-orange-500 block">DIMENSIONS</span><span className="text-slate-400">{boxDimensions.w}mm x {boxDimensions.h}mm x {boxDimensions.d}mm</span></div><div className="text-[10px] text-slate-400 italic">Edit via "EDIT" on images below</div></div>
+                                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-3">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-bold text-orange-500 block">3D TEXTURES</span>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" checked={useFrontForBack} onChange={(e) => setUseFrontForBack(e.target.checked)} className="w-3 h-3 accent-orange-500" />
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold uppercase">Front = Back</span>
+                                                </label>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
+                                                    const imgSource = tempImages[face] || (editingProduct.images ? editingProduct.images[face] : null);
+                                                    const isBackDisabled = face === 'back' && useFrontForBack;
+                                                    
+                                                    if (isBackDisabled) {
+                                                        return (
+                                                            <div key={face} className="bg-slate-50 dark:bg-slate-800 rounded h-16 border dark:border-slate-700 flex flex-col items-center justify-center opacity-50">
+                                                                <span className="text-[10px] uppercase text-slate-400 font-bold">{face}</span>
+                                                                <span className="text-[8px] text-slate-400">(Linked to Front)</span>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden">
+                                                            {/* Display Area - Click to Edit or Upload */}
+                                                            <div 
+                                                                className="w-full h-full cursor-pointer" 
+                                                                onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}
+                                                            >
+                                                                {imgSource ? (
+                                                                    <img src={imgSource} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-[10px] uppercase text-slate-400 hover:text-orange-500 transition-colors">
+                                                                        <Upload size={12} className="mr-1"/> {face}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Hidden File Input */}
+                                                            <input 
+                                                                id={`file-${face}`} 
+                                                                type="file" 
+                                                                accept="image/*" 
+                                                                onChange={(e) => handleProductFaceUpload(e, face)} 
+                                                                className="hidden" 
+                                                            />
+
+                                                            {/* Hover Overlay Actions */}
+                                                            {imgSource && (
+                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={(e) => { e.stopPropagation(); handleEditExisting(face, imgSource); }}
+                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
+                                                                        title="Edit/Crop Existing"
+                                                                    >
+                                                                        <Crop size={12}/>
+                                                                    </button>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={(e) => { e.stopPropagation(); document.getElementById(`file-${face}`).click(); }}
+                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
+                                                                        title="Replace File"
+                                                                    >
+                                                                        <Replace size={12}/>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        </>
+                                    )}
+                                    <textarea name="description" defaultValue={editingProduct.description} placeholder="Lore" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20 text-sm"/>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
+                                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p><input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/></div>
+                                </div>
+                            </div>
+                            {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
+                            </form>
+                        </div>
+                        </div>
                     )}
                     </div>
                 )}
+
+                {/* STOCK OPNAME */}
                 {activeTab === 'stock_opname' && (
-                    <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2><div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Product</th><th className="p-4 text-center">System Stock</th><th className="p-4 text-center">Physical Stock</th><th className="p-4 text-center">Variance</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{inventory.map(item => { const actual = opnameData[item.id] !== undefined ? opnameData[item.id] : item.stock; const diff = actual - item.stock; return (<tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50"><td className="p-4 font-medium dark:text-white">{item.name}</td><td className="p-4 text-center dark:text-slate-300">{item.stock}</td><td className="p-4 text-center"><input type="number" min="0" value={actual} onChange={(e) => handleOpnameChange(item.id, parseInt(e.target.value))} className={`w-20 p-2 text-center border rounded ${diff !== 0 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'dark:bg-slate-800 dark:border-slate-600'} dark:text-white`}/></td><td className={`p-4 text-center font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>{diff > 0 ? `+${diff}` : diff}</td></tr>); })}</tbody></table></div><div className="flex justify-end"><button onClick={handleOpnameSubmit} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2"><Save size={20} /> Save Adjustments</button></div></div>
+                    <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
+                            <tr>
+                            <th className="p-4">Product</th>
+                            <th className="p-4 text-center">System Stock</th>
+                            <th className="p-4 text-center">Physical Stock</th>
+                            <th className="p-4 text-center">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {inventory.map(item => {
+                            const actual = opnameData[item.id] !== undefined ? opnameData[item.id] : item.stock;
+                            const diff = actual - item.stock;
+                            return (
+                                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <td className="p-4 font-medium dark:text-white">{item.name}</td>
+                                <td className="p-4 text-center dark:text-slate-300">{item.stock}</td>
+                                <td className="p-4 text-center">
+                                    <input 
+                                    type="number" 
+                                    min="0"
+                                    value={actual}
+                                    onChange={(e) => handleOpnameChange(item.id, parseInt(e.target.value))}
+                                    className={`w-20 p-2 text-center border rounded ${diff !== 0 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'dark:bg-slate-800 dark:border-slate-600'} dark:text-white`}
+                                    />
+                                </td>
+                                <td className={`p-4 text-center font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>
+                                    {diff > 0 ? `+${diff}` : diff}
+                                </td>
+                                </tr>
+                            );
+                            })}
+                        </tbody>
+                        </table>
+                    </div>
+                    <div className="flex justify-end">
+                        <button onClick={handleOpnameSubmit} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                        <Save size={20} /> Save Adjustments
+                        </button>
+                    </div>
+                    </div>
                 )}
+
+                {/* SAMPLING */}
                 {activeTab === 'sampling' && (
-                    <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2><div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700"><form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4"><select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"><option value="">Select Product...</option>{inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}</select><input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/><input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/><button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button></form></div><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Date</th><th className="p-4">Product</th><th className="p-4">Qty</th><th className="p-4">Notes</th></tr></thead><tbody>{samplings.length === 0 ? (<tr><td colSpan="4" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>) : (samplings.map(s => (<tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"><td className="p-4 dark:text-slate-300">{s.date}</td><td className="p-4 font-bold dark:text-white">{s.productName}</td><td className="p-4 text-red-500 font-bold">-{s.qty}</td><td className="p-4 text-slate-500">{s.reason}</td></tr>)))}</tbody></table></div></div>
+                    <div className="space-y-6 animate-fade-in">
+                        {/* EDIT MODAL FOR SAMPLING */}
+                        {editingSample && (
+                            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+                                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                                    <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Sample Record</h3>
+                                    <form onSubmit={handleUpdateSampling} className="space-y-4">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded text-xs text-blue-600 dark:text-blue-300 mb-2">
+                                            <strong>Note:</strong> Changing quantity will automatically adjust product stock.
+                                        </div>
+                                        <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingSample.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                                        <div><label className="text-xs font-bold text-slate-500">Product</label><input disabled value={editingSample.productName} className="w-full p-2 border rounded bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"/></div>
+                                        <div><label className="text-xs font-bold text-slate-500">Quantity (Bks)</label><input name="qty" type="number" defaultValue={editingSample.qty} min="1" className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                                        <div><label className="text-xs font-bold text-slate-500">Reason / Location</label><input name="reason" defaultValue={editingSample.reason} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                                        
+                                        <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingSample(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Update</button></div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        <h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2>
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+                            <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
+                            <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
+                                <option value="">Select Product...</option>
+                                {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
+                            </select>
+                            <input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
+                            <input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
+                            <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button>
+                            </form>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
+                            <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
+                                <tr><th className="p-4">Date</th><th className="p-4">Product</th><th className="p-4">Qty</th><th className="p-4">Notes</th><th className="p-4 text-right">Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                {samplings.length === 0 ? (
+                                    <tr><td colSpan="5" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>
+                                ) : (
+                                    samplings.map(s => (
+                                    <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                        <td className="p-4 dark:text-slate-300">{s.date}</td>
+                                        <td className="p-4 font-bold dark:text-white">{s.productName}</td>
+                                        <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
+                                        <td className="p-4 text-slate-500">{s.reason}</td>
+                                        <td className="p-4 text-right flex justify-end gap-2">
+                                            <button onClick={() => setEditingSample(s)} className="p-2 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors" title="Edit Record"><Pencil size={16}/></button>
+                                            <button onClick={() => handleDeleteSampling(s)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors" title="Delete & Return Stock"><Trash2 size={16}/></button>
+                                        </td>
+                                    </tr>
+                                    ))
+                                )}
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
                 )}
+
+                {/* OTHER TABS */}
                 {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} />}
                 {activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} />}
                 {activeTab === 'sales' && (
-                    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in"><div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-orange-500 flex flex-col items-center text-center"><h4 className="font-bold truncate dark:text-white w-full">{item.name}</h4><div className="w-12 h-12 my-2 rounded bg-slate-100 dark:bg-slate-700 overflow-hidden">{(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-2 text-slate-300"/>}</div><p className="text-xs text-emerald-500 font-bold">{formatRupiah(item.priceRetail)}</p></div>))}</div></div><div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div><select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div></div>
+                    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
+                        <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative"><div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000"><div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div><div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>{(item.images?.front || item.image) ? (<img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>) : (<div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>)}<div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div></div><div className="mt-4 text-center z-10"><h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4><p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p><div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{item.stock} Left</div></div></div>))}</div></div></div>
+                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div><select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
+                    </div>
                 )}
-                {activeTab === 'transactions' && <HistoryReportView transactions={transactions} onDelete={handleDeleteHistory} />}
+                {/* UPDATED: Pass handleDeleteHistory for Folder Delete, and handleDeleteSingleTransaction for Single Rows */}
+                {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
                 {activeTab === 'audit' && (
                     <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr></thead><tbody>{auditLogs.map(log => (<tr key={log.id} className="border-b dark:border-slate-700"><td className="p-4 font-bold text-orange-500">{log.action}</td><td className="p-4 dark:text-slate-300">{log.details}</td><td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td></tr>))}</tbody></table></div></div>
                 )}
+
+                {/* SETTINGS TAB - FIXED & CRASH PROOF */}
                 {activeTab === 'settings' && renderSettings()}
               </>
           )}
         </div>
       </main>
-      <CapybaraMascot message={showCapyMsg ? capyMsg : null} onClick={() => triggerCapy()} customImage={appSettings?.mascotImage} />
+
+      <CapybaraMascot message={showCapyMsg ? capyMsg : null} onClick={() => cycleMascotMessage()} customImage={appSettings?.mascotImage} />
     </div>
   );
 }
