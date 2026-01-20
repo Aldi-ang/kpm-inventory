@@ -2086,7 +2086,7 @@ export default function KPMInventoryApp() {
                                     <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                         <td className="p-4 dark:text-slate-300">{s.date}</td>
                                         <td className="p-4 font-bold dark:text-white">{s.productName}</td>
-                                        <td className="p-4 text-red-500 font-bold">{isAdmin ? `-${s.qty}` : "-**"}</td>
+                                        <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
                                         <td className="p-4 text-slate-500">{s.reason}</td>
                                         <td className="p-4 text-right flex justify-end gap-2">
                                             <button onClick={() => setEditingSample(s)} className="p-2 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors" title="Edit Record"><Pencil size={16}/></button>
