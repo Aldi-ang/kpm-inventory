@@ -797,7 +797,79 @@ export default function KPMInventoryApp() {
   const updateCartItem = (productId, field, value) => { setCart(prev => prev.map(item => { if (item.productId === productId) { const newItem = { ...item, [field]: value }; const { unit, priceTier: tier, product: prod } = newItem; let base = 0; if (tier === 'Ecer') base = prod.priceEcer || 0; if (tier === 'Retail') base = prod.priceRetail || 0; if (tier === 'Grosir') base = prod.priceGrosir || 0; let mult = 1; if (unit === 'Slop') mult = prod.packsPerSlop || 10; if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); newItem.calculatedPrice = base * mult; return newItem; } return item; })); };
   const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
 
-  const processTransaction = async (e) => { e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const customerName = formData.get('customerName').trim(); const total = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); const paymentType = formData.get('paymentType'); if(!customerName) { alert("Customer Name is required!"); return; } try { await runTransaction(db, async (firestoreTrans) => { for (const item of cart) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await firestoreTrans.get(prodRef); if(!prodDoc.exists()) throw `Product ${item.name} not found`; const prodData = prodDoc.data(); let mult = 1; if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); const qtyToDeduct = item.qty * mult; if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; firestoreTrans.update(prodRef, { stock: prodData.stock - qtyToDeduct }); } const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); firestoreTrans.set(transRef, { date: getCurrentDate(), customerName, paymentType: paymentType, items: cart, total, type: 'SALE', timestamp: serverTimestamp() }); }); await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`); setCart([]); triggerCapy("Transaction complete & Saved!"); } catch(err) { alert(err); } };
+  const processTransaction = async (e) => { 
+    e.preventDefault(); 
+    if (!user) return; 
+    
+    const formData = new FormData(e.target); 
+    const customerName = formData.get('customerName').trim(); 
+    const total = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
+    const paymentType = formData.get('paymentType'); 
+    
+    if(!customerName) { alert("Customer Name is required!"); return; } 
+
+    try { 
+        await runTransaction(db, async (firestoreTrans) => { 
+            // --- PHASE 1: READ EVERYTHING FIRST ---
+            // We must gather all data before making ANY changes to satisfy Firestore rules.
+            const updatesToPerform = []; 
+
+            for (const item of cart) { 
+                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); 
+                const prodDoc = await firestoreTrans.get(prodRef); // READ
+                
+                if(!prodDoc.exists()) throw `Product ${item.name} not found`; 
+                
+                const prodData = prodDoc.data(); 
+                
+                // Calculate Unit Multipliers
+                let mult = 1; 
+                if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; 
+                if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
+                if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
+                
+                const qtyToDeduct = item.qty * mult; 
+                
+                if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
+                
+                // Don't update yet! Just save the instruction for Phase 2.
+                updatesToPerform.push({ 
+                    ref: prodRef, 
+                    newStock: prodData.stock - qtyToDeduct 
+                });
+            } 
+
+            // --- PHASE 2: WRITE EVERYTHING ---
+            // Now that all reads are finished, we can safely write.
+            
+            // 1. Apply Stock Deductions
+            for (const update of updatesToPerform) {
+                firestoreTrans.update(update.ref, { stock: update.newStock }); // WRITE
+            }
+            
+            // 2. Create the Transaction Record
+            const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); 
+            firestoreTrans.set(transRef, { // WRITE
+                date: getCurrentDate(), 
+                customerName, 
+                paymentType: paymentType, 
+                items: cart, 
+                total, 
+                type: 'SALE', 
+                timestamp: serverTimestamp() 
+            }); 
+        }); 
+
+        // Success!
+        await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`); 
+        setCart([]); 
+        triggerCapy("Transaction complete & Saved!"); 
+
+    } catch(err) { 
+        console.error("Transaction Error:", err);
+        alert("Transaction Failed: " + err); 
+    } 
+  };
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
 
   const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`), { date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() }); await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`); triggerCapy("Payment recorded!"); } catch (err) { console.error(err); } };
