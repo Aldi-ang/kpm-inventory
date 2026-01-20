@@ -11,18 +11,20 @@ import {
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx'; 
 
 // --- FIREBASE IMPORTS ---
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp } from "firebase/app";        // <-- WAS MISSING
+import { getAnalytics } from "firebase/analytics";   // <-- WAS MISSING
 import { 
-  getAuth, 
-  onAuthStateChanged,
+ getAuth, 
+  onAuthStateChanged, 
+  signOut, 
+  signInWithPopup,      
   GoogleAuthProvider,
-  signInWithPopup,
-  signOut
-} from "firebase/auth";
+  reauthenticateWithPopup    
+} from 'firebase/auth';
+
 import { 
   getFirestore, 
   collection, 
@@ -324,11 +326,12 @@ const ReturnModal = ({ transaction, onClose, onConfirm }) => {
   );
 };
 
-const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment }) => {
+const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin }) => {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [settleMode, setSettleMode] = useState(false);
     const [returnMode, setReturnMode] = useState(false);
     const [itemQtys, setItemQtys] = useState({});
+
     const customerData = useMemo(() => {
         const customers = {};
         const sortedTransactions = [...transactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
@@ -342,8 +345,10 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
         Object.values(customers).forEach(c => { c.balance = Math.max(0, c.balance); Object.keys(c.items).forEach(k => { c.items[k].qty = Math.max(0, c.items[k].qty); }); });
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
     }, [transactions, inventory]);
+
     const activeCustomer = selectedCustomer ? customerData.find(c => c.name === selectedCustomer.name) || selectedCustomer : null;
     const handleQtyInput = (key, val, max) => { let q = parseInt(val) || 0; if(q < 0) q = 0; setItemQtys(p => ({...p, [key]: q})); };
+    
     const submitAction = () => {
         const itemsToProcess = []; let totalValue = 0;
         Object.entries(itemQtys).forEach(([key, qty]) => { if(qty > 0) { const item = activeCustomer.items[key]; itemsToProcess.push({ productId: item.productId, name: item.name, qty, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' }); totalValue += (item.calculatedPrice * qty); } });
@@ -351,28 +356,62 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
         if (settleMode) onPayment(activeCustomer.name, itemsToProcess, totalValue); else if (returnMode) onReturn(activeCustomer.name, itemsToProcess, totalValue);
         setSettleMode(false); setReturnMode(false); setItemQtys({});
     };
+    
     const formatStockDisplay = (qty, product) => { if (!product) return `${qty} Bks`; const packsPerSlop = product.packsPerSlop || 10; const slops = Math.floor(qty / packsPerSlop); const bks = qty % packsPerSlop; return slops > 0 ? `${qty} Bks (${slops} Slop ${bks > 0 ? `+ ${bks} Bks` : ''})` : `${qty} Bks`; };
+
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)] animate-fade-in">
+            {/* LEFT LIST */}
             <div className={`lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-700 flex flex-col ${selectedCustomer ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-4 border-b dark:border-slate-700"><h2 className="font-bold text-lg dark:text-white flex items-center gap-2"><Truck size={20}/> Active Consignments</h2></div>
-                <div className="flex-1 overflow-y-auto">{customerData.length === 0 ? <div className="p-8 text-center text-slate-400 text-sm">No active consignments found.</div> : customerData.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}><div className="flex justify-between items-start"><h3 className="font-bold dark:text-white">{c.name}</h3><button onClick={(e) => { e.stopPropagation(); onDeleteConsignment(c.name); }} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={14}/></button></div><div className="mt-2 flex justify-between items-center"><span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded dark:text-slate-300">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span><span className="font-mono font-bold text-emerald-600">{formatRupiah(c.balance)}</span></div></div>))}</div>
+                <div className="flex-1 overflow-y-auto">{customerData.length === 0 ? <div className="p-8 text-center text-slate-400 text-sm">No active consignments found.</div> : customerData.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}><div className="flex justify-between items-start"><h3 className="font-bold dark:text-white">{c.name}</h3>
+                
+                {/* LOCKED: Delete Button hidden for non-admins */}
+                {isAdmin && (
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteConsignment(c.name); }} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={14}/></button>
+                )}
+                
+                </div><div className="mt-2 flex justify-between items-center"><span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded dark:text-slate-300">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span><span className="font-mono font-bold text-emerald-600">{formatRupiah(c.balance)}</span></div></div>))}</div>
             </div>
+
+            {/* RIGHT DETAILS */}
             <div className={`lg:w-2/3 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 ${!selectedCustomer ? 'hidden lg:flex justify-center items-center' : 'flex'}`}>
-                {!selectedCustomer ? (<div className="text-center text-slate-400"><Store size={48} className="mx-auto mb-4 opacity-20"/><p>Select a customer to view details</p></div>) : (<><div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl"><div><div className="flex items-center gap-2 lg:hidden mb-2 text-slate-400" onClick={() => setSelectedCustomer(null)}><ArrowRight className="rotate-180" size={16}/> Back</div><h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2></div><div className="text-right"><p className="text-xs text-slate-500 uppercase tracking-wider">Outstanding Balance</p><p className="text-2xl font-bold text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div></div><div className="flex-1 overflow-y-auto p-6"><h3 className="font-bold mb-4 dark:text-white flex items-center gap-2"><Package size={18}/> Goods at Customer</h3><div className="space-y-3">{Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => { const product = inventory.find(p => p.id === item.productId); return (<div key={key} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border dark:border-slate-700"><div><p className="font-bold dark:text-white">{item.name}</p><div className="flex items-center gap-2"><span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">{item.priceTier || 'Standard'}</span><p className="text-xs text-slate-500">{formatRupiah(item.calculatedPrice)} / Bks</p></div></div><div className="flex items-center gap-4"><div className="text-right"><p className="text-lg font-bold dark:text-white">{formatStockDisplay(item.qty, product)}</p></div>{(settleMode || returnMode) && (<input type="number" className={`w-24 p-2 rounded border text-center ${returnMode ? 'border-red-400 bg-red-50 text-red-600' : 'border-emerald-400 bg-emerald-50 text-emerald-600'}`} placeholder="Qty (Bks)" value={itemQtys[key] || ''} onChange={(e) => handleQtyInput(key, e.target.value, item.qty)}/>)}</div></div>); })}</div></div><div className="p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl">{(!settleMode && !returnMode) ? (<div className="grid grid-cols-3 gap-3"><button onClick={() => onAddGoods(activeCustomer?.name)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-orange-50 dark:hover:bg-slate-700 hover:border-orange-500 transition-all group"><Plus size={24} className="text-orange-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Add Goods</span></button><button onClick={() => setSettleMode(true)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-500 transition-all group"><Wallet size={24} className="text-emerald-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Record Payment</span></button><button onClick={() => setReturnMode(true)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-red-50 dark:hover:bg-slate-700 hover:border-red-500 transition-all group"><RotateCcw size={24} className="text-red-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Process Return</span></button></div>) : (<div><div className="flex gap-3"><button onClick={() => { setSettleMode(false); setReturnMode(false); setItemQtys({}); }} className="flex-1 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300">Cancel</button><button onClick={submitAction} className={`flex-1 py-3 rounded-xl font-bold text-white ${settleMode ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}>Confirm {settleMode ? 'Payment' : 'Return'}</button></div></div>)}</div></>)}
+                {!selectedCustomer ? (<div className="text-center text-slate-400"><Store size={48} className="mx-auto mb-4 opacity-20"/><p>Select a customer to view details</p></div>) : (<><div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl"><div><div className="flex items-center gap-2 lg:hidden mb-2 text-slate-400" onClick={() => setSelectedCustomer(null)}><ArrowRight className="rotate-180" size={16}/> Back</div><h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2></div><div className="text-right"><p className="text-xs text-slate-500 uppercase tracking-wider">Outstanding Balance</p><p className="text-2xl font-bold text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div></div><div className="flex-1 overflow-y-auto p-6"><h3 className="font-bold mb-4 dark:text-white flex items-center gap-2"><Package size={18}/> Goods at Customer</h3><div className="space-y-3">{Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => { const product = inventory.find(p => p.id === item.productId); return (<div key={key} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border dark:border-slate-700"><div><p className="font-bold dark:text-white">{item.name}</p><div className="flex items-center gap-2"><span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">{item.priceTier || 'Standard'}</span><p className="text-xs text-slate-500">{formatRupiah(item.calculatedPrice)} / Bks</p></div></div><div className="flex items-center gap-4"><div className="text-right"><p className="text-lg font-bold dark:text-white">{formatStockDisplay(item.qty, product)}</p></div>{(settleMode || returnMode) && (<input type="number" className={`w-24 p-2 rounded border text-center ${returnMode ? 'border-red-400 bg-red-50 text-red-600' : 'border-emerald-400 bg-emerald-50 text-emerald-600'}`} placeholder="Qty (Bks)" value={itemQtys[key] || ''} onChange={(e) => handleQtyInput(key, e.target.value, item.qty)}/>)}</div></div>); })}</div></div>
+                
+                {/* LOCKED: Footer Actions */}
+                <div className="p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
+                    {(!settleMode && !returnMode) ? (
+                        isAdmin ? (
+                            <div className="grid grid-cols-3 gap-3">
+                                <button onClick={() => onAddGoods(activeCustomer?.name)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-orange-50 dark:hover:bg-slate-700 hover:border-orange-500 transition-all group">
+                                    <Plus size={24} className="text-orange-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Add Goods</span>
+                                </button>
+                                <button onClick={() => setSettleMode(true)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-500 transition-all group">
+                                    <Wallet size={24} className="text-emerald-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Record Payment</span>
+                                </button>
+                                <button onClick={() => setReturnMode(true)} className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:bg-red-50 dark:hover:bg-slate-700 hover:border-red-500 transition-all group">
+                                    <RotateCcw size={24} className="text-red-500 mb-1"/><span className="text-xs font-bold text-slate-600 dark:text-slate-300">Process Return</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center p-2 text-slate-400 text-sm flex flex-col items-center">
+                                <Lock size={20} className="mb-1 opacity-50"/>
+                                <span className="font-bold">Consignment Actions Locked</span>
+                                <span className="text-xs opacity-70">Admin access required to Add, Pay, or Return items.</span>
+                            </div>
+                        )
+                    ) : (
+                        <div>
+                            <div className="flex gap-3">
+                                <button onClick={() => { setSettleMode(false); setReturnMode(false); setItemQtys({}); }} className="flex-1 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300">Cancel</button>
+                                <button onClick={submitAction} className={`flex-1 py-3 rounded-xl font-bold text-white ${settleMode ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}>Confirm {settleMode ? 'Payment' : 'Return'}</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                </>)}
             </div>
         </div>
-    );
-};
-
-const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
-    const [editingId, setEditingId] = useState(null);
-    const handleSubmit = async (e) => { e.preventDefault(); if (!formData.name.trim()) return; try { if (editingId) { await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() }); await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`); triggerCapy("Customer updated successfully!"); setEditingId(null); } else { await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), { ...formData, name: formData.name.trim(), createdAt: serverTimestamp() }); await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`); triggerCapy("Customer added to directory!"); } setFormData({ name: '', phone: '', address: '' }); } catch (err) { console.error(err); } };
-    const handleEdit = (customer) => { setFormData({ name: customer.name, phone: customer.phone, address: customer.address }); setEditingId(customer.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-    const handleDelete = async (id, name) => { if (window.confirm("Delete this customer profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted customer: ${name}`); } };
-    return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2><div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700"><form onSubmit={handleSubmit} className="flex flex-col gap-4"><div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', address:''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div><div className="flex flex-col md:flex-row gap-4 items-end"><div className="flex-1 w-full"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/></div><div className="flex-1 w-full"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." /></div><div className="flex-[2] w-full"><label className="text-xs font-bold text-slate-500 uppercase">Address</label><input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1" /></div><button className={`text-white px-6 py-2 rounded-lg font-bold h-10 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update' : 'Add'}</button></div></form></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{customers.map(c => (<div key={c.id} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex justify-between items-start ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}><div><h3 className="font-bold text-lg dark:text-white">{c.name}</h3>{c.phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone size={12}/> {c.phone}</p>}{c.address && <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {c.address}</p>}</div><div className="flex gap-2"><button onClick={() => handleEdit(c)} className="text-slate-400 hover:text-blue-500"><Edit size={16}/></button><button onClick={() => handleDelete(c.id, c.name)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button></div></div>))}</div></div>
     );
 };
 
@@ -668,12 +707,231 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
   const groupedByMonth = selectedCustomer.history.reduce((groups, t) => { const date = new Date(t.date); const key = date.toLocaleString('default', { month: 'long', year: 'numeric' }); if (!groups[key]) groups[key] = []; groups[key].push(t); return groups; }, {});
   return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody></table></div></div>))}</div></div></div>);
 };
+const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
+    // 1. ADD REGION AND CITY TO STATE
+    const [formData, setFormData] = useState({ name: '', phone: '', region: '', city: '', address: '' });
+    const [editingId, setEditingId] = useState(null);
 
+    const handleSubmit = async (e) => { 
+        e.preventDefault(); 
+        if (!formData.name.trim()) return; 
+        try { 
+            if (editingId) { 
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() }); 
+                await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`); 
+                triggerCapy("Customer updated successfully!"); 
+                setEditingId(null); 
+            } else { 
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() }); 
+                await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`); 
+                triggerCapy("Customer added to directory!"); 
+            } 
+            // Reset all fields including Region/City
+            setFormData({ name: '', phone: '', region: '', city: '', address: '' }); 
+        } catch (err) { console.error(err); } 
+    };
+
+    const handleEdit = (customer) => { 
+        // Load existing data into form
+        setFormData({ 
+            name: customer.name, 
+            phone: customer.phone || '', 
+            region: customer.region || '', 
+            city: customer.city || '', 
+            address: customer.address || '' 
+        }); 
+        setEditingId(customer.id); 
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    };
+
+    const handleDelete = async (id, name) => { 
+        if (window.confirm("Delete this customer profile?")) { 
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); 
+            logAudit("CUSTOMER_DELETE", `Deleted customer: ${name}`); 
+        } 
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
+            
+            {/* ADD CUSTOMER FORM */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>
+                        {editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}
+                    </div>
+                    
+                    {/* ROW 1: Name & Phone */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Store Name</label>
+                            <input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/>
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Phone</label>
+                            <input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." />
+                        </div>
+                    </div>
+
+                    {/* ROW 2: Region & City (NEW) */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Region (Wilayah)</label>
+                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Jawa Tengah" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase">City (Kota)</label>
+                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Solo" />
+                        </div>
+                    </div>
+
+                    {/* ROW 3: Address & Button */}
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-[2] w-full">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
+                            <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1" />
+                        </div>
+                        <button className={`text-white px-6 py-2 rounded-lg font-bold h-10 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update' : 'Add'}</button>
+                    </div>
+                </form>
+            </div>
+
+            {/* CUSTOMER LIST */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customers.map(c => (
+                    <div key={c.id} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex justify-between items-start ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                        <div>
+                            <h3 className="font-bold text-lg dark:text-white">{c.name}</h3>
+                            
+                            {/* Display Region & City */}
+                            {(c.city || c.region) && (
+                                <p className="text-xs font-bold text-orange-500 uppercase mb-1">
+                                    {c.city ? c.city : ''} {c.region ? `(${c.region})` : ''}
+                                </p>
+                            )}
+
+                            {c.phone && (
+                                <p className="text-sm text-slate-500 flex items-center gap-1">
+                                    <Phone size={12}/> 
+                                    {isAdmin ? c.phone : "••••••••••"}
+                                </p>
+                            )}
+                            {c.address && <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {c.address}</p>}
+                        </div>
+                        
+                        {/* PRIVACY: Hide Edit/Delete Buttons if not Admin */}
+                        {isAdmin && (
+                            <div className="flex gap-2">
+                                <button onClick={() => handleEdit(c)} className="text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
+                                <button onClick={() => handleDelete(c.id, c.name)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPin, setAdminPin] = useState(null);       
+  const [hasAdminPin, setHasAdminPin] = useState(false); 
+  const [inputPin, setInputPin] = useState("");         
+  const [isSetupMode, setIsSetupMode] = useState(false); 
+  const [showForgotPin, setShowForgotPin] = useState(false);
+
+// --- NEW: ADMIN PIN & RECOVERY LOGIC ---
+
+  // 1. Recovery & Pin States
+  const [recoveryAnswer, setRecoveryAnswer] = useState(""); 
+  const [inputRecovery, setInputRecovery] = useState("");   
+  const [showRecoveryInput, setShowRecoveryInput] = useState(false);
+
+  // 2. Fetch PIN & Secret Word on Load
+  useEffect(() => {
+    const fetchAdminSettings = async () => {
+        if(!user) return;
+        const ref = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin');
+        const snap = await getDoc(ref);
+        if(snap.exists() && snap.data().pin) {
+            setAdminPin(snap.data().pin);
+            setRecoveryAnswer(snap.data().recoveryWord || ""); 
+            setHasAdminPin(true);
+        } else {
+            setHasAdminPin(false);
+        }
+    };
+    fetchAdminSettings();
+  }, [user]);
+
+  // 3. Create/Set New PIN
+  const handleSetNewPin = async () => {
+      if(inputPin.length < 4) { alert("PIN must be at least 4 digits."); return; }
+      if(!inputRecovery.trim()) { alert("Please set a Secret Recovery Word."); return; }
+      if(!user) return;
+      
+      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin'), { 
+          pin: inputPin,
+          recoveryWord: inputRecovery.trim().toLowerCase(),
+          updatedAt: new Date().toISOString()
+      });
+      
+      setAdminPin(inputPin);
+      setRecoveryAnswer(inputRecovery.trim().toLowerCase());
+      setHasAdminPin(true);
+      setIsAdmin(true); 
+      setIsSetupMode(false);
+      setShowAdminLogin(false);
+      setInputPin("");
+      setInputRecovery("");
+      triggerCapy("Security settings saved.");
+  };
+
+  // 4. Login with PIN
+  const handlePinLogin = () => {
+      if(inputPin === adminPin) {
+          setIsAdmin(true);
+          setShowAdminLogin(false);
+          setInputPin("");
+          triggerCapy("Welcome back.");
+      } else {
+          alert("Wrong PIN!");
+          setInputPin("");
+      }
+  };
+
+  // 5. Start Recovery
+  const handleForgotPin = () => {
+      setShowRecoveryInput(true); 
+      setInputPin("");
+  };
+
+  // 6. Verify Secret Word
+  const handleVerifyRecovery = () => {
+      if(inputRecovery.trim().toLowerCase() === recoveryAnswer) {
+          alert("Secret Word Correct! Please create a NEW PIN.");
+          setIsSetupMode(true);       
+          setShowRecoveryInput(false); 
+          setInputRecovery("");
+      } else {
+          alert("Wrong Secret Word.");
+      }
+  };
+
+  // 7. Change PIN
+  const handleChangePin = () => {
+      if(!window.confirm("Change Admin PIN?")) return;
+      setIsSetupMode(true); 
+      setShowAdminLogin(true);
+      setInputPin("");
+      setInputRecovery("");
+  };
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(true);
   
@@ -762,6 +1020,8 @@ export default function KPMInventoryApp() {
   useEffect(() => {
     if (!user || !user.uid) return;
     const basePath = `artifacts/${appId}/users/${user.uid}`;
+    
+    // 1. Settings
     const unsubSettings = onSnapshot(doc(db, basePath, 'settings', 'general'), (snap) => {
         if (snap.exists()) {
             const data = snap.data();
@@ -771,13 +1031,25 @@ export default function KPMInventoryApp() {
             setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
         }
     });
+
+    // 2. Inventory
     const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // 3. Transactions
     const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // 4. Samplings
     const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // 5. Audit Logs
     const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+    
+    // 6. Customers (THIS IS LIKELY THE MISSING PART)
     const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
     const savedTheme = localStorage.getItem('kpm_theme');
     if (savedTheme === 'light') setDarkMode(false);
+    
     return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); };
   }, [user]);
 
@@ -1197,14 +1469,20 @@ export default function KPMInventoryApp() {
                         </p>
                     </div>
                     {isAdmin ? (
-                         <button onClick={handleAdminLogout} className="px-4 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
-                            Lock Admin
-                         </button>
+                        <div className="flex gap-2">
+                             <button onClick={handleChangePin} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors">
+                                Change PIN
+                             </button>
+                             <button onClick={handleAdminLogout} className="px-4 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
+                                Lock Admin
+                             </button>
+                        </div>
                     ) : (
                          <button onClick={() => setShowAdminLogin(true)} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors flex items-center gap-2">
                             <Key size={12}/> Unlock
                          </button>
                     )}
+                         
                 </div>
             </div>
             
@@ -1250,7 +1528,97 @@ export default function KPMInventoryApp() {
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
       {returningTransaction && <ReturnModal transaction={returningTransaction} onClose={() => setReturningTransaction(null)} onConfirm={executeReturn} />}
-      {showAdminLogin && <AdminAuthModal onClose={() => setShowAdminLogin(false)} onSuccess={handleAdminAuthSuccess} />}
+
+
+      {/* --- NEW: SECURE ADMIN LOGIN MODAL --- */}
+      {showAdminLogin && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700">
+            
+            <div className="flex justify-center mb-6">
+                <div className="bg-orange-100 dark:bg-orange-900/30 p-4 rounded-full text-orange-600 dark:text-orange-400">
+                    {isSetupMode || !hasAdminPin ? <ShieldCheck size={48}/> : showRecoveryInput ? <ShieldAlert size={48}/> : <Lock size={48} />}
+                </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">
+                {isSetupMode || !hasAdminPin ? "Setup Security" : showRecoveryInput ? "Recover Account" : "Admin Access"}
+            </h2>
+            <p className="text-center text-slate-500 text-sm mb-6">
+                {isSetupMode || !hasAdminPin 
+                    ? "Set your PIN and Secret Word." 
+                    : showRecoveryInput 
+                        ? "Enter Secret Word to reset PIN."
+                        : "Enter PIN to unlock."}
+            </p>
+
+            {/* PIN INPUT */}
+            {!showRecoveryInput && (
+                <input 
+                    type="password" 
+                    inputMode="numeric"
+                    placeholder={isSetupMode || !hasAdminPin ? "Create PIN" : "Enter PIN"} 
+                    className="w-full text-center text-2xl tracking-widest p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 dark:text-white font-mono mb-4 focus:ring-2 focus:ring-orange-500 outline-none"
+                    value={inputPin}
+                    onChange={(e) => setInputPin(e.target.value)}
+                    autoFocus={!showRecoveryInput}
+                />
+            )}
+
+            {/* SECRET WORD INPUT (CLEAN - NO EXAMPLES) */}
+            {(isSetupMode || !hasAdminPin || showRecoveryInput) && (
+                <div className="mb-6 animate-fade-in">
+                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">
+                        {showRecoveryInput ? "Secret Word" : "Set Secret Word"}
+                    </label>
+                    <input 
+                        type="text" 
+                        placeholder={showRecoveryInput ? "Enter Secret Word" : "Create Secret Word"} 
+                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 dark:text-white font-medium focus:ring-2 focus:ring-orange-500 outline-none"
+                        value={inputRecovery}
+                        onChange={(e) => setInputRecovery(e.target.value)}
+                    />
+                </div>
+            )}
+
+            {/* MAIN ACTION BUTTON */}
+            <button 
+                onClick={
+                    showRecoveryInput ? handleVerifyRecovery : 
+                    (isSetupMode || !hasAdminPin) ? handleSetNewPin : 
+                    handlePinLogin
+                }
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95 mb-4"
+            >
+                {showRecoveryInput ? "Verify & Reset" : (isSetupMode || !hasAdminPin) ? "Save Settings" : "Unlock"}
+            </button>
+
+            {/* FORGOT PIN LINK */}
+            {!isSetupMode && hasAdminPin && !showRecoveryInput && (
+                <button 
+                    onClick={handleForgotPin}
+                    className="w-full text-slate-400 hover:text-orange-500 text-xs font-bold uppercase tracking-wider mb-4"
+                >
+                    Forgot PIN?
+                </button>
+            )}
+
+            {/* CANCEL BUTTON */}
+            <button 
+                onClick={() => { 
+                    setShowAdminLogin(false); 
+                    setShowRecoveryInput(false);
+                    setIsSetupMode(false);
+                    setInputPin(""); 
+                    setInputRecovery("");
+                }}
+                className="w-full py-3 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+            >
+                Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SIDEBAR */}
       <nav className={`fixed left-0 top-0 h-screen bg-slate-900 text-slate-300 border-r border-slate-800 z-40 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'} shadow-xl`}>
@@ -1278,7 +1646,10 @@ export default function KPMInventoryApp() {
                 { id: 'transactions', icon: FileText, label: 'Reports' }, 
                 { id: 'audit', icon: History, label: 'Audit Logs' },
                 { id: 'settings', icon: Settings, label: 'Settings' }
-            ].map(item => (
+          ]
+          // NEW: HIDE REPORTS/AUDIT/STOCK OPNAME IF NOT ADMIN
+          .filter(item => isAdmin ? true : !['transactions', 'audit', 'stock_opname'].includes(item.id))
+          .map(item => (
               <button 
                 key={item.id} 
                 onClick={() => setActiveTab(item.id)} 
@@ -1350,39 +1721,62 @@ export default function KPMInventoryApp() {
                 {activeTab === 'dashboard' && (
                     <div className="space-y-6 animate-fade-in">
 
-                   
-                    {/* DASHBOARD CARDS ROW */}
-                    {/* DASHBOARD CARDS ROW */}
+                    {/* DASHBOARD CARDS ROW (SECURE MODE) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 1. Inventory Value */}
-                        <div className="bg-gradient-to-br from-slate-600 to-slate-800 p-6 rounded-2xl text-white shadow-lg">
+                        <div className="bg-gradient-to-br from-slate-600 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                             <p className="text-slate-300 text-sm font-medium uppercase tracking-wider">Inventory Assets</p>
-                            <h3 className="text-2xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                                <h3 className="text-2xl font-bold">
+                                    {isAdmin ? formatRupiah(totalStockValue) : "Rp •••••••"}
+                                </h3>
+                                {!isAdmin && <Lock size={16} className="opacity-50" />}
+                            </div>
                         </div>
 
                         {/* 2. Revenue */}
-                        <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+                        <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                             <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Total Revenue</p>
-                            <h3 className="text-2xl font-bold mt-1">
-                                {formatRupiah(
-                                transactions
-                                    .filter(t => t.type === 'SALE' || t.type === 'RETURN')
-                                    .reduce((acc, t) => acc + (t.total || 0), 0)
-                                )}
-                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                                <h3 className="text-2xl font-bold">
+                                    {isAdmin ? formatRupiah(
+                                    transactions
+                                        .filter(t => t.type === 'SALE' || t.type === 'RETURN')
+                                        .reduce((acc, t) => acc + (t.total || 0), 0)
+                                    ) : "Rp •••••••"}
+                                </h3>
+                                {!isAdmin && <Lock size={16} className="opacity-50" />}
+                            </div>
                         </div>
 
-                        {/* 3. NEW: NET PROFIT (Based on Distributor Price) */}
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
+                        {/* 3. NET PROFIT */}
+                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                             <p className="text-emerald-100 text-sm font-medium uppercase tracking-wider">Net Profit (Cuan)</p>
-                            <h3 className="text-2xl font-bold mt-1">
-                                {formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0))}
-                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                                <h3 className="text-2xl font-bold">
+                                    {isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "Rp •••••••"}
+                                </h3>
+                                {!isAdmin && <Lock size={16} className="opacity-50" />}
+                            </div>
                             <p className="text-[10px] opacity-70 mt-1">Revenue - Distributor Price</p>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
+
+                    {/* DAILY PERFORMANCE CHART (SECURE MODE) */}
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm relative overflow-hidden">
                         <h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3>
+                        
+                        {/* PRIVACY SHIELD */}
+                        {!isAdmin && (
+                            <div className="absolute inset-0 z-10 bg-slate-100/50 dark:bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center text-slate-500">
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-full shadow-lg mb-2">
+                                    <Lock size={32} className="text-orange-500"/>
+                                </div>
+                                <p className="font-bold text-sm uppercase tracking-widest">Analytics Locked</p>
+                                <button onClick={() => setShowAdminLogin(true)} className="mt-4 text-xs font-bold text-blue-500 hover:underline">Tap to Unlock</button>
+                            </div>
+                        )}
+
                         <div className="h-80">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData.data}>
@@ -1412,7 +1806,8 @@ export default function KPMInventoryApp() {
                     <div className="space-y-6 animate-fade-in">
                     <div className="flex gap-4">
                         <input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        <button onClick={handleExportCSV} className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white px-4 rounded-xl flex items-center gap-2 hover:bg-slate-200"><Download size={20}/> Export</button>
+                        
+                        {/* EXPORT BUTTON DELETED HERE */}
                         
                         {/* ONLY SHOW ADD BUTTON IF ADMIN */}
                         {isAdmin && (
@@ -1429,13 +1824,20 @@ export default function KPMInventoryApp() {
                                 <div>
                                 <h3 className="font-bold leading-tight dark:text-white">{item.name}</h3>
                                 <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span>
-                                <p className="text-emerald-500 font-bold mt-1">{item.stock} Bks</p>
+                                <p className="text-emerald-500 font-bold mt-1">{isAdmin ? item.stock : "****"} Bks</p>
                                 </div>
                             </div>
+                            
+                            {/* LOCKED: BUTTONS HIDDEN FOR NON-ADMIN */}
                             <div className="flex gap-2">
-                                <button onClick={() => setExaminingProduct(item)} className="flex-1 bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white">Examine</button>
-                                <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
-                                <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                                <button onClick={() => setExaminingProduct(item)} className={`bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white ${isAdmin ? 'flex-1' : 'w-full'}`}>Examine</button>
+                                
+                                {isAdmin && (
+                                    <>
+                                        <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
+                                        <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                                    </>
+                                )}
                             </div>
                         </div>
                         ))}
@@ -1539,43 +1941,43 @@ export default function KPMInventoryApp() {
                                     <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
                                     <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
 
-{/* NEW: DISTRIBUTOR PRICE (FACTORY COST) */}
-<div className="mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-    <label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-300">Distributor Price (Factory Modal)</label>
-    <input 
-        name="priceDistributor" 
-        type="number" 
-        placeholder="Rp 0" 
-        defaultValue={editingProduct.priceDistributor} 
-        className="w-full p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono text-blue-600"
-    />
-</div>
+                                    {/* NEW: DISTRIBUTOR PRICE (FACTORY COST) */}
+                                    <div className="mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                                        <label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-300">Distributor Price (Factory Modal)</label>
+                                        <input 
+                                            name="priceDistributor" 
+                                            type="number" 
+                                            placeholder="Rp 0" 
+                                            defaultValue={editingProduct.priceDistributor} 
+                                            className="w-full p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono text-blue-600"
+                                            readOnly={!isAdmin}
+                                        />
+                                    </div>
 
-{/* NEW: MINIMUM STOCK ALERT LEVEL */}
-<div className="mb-2">
-    <label className="text-[10px] uppercase font-bold text-orange-500">Alert Me If Stock Below:</label>
-    <input 
-        name="minStock" 
-        type="number" 
-        placeholder="e.g. 10" 
-        defaultValue={editingProduct.minStock} 
-        className="w-full p-1 border border-orange-200 bg-orange-50 rounded dark:bg-slate-800 dark:border-orange-900 dark:text-white"
-    />
-</div>
+                                    {/* NEW: MINIMUM STOCK ALERT LEVEL */}
+                                    <div className="mb-2">
+                                        <label className="text-[10px] uppercase font-bold text-orange-500">Alert Me If Stock Below:</label>
+                                        <input 
+                                            name="minStock" 
+                                            type="number" 
+                                            placeholder="e.g. 10" 
+                                            defaultValue={editingProduct.minStock} 
+                                            className="w-full p-1 border border-orange-200 bg-orange-50 rounded dark:bg-slate-800 dark:border-orange-900 dark:text-white"
+                                            readOnly={!isAdmin}
+                                        />
+                                    </div>
 
-<p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p>
+                                    <p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p>
 
+                                    {/* NEW: BUY PRICE (MODAL) */}
+                                    <input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
 
+                                    <input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
 
-{/* NEW: BUY PRICE (MODAL) */}
-<input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                                    <input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
 
-<input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
-
-<input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
-
-<input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/>
-</div>
+                                    <input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white" readOnly={!isAdmin}/>
+                                    </div>
                                 </div>
                             </div>
                             {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
@@ -1585,6 +1987,8 @@ export default function KPMInventoryApp() {
                     )}
                     </div>
                 )}
+
+
 
                 {/* STOCK OPNAME */}
                 {activeTab === 'stock_opname' && (
@@ -1662,7 +2066,7 @@ export default function KPMInventoryApp() {
                             <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
                             <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
                                 <option value="">Select Product...</option>
-                                {inventory.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
+                                {inventory.map(i => <option key={i.id} value={i.id}>{i.name} {isAdmin ? `(Stock: ${i.stock})` : ""}</option>)}
                             </select>
                             <input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
                             <input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
@@ -1682,7 +2086,7 @@ export default function KPMInventoryApp() {
                                     <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                         <td className="p-4 dark:text-slate-300">{s.date}</td>
                                         <td className="p-4 font-bold dark:text-white">{s.productName}</td>
-                                        <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
+                                        <td className="p-4 text-red-500 font-bold">{isAdmin ? `-${s.qty}` : "-**"}</td>
                                         <td className="p-4 text-slate-500">{s.reason}</td>
                                         <td className="p-4 text-right flex justify-end gap-2">
                                             <button onClick={() => setEditingSample(s)} className="p-2 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors" title="Edit Record"><Pencil size={16}/></button>
@@ -1698,12 +2102,50 @@ export default function KPMInventoryApp() {
                 )}
 
                 {/* OTHER TABS */}
-                {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} />}
-                {activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} />}
+                {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} isAdmin={isAdmin} />}
+{/* ... Consignment line is usually here ... */}
+
+{/* PASTE THIS MISSING LINE HERE: */}
+{activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} />}
                 {activeTab === 'sales' && (
                     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
-                        <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative"><div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000"><div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div><div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>{(item.images?.front || item.image) ? (<img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>) : (<div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>)}<div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div></div><div className="mt-4 text-center z-10"><h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4><p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p><div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{item.stock} Left</div></div></div>))}</div></div></div>
-                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div>
+                        <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative"><div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000"><div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div><div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>{(item.images?.front || item.image) ? (<img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>) : (<div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>)}<div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div></div><div className="mt-4 text-center z-10"><h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4><p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p><div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{isAdmin ? item.stock : "**"} Left</div></div></div>))}</div></div></div>
+                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+{cart.map(item => (
+  <div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
+      <div className="flex justify-between font-bold text-sm dark:text-white">
+          <span>{item.name}</span> 
+          <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button>
+      </div>
+      <div className="grid grid-cols-3 gap-1 mt-2">
+          {/* UNLOCKED INPUTS (No 'disabled' attribute) */}
+          <input 
+            type="number" 
+            value={item.qty} 
+            onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} 
+            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"
+          />
+          <select 
+            value={item.unit} 
+            onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} 
+            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"
+          >
+            <option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option>
+          </select>
+          <select 
+            value={item.priceTier} 
+            onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} 
+            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"
+          >
+            <option>Ecer</option><option>Retail</option><option>Grosir</option>
+          </select>
+      </div>
+      <div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div>
+  </div>
+))}
+
+<div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div>
 
 <select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm">
     <option value="Cash">Cash</option>
@@ -1714,7 +2156,9 @@ export default function KPMInventoryApp() {
 
 <button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
                     </div>
-                )}
+                </div>
+         
+                 )}
                 {/* UPDATED: Pass handleDeleteHistory for Folder Delete, and handleDeleteSingleTransaction for Single Rows */}
                 {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
                 {activeTab === 'audit' && (
