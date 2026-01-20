@@ -11,6 +11,7 @@ import {
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
+import * as XLSX from 'xlsx';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";
@@ -378,11 +379,11 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy 
 const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [reportView, setReportView] = useState(false);
-  const [rangeType, setRangeType] = useState('daily'); // daily, weekly, monthly, yearly
+  const [rangeType, setRangeType] = useState('daily');
   const [targetDate, setTargetDate] = useState(getCurrentDate());
   const [editingTrans, setEditingTrans] = useState(null);
 
-  // Helper to filter items based on range
+  // Filter Transactions based on Date Range
   const filteredTransactions = useMemo(() => {
       const target = new Date(targetDate);
       return transactions.filter(t => {
@@ -390,7 +391,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
           if (rangeType === 'daily') return t.date === targetDate;
           if (rangeType === 'weekly') {
               const startOfWeek = new Date(target);
-              startOfWeek.setDate(target.getDate() - target.getDay()); // Sunday start
+              startOfWeek.setDate(target.getDate() - target.getDay()); 
               const endOfWeek = new Date(startOfWeek);
               endOfWeek.setDate(startOfWeek.getDate() + 6);
               return tDate >= startOfWeek && tDate <= endOfWeek;
@@ -401,23 +402,41 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
       }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
   }, [transactions, rangeType, targetDate]);
 
-  // Calculations
+  // Calculate Statistics
   const stats = useMemo(() => {
     const totalRev = filteredTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+    const totalProfit = filteredTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0); // New Profit Stat
     const count = filteredTransactions.length;
-    // Item Breakdown with Smart Conversion
     const items = {};
+    
+    // Payment Method Breakdown
+    const payments = {
+        Cash: 0,
+        QRIS: 0,
+        Transfer: 0,
+        Titip: 0
+    };
+
     filteredTransactions.forEach(t => {
+        // Sum up payment types
+        const method = t.paymentType || 'Cash';
+        if (payments[method] !== undefined) {
+            payments[method] += (t.total || t.amountPaid || 0);
+        } else {
+            // Handle edge cases or old data
+            payments['Cash'] += (t.total || t.amountPaid || 0);
+        }
+
+        // Sum up items
         if(t.items) t.items.forEach(i => {
             const product = inventory.find(p => p.id === i.productId);
-            // SAFETY: Use product directly or fallback empty object to prevent crash
             const bksQty = convertToBks(i.qty, i.unit, product || {});
             if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
             items[i.name].qty += bksQty;
             items[i.name].val += (i.calculatedPrice * i.qty);
         });
     });
-    return { totalRev, count, items, transactions: filteredTransactions };
+    return { totalRev, totalProfit, count, items, payments, transactions: filteredTransactions };
   }, [filteredTransactions, inventory]);
 
   const handleEditSubmit = async (e) => {
@@ -436,22 +455,86 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
       } catch(err) { alert(err.message); }
   };
 
-  const generateCSV = () => {
-      const headers = ["Date,Customer,Type,Items,Total\n"];
-      const rows = stats.transactions.map(t => {
-          const itemsStr = t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join('; ') : 'Payment';
-          return `${t.date},"${t.customerName}",${t.type},"${itemsStr}",${t.total || t.amountPaid}`;
-      }).join("\n");
-      const blob = new Blob([headers + rows], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `Report_${rangeType}_${targetDate}.csv`; a.click();
+  // --- EXCEL EXPORT WITH PAYMENT BREAKDOWN ---
+  const generateExcel = () => {
+      const wb = XLSX.utils.book_new();
+
+      // 1. Header Info
+      const reportInfo = [
+          ["KPM INVENTORY - SALES REPORT"],
+          [`Period: ${rangeType.toUpperCase()}`],
+          [`Date Selected: ${targetDate}`],
+          [`Generated On: ${new Date().toLocaleString()}`],
+          [""]
+      ];
+
+      // 2. Summary Statistics
+      const summaryInfo = [
+          ["SUMMARY STATISTICS"],
+          ["Total Revenue", stats.totalRev], 
+          ["Total Profit (Cuan)", stats.totalProfit],
+          ["Total Transactions", stats.count],
+          ["Items Sold (Bks)", Object.values(stats.items).reduce((a,b)=>a+b.qty,0)],
+          [""]
+      ];
+
+      // 3. Payment Breakdown (New Section in Excel)
+      const paymentInfo = [
+          ["PAYMENT RECONCILIATION"],
+          ["Cash (Drawer)", stats.payments.Cash],
+          ["QRIS", stats.payments.QRIS],
+          ["Transfer (Bank)", stats.payments.Transfer],
+          ["Titip (Unpaid)", stats.payments.Titip],
+          [""]
+      ];
+
+      // 4. Main Data Table
+      const tableHeader = [["DATE", "TIME", "CUSTOMER", "TYPE", "PAYMENT", "ITEMS / DETAILS", "TOTAL (Rp)"]];
+      
+      const tableData = stats.transactions.map(t => {
+          const timeStr = t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+          let itemsStr = "";
+          if (t.items && t.items.length > 0) {
+              itemsStr = t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ");
+          } else if (t.paymentType === 'Titip') {
+              itemsStr = "Consignment Request";
+          } else if (t.itemsPaid) {
+              itemsStr = `Payment for ${t.itemsPaid.length} items`;
+          }
+
+          return [
+              t.date,
+              timeStr,
+              t.customerName,
+              t.type,
+              t.paymentType || 'Cash',
+              itemsStr,
+              t.total || t.amountPaid
+          ];
+      });
+
+      const finalData = [...reportInfo, ...summaryInfo, ...paymentInfo, ...tableHeader, ...tableData];
+      const ws = XLSX.utils.aoa_to_sheet(finalData);
+
+      // Set Column Widths
+      ws['!cols'] = [
+          { wch: 12 }, // Date
+          { wch: 10 }, // Time
+          { wch: 25 }, // Customer
+          { wch: 10 }, // Type
+          { wch: 10 }, // Payment Method
+          { wch: 50 }, // Items
+          { wch: 15 }  // Total
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "Sales Data");
+      XLSX.writeFile(wb, `KPM_Report_${rangeType}_${targetDate}.xlsx`);
   };
 
   const handlePrint = () => {
       window.print();
   };
 
-  // Customer Stats Logic (Folder View)
   const customerStats = useMemo(() => { const stats = {}; transactions.forEach(t => { const name = t.customerName || 'Unknown'; if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] }; stats[name].count += 1; if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; if (t.date > stats[name].lastDate) stats[name].lastDate = t.date; stats[name].history.push(t); }); return Object.values(stats).sort((a,b) => b.total - a.total); }, [transactions]);
 
   if (reportView) {
@@ -483,7 +566,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     </div>
                     <div className="flex items-center gap-3">
                         <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
-                        <button onClick={generateCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Export CSV (Excel)"><FileSpreadsheet size={20}/></button>
+                        <button onClick={generateExcel} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Download Excel (.xlsx)"><FileSpreadsheet size={20}/></button>
                         <button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
                     </div>
                 </div>
@@ -491,74 +574,57 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
              {/* PRINTABLE REPORT CONTAINER */}
              <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
-                 {/* PRINT HEADER */}
                  <div className="flex justify-between items-end mb-8 border-b-2 border-orange-500 pb-4">
                      <div>
                          <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">Sales Report</h1>
                          <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</p>
                      </div>
-                     <div className="text-right">
-                         <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p>
-                         <h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2>
-                     </div>
+                     <div className="text-right"><p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
                  </div>
                  
                  {/* SUMMARY CARDS */}
                  <div className="grid grid-cols-3 gap-6 mb-8">
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
-                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p>
-                         <p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p>
-                     </div>
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
-                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p>
-                         <p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p>
-                     </div>
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200">
-                         <p className="text-xs uppercase text-slate-500 font-bold mb-1">Avg Ticket</p>
-                         <p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count > 0 ? formatRupiah(stats.totalRev / stats.count) : '0'}</p>
-                     </div>
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p><p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p><p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
+                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Net Profit (Cuan)</p><p className="text-2xl font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
+                 </div>
+
+                 {/* NEW: PAYMENT METHOD BREAKDOWN (MONEY RECONCILIATION) */}
+                 <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
+                    <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2">
+                        <Wallet size={20} className="text-emerald-500"/> Money Breakdown (Reconciliation)
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
+                            <div key={method} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
+                                <p className="text-xs uppercase font-bold text-slate-400 mb-1">{method}</p>
+                                <p className={`text-lg font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>
+                                    {formatRupiah(stats.payments[method])}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
                  </div>
 
                  {/* PRODUCT BREAKDOWN */}
                  <div className="mb-8">
                      <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="text-orange-500"/> Product Performance</h3>
-                     <table className="w-full text-sm text-left border-collapse">
-                         <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
-                             <tr><th className="py-2">Product Name</th><th className="py-2 text-right">Qty (Bks)</th><th className="py-2 text-right">Revenue</th></tr>
-                         </thead>
-                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
-                             {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
-                                 <tr key={name}>
-                                     <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
-                                     <td className="py-3 text-right text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
-                                     <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
-                                 </tr>
-                             ))}
-                             {Object.keys(stats.items).length === 0 && <tr><td colSpan="3" className="py-6 text-center text-slate-400 italic">No sales data for this period.</td></tr>}
-                         </tbody>
-                     </table>
+                     <table className="w-full text-sm text-left border-collapse"><thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300"><tr><th className="py-2">Product Name</th><th className="py-2 text-right">Qty (Bks)</th><th className="py-2 text-right">Revenue</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">{Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (<tr key={name}><td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td><td className="py-3 text-right text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td><td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td></tr>))}</tbody></table>
                  </div>
-
-                 {/* TRANSACTION LOG */}
+                 
+                 {/* LOG */}
                  <div>
                     <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><History size={20} className="text-orange-500"/> Transaction Log</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left border-collapse">
-                            <thead className="bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 text-slate-500 font-bold">
-                                <tr>
-                                    <th className="p-3 rounded-l-lg">Time</th>
-                                    <th className="p-3">Customer</th>
-                                    <th className="p-3">Type</th>
-                                    <th className="p-3 text-right">Total</th>
-                                    <th className="p-3 rounded-r-lg text-right print:hidden">Action</th>
-                                </tr>
-                            </thead>
+                            <thead className="bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 text-slate-500 font-bold"><tr><th className="p-3 rounded-l-lg">Time</th><th className="p-3">Customer</th><th className="p-3">Type</th><th className="p-3">Method</th><th className="p-3 text-right">Total</th><th className="p-3 rounded-r-lg text-right print:hidden">Action</th></tr></thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {stats.transactions.map(t => (
                                     <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                         <td className="p-3 text-slate-500 font-mono text-xs">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : t.date}</td>
                                         <td className="p-3 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black">{t.customerName}</td>
                                         <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:print:bg-slate-200 dark:print:text-black border dark:border-slate-600">{t.type}</span></td>
+                                        <td className="p-3 text-xs text-slate-500">{t.paymentType || 'Cash'}</td>
                                         <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.total || t.amountPaid)}</td>
                                         <td className="p-3 text-right print:hidden">
                                             {isAdmin && (
@@ -576,23 +642,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  </div>
              </div>
              
-             <style>{`
-                @media print {
-                    @page { size: A4; margin: 20mm; }
-                    body { background: white; color: black; }
-                    .print\\:hidden { display: none !important; }
-                    .print\\:shadow-none { box-shadow: none !important; }
-                    .print\\:border-none { border: none !important; }
-                    .print\\:p-0 { padding: 0 !important; }
-                    .dark\\:print\\:text-black { color: black !important; }
-                    .dark\\:print\\:bg-white { background: white !important; }
-                    .dark\\:print\\:bg-slate-100 { background: #f1f5f9 !important; }
-                    .dark\\:print\\:border-slate-300 { border-color: #cbd5e1 !important; }
-                    /* Hide Sidebar and other layout elements */
-                    nav, .capy-mascot { display: none !important; }
-                    main { margin: 0 !important; padding: 0 !important; }
-                }
-             `}</style>
+             <style>{`@media print { @page { size: A4; margin: 20mm; } body { background: white; color: black; } .print\\:hidden { display: none !important; } .print\\:shadow-none { box-shadow: none !important; } .print\\:border-none { border: none !important; } .print\\:p-0 { padding: 0 !important; } .dark\\:print\\:text-black { color: black !important; } .dark\\:print\\:bg-white { background: white !important; } .dark\\:print\\:bg-slate-100 { background: #f1f5f9 !important; } .dark\\:print\\:border-slate-300 { border-color: #cbd5e1 !important; } nav, .capy-mascot { display: none !important; } main { margin: 0 !important; padding: 0 !important; } }`}</style>
         </div>
       );
   }
@@ -788,7 +838,11 @@ export default function KPMInventoryApp() {
   const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
   const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
-  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries()); const numFields = ['stock', 'priceRetail', 'priceGrosir', 'priceEcer']; numFields.forEach(field => data[field] = Number(data[field]) || 0); data.images = { ...(editingProduct?.images || {}), ...tempImages }; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
+
+  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries());
+
+ // Added 'priceDistributor' to the list so it gets saved as a number
+        const numFields = ['stock', 'minStock', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; numFields.forEach(field => data[field] = Number(data[field]) || 0); data.images = { ...(editingProduct?.images || {}), ...tempImages }; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
   const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
   const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed."); } catch (err) { triggerCapy("Delete failed"); } } };
   const handleOpnameChange = (id, val) => { setOpnameData(prev => ({ ...prev, [id]: val })); };
@@ -803,70 +857,85 @@ export default function KPMInventoryApp() {
     
     const formData = new FormData(e.target); 
     const customerName = formData.get('customerName').trim(); 
-    const total = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
     const paymentType = formData.get('paymentType'); 
+    
+    // Calculate Total Revenue locally first
+    const totalRevenue = cart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
     
     if(!customerName) { alert("Customer Name is required!"); return; } 
 
     try { 
         await runTransaction(db, async (firestoreTrans) => { 
-            // --- PHASE 1: READ EVERYTHING FIRST ---
-            // We must gather all data before making ANY changes to satisfy Firestore rules.
-            const updatesToPerform = []; 
+            // --- PHASE 1: READ & CALCULATE ---
+            const updatesToPerform = [];
+            const transactionItems = []; // We will store detailed items here
+            let totalProfit = 0; // Track total profit for this sale
 
             for (const item of cart) { 
                 const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); 
-                const prodDoc = await firestoreTrans.get(prodRef); // READ
+                const prodDoc = await firestoreTrans.get(prodRef); 
                 
                 if(!prodDoc.exists()) throw `Product ${item.name} not found`; 
                 
                 const prodData = prodDoc.data(); 
                 
-                // Calculate Unit Multipliers
+                // 1. Calculate Unit Multiplier
                 let mult = 1; 
                 if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; 
                 if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
                 if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
                 
+                // 2. Check Stock
                 const qtyToDeduct = item.qty * mult; 
-                
                 if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
                 
-                // Don't update yet! Just save the instruction for Phase 2.
-                updatesToPerform.push({ 
-                    ref: prodRef, 
-                    newStock: prodData.stock - qtyToDeduct 
+                // 3. CALCULATE PROFIT (Revenue - Distributor Price)
+                const distributorPrice = prodData.priceDistributor || 0; // The Factory Price
+                
+                const totalCost = distributorPrice * qtyToDeduct; // How much you paid for these goods
+                const totalRevenueItem = item.calculatedPrice * item.qty; // How much you sold them for
+                const itemProfit = totalRevenueItem - totalCost; // Your Profit
+                
+                totalProfit += itemProfit;
+
+                // Prepare Data for Update
+                updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                
+                // Save Snapshot of prices (So if prices change later, history stays accurate)
+                transactionItems.push({
+                    ...item,
+                    distributorPriceSnapshot: distributorPrice,
+                    profitSnapshot: itemProfit
                 });
             } 
 
-            // --- PHASE 2: WRITE EVERYTHING ---
-            // Now that all reads are finished, we can safely write.
+            // --- PHASE 2: WRITE ---
             
-            // 1. Apply Stock Deductions
+            // 1. Update Stock
             for (const update of updatesToPerform) {
-                firestoreTrans.update(update.ref, { stock: update.newStock }); // WRITE
+                firestoreTrans.update(update.ref, { stock: update.newStock }); 
             }
             
-            // 2. Create the Transaction Record
+            // 2. Save Transaction
             const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); 
-            firestoreTrans.set(transRef, { // WRITE
+            firestoreTrans.set(transRef, { 
                 date: getCurrentDate(), 
                 customerName, 
-                paymentType: paymentType, 
-                items: cart, 
-                total, 
+                paymentType, 
+                items: transactionItems, 
+                total: totalRevenue,
+                totalProfit: totalProfit, // SAVING THE CALCULATED PROFIT
                 type: 'SALE', 
                 timestamp: serverTimestamp() 
             }); 
         }); 
 
-        // Success!
-        await logAudit("SALE", `Sold items to ${customerName} (${paymentType})`); 
+        await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
         setCart([]); 
-        triggerCapy("Transaction complete & Saved!"); 
+        triggerCapy("Sale Recorded! Profit Calculated. 💰"); 
 
     } catch(err) { 
-        console.error("Transaction Error:", err);
+        console.error(err);
         alert("Transaction Failed: " + err); 
     } 
   };
@@ -990,7 +1059,7 @@ export default function KPMInventoryApp() {
     };
     reader.readAsText(file);
     e.target.value = null; 
-  };
+  };// 
   
   // --- NEW: EXPORT SHARED CONFIG (Products + Branding ONLY) ---
   const handleExportSharedConfig = async () => {
@@ -1077,34 +1146,36 @@ export default function KPMInventoryApp() {
             {/* BACKUP & RESTORE SECTION */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><DatabaseBackupIcon /> Data Management</h3>
-                <div className="flex gap-4">
+                
+                {/* Personal Backup */}
+                <div className="flex gap-4 mb-6">
                     <button onClick={handleBackupData} className="flex-1 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 text-indigo-700 dark:text-indigo-300 py-4 rounded-xl border border-indigo-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all">
                         <Download size={24} />
-                        <span className="font-bold text-sm">Backup to PC</span>
-                        <span className="text-[10px] opacity-70">Download .json file</span>
+                        <span className="font-bold text-sm">Full Backup</span>
+                        <span className="text-[10px] opacity-70">Save Everything to PC</span>
                     </button>
                     <label className="flex-1 bg-emerald-50 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-slate-600 text-emerald-700 dark:text-emerald-300 py-4 rounded-xl border border-emerald-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer">
                         <UploadCloud size={24} />
                         <span className="font-bold text-sm">Restore Data</span>
-                        <span className="text-[10px] opacity-70">Select .json file to import</span>
+                        <span className="text-[10px] opacity-70">Restore Everything from PC</span>
                         <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
                     </label>
                 </div>
-                
-                {/* --- NEW: SHARE CONFIG SECTION --- */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-700">
-                    <h4 className="font-bold text-sm text-slate-500 mb-3 uppercase tracking-wider">Team Sharing</h4>
+
+                {/* Shared Config (New Feature) */}
+                <div className="pt-6 border-t dark:border-slate-700">
+                    <h4 className="font-bold text-xs text-slate-500 mb-3 uppercase tracking-wider">Team Sharing (Manual)</h4>
                     <div className="flex gap-4">
                         <button onClick={handleExportSharedConfig} className="flex-1 bg-orange-50 dark:bg-slate-700 hover:bg-orange-100 dark:hover:bg-slate-600 text-orange-700 dark:text-orange-300 py-4 rounded-xl border border-orange-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all">
                             <Globe size={24} />
                             <span className="font-bold text-sm">Share Config</span>
-                            <span className="text-[10px] opacity-70">Export Products & Branding</span>
+                            <span className="text-[10px] opacity-70">Export Catalog & Branding Only</span>
                         </button>
                         
                         <label className="flex-1 bg-blue-50 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-slate-600 text-blue-700 dark:text-blue-300 py-4 rounded-xl border border-blue-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer">
                             <Replace size={24} />
                             <span className="font-bold text-sm">Import Config</span>
-                            <span className="text-[10px] opacity-70">Apply Shared File</span>
+                            <span className="text-[10px] opacity-70">Apply Shared Catalog & Branding</span>
                             <input type="file" accept=".json" onChange={handleImportSharedConfig} className="hidden" />
                         </label>
                     </div>
@@ -1122,7 +1193,7 @@ export default function KPMInventoryApp() {
                             {isAdmin ? "Administrator Access" : "Standard User Access"}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                            {isAdmin ? "You have full control over inventory and settings." : "Limited access to settings and critical features."}
+                            {isAdmin ? "You have full control." : "Limited access."}
                         </p>
                     </div>
                     {isAdmin ? (
@@ -1278,20 +1349,36 @@ export default function KPMInventoryApp() {
                 {/* DASHBOARD */}
                 {activeTab === 'dashboard' && (
                     <div className="space-y-6 animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
-                        <p className="text-emerald-100 text-sm font-medium">Inventory Value</p>
-                        <h3 className="text-3xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
+
+                   
+                    {/* DASHBOARD CARDS ROW */}
+                    {/* DASHBOARD CARDS ROW */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 1. Inventory Value */}
+                        <div className="bg-gradient-to-br from-slate-600 to-slate-800 p-6 rounded-2xl text-white shadow-lg">
+                            <p className="text-slate-300 text-sm font-medium uppercase tracking-wider">Inventory Assets</p>
+                            <h3 className="text-2xl font-bold mt-1">{formatRupiah(totalStockValue)}</h3>
                         </div>
+
+                        {/* 2. Revenue */}
                         <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
-                        <p className="text-orange-100 text-sm font-medium">Net Sales (Revenue)</p>
-                        <h3 className="text-3xl font-bold mt-1">
-                            {formatRupiah(
-                            transactions
-                                .filter(t => t.type === 'SALE' || t.type === 'RETURN')
-                                .reduce((acc, t) => acc + (t.total || 0), 0)
-                            )}
-                        </h3>
+                            <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Total Revenue</p>
+                            <h3 className="text-2xl font-bold mt-1">
+                                {formatRupiah(
+                                transactions
+                                    .filter(t => t.type === 'SALE' || t.type === 'RETURN')
+                                    .reduce((acc, t) => acc + (t.total || 0), 0)
+                                )}
+                            </h3>
+                        </div>
+
+                        {/* 3. NEW: NET PROFIT (Based on Distributor Price) */}
+                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
+                            <p className="text-emerald-100 text-sm font-medium uppercase tracking-wider">Net Profit (Cuan)</p>
+                            <h3 className="text-2xl font-bold mt-1">
+                                {formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0))}
+                            </h3>
+                            <p className="text-[10px] opacity-70 mt-1">Revenue - Distributor Price</p>
                         </div>
                     </div>
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
@@ -1450,7 +1537,45 @@ export default function KPMInventoryApp() {
                                 </div>
                                 <div className="space-y-3">
                                     <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
-                                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p><input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/></div>
+                                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
+
+{/* NEW: DISTRIBUTOR PRICE (FACTORY COST) */}
+<div className="mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+    <label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-300">Distributor Price (Factory Modal)</label>
+    <input 
+        name="priceDistributor" 
+        type="number" 
+        placeholder="Rp 0" 
+        defaultValue={editingProduct.priceDistributor} 
+        className="w-full p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono text-blue-600"
+    />
+</div>
+
+{/* NEW: MINIMUM STOCK ALERT LEVEL */}
+<div className="mb-2">
+    <label className="text-[10px] uppercase font-bold text-orange-500">Alert Me If Stock Below:</label>
+    <input 
+        name="minStock" 
+        type="number" 
+        placeholder="e.g. 10" 
+        defaultValue={editingProduct.minStock} 
+        className="w-full p-1 border border-orange-200 bg-orange-50 rounded dark:bg-slate-800 dark:border-orange-900 dark:text-white"
+    />
+</div>
+
+<p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p>
+
+
+
+{/* NEW: BUY PRICE (MODAL) */}
+<input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+
+<input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+
+<input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+
+<input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white"/>
+</div>
                                 </div>
                             </div>
                             {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
@@ -1578,7 +1703,16 @@ export default function KPMInventoryApp() {
                 {activeTab === 'sales' && (
                     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
                         <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative"><div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000"><div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div><div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>{(item.images?.front || item.image) ? (<img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>) : (<div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>)}<div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div></div><div className="mt-4 text-center z-10"><h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4><p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p><div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{item.stock} Left</div></div></div>))}</div></div></div>
-                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div><select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm"><option>Cash</option><option>Titip</option></select><button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
+                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">{cart.map(item => (<div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700"><div className="flex justify-between font-bold text-sm dark:text-white"><span>{item.name}</span> <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button></div><div className="grid grid-cols-3 gap-1 mt-2"><input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/><select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select><select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"><option>Ecer</option><option>Retail</option><option>Grosir</option></select></div><div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div></div>))}</div><div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div>
+
+<select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm">
+    <option value="Cash">Cash</option>
+    <option value="QRIS">QRIS</option>
+    <option value="Transfer">Transfer (BCA/Mandiri)</option>
+    <option value="Titip">Titip (Consignment)</option>
+</select>
+
+<button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
                     </div>
                 )}
                 {/* UPDATED: Pass handleDeleteHistory for Folder Delete, and handleDeleteSingleTransaction for Single Rows */}
