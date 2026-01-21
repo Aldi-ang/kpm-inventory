@@ -833,7 +833,377 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             </div>
         </div>
     );
+};// --- NEW: SAMPLING ANALYTICS DASHBOARD (Admin Only) ---
+const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
+    const [rangeType, setRangeType] = useState('monthly');
+    const [targetDate, setTargetDate] = useState(getCurrentDate());
+
+    // Filter Data
+    const stats = useMemo(() => {
+        const target = new Date(targetDate);
+        const filtered = samplings.filter(s => {
+            const sDate = new Date(s.date);
+            if (rangeType === 'daily') return s.date === targetDate;
+            if (rangeType === 'weekly') {
+                const start = new Date(target); start.setDate(target.getDate() - target.getDay());
+                const end = new Date(start); end.setDate(start.getDate() + 6);
+                return sDate >= start && sDate <= end;
+            }
+            if (rangeType === 'monthly') return sDate.getMonth() === target.getMonth() && sDate.getFullYear() === target.getFullYear();
+            if (rangeType === 'yearly') return sDate.getFullYear() === target.getFullYear();
+            return false;
+        });
+
+        const totalQty = filtered.reduce((a, b) => a + b.qty, 0);
+        const productBreakdown = {};
+        const locationBreakdown = {};
+
+        filtered.forEach(s => {
+            // Product Stats
+            if (!productBreakdown[s.productName]) productBreakdown[s.productName] = 0;
+            productBreakdown[s.productName] += s.qty;
+
+            // Location Stats
+            const loc = s.reason || 'Unknown';
+            if (!locationBreakdown[loc]) locationBreakdown[loc] = 0;
+            locationBreakdown[loc] += s.qty;
+        });
+
+        // Chart Data
+        const chartData = Object.entries(productBreakdown)
+            .map(([name, qty]) => ({ name, qty }))
+            .sort((a, b) => b.qty - a.qty)
+            .slice(0, 5);
+
+        return { totalQty, filtered, productBreakdown, locationBreakdown, chartData };
+    }, [samplings, rangeType, targetDate]);
+
+    return (
+        <div className="animate-fade-in space-y-6">
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
+            
+            {/* CONTROLS */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-xl border dark:border-slate-700">
+                    {['daily', 'weekly', 'monthly', 'yearly'].map(t => (
+                        <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{t}</button>
+                    ))}
+                </div>
+                <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
+            </div>
+
+            {/* SUMMARY CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl text-white shadow-lg">
+                    <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Total Samples Distributed</p>
+                    <h3 className="text-3xl font-bold">{stats.totalQty} <span className="text-lg opacity-70">Bks</span></h3>
+                </div>
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Top Location</p>
+                    <h3 className="text-xl font-bold dark:text-white truncate">{Object.entries(stats.locationBreakdown).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-'}</h3>
+                </div>
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Top Product</p>
+                    <h3 className="text-xl font-bold dark:text-white truncate">{Object.entries(stats.productBreakdown).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-'}</h3>
+                </div>
+            </div>
+
+            {/* CHART */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm h-80">
+                <h3 className="font-bold mb-4 dark:text-white">Top 5 Sampled Products</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.chartData}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
+                        <XAxis dataKey="name" fontSize={10} stroke="#94a3b8"/>
+                        <YAxis fontSize={12} stroke="#94a3b8"/>
+                        <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
+                        <Bar dataKey="qty" fill="#f97316" radius={[4, 4, 0, 0]} name="Quantity (Bks)"/>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
 };
+
+
+// --- NEW: SAMPLING CART (FIXED DARK MODE VISIBILITY) ---
+const SamplingCartView = ({ inventory, onCancel, onSubmit, isAdmin }) => {
+    const [cart, setCart] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [location, setLocation] = useState("");
+    const [note, setNote] = useState(""); 
+    const [targetDate, setTargetDate] = useState(getCurrentDate());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Helper: Auto-Capitalize
+    const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+
+    const filteredProducts = inventory.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const addToCart = (product) => {
+        setCart(prev => {
+            const existing = prev.find(i => i.id === product.id);
+            if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+            return [...prev, { id: product.id, name: product.name, qty: 1, stock: product.stock }];
+        });
+    };
+
+    const updateQty = (id, delta) => {
+        setCart(prev => prev.map(item => {
+            if (item.id === id) {
+                const newQty = Math.max(1, item.qty + delta);
+                return { ...item, qty: newQty };
+            }
+            return item;
+        }));
+    };
+
+    const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
+
+    const handleFinalSubmit = async () => {
+        if (!location.trim()) return alert("Please enter a Location!");
+        if (cart.length === 0) return alert("Cart is empty!");
+        
+        setIsSubmitting(true);
+        await onSubmit(cart, toTitleCase(location.trim()), targetDate, note.trim());
+        setIsSubmitting(false);
+    };
+
+    return (
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)] animate-fade-in">
+            {/* LEFT: PRODUCT GRID */}
+            <div className="lg:w-2/3 flex flex-col bg-slate-100 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-4">
+                <div className="flex gap-4 mb-4">
+                    <button onClick={onCancel} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"><ArrowRight className="rotate-180 dark:text-white" size={20}/></button>
+                    <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-3.5 text-slate-400" size={20}/>
+                        <input className="w-full pl-10 p-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-orange-500 dark:bg-slate-800 dark:text-white font-bold" placeholder="Search item to sample..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} autoFocus />
+                    </div>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {filteredProducts.map(item => (
+                            <div 
+                                key={item.id} 
+                                onClick={() => addToCart(item)} 
+                                className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border dark:border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-md transition-all active:scale-95 group relative overflow-hidden flex flex-col items-center text-center"
+                            >
+                                {/* FIXED: Added dark:text-white here */}
+                                <div className="absolute top-2 right-2 z-20 bg-slate-100 dark:bg-slate-700 text-[10px] px-1.5 py-0.5 rounded text-slate-500 dark:text-white font-mono border dark:border-slate-600">
+                                    {isAdmin ? item.stock : '**'} Left
+                                </div>
+
+                                <div className="h-32 w-full mb-2 flex items-center justify-center relative z-10 group-hover:-translate-y-1 transition-transform duration-300">
+                                    {(item.images?.front || item.image) ? (
+                                        <img src={item.images?.front || item.image} className="h-full w-full object-contain drop-shadow-xl" style={{filter: 'contrast(1.1)'}}/>
+                                    ) : (
+                                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                                            <Package size={32} className="text-slate-300 group-hover:text-orange-400 transition-colors"/>
+                                        </div>
+                                    )}
+                                </div>
+                                <h4 className="font-bold text-sm dark:text-white leading-tight line-clamp-2 w-full">{item.name}</h4>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT: SAMPLING BASKET */}
+            <div className="lg:w-1/3 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
+                <div className="p-5 bg-slate-900 text-white">
+                    <h3 className="font-bold flex items-center gap-2"><ClipboardList className="text-orange-500"/> Sampling Basket</h3>
+                    <p className="text-xs text-slate-400 mt-1">Items will be grouped by description.</p>
+                </div>
+                
+                <div className="p-4 border-b dark:border-slate-700 space-y-3 bg-orange-50 dark:bg-slate-800/50">
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Folder Name / Location</label>
+                        <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Pasar Sraten" className="w-full p-2.5 rounded-lg border-2 border-orange-200 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold text-sm" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Description / Store Name (Optional)</label>
+                        <input value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Toko Bayu" className="w-full p-2.5 rounded-lg border border-slate-300 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block flex justify-between">
+                            <span>Date</span>
+                            {!isAdmin && <span className="text-red-400 flex items-center gap-1"><Lock size={10}/> Locked</span>}
+                        </label>
+                        <div className="relative">
+                            <input 
+                                type="date" 
+                                value={targetDate} 
+                                onChange={e => setTargetDate(e.target.value)} 
+                                disabled={!isAdmin}
+                                className={`w-full p-2.5 rounded-lg border dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm font-bold ${!isAdmin ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''}`} 
+                            />
+                            {/* FIXED: Added dark:text-white to the Calendar Icon */}
+                            <Calendar className="absolute right-3 top-2.5 text-slate-400 dark:text-white pointer-events-none" size={18}/>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {cart.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50"><Truck size={48} className="mb-2"/><p className="text-sm font-bold">Basket is empty</p></div>
+                    ) : (
+                        cart.map(item => (
+                            <div key={item.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 animate-fade-in-up flex items-center justify-between">
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-sm dark:text-white">{item.name}</h4>
+                                    <p className="text-xs text-orange-500 font-bold">{item.qty} Bks</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">-</button>
+                                    
+                                    {/* FIXED: Added dark:text-white to the quantity number */}
+                                    <span className="w-6 text-center text-sm font-bold dark:text-white">{item.qty}</span>
+                                    
+                                    <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">+</button>
+                                    <button onClick={() => removeFromCart(item.id)} className="ml-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="p-4 border-t dark:border-slate-700">
+                    <button onClick={handleFinalSubmit} disabled={isSubmitting || cart.length === 0} className={`w-full py-4 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 ${isSubmitting ? 'bg-slate-400' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'}`}>
+                        {isSubmitting ? <RefreshCcw className="animate-spin"/> : <Save size={20}/>}
+                        {isSubmitting ? 'Saving...' : `Save ${cart.reduce((a,b)=>a+b.qty,0)} Items`}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// --- NEW: SAMPLING FOLDER VIEW (GROUPED BY STORE/NOTE) ---
+const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder }) => {
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+
+    // Group By Date -> Location
+    const folderStructure = useMemo(() => {
+        const structure = {};
+        samplings.forEach(s => {
+            if (!structure[s.date]) structure[s.date] = {};
+            const loc = s.reason ? s.reason.trim() : 'Unspecified';
+            if (!structure[s.date][loc]) structure[s.date][loc] = [];
+            structure[s.date][loc].push(s);
+        });
+        return structure;
+    }, [samplings]);
+
+    // LEVEL 3: ITEMS LIST (Inside a Location) - GROUPED BY NOTE
+    if (selectedDate && selectedLocation) {
+        const items = folderStructure[selectedDate][selectedLocation] || [];
+        
+        // Group Items by Note (Description)
+        const groupedItems = items.reduce((groups, item) => {
+            const noteKey = item.note ? item.note.trim() : "General / No Description";
+            if (!groups[noteKey]) groups[noteKey] = [];
+            groups[noteKey].push(item);
+            return groups;
+        }, {});
+
+        return (
+            <div className="animate-fade-in">
+                <div className="flex justify-between items-center mb-6">
+                    <button onClick={() => setSelectedLocation(null)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Locations</button>
+                    {isAdmin && (
+                        <button onClick={() => onEditFolder(selectedDate, selectedLocation)} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-100 hover:text-orange-600 transition-colors">
+                            <Edit size={14}/> Edit Folder / Date
+                        </button>
+                    )}
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
+                    <div className="bg-slate-900 text-white p-8">
+                        <p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">{selectedDate}</p>
+                        <h1 className="text-3xl font-bold font-serif">{selectedLocation}</h1>
+                        <p className="text-slate-400 text-sm mt-2">{items.length} Total Items Sampled</p>
+                    </div>
+                    
+                    <div className="p-8 space-y-8">
+                        {Object.entries(groupedItems).map(([noteGroup, groupItems]) => (
+                            <div key={noteGroup} className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border dark:border-slate-700 overflow-hidden">
+                                {/* SECTION HEADER (STORE NAME) */}
+                                <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b dark:border-slate-700 flex justify-between items-center">
+                                    <h3 className="font-bold text-slate-700 dark:text-white flex items-center gap-2">
+                                        <Store size={16} className="text-orange-500"/> {noteGroup}
+                                    </h3>
+                                    <span className="text-xs bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300">{groupItems.length} items</span>
+                                </div>
+
+                                {/* ITEMS TABLE FOR THIS STORE */}
+                                <table className="w-full text-sm text-left">
+                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                        {groupItems.map(s => (
+                                            <tr key={s.id} className="hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                                                <td className="p-3 font-medium dark:text-white pl-4">{s.productName}</td>
+                                                <td className="p-3 text-right text-red-500 font-bold">-{s.qty}</td>
+                                                <td className="p-3 text-right flex justify-end gap-2 pr-4">
+                                                    {isAdmin && (
+                                                        <>
+                                                        <button onClick={() => onEdit(s)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"><Pencil size={14}/></button>
+                                                        <button onClick={() => onDelete(s)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><Trash2 size={14}/></button>
+                                                        </>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // LEVEL 2: LOCATION FOLDERS
+    if (selectedDate) {
+        const locations = Object.keys(folderStructure[selectedDate] || {});
+        return (
+            <div className="animate-fade-in">
+                <button onClick={() => setSelectedDate(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Dates</button>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Calendar size={24} className="text-orange-500"/> {selectedDate}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {locations.map(loc => (
+                        <div key={loc} onClick={() => setSelectedLocation(loc)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-100 dark:bg-slate-700 rounded-lg text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
+                                <div><h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3><p className="text-xs text-slate-500">{folderStructure[selectedDate][loc].length} Items</p></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // LEVEL 1: DATE FOLDERS
+    const dates = Object.keys(folderStructure).sort((a,b) => new Date(b) - new Date(a));
+    return (
+        <div className="animate-fade-in space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {dates.map(date => (
+                    <div key={date} onClick={() => setSelectedDate(date)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all relative">
+                        <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400">{date}</span></div>
+                        <h3 className="font-bold text-lg dark:text-white mb-1">{new Date(date).toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'})}</h3>
+                        <p className="text-xs text-slate-500">{Object.keys(folderStructure[date]).length} Locations</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
@@ -994,6 +1364,9 @@ export default function KPMInventoryApp() {
   const [editCompanyName, setEditCompanyName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [editingSample, setEditingSample] = useState(null); // Add this line
+  const [editingFolder, setEditingFolder] = useState(null); // <--- NEW STATE FOR FOLDER EDITING
+
+
 
   // --- AUTHENTICATION FLOW ---
   useEffect(() => {
@@ -1217,78 +1590,156 @@ export default function KPMInventoryApp() {
   const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, inventory.find(p=>p.id===item.productId)) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); await logAudit("RETURN", `Return from ${customerName}`); triggerCapy("Return Processed!"); } catch(err) { console.error(err); } };
   const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales POS and select 'Titip' payment for ${name}`); setActiveTab('sales'); };
   
-  const handleSamplingSubmit = async (e) => { 
-    e.preventDefault(); if (!user) return; const formData = new FormData(e.target); const productId = formData.get('productId'); const qty = parseInt(formData.get('qty')); const reason = formData.get('reason'); 
-    if (!productId || isNaN(qty) || qty <= 0) { alert("Please select a valid product and quantity."); return; }
-    try { await runTransaction(db, async (transaction) => { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, productId); const prodDoc = await transaction.get(prodRef); if (!prodDoc.exists()) throw "Product doesn't exist!"; const currentStock = prodDoc.data().stock || 0; const newStock = currentStock - qty; if(newStock < 0) throw "Not enough stock!"; transaction.update(prodRef, { stock: newStock }); const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`)); transaction.set(newSampleRef, { date: getCurrentDate(), productId, productName: inventory.find(i=>i.id===productId)?.name || 'Unknown', qty, reason, timestamp: serverTimestamp() }); }); await logAudit("SAMPLING_ADD", `Sampled ${qty} of item`); triggerCapy("Sample recorded. Stock updated."); e.target.reset(); } catch (err) { console.error(err); alert("Transaction failed: " + err); } 
-  };
-  
-  const handleDeleteSampling = async (sample) => {
-      if(!user) return;
-      
-      // SAFETY CHECK: Does product ID exist?
-      if(!sample.productId) {
-          if(!window.confirm("This record is corrupted (missing Product ID). Force delete it? Stock will NOT be returned.")) return;
-          try {
-              await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id));
-              triggerCapy("Corrupted record removed.");
-          } catch(e) { alert(e.message); }
-          return;
-      }
-
-      if(!window.confirm(`Delete sample record for ${sample.productName}? Stock will be RETURNED.`)) return;
-      
+ // --- NEW: HANDLE BATCH SAMPLING (GLOBAL NOTE) ---
+  const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
+      if (!user) return;
       try {
           await runTransaction(db, async (transaction) => {
-              // 1. Return stock to product
-              const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, sample.productId);
-              const prodDoc = await transaction.get(prodRef);
-              if(prodDoc.exists()) {
-                  transaction.update(prodRef, { stock: prodDoc.data().stock + sample.qty });
+              const writes = [];
+              for (const item of cartItems) {
+                  const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
+                  const prodDoc = await transaction.get(prodRef);
+                  if (!prodDoc.exists()) throw `Product ${item.name} not found!`;
+                  
+                  const currentStock = prodDoc.data().stock || 0;
+                  const newStock = currentStock - item.qty;
+                  if (newStock < 0) throw `Not enough stock for ${item.name} (Has: ${currentStock})`;
+
+                  writes.push({ type: 'update', ref: prodRef, data: { stock: newStock } });
+                  const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`));
+                  
+                  // NEW: Save the GLOBAL note to every item
+                  writes.push({ 
+                      type: 'set', 
+                      ref: newSampleRef, 
+                      data: {
+                          date: date,
+                          productId: item.id,
+                          productName: item.name,
+                          qty: item.qty,
+                          reason: location, 
+                          note: note || '', 
+                          timestamp: serverTimestamp()
+                      } 
+                  });
               }
-              // 2. Delete sampling record
-              const sampleRef = doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id);
-              transaction.delete(sampleRef);
+              for (const w of writes) {
+                  if (w.type === 'update') transaction.update(w.ref, w.data);
+                  if (w.type === 'set') transaction.set(w.ref, w.data);
+              }
           });
-          logAudit("SAMPLING_DELETE", `Deleted sample for ${sample.productName}. Stock returned.`);
-          triggerCapy("Sampling deleted and stock reverted!");
-      } catch (err) {
+          await logAudit("SAMPLING_BATCH", `Added ${cartItems.length} items to folder: ${location}`);
+          triggerCapy(`Success! ${cartItems.length} items saved.`);
+          setEditingSample(null);
+      } catch (err) { console.error(err); alert("Failed to save batch: " + err); }
+  };
+
+ // --- NEW: DELETE SAMPLING RECORD ---
+  const handleDeleteSampling = async (sample) => {
+      if(!window.confirm("Delete this sample record? Stock will be RESTORED to inventory.")) return;
+      try {
+          await runTransaction(db, async (t) => {
+              const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, sample.productId);
+              const prodDoc = await t.get(prodRef);
+              
+              // 1. Restore Stock
+              if(prodDoc.exists()) {
+                  const currentStock = prodDoc.data().stock || 0;
+                  t.update(prodRef, { stock: currentStock + sample.qty });
+              }
+              
+              // 2. Delete Record
+              t.delete(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id));
+          });
+          
+          logAudit("SAMPLING_DELETE", `Deleted sample: ${sample.productName}`);
+          triggerCapy("Sample deleted & stock restored.");
+      } catch(err) {
           console.error(err);
-          alert("Failed to delete sample: " + err.message);
+          alert("Failed to delete: " + err.message);
       }
   };
 
+// --- NEW: UPDATE SINGLE SAMPLING (WITH NOTE & DATE) ---
   const handleUpdateSampling = async (e) => {
       e.preventDefault();
-      if(!user || !editingSample) return;
+      if (!user || !editingSample) return;
       const formData = new FormData(e.target);
       const newQty = parseInt(formData.get('qty'));
-      const newReason = formData.get('reason');
       const newDate = formData.get('date');
-
-      if(isNaN(newQty) || newQty <= 0) return alert("Invalid Qty");
+      const newReason = formData.get('reason');
+      const newNote = formData.get('note');
 
       try {
           await runTransaction(db, async (t) => {
-              const sampleRef = doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, editingSample.id);
               const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingSample.productId);
-              
-              // Get current product state
               const prodDoc = await t.get(prodRef);
-              if(!prodDoc.exists()) throw "Product not found";
               
-              // Calculate difference: If old was 10 and new is 5, we add 5 back to stock.
-              // If old was 5 and new is 10, we remove 5 more.
-              const qtyDiff = editingSample.qty - newQty; 
-              const currentStock = prodDoc.data().stock;
+              // Adjust stock difference
+              const oldQty = editingSample.qty;
+              const diff = newQty - oldQty;
               
-              t.update(prodRef, { stock: currentStock + qtyDiff });
-              t.update(sampleRef, { qty: newQty, reason: newReason, date: newDate });
+              if (prodDoc.exists() && diff !== 0) {
+                  const currentStock = prodDoc.data().stock || 0;
+                  if (currentStock < diff) throw "Not enough stock for increase!";
+                  t.update(prodRef, { stock: currentStock - diff });
+              }
+
+              t.update(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, editingSample.id), {
+                  date: newDate,
+                  qty: newQty,
+                  reason: newReason,
+                  note: newNote,
+                  updatedAt: serverTimestamp()
+              });
           });
+          
+          triggerCapy("Record updated!");
           setEditingSample(null);
-          triggerCapy("Sample updated & Stock adjusted!");
-      } catch(err) {
-          alert(err.message);
+      } catch (err) { alert(err.message || err); }
+  };
+
+  // --- NEW: OPEN FOLDER EDIT MODAL ---
+  const handleBatchFolderEdit = (oldDate, oldReason) => {
+      setEditingFolder({ oldDate, oldReason }); // Just open the modal
+  };
+
+  // --- NEW: SAVE FOLDER CHANGES (Native Date Picker) ---
+  const processFolderEdit = async (e) => {
+      e.preventDefault();
+      if (!user || !editingFolder) return;
+      
+      const formData = new FormData(e.target);
+      const newDate = formData.get('newDate');
+      let newReason = formData.get('newReason').trim();
+      
+      // Auto-capitalize the new location name for consistency
+      newReason = newReason.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+
+      const { oldDate, oldReason } = editingFolder;
+
+      if (newDate === oldDate && newReason === oldReason) {
+          setEditingFolder(null);
+          return;
+      }
+
+      if (!window.confirm(`Move ALL items from "${oldReason}" to "${newReason}" on ${newDate}?`)) return;
+
+      try {
+          const targets = samplings.filter(s => s.date === oldDate && s.reason === oldReason);
+          const batch = writeBatch(db);
+          
+          targets.forEach(s => {
+              const ref = doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, s.id);
+              batch.update(ref, { date: newDate, reason: newReason });
+          });
+          
+          await batch.commit();
+          triggerCapy(`Successfully moved ${targets.length} items!`);
+          setEditingFolder(null);
+      } catch (err) {
+          console.error(err);
+          alert("Move failed: " + err.message);
       }
   };
 
@@ -2038,134 +2489,222 @@ export default function KPMInventoryApp() {
                     </div>
                 )}
 
-                {/* SAMPLING */}
+                {/* SAMPLING TAB - REDESIGNED */}
                 {activeTab === 'sampling' && (
                     <div className="space-y-6 animate-fade-in">
-                        {/* EDIT MODAL FOR SAMPLING */}
-                        {editingSample && (
-                            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-                                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
-                                    <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Sample Record</h3>
-                                    <form onSubmit={handleUpdateSampling} className="space-y-4">
-                                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded text-xs text-blue-600 dark:text-blue-300 mb-2">
-                                            <strong>Note:</strong> Changing quantity will automatically adjust product stock.
+
+
+	{/* NEW: FOLDER EDIT MODAL (Phone Friendly) */}
+                    {editingFolder && (
+                        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl border dark:border-slate-700">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
+                                        <Folder size={20} className="text-orange-500"/> Edit Folder
+                                    </h3>
+                                    <button onClick={() => setEditingFolder(null)}><X className="dark:text-white"/></button>
+                                </div>
+                                
+                                <form onSubmit={processFolderEdit} className="space-y-4">
+                                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg text-xs text-orange-800 dark:text-orange-200 mb-2">
+                                        <p className="font-bold">You are moving all items from:</p>
+                                        <p>{editingFolder.oldReason}</p>
+                                        <p className="font-mono opacity-70">{editingFolder.oldDate}</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">New Location Name</label>
+                                        <input 
+                                            name="newReason" 
+                                            defaultValue={editingFolder.oldReason} 
+                                            className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold"
+                                            placeholder="e.g. Pasar Sraten"
+                                            required 
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">New Date</label>
+                                        <div className="relative">
+                                            {/* THIS IS THE CALENDAR DROP DOWN (Native Date Picker) */}
+                                            <input 
+                                                name="newDate" 
+                                                type="date" 
+                                                defaultValue={editingFolder.oldDate} 
+                                                className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold"
+                                                required 
+                                            />
+                                            <Calendar className="absolute right-3 top-3.5 text-slate-400 dark:text-white pointer-events-none" size={20}/>
                                         </div>
-                                        <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingSample.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                                        <div><label className="text-xs font-bold text-slate-500">Product</label><input disabled value={editingSample.productName} className="w-full p-2 border rounded bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"/></div>
-                                        <div><label className="text-xs font-bold text-slate-500">Quantity (Bks)</label><input name="qty" type="number" defaultValue={editingSample.qty} min="1" className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                                        <div><label className="text-xs font-bold text-slate-500">Reason / Location</label><input name="reason" defaultValue={editingSample.reason} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                                        
-                                        <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingSample(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Update</button></div>
-                                    </form>
+                                    </div>
+
+                                    <div className="flex gap-2 pt-2">
+                                        <button type="button" onClick={() => setEditingFolder(null)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-slate-500 dark:text-slate-300">Cancel</button>
+                                        <button type="submit" className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold shadow-lg hover:bg-orange-600 transition-colors">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+
+                        {/* 1. Header & Controls */}
+                        {!editingSample && (
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
+                                    <ClipboardList size={24} className="text-orange-500"/> Sampling Records
+                                </h2>
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    {/* RECORD NEW BUTTON (Opens Modal) */}
+                                    <button onClick={() => setEditingSample({ isNew: true })} className="flex-1 md:flex-none bg-orange-500 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md hover:bg-orange-600 transition-all flex items-center justify-center gap-2 font-bold">
+                                        <Plus size={20}/> Record Sample
+                                    </button>
+                                    
+                                    {/* ANALYTICS BUTTON (Admin Only) */}
+                                    {isAdmin && (
+                                        <button onClick={() => setEditingSample('analytics')} className="flex-1 md:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl shadow-sm hover:border-orange-500 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-white">
+                                            <TrendingUp size={20} className="text-blue-500"/> Analytics
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        <h2 className="text-2xl font-bold dark:text-white">Product Sampling Record</h2>
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
-                            <form onSubmit={handleSamplingSubmit} className="flex flex-col md:flex-row gap-4">
-                            <select name="productId" required className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white">
-                                <option value="">Select Product...</option>
-                                {inventory.map(i => <option key={i.id} value={i.id}>{i.name} {isAdmin ? `(Stock: ${i.stock})` : ""}</option>)}
-                            </select>
-                            <input type="number" name="qty" required placeholder="Qty (Bks)" min="1" className="w-32 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
-                            <input type="text" name="reason" placeholder="Location / Recipient" className="flex-1 p-3 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/>
-                            <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded font-bold">Record Sample</button>
-                            </form>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700">
-                            <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                                <tr><th className="p-4">Date</th><th className="p-4">Product</th><th className="p-4">Qty</th><th className="p-4">Notes</th><th className="p-4 text-right">Actions</th></tr>
-                            </thead>
-                            <tbody>
-                                {samplings.length === 0 ? (
-                                    <tr><td colSpan="5" className="p-8 text-center text-slate-500">No sampling records found.</td></tr>
-                                ) : (
-                                    samplings.map(s => (
-                                    <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                        <td className="p-4 dark:text-slate-300">{s.date}</td>
-                                        <td className="p-4 font-bold dark:text-white">{s.productName}</td>
-                                        <td className="p-4 text-red-500 font-bold">-{s.qty}</td>
-                                        <td className="p-4 text-slate-500">{s.reason}</td>
-                                        <td className="p-4 text-right flex justify-end gap-2">
-                                            <button onClick={() => setEditingSample(s)} className="p-2 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors" title="Edit Record"><Pencil size={16}/></button>
-                                            <button onClick={() => handleDeleteSampling(s)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors" title="Delete & Return Stock"><Trash2 size={16}/></button>
-                                        </td>
-                                    </tr>
-                                    ))
-                                )}
-                            </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+                        {/* 2. Content Switching */}
+                        {editingSample === 'analytics' ? (
+                            <SamplingAnalyticsView samplings={samplings} inventory={inventory} onBack={() => setEditingSample(null)} />
 
+                        ) : editingSample?.isNew ? (
+    // NEW: SHOPPING CART STYLE SAMPLING VIEW
+    <SamplingCartView 
+        inventory={inventory} 
+        isAdmin={isAdmin} 
+        onCancel={() => setEditingSample(null)} 
+        onSubmit={handleBatchSamplingSubmit} 
+    />
+) : editingSample && !editingSample.isNew && editingSample !== 'analytics' ? (
+    // EDIT EXISTING MODAL (Updated with Notes)
+    <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Sample Record</h3>
+            <form onSubmit={handleUpdateSampling} className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded text-xs text-blue-600 dark:text-blue-300 mb-2"><strong>Note:</strong> Changing quantity will automatically adjust product stock.</div>
+                <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingSample.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                <div><label className="text-xs font-bold text-slate-500">Product</label><input disabled value={editingSample.productName} className="w-full p-2 border rounded bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"/></div>
+                <div><label className="text-xs font-bold text-slate-500">Quantity (Bks)</label><input name="qty" type="number" defaultValue={editingSample.qty} min="1" className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                <div><label className="text-xs font-bold text-slate-500">Location</label><input name="reason" defaultValue={editingSample.reason} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                
+                {/* NEW: EDIT NOTE FIELD */}
+                <div><label className="text-xs font-bold text-slate-500">Description / Note</label><input name="note" defaultValue={editingSample.note} placeholder="Store name, etc." className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
+                
+                <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingSample(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Update</button></div>
+            </form>
+        </div>
+    </div>
+) : (
+    // MAIN FOLDER VIEW (Now passed onEditFolder)
+    <SamplingFolderView 
+        samplings={samplings} 
+        isAdmin={isAdmin} 
+        onRecordSample={() => setEditingSample({isNew:true})} 
+        onDelete={handleDeleteSampling} 
+        onEdit={(s) => setEditingSample(s)}
+        onEditFolder={handleBatchFolderEdit} 
+    />
+)}
+</div>  
+)}      
+                
                 {/* OTHER TABS */}
                 {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} isAdmin={isAdmin} />}
 {/* ... Consignment line is usually here ... */}
 
 {/* PASTE THIS MISSING LINE HERE: */}
 {activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} />}
+
+
                 {activeTab === 'sales' && (
                     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
-                        <div className="lg:w-2/3 flex flex-col"><input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative"><div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">{filteredInventory.map(item => (<div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000"><div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div><div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>{(item.images?.front || item.image) ? (<img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>) : (<div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>)}<div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div></div><div className="mt-4 text-center z-10"><h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4><p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p><div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{isAdmin ? item.stock : "**"} Left</div></div></div>))}</div></div></div>
-                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700"><div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div><div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {/* LEFT COLUMN: PRODUCT GRID */}
+                        <div className="lg:w-2/3 flex flex-col">
+                            <input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
+                            <div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative">
+                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+                                    {filteredInventory.map(item => (
+                                        <div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000">
+                                            <div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div>
+                                            <div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>
+                                                {(item.images?.front || item.image) ? (
+                                                    <img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>
+                                                ) : (
+                                                    <div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>
+                                                )}
+                                                <div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div>
+                                            </div>
+                                            <div className="mt-4 text-center z-10">
+                                                <h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4>
+                                                <p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p>
+                                                <div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{isAdmin ? item.stock : "**"} Left</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
 
-{cart.map(item => (
-  <div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
-      <div className="flex justify-between font-bold text-sm dark:text-white">
-          <span>{item.name}</span> 
-          <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button>
-      </div>
-      <div className="grid grid-cols-3 gap-1 mt-2">
-          {/* UNLOCKED INPUTS (No 'disabled' attribute) */}
-          <input 
-            type="number" 
-            value={item.qty} 
-            onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} 
-            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"
-          />
-          <select 
-            value={item.unit} 
-            onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} 
-            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"
-          >
-            <option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option>
-          </select>
-          <select 
-            value={item.priceTier} 
-            onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} 
-            className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white"
-          >
-            <option>Ecer</option><option>Retail</option><option>Grosir</option>
-          </select>
-      </div>
-      <div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div>
-  </div>
-))}
+                        {/* RIGHT COLUMN: CART */}
+                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700">
+                            <div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div>
+                            
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                {cart.map(item => (
+                                    <div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
+                                        <div className="flex justify-between font-bold text-sm dark:text-white">
+                                            <span>{item.name}</span> 
+                                            <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 mt-2">
+                                            <input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/>
+                                            <select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white">
+                                                <option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option>
+                                            </select>
+                                            <select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white">
+                                                <option>Ecer</option><option>Retail</option><option>Grosir</option>
+                                            </select>
+                                        </div>
+                                        <div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div>
+                                    </div>
+                                ))}
+                            </div>
 
-<div className="p-4 border-t dark:border-slate-700"><form onSubmit={processTransaction}><div className="mb-3 relative"><input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/><datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist></div>
+                            <div className="p-4 border-t dark:border-slate-700">
+                                <form onSubmit={processTransaction}>
+                                    <div className="mb-3 relative">
+                                        <input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/>
+                                        <datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist>
+                                    </div>
 
-<select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm">
-    <option value="Cash">Cash</option>
-    <option value="QRIS">QRIS</option>
-    <option value="Transfer">Transfer (BCA/Mandiri)</option>
-    <option value="Titip">Titip (Consignment)</option>
-</select>
+                                    <select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm">
+                                        <option value="Cash">Cash</option>
+                                        <option value="QRIS">QRIS</option>
+                                        <option value="Transfer">Transfer (BCA/Mandiri)</option>
+                                        <option value="Titip">Titip (Consignment)</option>
+                                    </select>
 
-<button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button></form></div></div>
+                                    <button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                </div>
-         
-                 )}
-                {/* UPDATED: Pass handleDeleteHistory for Folder Delete, and handleDeleteSingleTransaction for Single Rows */}
+                )}
+
                 {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
+                
                 {activeTab === 'audit' && (
                     <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr></thead><tbody>{auditLogs.map(log => (<tr key={log.id} className="border-b dark:border-slate-700"><td className="p-4 font-bold text-orange-500">{log.action}</td><td className="p-4 dark:text-slate-300">{log.details}</td><td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td></tr>))}</tbody></table></div></div>
                 )}
 
-                {/* SETTINGS TAB - FIXED & CRASH PROOF */}
                 {activeTab === 'settings' && renderSettings()}
               </>
           )}
