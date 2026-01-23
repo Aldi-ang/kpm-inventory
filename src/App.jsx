@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
-  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe
+  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -29,6 +29,7 @@ import {
   getFirestore, 
   collection, 
   doc, 
+  getDoc, // <--- THIS WAS MISSING!
   addDoc, 
   setDoc, 
   updateDoc, 
@@ -36,8 +37,8 @@ import {
   onSnapshot, 
   serverTimestamp, 
   query, 
-  orderBy,
-  runTransaction,
+  orderBy, 
+  runTransaction, 
   writeBatch
 } from "firebase/firestore";
 
@@ -52,13 +53,18 @@ const firebaseConfig = {
   measurementId: "G-CM3Z2Q412T"
 };
 
+// ... imports ...
+
 const app = initializeApp(firebaseConfig);
 let analytics;
 try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
-const appId = "cello-inventory-manager";
+
+// --- MISSING LINE: ADD THIS BACK ---
+const appId = "cello-inventory-manager"; 
+// ----------------------------------
 
 // --- CONSTANTS ---
 const ADMIN_PASS = "KomuroMangetsu02";
@@ -246,15 +252,169 @@ const AdminAuthModal = ({ onClose, onSuccess }) => {
     );
 };
 
-const CapybaraMascot = ({ mood = 'happy', message, onClick, customImage }) => {
-  const [isBouncing, setIsBouncing] = useState(false);
-  useEffect(() => { const interval = setInterval(() => { setIsBouncing(true); setTimeout(() => setIsBouncing(false), 500); }, 5000 + Math.random() * 5000); return () => clearInterval(interval); }, []);
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end cursor-pointer group" onClick={onClick}>
-      {message && (<div className="bg-white dark:bg-slate-800 p-3 rounded-t-xl rounded-bl-xl shadow-lg border-2 border-orange-400 mb-2 max-w-xs animate-fade-in-up"><p className="text-sm text-slate-700 dark:text-slate-200 font-medium">{message}</p></div>)}
-      <div className={`transition-transform duration-300 ${isBouncing ? '-translate-y-2' : ''} hover:scale-110 drop-shadow-xl`}><img src={customImage || "/capybara.jpg"} alt="Mascot" className="w-24 h-24 rounded-full border-4 border-orange-500 object-cover shadow-lg bg-orange-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/></div>
-    </div>
-  );
+// --- NEW: CAPYBARA MASCOT V5 (SEQUENTIAL DIALOGUE & SELF-CONTAINED DEFAULTS) ---
+const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticImageSrc }) => {
+    // ASSETS
+    const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4"; 
+    const DISCO_MUSIC_URL = "/disco_music.mp3"; 
+    const NORMAL_IMAGE_URL = "/mr capy.png"; 
+
+    // FALLBACK MESSAGES (In case none are passed)
+    const DEFAULT_MESSAGES = [
+        "Welcome back, Boss!",
+        "Stock looks good today.",
+        "Don't forget to record samples!",
+        "Sales are looking up! 📈",
+        "I love organization. And watermelons. 🍉",
+        "Did you know Capybaras are the largest rodents?",
+        "Remember to hydrate while you work! 💧",
+        "System systems go! 🚀",
+        "Any new products to add?",
+        "You are doing great today! ⭐"
+    ];
+
+    // Combine passed messages with defaults if empty
+    const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
+
+    // STATE
+    const [isPeeking, setIsPeeking] = useState(false);
+    const [isHiding, setIsHiding] = useState(false); 
+    const [internalMsg, setInternalMsg] = useState(""); 
+    
+    // SEQUENCE TRACKER (Starts at 0)
+    const msgIndexRef = useRef(0);
+
+    // 1. HANDLE MUSIC
+    useEffect(() => {
+        let audio = null;
+        if (isDiscoMode) {
+            audio = new Audio(DISCO_MUSIC_URL);
+            audio.volume = 0.6; 
+            audio.loop = true;  
+            audio.play().catch(e => console.log("Audio blocked:", e));
+        }
+        return () => { if (audio) { audio.pause(); audio.currentTime = 0; } };
+    }, [isDiscoMode]);
+
+    // 2. SEQUENTIAL PEEKING LOGIC
+    useEffect(() => {
+        if (isDiscoMode) return; 
+
+        let peekTimer;
+        let hideTimer;
+
+        const scheduleNextPeek = () => {
+            const nextPeekTime = Math.random() * 30000 + 10000; // 10-40s random interval
+            
+            peekTimer = setTimeout(() => {
+                // GET NEXT MESSAGE IN ORDER
+                const currentIndex = msgIndexRef.current;
+                const nextText = dialogueList[currentIndex];
+                
+                // Set text
+                setInternalMsg(nextText);
+                
+                // Advance index for NEXT time (Loop back to 0 if at end)
+                msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
+
+                // Show him
+                setIsPeeking(true);
+                setIsHiding(false);
+
+                // Hide after 6 seconds
+                hideTimer = setTimeout(() => {
+                    handleHide();
+                }, 6000); 
+
+            }, nextPeekTime);
+        };
+
+        const handleHide = () => {
+            setIsHiding(true); 
+            setTimeout(() => {
+                setIsPeeking(false);
+                setIsHiding(false);
+                setInternalMsg(""); 
+                scheduleNextPeek(); 
+            }, 1000);
+        };
+
+        scheduleNextPeek();
+        return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); };
+    }, [isDiscoMode, dialogueList]); // Re-run if list changes
+
+    // 3. SMART CLICK LOGIC
+    const onMascotClick = () => {
+        if (message || internalMsg) {
+            setIsHiding(true);
+            setTimeout(() => {
+                setIsPeeking(false);
+                setInternalMsg("");
+            }, 500); 
+        } else {
+            if (onClick) onClick(); 
+            setIsHiding(false);     
+        }
+    };
+
+    // --- RENDER: DISCO MODE ---
+    if (isDiscoMode) {
+        return (
+            <>
+                <div className="fixed inset-0 z-[100] pointer-events-none animate-disco-lights mix-blend-overlay opacity-60"></div>
+                <div className="fixed bottom-0 right-4 z-[102] cursor-pointer animate-bounce-high" onClick={onClick}>
+                    <div className="relative w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden border-4 border-pink-500 shadow-[0_0_50px_#ec4899]">
+                        <video src={DISCO_VIDEO_URL} autoPlay loop muted className="w-full h-full object-cover"/>
+                    </div>
+                </div>
+                <style>{`
+                    @keyframes disco-lights { 0% { background: linear-gradient(45deg, red, blue); } 50% { background: linear-gradient(45deg, lime, yellow); } 100% { background: linear-gradient(45deg, purple, red); } }
+                    @keyframes bounce-high { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+                    .animate-disco-lights { animation: disco-lights 2s infinite linear alternate; }
+                    .animate-bounce-high { animation: bounce-high 0.8s infinite ease-in-out; }
+                `}</style>
+            </>
+        );
+    }
+
+    // --- RENDER: NORMAL MODE ---
+    const activeMessage = message || internalMsg; 
+    const showMascot = isPeeking || message; 
+    const slideClass = isHiding ? 'translate-x-[120%]' : 'translate-x-0'; 
+    const initialClass = 'translate-x-[120%]';
+
+    return (
+        <div 
+            className={`fixed bottom-0 right-0 z-[60] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
+            onClick={onMascotClick}
+            style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
+        >
+            <div className="relative w-48 h-48 md:w-64 md:h-64">
+                {/* ANIMATED PIXEL CLOUD */}
+                {activeMessage && (
+                    <div className="absolute bottom-[85%] right-[20%] z-20 animate-pop-in pointer-events-none">
+                        <div className="relative bg-white border-4 border-black p-4 min-w-[160px] max-w-[200px] text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]">
+                            <p className="text-[10px] md:text-xs font-bold text-black font-mono leading-tight">
+                                {activeMessage}
+                            </p>
+                            <div className="absolute -bottom-3 right-8 w-4 h-4 bg-white border-r-4 border-b-4 border-black rotate-45"></div>
+                        </div>
+                    </div>
+                )}
+
+                <img 
+                    src={NORMAL_IMAGE_URL} 
+                    alt="Mascot" 
+                    className="w-full h-full object-contain drop-shadow-xl hover:brightness-110 transition-all origin-bottom-right"
+                    onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}
+                />
+            </div>
+            <style>{`
+                @keyframes pop-in { 0% { transform: scale(0) translateY(20px); opacity: 0; } 80% { transform: scale(1.1) translateY(-5px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+                .animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+            `}</style>
+        </div>
+    );
 };
 
 const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
@@ -707,125 +867,314 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
   const groupedByMonth = selectedCustomer.history.reduce((groups, t) => { const date = new Date(t.date); const key = date.toLocaleString('default', { month: 'long', year: 'numeric' }); if (!groups[key]) groups[key] = []; groups[key].push(t); return groups; }, {});
   return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody></table></div></div>))}</div></div></div>);
 };
+// --- NEW: CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
+const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
+    const [benchmarks, setBenchmarks] = useState([]);
+    const [newBench, setNewBench] = useState({ brand: '', product: '', price: '', notes: '', volume: 'Medium' });
+    const [mapMode, setMapMode] = useState('map'); 
+
+    useEffect(() => {
+        const q = query(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${customer.id}/benchmarks`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => setBenchmarks(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+        return () => unsub();
+    }, [customer.id]);
+
+    const handleAddBenchmark = async (e) => {
+        e.preventDefault();
+        if (!newBench.product || !newBench.price) return;
+        try {
+            await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${customer.id}/benchmarks`), { ...newBench, price: parseFloat(newBench.price), createdAt: serverTimestamp() });
+            setNewBench({ brand: '', product: '', price: '', notes: '', volume: 'Medium' });
+            triggerCapy("Competitor data logged!");
+        } catch (err) { console.error(err); }
+    };
+
+    const handleDeleteBenchmark = async (id) => {
+        if (!window.confirm("Delete record?")) return;
+        await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${customer.id}/benchmarks`, id));
+    };
+
+    // --- MAP RENDER LOGIC ---
+    const renderMap = () => {
+        // 1. If user provided EXACT Embed Code, use it (Best for Street View POV)
+        if (customer.embedHtml && customer.embedHtml.startsWith("<iframe")) {
+            return <div dangerouslySetInnerHTML={{ __html: customer.embedHtml.replace('<iframe', '<iframe width="100%" height="100%" style="border:0;"') }} className="w-full h-full" />;
+        }
+
+        // 2. Otherwise, construct URL based on Lat/Lng
+        const hasGPS = customer.latitude && customer.longitude;
+        let src = "";
+
+        if (mapMode === 'street') {
+             // Try basic street view embed (Might be limited without key)
+             const loc = hasGPS ? `${customer.latitude},${customer.longitude}` : encodeURIComponent(customer.address || customer.name);
+             src = `https://maps.google.com/maps?q=$${loc}&layer=c&output=svembed`;
+        } else {
+             // Standard Map
+             if (hasGPS) src = `https://maps.google.com/maps?q=$${customer.latitude},${customer.longitude}&z=18&output=embed`;
+             else {
+                 let query = customer.address || customer.name;
+                 if (customer.city) query += `, ${customer.city}`;
+                 src = `https://maps.google.com/maps?q=$${encodeURIComponent(query)}&z=15&output=embed`;
+             }
+        }
+
+        return <iframe width="100%" height="100%" src={src} frameBorder="0" className="transition-all duration-500"></iframe>;
+    };
+
+    return (
+        <div className="animate-fade-in space-y-6">
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to List</button>
+            
+            <div className="flex flex-col md:flex-row gap-6">
+                <div className="md:w-1/3 space-y-6">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+                        <h2 className="text-2xl font-bold dark:text-white mb-1">{customer.name}</h2>
+                        <div className="text-sm text-slate-500 mb-4 flex items-center gap-2"><MapPin size={14}/> {customer.city} {customer.region}</div>
+                        
+                        <div className="space-y-3 mb-6">
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center gap-3"><Phone size={18} className="text-slate-400"/><span className="font-bold dark:text-white">{customer.phone || "-"}</span></div>
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-start gap-3">
+                                <MapPin size={18} className="text-slate-400 mt-1"/>
+                                <div><span className="text-sm dark:text-slate-300 block">{customer.address || "No Address"}</span>{customer.latitude && <span className="text-[10px] text-emerald-500 font-mono mt-1 block">GPS: {customer.latitude}, {customer.longitude}</span>}</div>
+                            </div>
+                        </div>
+
+                        {/* MAP CONTAINER */}
+                        <div className="rounded-xl overflow-hidden border dark:border-slate-700 h-64 bg-slate-100 relative group">
+                            {renderMap()}
+                            
+                            {/* Switcher (Only show if NOT using Embed Code, as Embed code is fixed) */}
+                            {!customer.embedHtml && (
+                                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                                    <button onClick={() => setMapMode(mapMode === 'map' ? 'street' : 'map')} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+                                        {mapMode === 'map' ? <><User size={14} className="text-orange-500"/> Street View</> : <><MapPin size={14} className="text-blue-500"/> Map View</>}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        {customer.embedHtml ? 
+                            <p className="text-[10px] text-emerald-500 mt-2 text-center font-bold">Using Custom Embed View</p> :
+                            <p className="text-[10px] text-slate-400 mt-2 text-center">{customer.latitude ? "Exact GPS Location" : "Approximate Address Location"}</p>
+                        }
+                    </div>
+                </div>
+
+                {/* COMPETITOR CATALOG */}
+                <div className="md:w-2/3">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700 h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <div><h3 className="font-bold text-lg dark:text-white flex items-center gap-2"><ShieldAlert size={20} className="text-red-500"/> Competitor Intelligence</h3><p className="text-xs text-slate-500">Track benchmark prices at this specific store.</p></div>
+                        </div>
+                        <form onSubmit={handleAddBenchmark} className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700 mb-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                                <input value={newBench.brand} onChange={e=>setNewBench({...newBench, brand:e.target.value})} placeholder="Brand" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                                <input value={newBench.product} onChange={e=>setNewBench({...newBench, product:e.target.value})} placeholder="Product Name" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                                <input type="number" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                                <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
+                            </div>
+                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><button className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-600">Add Log</button></div>
+                        </form>
+                        <div className="flex-1 overflow-y-auto">
+                            <table className="w-full text-sm text-left"><thead className="text-slate-500 font-bold border-b dark:border-slate-700"><tr><th className="pb-3 pl-2">Product</th><th className="pb-3">Price</th><th className="pb-3">Performance</th><th className="pb-3">Notes</th><th className="pb-3 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{benchmarks.map(b => (<tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50"><td className="py-3 pl-2"><div className="font-bold dark:text-white">{b.product}</div><div className="text-xs text-slate-500">{b.brand}</div></td><td className="py-3 font-mono text-red-500 font-bold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}</td><td className="py-3"><span className={`text-[10px] px-2 py-1 rounded-full border ${b.volume === 'High Sales' ? 'bg-green-100 text-green-700 border-green-200' : b.volume === 'Slow Moving' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>{b.volume}</span></td><td className="py-3 text-slate-500 text-xs italic">{b.notes}</td><td className="py-3 text-right pr-2"><button onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button></td></tr>))}</tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- UPGRADED: CUSTOMER MANAGEMENT (SMART LOCATION) ---
 const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
-    // 1. ADD REGION AND CITY TO STATE
-    const [formData, setFormData] = useState({ name: '', phone: '', region: '', city: '', address: '' });
+    const [viewMode, setViewMode] = useState('list');
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    // Added 'embedHtml' to store the exact Street View iframe
+    const [formData, setFormData] = useState({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', embedHtml: '' });
     const [editingId, setEditingId] = useState(null);
+    const [isLocating, setIsLocating] = useState(false);
+
+    // 1. SMART LINK PARSER (Extracts Coords from Link)
+    const handleLinkChange = (e) => {
+        const val = e.target.value;
+        let newFormData = { ...formData, gmapsUrl: val };
+
+        // Attempt to parse Latitude/Longitude from standard Google Maps URLs
+        // Pattern: @-7.6043,110.2055
+        const coordRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        const match = val.match(coordRegex);
+
+        if (match) {
+            newFormData.latitude = match[1];
+            newFormData.longitude = match[2];
+            triggerCapy("📍 Coordinates extracted from link!");
+        }
+
+        // Detect if user accidentally pasted the Embed HTML <iframe...> here
+        if (val.includes("<iframe")) {
+            newFormData.embedHtml = val;
+            newFormData.gmapsUrl = "Embed Code Detected";
+            triggerCapy("📹 Embed code detected!");
+        }
+
+        setFormData(newFormData);
+    };
+
+    // 2. GPS GEOLOCATION
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) { alert("Geolocation not supported"); return; }
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setFormData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+                setIsLocating(false);
+                triggerCapy("GPS Location Locked! 🎯");
+            },
+            (err) => { alert("GPS Error: " + err.message); setIsLocating(false); }
+        );
+    };
+
+    // 3. MANUAL PINPOINT HELPER
+    const openPinpointMap = () => {
+        // Opens a tool where they can click a map to get coords
+        window.open("https://www.google.com/maps", "_blank");
+    };
 
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
         if (!formData.name.trim()) return; 
         try { 
+            const payload = { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() };
             if (editingId) { 
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() }); 
-                await logAudit("CUSTOMER_UPDATE", `Updated customer: ${formData.name}`); 
-                triggerCapy("Customer updated successfully!"); 
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), payload); 
+                await logAudit("CUSTOMER_UPDATE", `Updated: ${formData.name}`); 
+                triggerCapy("Customer updated!"); 
                 setEditingId(null); 
             } else { 
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() }); 
-                await logAudit("CUSTOMER_ADD", `Added customer: ${formData.name}`); 
-                triggerCapy("Customer added to directory!"); 
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), payload); 
+                await logAudit("CUSTOMER_ADD", `Added: ${formData.name}`); 
+                triggerCapy("Customer added!"); 
             } 
-            // Reset all fields including Region/City
-            setFormData({ name: '', phone: '', region: '', city: '', address: '' }); 
+            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', embedHtml: '' }); 
         } catch (err) { console.error(err); } 
     };
 
-    const handleEdit = (customer) => { 
-        // Load existing data into form
+    const handleEdit = (c) => { 
         setFormData({ 
-            name: customer.name, 
-            phone: customer.phone || '', 
-            region: customer.region || '', 
-            city: customer.city || '', 
-            address: customer.address || '' 
+            name: c.name, phone: c.phone || '', region: c.region || '', city: c.city || '', 
+            address: c.address || '', gmapsUrl: c.gmapsUrl || '', 
+            latitude: c.latitude || '', longitude: c.longitude || '',
+            embedHtml: c.embedHtml || ''
         }); 
-        setEditingId(customer.id); 
+        setEditingId(c.id); 
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
 
-    const handleDelete = async (id, name) => { 
-        if (window.confirm("Delete this customer profile?")) { 
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); 
-            logAudit("CUSTOMER_DELETE", `Deleted customer: ${name}`); 
-        } 
-    };
+    const handleDelete = async (id, name) => { if (window.confirm("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
+    const openDetail = (c) => { setSelectedCustomer(c); setViewMode('detail'); };
+
+    if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} />;
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
             <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
             
-            {/* ADD CUSTOMER FORM */}
+            {/* FORM */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>
-                        {editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}
-                    </div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', latitude: '', longitude: '', embedHtml: ''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
-                    {/* ROW 1: Name & Phone */}
+                    {/* Basic Info */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." /></div>
+                    </div>
+
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Store Name</label>
-                            <input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/>
+                            <label className="text-xs font-bold text-slate-500 uppercase">Region / City</label>
+                            <div className="flex gap-2">
+                                <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Region" />
+                                <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="City" />
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Phone</label>
-                            <input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." />
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Address</label><input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1..." /></div>
+                    </div>
+
+                    {/* LOCATION SECTION */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-4">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b dark:border-slate-700">
+                            <MapPin size={16} className="text-orange-500"/>
+                            <span className="font-bold text-sm dark:text-white">Pinpoint Location</span>
+                        </div>
+
+                        {/* 1. SMART LINK INPUT */}
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">
+                                <span>Paste Google Maps Link</span>
+                                <span className="text-emerald-500">Auto-detects Coords</span>
+                            </label>
+                            <div className="flex gap-2">
+                                <input value={formData.gmapsUrl} onChange={handleLinkChange} className="flex-1 p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="https://goo.gl/maps/..." />
+                                <button type="button" onClick={openPinpointMap} className="bg-white dark:bg-slate-700 border dark:border-slate-600 px-3 rounded text-xs font-bold hover:bg-slate-100" title="Open Map to Find">Find</button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-1">Tip: Find spot in Google Maps App {'>'} Share {'>'} Copy Link. Paste here.</p>
+                        </div>
+
+                        {/* 2. MANUAL COORDS / GPS */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Latitude</label>
+                                <input type="number" step="any" value={formData.latitude} onChange={e=>setFormData({...formData, latitude: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" placeholder="-7.xxxx" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Longitude</label>
+                                <input type="number" step="any" value={formData.longitude} onChange={e=>setFormData({...formData, longitude: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" placeholder="110.xxxx" />
+                            </div>
+                        </div>
+                        <button type="button" onClick={handleGetLocation} disabled={isLocating} className="w-full py-2 bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-orange-200 transition-colors">
+                            {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <MapPin size={12}/>} Use My Current GPS Location
+                        </button>
+
+                        {/* 3. EMBED CODE (For Perfect Street View) */}
+                        <div className="pt-2 border-t dark:border-slate-700">
+                             <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">
+                                 Optional: Exact Street View (Embed HTML)
+                             </label>
+                             <textarea 
+                                value={formData.embedHtml} 
+                                onChange={e=>setFormData({...formData, embedHtml: e.target.value})} 
+                                className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 font-mono h-16" 
+                                placeholder='<iframe src="https://www.google.com/maps/embed...">'
+                             />
+                             <p className="text-[10px] text-slate-400 mt-1">
+                                 To get this: Go to Google Maps (Desktop) {'>'} Share {'>'} "Embed a map" {'>'} Copy HTML.
+                             </p>
                         </div>
                     </div>
 
-                    {/* ROW 2: Region & City (NEW) */}
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Region (Wilayah)</label>
-                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Jawa Tengah" />
-                        </div>
-                        <div className="flex-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">City (Kota)</label>
-                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Solo" />
-                        </div>
-                    </div>
-
-                    {/* ROW 3: Address & Button */}
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-[2] w-full">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
-                            <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1" />
-                        </div>
-                        <button className={`text-white px-6 py-2 rounded-lg font-bold h-10 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update' : 'Add'}</button>
+                    <div className="flex justify-end pt-2">
+                        <button className={`text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
                     </div>
                 </form>
             </div>
 
-            {/* CUSTOMER LIST */}
+            {/* LIST */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {customers.map(c => (
-                    <div key={c.id} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex justify-between items-start ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                    <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
                         <div>
-                            <h3 className="font-bold text-lg dark:text-white">{c.name}</h3>
-                            
-                            {/* Display Region & City */}
-                            {(c.city || c.region) && (
-                                <p className="text-xs font-bold text-orange-500 uppercase mb-1">
-                                    {c.city ? c.city : ''} {c.region ? `(${c.region})` : ''}
-                                </p>
-                            )}
-
-                            {c.phone && (
-                                <p className="text-sm text-slate-500 flex items-center gap-1">
-                                    <Phone size={12}/> 
-                                    {isAdmin ? c.phone : "••••••••••"}
-                                </p>
-                            )}
-                            {c.address && <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {c.address}</p>}
+                            <div className="flex justify-between items-start">
+                                <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
+                                {c.latitude && <MapPin size={16} className="text-emerald-500" title="GPS Pinpointed"/>}
+                            </div>
+                            {(c.city || c.region) && <p className="text-xs font-bold text-orange-500 uppercase mb-2">{c.city} {c.region}</p>}
+                            {c.phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone size={12}/> {isAdmin ? c.phone : "••••••••••"}</p>}
                         </div>
-                        
-                        {/* PRIVACY: Hide Edit/Delete Buttons if not Admin */}
                         {isAdmin && (
-                            <div className="flex gap-2">
-                                <button onClick={() => handleEdit(c)} className="text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
-                                <button onClick={() => handleDelete(c.id, c.name)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                            <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
+                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-100 text-slate-600 dark:text-slate-300">Edit</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-100 text-red-500">Delete</button>
                             </div>
                         )}
                     </div>
@@ -833,15 +1182,44 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             </div>
         </div>
     );
-};// --- NEW: SAMPLING ANALYTICS DASHBOARD (Admin Only) ---
+};
+
+// --- NEW: SAMPLING ANALYTICS VIEW (FIXED TOOLTIP & COST ANALYSIS) ---
 const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
     const [rangeType, setRangeType] = useState('monthly');
     const [targetDate, setTargetDate] = useState(getCurrentDate());
 
-    // Filter Data
+    // Local Helper for Rupiah
+    const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+    // --- CUSTOM TOOLTIP (FIXES THE "BKS IN RUPIAH" BUG) ---
+    const SamplingTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white dark:bg-slate-800 p-3 border dark:border-slate-600 shadow-xl rounded-xl text-xs z-50">
+                    <p className="font-bold mb-2 border-b pb-1 dark:border-slate-600 dark:text-white">{label}</p>
+                    {payload.map((entry, index) => (
+                        <div key={index} className="flex justify-between items-center gap-4 mb-1">
+                            <span style={{ color: entry.color }} className="font-bold">{entry.name}:</span>
+                            <span className="font-mono dark:text-slate-300">
+                                {/* Only add "Rp" if the label says Cost or Value */}
+                                {entry.name.includes('Cost') || entry.name.includes('Value') || entry.name.includes('Rp')
+                                    ? formatRp(entry.value) 
+                                    : `${entry.value} Bks`} 
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    // Filter Data & Calculate Stats
     const stats = useMemo(() => {
         const target = new Date(targetDate);
         const filtered = samplings.filter(s => {
+            if(!s.date) return false;
             const sDate = new Date(s.date);
             if (rangeType === 'daily') return s.date === targetDate;
             if (rangeType === 'weekly') {
@@ -854,29 +1232,66 @@ const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
             return false;
         });
 
-        const totalQty = filtered.reduce((a, b) => a + b.qty, 0);
+        let totalQty = 0;
+        let totalValueDistributor = 0; // Factory Cost (Modal)
+        
+        // Opportunity Costs
+        let totalValueRetail = 0;      
+        let totalValueGrosir = 0;
+        let totalValueEcer = 0;
+        
         const productBreakdown = {};
         const locationBreakdown = {};
 
         filtered.forEach(s => {
-            // Product Stats
-            if (!productBreakdown[s.productName]) productBreakdown[s.productName] = 0;
-            productBreakdown[s.productName] += s.qty;
+            // Find Product to get Price
+            const product = inventory.find(p => p.id === s.productId) || {};
+            
+            // PRICES
+            const cost = product.priceDistributor || 0;
+            const retail = product.priceRetail || 0;
+            const grosir = product.priceGrosir || 0;
+            const ecer = product.priceEcer || 0;
+            
+            // Calc Totals
+            totalQty += s.qty;
+            totalValueDistributor += (s.qty * cost);
+            totalValueRetail += (s.qty * retail);
+            totalValueGrosir += (s.qty * grosir);
+            totalValueEcer += (s.qty * ecer);
+
+            // Product Stats (By Value/Cost now, not just Qty)
+            if (!productBreakdown[s.productName]) productBreakdown[s.productName] = { qty: 0, val: 0 };
+            productBreakdown[s.productName].qty += s.qty;
+            productBreakdown[s.productName].val += (s.qty * cost); // Accumulate Cost for Graph
 
             // Location Stats
             const loc = s.reason || 'Unknown';
-            if (!locationBreakdown[loc]) locationBreakdown[loc] = 0;
-            locationBreakdown[loc] += s.qty;
+            if (!locationBreakdown[loc]) locationBreakdown[loc] = { qty: 0, val: 0 };
+            locationBreakdown[loc].qty += s.qty;
+            locationBreakdown[loc].val += (s.qty * cost);
         });
 
-        // Chart Data
+        // Prepare Chart Data (Top 5 by Marketing Spend/Cost)
         const chartData = Object.entries(productBreakdown)
-            .map(([name, qty]) => ({ name, qty }))
-            .sort((a, b) => b.qty - a.qty)
+            .map(([name, data]) => ({ name, qty: data.qty, val: data.val }))
+            .sort((a, b) => b.val - a.val) // Sort by Value (Cost) not Qty
             .slice(0, 5);
 
-        return { totalQty, filtered, productBreakdown, locationBreakdown, chartData };
-    }, [samplings, rangeType, targetDate]);
+        // Find Top Location (by Spend)
+        const topLocation = Object.entries(locationBreakdown).sort((a,b) => b[1].val - a[1].val)[0];
+
+        return { 
+            totalQty, 
+            totalValueDistributor, 
+            totalValueRetail,
+            totalValueGrosir,
+            totalValueEcer,
+            filtered, 
+            topLocation: topLocation ? { name: topLocation[0], val: topLocation[1].val } : null,
+            chartData 
+        };
+    }, [samplings, rangeType, targetDate, inventory]);
 
     return (
         <div className="animate-fade-in space-y-6">
@@ -894,30 +1309,62 @@ const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
 
             {/* SUMMARY CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl text-white shadow-lg">
-                    <p className="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Total Samples Distributed</p>
-                    <h3 className="text-3xl font-bold">{stats.totalQty} <span className="text-lg opacity-70">Bks</span></h3>
+                {/* 1. Marketing Invest (Factory Cost) */}
+                <div className="p-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl text-white shadow-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Wallet size={16} className="text-blue-200"/>
+                        <p className="text-blue-100 text-xs font-bold uppercase tracking-wider">Total Marketing Burn</p>
+                    </div>
+                    <h3 className="text-3xl font-bold">{formatRp(stats.totalValueDistributor)}</h3>
+                    <p className="text-[10px] opacity-70 mt-1">Real Cost (Distributor Price)</p>
                 </div>
+
+                {/* 2. Total Samples */}
                 <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Top Location</p>
-                    <h3 className="text-xl font-bold dark:text-white truncate">{Object.entries(stats.locationBreakdown).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-'}</h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Items Distributed</p>
+                    <h3 className="text-3xl font-bold dark:text-white">{stats.totalQty} <span className="text-lg opacity-50">Bks</span></h3>
                 </div>
+
+                {/* 3. Top Location */}
                 <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Top Product</p>
-                    <h3 className="text-xl font-bold dark:text-white truncate">{Object.entries(stats.productBreakdown).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-'}</h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Top Location (By Spend)</p>
+                    <h3 className="text-lg font-bold dark:text-white truncate">{stats.topLocation?.name || '-'}</h3>
+                    <p className="text-sm font-bold text-orange-500">{stats.topLocation ? formatRp(stats.topLocation.val) : '-'}</p>
                 </div>
             </div>
 
-            {/* CHART */}
+            {/* OPPORTUNITY COST COMPARISON (NEW) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Ecer Opportunity */}
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
+                    <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase mb-1">Potential if sold at ECER</p>
+                    <h4 className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{formatRp(stats.totalValueEcer)}</h4>
+                </div>
+
+                {/* Retail Opportunity */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                    <p className="text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase mb-1">Potential if sold at RETAIL</p>
+                    <h4 className="text-xl font-bold text-blue-700 dark:text-blue-300">{formatRp(stats.totalValueRetail)}</h4>
+                </div>
+
+                {/* Grosir Opportunity */}
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-800/50">
+                    <p className="text-orange-600 dark:text-orange-400 text-[10px] font-bold uppercase mb-1">Potential if sold at GROSIR</p>
+                    <h4 className="text-xl font-bold text-orange-700 dark:text-orange-300">{formatRp(stats.totalValueGrosir)}</h4>
+                </div>
+            </div>
+
+            {/* CHART - NOW SHOWING COST (Rupiah) */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm h-80">
-                <h3 className="font-bold mb-4 dark:text-white">Top 5 Sampled Products</h3>
+                <h3 className="font-bold mb-4 dark:text-white">Top 5 Products by Marketing Spend (Cost)</h3>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={stats.chartData}>
                         <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
                         <XAxis dataKey="name" fontSize={10} stroke="#94a3b8"/>
-                        <YAxis fontSize={12} stroke="#94a3b8"/>
-                        <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
-                        <Bar dataKey="qty" fill="#f97316" radius={[4, 4, 0, 0]} name="Quantity (Bks)"/>
+                        <YAxis fontSize={12} stroke="#94a3b8" tickFormatter={(value) => `Rp${value/1000}k`}/>
+                        {/* Use the new Smart Tooltip here */}
+                        <Tooltip content={<SamplingTooltip />} cursor={{fill: 'transparent'}}/>
+                        <Bar dataKey="val" fill="#f97316" radius={[4, 4, 0, 0]} name="Cost (Rp)"/>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -925,91 +1372,61 @@ const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
     );
 };
 
-
-// --- NEW: SAMPLING CART (FIXED DARK MODE VISIBILITY) ---
-const SamplingCartView = ({ inventory, onCancel, onSubmit, isAdmin }) => {
-    const [cart, setCart] = useState([]);
+            // --- NEW: SAMPLING CART VIEW (The Missing Component) ---
+const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => {
     const [searchTerm, setSearchTerm] = useState("");
+    const [cart, setCart] = useState([]);
     const [location, setLocation] = useState("");
-    const [note, setNote] = useState(""); 
-    const [targetDate, setTargetDate] = useState(getCurrentDate());
+    const [note, setNote] = useState("");
+    const [targetDate, setTargetDate] = useState(new Date().toISOString().split('T')[0]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Helper: Auto-Capitalize
-    const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const filteredProducts = inventory.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const addToCart = (product) => {
+    const addToCart = (item) => {
         setCart(prev => {
-            const existing = prev.find(i => i.id === product.id);
-            if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
-            return [...prev, { id: product.id, name: product.name, qty: 1, stock: product.stock }];
+            const existing = prev.find(i => i.id === item.id);
+            if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+            return [...prev, { id: item.id, name: item.name, qty: 1 }];
         });
     };
 
     const updateQty = (id, delta) => {
-        setCart(prev => prev.map(item => {
-            if (item.id === id) {
-                const newQty = Math.max(1, item.qty + delta);
-                return { ...item, qty: newQty };
-            }
-            return item;
-        }));
+        setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
     };
 
     const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
 
     const handleFinalSubmit = async () => {
-        if (!location.trim()) return alert("Please enter a Location!");
-        if (cart.length === 0) return alert("Cart is empty!");
+        if (!location.trim()) { alert("Please enter a Folder/Location name!"); return; }
+        if (cart.length === 0) return;
         
         setIsSubmitting(true);
-        await onSubmit(cart, toTitleCase(location.trim()), targetDate, note.trim());
+        await onSubmit(cart, location, targetDate, note);
         setIsSubmitting(false);
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)] animate-fade-in">
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] animate-fade-in">
             {/* LEFT: PRODUCT GRID */}
-            <div className="lg:w-2/3 flex flex-col bg-slate-100 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-4">
+            <div className="lg:w-2/3 flex flex-col">
                 <div className="flex gap-4 mb-4">
-                    <button onClick={onCancel} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"><ArrowRight className="rotate-180 dark:text-white" size={20}/></button>
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-3.5 text-slate-400" size={20}/>
-                        <input className="w-full pl-10 p-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-orange-500 dark:bg-slate-800 dark:text-white font-bold" placeholder="Search item to sample..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} autoFocus />
-                    </div>
+                    <button onClick={onCancel} className="p-3 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 text-slate-500 hover:text-orange-500"><ArrowRight className="rotate-180"/></button>
+                    <input className="flex-1 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white" placeholder="Search item to sample..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
                 </div>
-                <div className="flex-1 overflow-y-auto pr-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {filteredProducts.map(item => (
-                            <div 
-                                key={item.id} 
-                                onClick={() => addToCart(item)} 
-                                className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border dark:border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-md transition-all active:scale-95 group relative overflow-hidden flex flex-col items-center text-center"
-                            >
-                                {/* FIXED: Added dark:text-white here */}
-                                <div className="absolute top-2 right-2 z-20 bg-slate-100 dark:bg-slate-700 text-[10px] px-1.5 py-0.5 rounded text-slate-500 dark:text-white font-mono border dark:border-slate-600">
-                                    {isAdmin ? item.stock : '**'} Left
-                                </div>
-
-                                <div className="h-32 w-full mb-2 flex items-center justify-center relative z-10 group-hover:-translate-y-1 transition-transform duration-300">
-                                    {(item.images?.front || item.image) ? (
-                                        <img src={item.images?.front || item.image} className="h-full w-full object-contain drop-shadow-xl" style={{filter: 'contrast(1.1)'}}/>
-                                    ) : (
-                                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
-                                            <Package size={32} className="text-slate-300 group-hover:text-orange-400 transition-colors"/>
-                                        </div>
-                                    )}
-                                </div>
-                                <h4 className="font-bold text-sm dark:text-white leading-tight line-clamp-2 w-full">{item.name}</h4>
+                <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 rounded-2xl p-4 border dark:border-slate-700">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {filteredInventory.map(item => (
+                            <div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border dark:border-slate-700 cursor-pointer hover:border-orange-500 group transition-all">
+                                <h4 className="font-bold text-sm dark:text-white truncate">{item.name}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{item.stock} in stock</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* RIGHT: SAMPLING BASKET */}
+            {/* RIGHT: BASKET */}
             <div className="lg:w-1/3 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
                 <div className="p-5 bg-slate-900 text-white">
                     <h3 className="font-bold flex items-center gap-2"><ClipboardList className="text-orange-500"/> Sampling Basket</h3>
@@ -1038,7 +1455,6 @@ const SamplingCartView = ({ inventory, onCancel, onSubmit, isAdmin }) => {
                                 disabled={!isAdmin}
                                 className={`w-full p-2.5 rounded-lg border dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm font-bold ${!isAdmin ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''}`} 
                             />
-                            {/* FIXED: Added dark:text-white to the Calendar Icon */}
                             <Calendar className="absolute right-3 top-2.5 text-slate-400 dark:text-white pointer-events-none" size={18}/>
                         </div>
                     </div>
@@ -1056,10 +1472,7 @@ const SamplingCartView = ({ inventory, onCancel, onSubmit, isAdmin }) => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">-</button>
-                                    
-                                    {/* FIXED: Added dark:text-white to the quantity number */}
                                     <span className="w-6 text-center text-sm font-bold dark:text-white">{item.qty}</span>
-                                    
                                     <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">+</button>
                                     <button onClick={() => removeFromCart(item.id)} className="ml-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                                 </div>
@@ -1080,26 +1493,37 @@ const SamplingCartView = ({ inventory, onCancel, onSubmit, isAdmin }) => {
 };
 
 
-// --- NEW: SAMPLING FOLDER VIEW (GROUPED BY STORE/NOTE) ---
+// --- NEW: SAMPLING FOLDER VIEW (YEAR > MONTH > DATE > LOCATION) ---
 const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder }) => {
+    // New State for Deep Navigation
+    const [selectedYear, setSelectedYear] = useState(null);
+    const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
 
-    // Group By Date -> Location
+    // 1. Group Data: Year -> Month -> Date -> Location
     const folderStructure = useMemo(() => {
         const structure = {};
         samplings.forEach(s => {
-            if (!structure[s.date]) structure[s.date] = {};
+            if (!s.date) return;
+            const d = new Date(s.date);
+            const year = d.getFullYear();
+            const month = d.toLocaleString('default', { month: 'long' }); // e.g. "January"
+            
+            if (!structure[year]) structure[year] = {};
+            if (!structure[year][month]) structure[year][month] = {};
+            if (!structure[year][month][s.date]) structure[year][month][s.date] = {};
+            
             const loc = s.reason ? s.reason.trim() : 'Unspecified';
-            if (!structure[s.date][loc]) structure[s.date][loc] = [];
-            structure[s.date][loc].push(s);
+            if (!structure[year][month][s.date][loc]) structure[year][month][s.date][loc] = [];
+            structure[year][month][s.date][loc].push(s);
         });
         return structure;
     }, [samplings]);
 
-    // LEVEL 3: ITEMS LIST (Inside a Location) - GROUPED BY NOTE
-    if (selectedDate && selectedLocation) {
-        const items = folderStructure[selectedDate][selectedLocation] || [];
+    // --- LEVEL 4: ITEMS LIST (Inside a Location) ---
+    if (selectedYear && selectedMonth && selectedDate && selectedLocation) {
+        const items = folderStructure[selectedYear][selectedMonth][selectedDate][selectedLocation] || [];
         
         // Group Items by Note (Description)
         const groupedItems = items.reduce((groups, item) => {
@@ -1115,7 +1539,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                     <button onClick={() => setSelectedLocation(null)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Locations</button>
                     {isAdmin && (
                         <button onClick={() => onEditFolder(selectedDate, selectedLocation)} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-100 hover:text-orange-600 transition-colors">
-                            <Edit size={14}/> Edit Folder / Date
+                            <Edit size={14}/> Edit Folder
                         </button>
                     )}
                 </div>
@@ -1130,15 +1554,12 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                     <div className="p-8 space-y-8">
                         {Object.entries(groupedItems).map(([noteGroup, groupItems]) => (
                             <div key={noteGroup} className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border dark:border-slate-700 overflow-hidden">
-                                {/* SECTION HEADER (STORE NAME) */}
                                 <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b dark:border-slate-700 flex justify-between items-center">
                                     <h3 className="font-bold text-slate-700 dark:text-white flex items-center gap-2">
                                         <Store size={16} className="text-orange-500"/> {noteGroup}
                                     </h3>
                                     <span className="text-xs bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300">{groupItems.length} items</span>
                                 </div>
-
-                                {/* ITEMS TABLE FOR THIS STORE */}
                                 <table className="w-full text-sm text-left">
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {groupItems.map(s => (
@@ -1165,19 +1586,22 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
         );
     }
 
-    // LEVEL 2: LOCATION FOLDERS
-    if (selectedDate) {
-        const locations = Object.keys(folderStructure[selectedDate] || {});
+    // --- LEVEL 3: LOCATION FOLDERS (Inside a Date) ---
+    if (selectedYear && selectedMonth && selectedDate) {
+        const locations = Object.keys(folderStructure[selectedYear][selectedMonth][selectedDate] || {});
         return (
             <div className="animate-fade-in">
-                <button onClick={() => setSelectedDate(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Dates</button>
-                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Calendar size={24} className="text-orange-500"/> {selectedDate}</h2>
+                <button onClick={() => setSelectedDate(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to {selectedMonth}</button>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Calendar size={24} className="text-orange-500"/> {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {locations.map(loc => (
                         <div key={loc} onClick={() => setSelectedLocation(loc)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-indigo-100 dark:bg-slate-700 rounded-lg text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
-                                <div><h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3><p className="text-xs text-slate-500">{folderStructure[selectedDate][loc].length} Items</p></div>
+                                <div>
+                                    <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3>
+                                    <p className="text-xs text-slate-500">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -1186,19 +1610,84 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
         );
     }
 
-    // LEVEL 1: DATE FOLDERS
-    const dates = Object.keys(folderStructure).sort((a,b) => new Date(b) - new Date(a));
+    // --- LEVEL 2: DATE FOLDERS (Inside a Month) ---
+    if (selectedYear && selectedMonth) {
+        const dates = Object.keys(folderStructure[selectedYear][selectedMonth] || {}).sort((a,b) => new Date(b) - new Date(a));
+        return (
+            <div className="animate-fade-in">
+                <button onClick={() => setSelectedMonth(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to {selectedYear}</button>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Folder size={24} className="text-orange-500"/> {selectedMonth} {selectedYear}</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {dates.map(date => {
+                        const locCount = Object.keys(folderStructure[selectedYear][selectedMonth][date]).length;
+                        return (
+                            <div key={date} onClick={() => setSelectedDate(date)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all text-center">
+                                <div className="w-12 h-12 mx-auto bg-orange-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors mb-3">
+                                    <span className="font-bold text-lg">{new Date(date).getDate()}</span>
+                                </div>
+                                <h3 className="font-bold text-sm dark:text-white">{new Date(date).toLocaleDateString(undefined, {weekday:'short'})}</h3>
+                                <p className="text-[10px] text-slate-500 mt-1">{locCount} Locations</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    }
+
+    // --- LEVEL 1: MONTH FOLDERS (Inside a Year) ---
+    if (selectedYear) {
+        const months = Object.keys(folderStructure[selectedYear] || {});
+        // Sort months chronologically
+        const monthOrder = { "January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12 };
+        months.sort((a, b) => monthOrder[a] - monthOrder[b]);
+
+        return (
+            <div className="animate-fade-in">
+                <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Years</button>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Folder size={24} className="text-blue-500"/> {selectedYear} Archives</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {months.map(month => (
+                        <div key={month} onClick={() => setSelectedMonth(month)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 dark:bg-slate-700 rounded-lg text-blue-500 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                <div>
+                                    <h3 className="font-bold text-lg dark:text-white">{month}</h3>
+                                    <p className="text-xs text-slate-500">{Object.keys(folderStructure[selectedYear][month]).length} Dates Recorded</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // --- LEVEL 0: YEAR FOLDERS (Top Level) ---
+    const years = Object.keys(folderStructure).sort((a, b) => b - a);
     return (
         <div className="animate-fade-in space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {dates.map(date => (
-                    <div key={date} onClick={() => setSelectedDate(date)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all relative">
-                        <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400">{date}</span></div>
-                        <h3 className="font-bold text-lg dark:text-white mb-1">{new Date(date).toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'})}</h3>
-                        <p className="text-xs text-slate-500">{Object.keys(folderStructure[date]).length} Locations</p>
-                    </div>
-                ))}
-            </div>
+            {years.length === 0 ? (
+                 <div className="text-center py-20 text-slate-400">
+                    <Folder size={48} className="mx-auto mb-4 opacity-20"/>
+                    <p>No sampling records found.</p>
+                 </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {years.map(year => (
+                        <div key={year} onClick={() => setSelectedYear(year)} className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
+                            <Folder size={100} className="absolute -right-6 -bottom-6 text-white opacity-5 group-hover:opacity-10 transition-opacity"/>
+                            <div className="relative z-10">
+                                <h3 className="text-3xl font-bold mb-1">{year}</h3>
+                                <div className="h-1 w-12 bg-orange-500 rounded mb-3"></div>
+                                <p className="text-sm text-slate-400 font-mono">
+                                    {Object.keys(folderStructure[year]).length} Months Active
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
@@ -1327,6 +1816,22 @@ export default function KPMInventoryApp() {
   const [activeCropContext, setActiveCropContext] = useState(null); 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
+// --- NEW: DISCO MODE STATE ---
+  const [isDiscoMode, setIsDiscoMode] = useState(false);
+  const discoTimeoutRef = useRef(null); 
+
+  const triggerDiscoParty = () => {
+      if (isDiscoMode) return; 
+      setIsDiscoMode(true);
+      triggerCapy("Let's DANCE! 🕺💃"); 
+
+      // Stop after 12 seconds
+      if (discoTimeoutRef.current) clearTimeout(discoTimeoutRef.current);
+      discoTimeoutRef.current = setTimeout(() => {
+          setIsDiscoMode(false);
+      }, 12000); 
+  };
+
   // Capybara Message Cycle
   const [capyMsg, setCapyMsg] = useState("Welcome to KPM Inventory!");
   const [showCapyMsg, setShowCapyMsg] = useState(false);
@@ -1359,12 +1864,19 @@ export default function KPMInventoryApp() {
   const activeMessages = (appSettings?.mascotMessages && appSettings.mascotMessages.length > 0) ? appSettings.mascotMessages : defaultMessages;
 
   // Feature State
+
+ // Feature State
   const [editMascotMessage, setEditMascotMessage] = useState("");
   const [newMascotMessage, setNewMascotMessage] = useState("");
+  
+  // New Editing States
+  const [editingMsgIndex, setEditingMsgIndex] = useState(-1); 
+  const [editMsgText, setEditMsgText] = useState("");         
+  
   const [editCompanyName, setEditCompanyName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
-  const [editingSample, setEditingSample] = useState(null); // Add this line
-  const [editingFolder, setEditingFolder] = useState(null); // <--- NEW STATE FOR FOLDER EDITING
+  const [editingSample, setEditingSample] = useState(null); 
+  const [editingFolder, setEditingFolder] = useState(null);
 
 
 
@@ -1463,6 +1975,28 @@ export default function KPMInventoryApp() {
       await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessages: updatedMessages }, {merge: true});
   };
 
+// --- NEW: SAVE EDITED MASCOT MESSAGE ---
+  const handleSaveEditedMessage = async (index) => {
+      if (!user || !editMsgText.trim()) return;
+      
+      // 1. Get current list (or use defaults if this is the first customization)
+      let currentList = appSettings?.mascotMessages;
+      if (!currentList || currentList.length === 0) {
+          currentList = [...defaultMessages];
+      }
+      
+      // 2. Create a copy and update the specific item
+      const updatedList = [...currentList];
+      updatedList[index] = editMsgText.trim();
+      
+      // 3. Save to Firestore
+      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessages: updatedList }, {merge: true});
+      
+      // 4. Reset UI
+      setEditingMsgIndex(-1);
+      setEditMsgText("");
+      triggerCapy("Dialogue updated!");
+  };
   // --- NEW: DELETE SINGLE TRANSACTION ---
   const handleDeleteSingleTransaction = async (transaction) => {
       if(!window.confirm("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
@@ -1865,6 +2399,8 @@ export default function KPMInventoryApp() {
       return (
         <div className="animate-fade-in max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
+
+
             
             {/* BACKUP & RESTORE SECTION */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
@@ -1953,14 +2489,47 @@ export default function KPMInventoryApp() {
                 </div>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {activeMessages.map((msg, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
-                            <span className="text-sm dark:text-slate-300 italic">"{msg}"</span>
-                            <button onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
-                        </div>
-                    ))}
+    {activeMessages.map((msg, idx) => (
+        <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+            {editingMsgIndex === idx ? (
+                // EDIT MODE: Show Input + Save + Cancel
+                <div className="flex gap-2 w-full animate-fade-in">
+                    <input 
+                        autoFocus
+                        className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                        value={editMsgText}
+                        onChange={(e) => setEditMsgText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}
+                    />
+                    <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600" title="Save"><Save size={16}/></button>
+                    <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-500" title="Cancel"><X size={16}/></button>
                 </div>
-            </div>
+            ) : (
+                // NORMAL MODE: Show Text + Edit + Delete
+                <>
+                    <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
+                    <div className="flex gap-2 shrink-0">
+                        <button 
+                            onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} 
+                            className="text-slate-400 hover:text-blue-500"
+                            title="Edit Message"
+                        >
+                            <Edit size={14}/>
+                        </button>
+                        <button 
+                            onClick={() => handleDeleteMascotMessage(msg)} 
+                            className="text-slate-400 hover:text-red-500"
+                            title="Delete Message"
+                        >
+                            <Trash2 size={14}/>
+                        </button>
+                    </div>
+                </>
+            )}
+        </div>
+    ))}
+</div>
+</div>
 
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
                  {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
@@ -1968,7 +2537,40 @@ export default function KPMInventoryApp() {
             
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
                 {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
-                <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3></div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div></div>
+                <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3></div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div>
+
+
+{/* DANGER ZONE - DISCO MODE (ADMIN ONLY) */}
+            {isAdmin && (
+                <div className="mt-12 pt-8 border-t-2 border-red-100 dark:border-red-900/30">
+                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <ShieldAlert size={16}/> Danger Zone
+                    </h4>
+                    
+                    <button 
+                        onClick={triggerDiscoParty} 
+                        disabled={isDiscoMode}
+                        className={`w-full py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center gap-3 transition-all transform active:scale-95 border-b-4 border-red-800 ${isDiscoMode ? 'bg-slate-500 border-slate-700 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:shadow-red-500/40'}`}
+                    >
+                        {isDiscoMode ? (
+                            <>
+                                <Music size={24} className="animate-spin"/> 
+                                SYSTEM OVERLOAD: PARTYING...
+                            </>
+                        ) : (
+                            <>
+                                <ShieldAlert size={24} className="animate-pulse"/> 
+                                DO NOT PRESS: CAPY DISCO PROTOCOL
+                            </>
+                        )}
+                    </button>
+                    
+                    <p className="text-[10px] text-red-400 text-center mt-3 font-mono opacity-70">
+                        Warning: Initiating this protocol will result in extreme funkiness levels.
+                    </p>
+                </div>
+            )}
+		</div>
         </div>
       );
   }
@@ -2711,7 +3313,13 @@ export default function KPMInventoryApp() {
         </div>
       </main>
 
-      <CapybaraMascot message={showCapyMsg ? capyMsg : null} onClick={() => cycleMascotMessage()} customImage={appSettings?.mascotImage} />
+      {/* MASCOT - NOW WITH DISCO STATE PASSED DOWN */}
+      <CapybaraMascot 
+          isDiscoMode={isDiscoMode}
+          message={showCapyMsg ? capyMsg : null} 
+          onClick={() => cycleMascotMessage()} 
+          staticImageSrc={appSettings?.mascotImage} 
+      />
     </div>
   );
 }
