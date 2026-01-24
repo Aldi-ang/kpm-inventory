@@ -2525,11 +2525,48 @@ export default function KPMInventoryApp() {
       return () => unsubTiers();
   }, [user]);
 
-  // Save Tiers to DB
-  const handleSaveTiers = async (newTiers) => {
-      if(!user) return;
-      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: newTiers }, {merge: true});
-      triggerCapy("Tier settings updated!");
+  // --- NEW: EXPORT TIER ICONS ---
+  const handleExportTiers = () => {
+      if(!tierSettings) return;
+      const data = JSON.stringify({ 
+          meta: { type: 'kpm_tier_config', date: new Date().toISOString() }, 
+          tiers: tierSettings 
+      }, null, 2);
+      
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kpm_map_icons_${getCurrentDate()}.json`;
+      a.click();
+      triggerCapy("Map Icons Exported!");
+  };
+
+  // --- NEW: IMPORT TIER ICONS ---
+  const handleImportTiers = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if(!window.confirm("Import Icons? This will overwrite your current map pins.")) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+          try {
+              const json = JSON.parse(event.target.result);
+              // Validation check
+              if (json.meta?.type !== 'kpm_tier_config' || !Array.isArray(json.tiers)) {
+                  throw new Error("Invalid Icon Config File");
+              }
+              
+              setTierSettings(json.tiers);
+              await handleSaveTiers(json.tiers); // Save to Database
+              triggerCapy("Map Icons Imported Successfully!");
+          } catch (err) {
+              alert("Import Failed: " + err.message);
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = null;
   };
 
   // UI States
@@ -3260,20 +3297,40 @@ export default function KPMInventoryApp() {
                 </div>
             </div>
             
-{/* TIER MANAGER (ADMIN ONLY) */}
+{/* TIER MANAGER (ADMIN ONLY) - FIXED EDITING */}
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
+                    
+                    <div className="flex gap-2">
+                        <button onClick={handleExportTiers} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors">
+                            <Download size={14}/> Export
+                        </button>
+                        <label className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer">
+                            <Upload size={14}/> Import
+                            <input type="file" accept=".json" onChange={handleImportTiers} className="hidden" />
+                        </label>
+                    </div>
                 </div>
                 
                 <div className="space-y-3">
                     {tierSettings.map((tier, idx) => (
                         <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
-                            {/* Color Picker (Border Color) */}
+                            {/* Color Picker */}
                             <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"/>
                             
-                            {/* Label Input */}
-                            <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; handleSaveTiers(newTiers); }} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Name"/>
+                            {/* Label Input - FIXED: Updates State on Change, Saves on Blur */}
+                            <input 
+                                value={tier.label} 
+                                onChange={(e) => { 
+                                    const newTiers = [...tierSettings]; 
+                                    newTiers[idx].label = e.target.value; 
+                                    setTierSettings(newTiers); // Instant UI Update
+                                }} 
+                                onBlur={() => handleSaveTiers(tierSettings)} // Save to DB when done typing
+                                className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" 
+                                placeholder="Name"
+                            />
                             
                             {/* Icon Type Toggle */}
                             <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white">
