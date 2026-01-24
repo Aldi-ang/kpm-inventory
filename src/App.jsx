@@ -11,7 +11,20 @@ import {
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx';
+
+// --- MAP ENGINE IMPORTS ---
+import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default Leaflet marker icons in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";        // <-- WAS MISSING
@@ -170,14 +183,29 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
   };
   const handleMouseUp = () => { setIsDraggingImage(false); setResizingHandle(null); };
   const executeCrop = () => {
-    const canvas = document.createElement('canvas'); const BASE_RES = 600; const ratio = cropBox.w / cropBox.h;
-    if (ratio > 1) { canvas.width = BASE_RES; canvas.height = BASE_RES / ratio; } else { canvas.height = BASE_RES; canvas.width = BASE_RES * ratio; }
-    const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const img = imageRef.current; ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate((rotation * Math.PI) / 180);
+    const canvas = document.createElement('canvas'); 
+    const BASE_RES = 600; 
+    const ratio = cropBox.w / cropBox.h;
+    
+    if (ratio > 1) { canvas.width = BASE_RES; canvas.height = BASE_RES / ratio; } 
+    else { canvas.height = BASE_RES; canvas.width = BASE_RES * ratio; }
+    
+    const ctx = canvas.getContext('2d'); 
+    
+    // --- CHANGE 1: CLEAR RECT INSTEAD OF FILL WHITE (FOR TRANSPARENCY) ---
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const img = imageRef.current; 
+    ctx.translate(canvas.width / 2, canvas.height / 2); 
+    ctx.rotate((rotation * Math.PI) / 180);
+    
     const scaleFactor = canvas.width / cropBox.w; 
-    ctx.translate(offset.x * scaleFactor, offset.y * scaleFactor); ctx.scale(zoom * scaleFactor, zoom * scaleFactor);
+    ctx.translate(offset.x * scaleFactor, offset.y * scaleFactor); 
+    ctx.scale(zoom * scaleFactor, zoom * scaleFactor);
     ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    onCrop(canvas.toDataURL('image/jpeg', 0.8));
+    
+    // --- CHANGE 2: EXPORT AS PNG (PRESERVES TRANSPARENCY) ---
+    onCrop(canvas.toDataURL('image/png', 1.0));
   };
   
   const DimSlider = ({ label, val, axis }) => (
@@ -985,42 +1013,698 @@ const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, trigg
     );
 };
 
-// --- UPGRADED: CUSTOMER MANAGEMENT (SMART LOCATION) ---
-const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
-    const [viewMode, setViewMode] = useState('list');
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
-    // Added 'embedHtml' to store the exact Street View iframe
-    const [formData, setFormData] = useState({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', embedHtml: '' });
-    const [editingId, setEditingId] = useState(null);
-    const [isLocating, setIsLocating] = useState(false);
 
-    // 1. SMART LINK PARSER (Extracts Coords from Link)
-    const handleLinkChange = (e) => {
-        const val = e.target.value;
-        let newFormData = { ...formData, gmapsUrl: val };
 
-        // Attempt to parse Latitude/Longitude from standard Google Maps URLs
-        // Pattern: @-7.6043,110.2055
-        const coordRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
-        const match = val.match(coordRegex);
+// --- HELPER: MAP CONTROLLER (DEFINED OUTSIDE TO PREVENT RE-RENDERS) ---
+// This component handles camera movements safely without resetting on every click.
+const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome }) => {
+    const map = useMap();
+    const isFirstRun = useRef(true);
 
-        if (match) {
-            newFormData.latitude = match[1];
-            newFormData.longitude = match[2];
-            triggerCapy("📍 Coordinates extracted from link!");
+    // 1. INITIAL LOAD (Go to Saved Home)
+    useEffect(() => {
+        if (isFirstRun.current) {
+            if (savedHome && savedHome.lat && savedHome.lng) {
+                map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
+            } else {
+                map.locate().on("locationfound", (e) => map.flyTo(e.latlng, 13));
+            }
+            isFirstRun.current = false;
         }
+    }, [map, savedHome]);
 
-        // Detect if user accidentally pasted the Embed HTML <iframe...> here
-        if (val.includes("<iframe")) {
-            newFormData.embedHtml = val;
-            newFormData.gmapsUrl = "Embed Code Detected";
-            triggerCapy("📹 Embed code detected!");
+    // 2. REGION/CITY CHANGE (Only runs when filters change)
+    useEffect(() => {
+        if (selectedRegion !== "All" && mapPoints.length > 0) {
+            let latSum = 0, lngSum = 0;
+            mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
+            const center = [latSum / mapPoints.length, lngSum / mapPoints.length];
+            map.flyTo(center, 13, { duration: 1.5 });
         }
+    }, [selectedRegion, selectedCity, map]); // <--- NOT dependent on selectedStore
 
-        setFormData(newFormData);
+    return null;
+};
+
+// --- FIXED: MAP MISSION CONTROL (DYNAMIC TIERS + ALL PREVIOUS FIXES) ---
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
+    const [selectedStore, setSelectedStore] = useState(null);
+    const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
+    const [isAddingMode, setIsAddingMode] = useState(false); 
+    const [newPinCoords, setNewPinCoords] = useState(null);
+    
+    const [selectedRegion, setSelectedRegion] = useState("All"); 
+    const [selectedCity, setSelectedCity] = useState("All");     
+    const [mapBounds, setMapBounds] = useState(null); 
+
+    const activeTiers = tierSettings || [
+        { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
+        { id: 'Gold', label: 'Gold', color: '#fbbf24', iconType: 'emoji', value: '🥇' },
+        { id: 'Silver', label: 'Silver', color: '#94a3b8', iconType: 'emoji', value: '🥈' },
+        { id: 'Bronze', label: 'Bronze', color: '#78350f', iconType: 'emoji', value: '🥉' }
+    ];
+
+    // 1. DATA PROCESSING
+    const { mapPoints, locationTree } = useMemo(() => {
+        const tree = {}; 
+        const validStores = customers
+            .filter(c => c.latitude && c.longitude)
+            .map(c => {
+                const lat = parseFloat(c.latitude);
+                const lng = parseFloat(c.longitude);
+                if (isNaN(lat) || isNaN(lng)) return null;
+
+                // DATA FIX: FORCE "JALAN PEMUDA" TO "MUNTILAN"
+                let reg = c.region || "Uncategorized";
+                let cit = c.city || "Uncategorized";
+                const addr = (c.address || "").toLowerCase();
+
+                if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) {
+                    cit = "Muntilan"; 
+                }
+
+                if (!tree[reg]) tree[reg] = new Set();
+                tree[reg].add(cit);
+
+                const last = c.lastVisit ? new Date(c.lastVisit) : new Date(0);
+                const next = new Date(last);
+                next.setDate(last.getDate() + (parseInt(c.visitFreq) || 7));
+                const diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
+                
+                let status = 'ok';
+                if (diffDays <= 0) status = 'overdue';
+                else if (diffDays <= 2) status = 'soon';
+
+                return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays };
+            })
+            .filter(c => c !== null);
+
+        const filtered = validStores.filter(c => {
+            if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
+            if (selectedCity !== "All" && c.city !== selectedCity) return false;
+            const tier = c.tier || 'Silver';
+            if (!filterTier.includes(tier)) return false;
+            return true;
+        });
+
+        const treeArray = Object.keys(tree).reduce((acc, reg) => {
+            acc[reg] = Array.from(tree[reg]).sort();
+            return acc;
+        }, {});
+
+        return { mapPoints: filtered, locationTree: treeArray };
+    }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
+
+    const AdminControls = () => {
+        const map = useMapEvents({});
+        const saveView = () => { if(onSetHome) onSetHome(map.getCenter(), map.getZoom()); };
+        if(!isAdmin) return null;
+        return (
+            <div className="absolute top-[80px] left-[10px] z-[9999]">
+                <button onClick={saveView} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
+                    <MapPin size={14}/> Set Home
+                </button>
+            </div>
+        );
     };
 
-    // 2. GPS GEOLOCATION
+    const MapClicker = () => {
+        useMapEvents({
+            click(e) {
+                if (isAddingMode) {
+                    setNewPinCoords(e.latlng);
+                    const coordString = `${e.latlng.lat}, ${e.latlng.lng}`;
+                    navigator.clipboard.writeText(coordString);
+                    if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
+                } else {
+                    setSelectedStore(null);
+                }
+            },
+        });
+        return null;
+    };
+
+    const getIcon = (store, isTemp = false) => {
+        if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
+
+        const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
+        let content = '';
+        if (tierDef.iconType === 'image') {
+            content = `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+        } else {
+            content = `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
+        }
+
+        let glow = store.status === 'overdue' ? `box-shadow: 0 0 0 4px #ef4444; animation: pulse 1.5s infinite;` : '';
+        let border = `border: 3px solid ${tierDef.color || '#94a3b8'};`;
+
+        return L.divIcon({
+            className: 'custom-icon', 
+            html: `<div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} overflow: hidden;">${content}</div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+        });
+    };
+
+    const toggleTierFilter = (tierId) => {
+        setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
+    };
+
+    const toggleAllTiers = () => {
+        setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
+    };
+
+    const handlePinClick = (store, map) => {
+        setSelectedStore(store);
+        map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 });
+    };
+
+    // --- UPDATED: DYNAMIC TIER LOOKUP ---
+    const MarkerWithZoom = ({ store }) => {
+        const map = useMap();
+        
+        // Find the correct Tier Definition (Icon + Label)
+        const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
+
+        return (
+            <Marker 
+                key={store.id} 
+                position={[store.latitude, store.longitude]} 
+                icon={getIcon(store)} 
+                eventHandlers={{ click: () => handlePinClick(store, map) }}
+                riseOnHover={true}
+            >
+                <LeafletTooltip direction="top" offset={[0, -40]} opacity={1} className="custom-leaflet-tooltip">
+                    <div className="store-3d-card w-48 bg-slate-900 text-white rounded-xl border-2 border-slate-600 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none z-20"></div>
+                        {store.storeImage ? (
+                            <img src={store.storeImage} className="w-full h-28 object-cover" alt={store.name} onError={(e) => e.target.style.display = 'none'}/>
+                        ) : (
+                            <div className="w-full h-24 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-slate-600"><Store size={32}/></div>
+                        )}
+                        <div className="p-3 bg-slate-900/95 backdrop-blur relative z-10">
+                            <h3 className="font-bold text-sm mb-1 truncate text-white">{store.name}</h3>
+                            <div className="flex justify-between items-center text-[10px] text-slate-400">
+                                {/* DYNAMIC TIER BADGE */}
+                                <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600 flex items-center gap-1 font-bold">
+                                    {tierDef.iconType === 'image' ? (
+                                        <img src={tierDef.value} className="w-3 h-3 object-contain"/> 
+                                    ) : (
+                                        <span>{tierDef.value}</span>
+                                    )}
+                                    <span>{tierDef.label}</span>
+                                </span>
+                                
+                                <span className={store.status === 'overdue' ? 'text-red-400 font-bold bg-red-900/20 px-1.5 py-0.5 rounded' : 'text-emerald-400 font-bold'}>{store.diffDays <= 0 ? 'LATE' : `${store.diffDays}d left`}</span>
+                            </div>
+                        </div>
+                    </div>
+                </LeafletTooltip>
+            </Marker>
+        );
+    };
+
+    const StoreHUD = ({ store }) => {
+        const [showConsignDetails, setShowConsignDetails] = useState(false);
+
+        const stats = useMemo(() => {
+            const storeTrans = transactions.filter(t => t.customerName === store.name);
+            const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
+            const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
+            const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
+            const currentConsignment = Math.max(0, totalTitip - totalPaid);
+            
+            const itemMap = {}; 
+            storeTrans.forEach(t => {
+                if (t.type === 'SALE' && t.paymentType === 'Titip') {
+                    t.items.forEach(i => {
+                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
+                        const bks = convertToBks(i.qty, i.unit, prod);
+                        if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 };
+                        itemMap[i.productId].qty += bks;
+                    });
+                }
+                else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+                    const list = t.items || t.itemsPaid || [];
+                    list.forEach(i => {
+                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
+                        const bks = convertToBks(i.qty, i.unit, prod);
+                        if (itemMap[i.productId]) itemMap[i.productId].qty -= bks;
+                    });
+                }
+            });
+            const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
+
+            const graphData = storeTrans.filter(t => t.type === 'SALE').reduce((acc, t) => {
+                const date = t.date.substring(5);
+                const found = acc.find(i => i.date === date);
+                if (found) found.total += t.total; else acc.push({ date, total: t.total });
+                return acc;
+            }, []).sort((a,b) => a.date.localeCompare(b.date)).slice(-5);
+            
+            return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
+        }, [store, transactions, inventory]);
+
+        const getWhatsappLink = () => {
+            if (!store.phone) return "#";
+            const cleanNumber = store.phone.replace(/\D/g, '').replace(/^0/, '62');
+            return `https://wa.me/${cleanNumber}`;
+        };
+
+        const HudTooltip = ({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+                return (
+                    <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl">
+                        <p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p>
+                        <p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p>
+                    </div>
+                );
+            }
+            return null;
+        };
+
+        return (
+            <div className="absolute left-4 top-20 bottom-4 w-80 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-slate-700 p-6 overflow-y-auto z-[1000] animate-slide-in-left">
+                <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
+                <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">{store.name}</h2>
+                <p className="text-slate-400 text-xs mb-4 flex items-center gap-1"><MapPin size={12}/> {store.city}</p>
+
+                {isAdmin && store.phone && (
+                    <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center">
+                        <span className="text-sm font-mono">{store.phone}</span>
+                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="p-2 bg-green-600 rounded-lg hover:bg-green-500 transition-colors flex items-center gap-2 text-xs font-bold"><Phone size={14}/> Chat</a>
+                    </div>
+                )}
+
+                <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
+                    <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
+                    <div>
+                        <p className="text-[10px] uppercase font-bold opacity-70">Next Visit</p>
+                        <p className="font-bold text-sm">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p>
+                    </div>
+                </div>
+
+                {isAdmin && (
+                    <div className="space-y-4 mb-6">
+                        {stats.currentConsignment > 0 && (
+                            <div className="p-3 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
+                                <div 
+                                    className="flex justify-between items-center cursor-pointer"
+                                    onClick={() => setShowConsignDetails(!showConsignDetails)}
+                                >
+                                    <div>
+                                        <p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p>
+                                        <p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p>
+                                    </div>
+                                    <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}>
+                                        <ChevronRight size={16} className="text-orange-500 rotate-90"/>
+                                    </div>
+                                </div>
+
+                                {showConsignDetails && (
+                                    <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
+                                        {stats.activeItems.length > 0 ? (
+                                            stats.activeItems.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between text-xs items-center">
+                                                    <span className="text-slate-300 font-medium">{item.name}</span>
+                                                    <span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-xs text-slate-400 italic text-center">No item details found.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
+                        <div className="h-32 bg-slate-800 rounded-xl p-2 border border-slate-700">
+                            <p className="text-[10px] text-slate-500 mb-1">Sales Trend</p>
+                            <ResponsiveContainer width="100%" height="90%">
+                                <BarChart data={stats.graphData}>
+                                    <Tooltip content={<HudTooltip />} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
+                                    <Bar dataKey="total" fill="#10b981" radius={[2,2,0,0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
+                <a href={`http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm"><MapPin size={16}/> GPS Navigation</a>
+            </div>
+        );
+    };
+
+    return (
+        <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
+            {/* CONTROLS */}
+            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
+                <div className="flex gap-2 pointer-events-auto">
+                    <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                        <MapPin size={16} className="text-orange-500 ml-2"/>
+                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Regions</option>{Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}</select>
+                    </div>
+                    {selectedRegion !== "All" && locationTree[selectedRegion] && (<div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in"><span className="text-slate-400 text-xs ml-2">City:</span><select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Cities</option>{locationTree[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}</select></div>)}
+                </div>
+                <div className="flex gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
+                    <button onClick={toggleAllTiers} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>All</button>
+                    {activeTiers.map(tier => (
+                        <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white border border-slate-500 shadow-md transform scale-105' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
+                            {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{tier.value}</span>}
+                            {tier.label}
+                        </button>
+                    ))}
+                </div>
+                <button onClick={() => setIsAddingMode(!isAddingMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${isAddingMode ? 'bg-orange-500 text-white border-orange-400 animate-pulse scale-105' : 'bg-white text-slate-700 border-slate-200'}`}><MapPin size={16}/> {isAddingMode ? "Click Map to Drop" : "Add Store"}</button>
+            </div>
+
+            {/* MAP */}
+            <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
+                <ZoomControl position="topleft" />
+                
+                {/* USE STABLE CONTROLLER */}
+                <MapEffectController 
+                    selectedRegion={selectedRegion}
+                    selectedCity={selectedCity}
+                    mapPoints={mapPoints}
+                    savedHome={savedHome}
+                />
+
+                <LayersControl position="bottomright">
+                    
+                    {/* OPTION 1: BALANCED DARK MODE (Brightened, Visible) */}
+                    <LayersControl.BaseLayer checked name="Game Mode (Balanced)">
+                        <TileLayer 
+                            className="balanced-dark-tile"
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+                            attribution='© CARTO'
+                        />
+                    </LayersControl.BaseLayer>
+
+                    {/* OPTION 2: BLUEPRINT / HIGH VISIBILITY (Inverted Light Map) */}
+                    <LayersControl.BaseLayer name="Blueprint (High Vis)">
+                        <TileLayer 
+                            className="blueprint-tile"
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                            attribution='© OpenStreetMap'
+                        />
+                    </LayersControl.BaseLayer>
+
+                    <LayersControl.BaseLayer name="Satellite">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
+                    </LayersControl.BaseLayer>
+                </LayersControl>
+
+                <AdminControls />
+                <MapClicker />
+                {mapBounds && <Rectangle bounds={mapBounds} pathOptions={{ color: '#f97316', weight: 2, fillOpacity: 0.1, dashArray: '5, 10' }} />}
+                
+                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} />)}
+                
+                {newPinCoords && <Marker position={newPinCoords} icon={getIcon({}, true)}><Popup>New Location: {newPinCoords.lat.toFixed(5)}, {newPinCoords.lng.toFixed(5)}</Popup></Marker>}
+            </MapContainer>
+
+            {selectedStore && <StoreHUD store={selectedStore} />}
+            
+            <style>{`
+                .leaflet-tooltip-pane { 
+                    z-index: 9999 !important; 
+                    pointer-events: none !important; 
+                }
+
+                .leaflet-control-zoom a {
+                    background-color: white !important;
+                    color: black !important;
+                    border: 2px solid #ccc !important;
+                    width: 36px !important;
+                    height: 36px !important;
+                    line-height: 36px !important;
+                    font-size: 18px !important;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+                }
+                .leaflet-control-zoom a:hover {
+                    background-color: #f1f5f9 !important;
+                }
+
+                .custom-icon .marker-inner {
+                    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    transform-origin: center center;
+                }
+                .custom-icon:hover .marker-inner {
+                    transform: scale(1.2);
+                    filter: drop-shadow(0 0 10px gold);
+                }
+                .custom-icon:hover {
+                    z-index: 10000 !important;
+                }
+
+                .custom-leaflet-tooltip { 
+                    background: transparent !important; 
+                    border: none !important; 
+                    box-shadow: none !important; 
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    opacity: 1 !important;
+                }
+                .custom-leaflet-tooltip::before { display: none !important; }
+
+                .store-3d-card {
+                    transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px);
+                    opacity: 0;
+                    transform-origin: bottom center;
+                }
+
+                .custom-leaflet-tooltip .store-3d-card {
+                    animation: popIn 0.3s forwards;
+                }
+
+                @keyframes popIn {
+                    0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; }
+                    100% { 
+                        transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); 
+                        opacity: 1; 
+                        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8);
+                    }
+                }
+
+                /* FIXED: REMOVED AGGRESSIVE CONTRAST, ADDED BRIGHTNESS */
+                .balanced-dark-tile {
+                    filter: brightness(1.2); 
+                }
+
+                /* FIXED: HIGH VISIBILITY BLUEPRINT MODE (Inverted OSM) */
+                .blueprint-tile {
+                    filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.8);
+                }
+
+                @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+                @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+            `}</style>
+        </div>
+    );
+};
+
+// --- FIXED: JOURNEY VIEW (DYNAMIC TIERS + WORKING MAP LINKS) ---
+const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, setActiveTab, tierSettings }) => {
+    const [selectedStore, setSelectedStore] = useState(null);
+    const [checkInNote, setCheckInNote] = useState("");
+    const [isCheckingIn, setIsCheckingIn] = useState(false);
+
+    // 1. FILTER: Find stores due for a visit
+    const todaysMission = useMemo(() => {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        return customers.map(c => {
+            if (!c.lastVisit) return { ...c, status: 'urgent', daysOverdue: 99 }; 
+            
+            const last = new Date(c.lastVisit);
+            const freq = parseInt(c.visitFreq || 7);
+            const nextDue = new Date(last);
+            nextDue.setDate(last.getDate() + freq);
+            
+            const diffTime = nextDue - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            let status = 'ok';
+            if (diffDays <= 0) status = 'overdue';
+            else if (diffDays <= 2) status = 'soon';
+            
+            return { ...c, diffDays, status, nextDue };
+        })
+        .filter(c => c.status === 'overdue' || c.status === 'soon') 
+        .sort((a, b) => {
+            if (a.status !== b.status) return a.status === 'overdue' ? -1 : 1;
+            // Simple sort by tier priority (Platinum > Gold > Silver > Bronze)
+            const getScore = (tierId) => {
+                const idx = tierSettings ? tierSettings.findIndex(t => t.id === tierId) : -1;
+                return idx === -1 ? 100 : idx; // Lower index = Higher Priority in default list
+            };
+            return getScore(a.tier) - getScore(b.tier);
+        });
+    }, [customers, tierSettings]);
+
+    const handleCheckIn = async (store) => {
+        setIsCheckingIn(true);
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), {
+                lastVisit: todayStr,
+                updatedAt: serverTimestamp()
+            });
+            await logAudit("VISIT_CHECKIN", `Visited ${store.name}. Note: ${checkInNote || "Routine Check"}`);
+            triggerCapy(`Check-in complete at ${store.name}! Great job!`);
+            setSelectedStore(null);
+            setCheckInNote("");
+        } catch (err) {
+            console.error(err);
+            alert("Check-in failed.");
+        }
+        setIsCheckingIn(false);
+    };
+
+    // --- FIXED: GOOGLE MAPS LINK ---
+    const getMapsLink = (c) => {
+        // Use standard Google Maps URL format
+        if (c.latitude && c.longitude) return `https://www.google.com/maps?q=${c.latitude},${c.longitude}`;
+        return `https://www.google.com/maps?q=${encodeURIComponent(c.address || c.name)}`;
+    };
+
+    return (
+        <div className="max-w-3xl mx-auto animate-fade-in space-y-6">
+            {/* HEADER */}
+            <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                <div className="relative z-10 flex justify-between items-end">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2"><MapPin size={24} className="text-orange-500"/> Daily Mission</h2>
+                        <p className="text-slate-400 text-sm mt-1">{todaysMission.length} stores require your attention today.</p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-3xl font-bold text-orange-500">{todaysMission.length}</div>
+                        <div className="text-xs uppercase font-bold tracking-widest opacity-50">Pending Visits</div>
+                    </div>
+                </div>
+                <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10"><MapPin size={200} /></div>
+            </div>
+
+            {/* CHECK-IN MODAL */}
+            {selectedStore && (
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl border dark:border-slate-700">
+                        <h3 className="text-xl font-bold dark:text-white mb-1">Check In</h3>
+                        <p className="text-sm text-slate-500 mb-4">You are at <span className="font-bold text-orange-500">{selectedStore.name}</span></p>
+                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Visit Result / Notes</label>
+                        <textarea value={checkInNote} onChange={e => setCheckInNote(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border dark:border-slate-600 dark:text-white text-sm mb-4 h-24" placeholder="e.g. Owner wasn't there, Restocked 2 Bal..."/>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setSelectedStore(null)} className="py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
+                            <button onClick={() => handleCheckIn(selectedStore)} disabled={isCheckingIn} className="py-3 rounded-xl font-bold bg-orange-500 text-white shadow-lg hover:bg-orange-600">{isCheckingIn ? "Saving..." : "Confirm Visit"}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MISSION LIST */}
+            <div className="space-y-4">
+                {todaysMission.length === 0 ? (
+                    <div className="text-center py-20 opacity-50"><ShieldCheck size={64} className="mx-auto mb-4 text-emerald-500"/><h3 className="text-xl font-bold dark:text-white">All Clear!</h3><p className="text-slate-500">You have completed all scheduled visits for today.</p></div>
+                ) : (
+                    todaysMission.map(store => {
+                        // DYNAMIC TIER LOOKUP
+                        const tierDef = tierSettings ? tierSettings.find(t => t.id === store.tier) : null;
+                        
+                        return (
+                            <div key={store.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-all">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
+                                            {store.name}
+                                            {/* --- FIXED: DYNAMIC TIER BADGE --- */}
+                                            {tierDef && (
+                                                <span 
+                                                    className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold"
+                                                    style={{ 
+                                                        borderColor: tierDef.color, 
+                                                        backgroundColor: `${tierDef.color}15`, // 15 = low opacity hex
+                                                        color: tierDef.color 
+                                                    }}
+                                                >
+                                                    {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value}
+                                                    {tierDef.label.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </h3>
+                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {store.city} {store.region ? `(${store.region})` : ''}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className={`text-xs font-bold px-2 py-1 rounded ${store.diffDays < 0 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>{store.diffDays < 0 ? `${Math.abs(store.diffDays)} Days Late` : 'Due Soon'}</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 border-t dark:border-slate-700 pt-3">
+                                    <a href={getMapsLink(store)} target="_blank" rel="noreferrer" className="flex-1 py-2 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-100"><MapPin size={16}/> Route</a>
+                                    <button onClick={() => setSelectedStore(store)} className="flex-1 py-2 bg-emerald-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-100"><ShieldCheck size={16}/> Check In</button>
+                                    <button onClick={() => { setActiveTab('sales'); }} className="px-4 py-2 bg-orange-50 dark:bg-slate-700 text-orange-600 dark:text-orange-300 rounded-lg text-sm font-bold hover:bg-orange-100">Sell</button>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+};
+
+          
+
+// --- UPGRADED: CUSTOMER MANAGEMENT (WITH PHOTO UPLOAD) ---
+const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage }) => {
+    const [viewMode, setViewMode] = useState('list');
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [formData, setFormData] = useState({ 
+        name: '', phone: '', region: '', city: '', address: '', 
+        gmapsUrl: '', latitude: '', longitude: '', storeImage: '', 
+        tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] 
+    });
+    const [editingId, setEditingId] = useState(null);
+    const [isLocating, setIsLocating] = useState(false);
+    
+    // LISTEN FOR CROPPED IMAGE FROM PARENT
+    useEffect(() => {
+        if (croppedImage) {
+            setFormData(prev => ({ ...prev, storeImage: croppedImage }));
+            onClearCroppedImage(); // Clear from parent so it doesn't loop
+        }
+    }, [croppedImage]);
+
+    // Combined Coords Input
+    const [coordInput, setCoordInput] = useState("");
+    const coordRef = useRef(null);
+
+    useEffect(() => {
+        if (document.activeElement !== coordRef.current) {
+            if (formData.latitude && formData.longitude) {
+                setCoordInput(`${formData.latitude}, ${formData.longitude}`);
+            } else {
+                setCoordInput("");
+            }
+        }
+    }, [formData.latitude, formData.longitude]);
+
+    const handleAutoGeocode = async () => {
+        if (!formData.address && !formData.city) { alert("Please enter City/Address first!"); return; }
+        setIsLocating(true);
+        try {
+            const query = `${formData.address}, ${formData.city || ''}, ${formData.region || ''}`;
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const result = data[0];
+                setFormData(prev => ({ ...prev, latitude: parseFloat(result.lat), longitude: parseFloat(result.lon) }));
+                triggerCapy(`Found: ${result.display_name.split(',')[0]} 📍`);
+            } else { alert("Location not found."); }
+        } catch (error) { console.error(error); alert("Geocoding failed."); }
+        setIsLocating(false);
+    };
+
     const handleGetLocation = () => {
         if (!navigator.geolocation) { alert("Geolocation not supported"); return; }
         setIsLocating(true);
@@ -1028,44 +1712,64 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             (pos) => {
                 setFormData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
                 setIsLocating(false);
-                triggerCapy("GPS Location Locked! 🎯");
+                triggerCapy("GPS Locked! 🎯");
             },
             (err) => { alert("GPS Error: " + err.message); setIsLocating(false); }
         );
     };
 
-    // 3. MANUAL PINPOINT HELPER
-    const openPinpointMap = () => {
-        // Opens a tool where they can click a map to get coords
-        window.open("https://www.google.com/maps", "_blank");
+    const handleCoordInputChange = (e) => {
+        const val = e.target.value;
+        setCoordInput(val);
+        const parts = val.split(',').map(s => s.trim());
+        if (parts.length === 2) {
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (!isNaN(lat) && !isNaN(lng)) setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        }
+    };
+
+    const handleFileSelect = (e) => {
+        if(e.target.files[0] && onRequestCrop) {
+            onRequestCrop(e.target.files[0]);
+        }
+        e.target.value = null; 
     };
 
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
         if (!formData.name.trim()) return; 
+        const cleanData = {
+            ...formData,
+            name: formData.name.trim(),
+            latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+            longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+            updatedAt: serverTimestamp()
+        };
         try { 
-            const payload = { ...formData, name: formData.name.trim(), updatedAt: serverTimestamp() };
             if (editingId) { 
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), payload); 
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), cleanData); 
                 await logAudit("CUSTOMER_UPDATE", `Updated: ${formData.name}`); 
                 triggerCapy("Customer updated!"); 
                 setEditingId(null); 
             } else { 
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), payload); 
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), cleanData); 
                 await logAudit("CUSTOMER_ADD", `Added: ${formData.name}`); 
                 triggerCapy("Customer added!"); 
             } 
-            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', embedHtml: '' }); 
+            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
+            setCoordInput("");
         } catch (err) { console.error(err); } 
     };
 
     const handleEdit = (c) => { 
         setFormData({ 
             name: c.name, phone: c.phone || '', region: c.region || '', city: c.city || '', 
-            address: c.address || '', gmapsUrl: c.gmapsUrl || '', 
+            address: c.address || '', gmapsUrl: c.gmapsUrl || '', storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
-            embedHtml: c.embedHtml || ''
+            tier: c.tier || 'Silver', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0]
         }); 
+        setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
         setEditingId(c.id); 
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
@@ -1076,80 +1780,76 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
     if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} />;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+        <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
             <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
             
-            {/* FORM */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', latitude: '', longitude: '', embedHtml: ''}); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', latitude: '', longitude: '', storeImage:'', tier: 'Silver', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
-                    {/* Basic Info */}
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Aneka" required/></div>
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="0812..." /></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Region / City</label>
-                            <div className="flex gap-2">
-                                <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Region" />
-                                <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="City" />
-                            </div>
-                        </div>
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Address</label><input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Jl. Sudirman No. 1..." /></div>
-                    </div>
-
-                    {/* LOCATION SECTION */}
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-4">
-                        <div className="flex items-center gap-2 mb-2 pb-2 border-b dark:border-slate-700">
-                            <MapPin size={16} className="text-orange-500"/>
-                            <span className="font-bold text-sm dark:text-white">Pinpoint Location</span>
-                        </div>
-
-                        {/* 1. SMART LINK INPUT */}
+                    {/* STRATEGY & IMAGE UPLOAD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">
-                                <span>Paste Google Maps Link</span>
-                                <span className="text-emerald-500">Auto-detects Coords</span>
-                            </label>
+                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Tier</label>
+                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold">
+                                {tierSettings && tierSettings.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                                {!tierSettings && <option value="Silver">Silver</option>}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Last Visit</label>
+                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                        </div>
+                        
+                        {/* IMAGE UPLOAD UI */}
+                        <div>
+                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Store Photo</label>
+                            <div className="flex items-center gap-2">
+                                <label className="flex-1 cursor-pointer bg-white dark:bg-slate-800 border dark:border-slate-600 hover:border-indigo-500 rounded p-2 flex items-center justify-center gap-2 transition-colors">
+                                    <Camera size={16} className="text-indigo-500"/>
+                                    <span className="text-xs font-bold dark:text-white">Upload / Camera</span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+                                </label>
+                                {formData.storeImage && (
+                                    <div className="w-9 h-9 rounded border border-indigo-200 overflow-hidden shrink-0 group relative">
+                                        <img src={formData.storeImage} className="w-full h-full object-cover" />
+                                        <button type="button" onClick={() => setFormData({...formData, storeImage: ''})} className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100"><X size={12}/></button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* LOCATION TOOLS */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <MapPin size={16} className="text-orange-500"/>
+                                <span className="font-bold text-sm dark:text-white">Pinpoint Location</span>
+                            </div>
                             <div className="flex gap-2">
-                                <input value={formData.gmapsUrl} onChange={handleLinkChange} className="flex-1 p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="https://goo.gl/maps/..." />
-                                <button type="button" onClick={openPinpointMap} className="bg-white dark:bg-slate-700 border dark:border-slate-600 px-3 rounded text-xs font-bold hover:bg-slate-100" title="Open Map to Find">Find</button>
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-1">Tip: Find spot in Google Maps App {'>'} Share {'>'} Copy Link. Paste here.</p>
-                        </div>
-
-                        {/* 2. MANUAL COORDS / GPS */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Latitude</label>
-                                <input type="number" step="any" value={formData.latitude} onChange={e=>setFormData({...formData, latitude: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" placeholder="-7.xxxx" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Longitude</label>
-                                <input type="number" step="any" value={formData.longitude} onChange={e=>setFormData({...formData, longitude: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" placeholder="110.xxxx" />
+                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-md">
+                                    {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <Search size={12}/>} Auto-Find
+                                </button>
+                                <button type="button" onClick={handleGetLocation} className="bg-white dark:bg-slate-700 border dark:border-slate-600 px-3 rounded text-xs font-bold hover:bg-slate-100 flex items-center gap-1">
+                                    <MapPin size={12}/> My GPS
+                                </button>
                             </div>
                         </div>
-                        <button type="button" onClick={handleGetLocation} disabled={isLocating} className="w-full py-2 bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-orange-200 transition-colors">
-                            {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <MapPin size={12}/>} Use My Current GPS Location
-                        </button>
-
-                        {/* 3. EMBED CODE (For Perfect Street View) */}
-                        <div className="pt-2 border-t dark:border-slate-700">
-                             <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">
-                                 Optional: Exact Street View (Embed HTML)
-                             </label>
-                             <textarea 
-                                value={formData.embedHtml} 
-                                onChange={e=>setFormData({...formData, embedHtml: e.target.value})} 
-                                className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 font-mono h-16" 
-                                placeholder='<iframe src="https://www.google.com/maps/embed...">'
-                             />
-                             <p className="text-[10px] text-slate-400 mt-1">
-                                 To get this: Go to Google Maps (Desktop) {'>'} Share {'>'} "Embed a map" {'>'} Copy HTML.
-                             </p>
+                        <div className="flex gap-2">
+                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Region (Kabupaten)" />
+                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
+                        </div>
+                        <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
+                        
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Coordinates (Lat, Lng)</label>
+                            <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" value={coordInput} onChange={handleCoordInputChange} />
                         </div>
                     </div>
 
@@ -1159,17 +1859,18 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                 </form>
             </div>
 
-            {/* LIST */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {customers.map(c => (
                     <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
                         <div>
                             <div className="flex justify-between items-start">
                                 <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
-                                {c.latitude && <MapPin size={16} className="text-emerald-500" title="GPS Pinpointed"/>}
+                                {c.latitude ? <MapPin size={16} className="text-emerald-500"/> : <MapPin size={16} className="text-slate-300"/>}
                             </div>
-                            {(c.city || c.region) && <p className="text-xs font-bold text-orange-500 uppercase mb-2">{c.city} {c.region}</p>}
-                            {c.phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone size={12}/> {isAdmin ? c.phone : "••••••••••"}</p>}
+                            <div className="flex gap-2 mb-2">
+                                <span className={`text-[10px] px-2 rounded-full border ${c.tier === 'Platinum' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : c.tier === 'Gold' ? 'bg-orange-100 text-orange-800 border-orange-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>{c.tier}</span>
+                            </div>
+                            {(c.city || c.region) && <p className="text-xs font-bold text-slate-400 uppercase">{c.city} {c.region}</p>}
                         </div>
                         {isAdmin && (
                             <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
@@ -1804,11 +2505,39 @@ export default function KPMInventoryApp() {
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
 
+// --- NEW: TIER SETTINGS STATE ---
+  const DEFAULT_TIERS = [
+      { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
+      { id: 'Gold', label: 'Gold', color: '#fbbf24', iconType: 'emoji', value: '🥇' },
+      { id: 'Silver', label: 'Silver', color: '#94a3b8', iconType: 'emoji', value: '🥈' },
+      { id: 'Bronze', label: 'Bronze', color: '#78350f', iconType: 'emoji', value: '🥉' }
+  ];
+  const [tierSettings, setTierSettings] = useState(DEFAULT_TIERS);
+
+  // Load Tiers from DB
+  useEffect(() => {
+      if(!user) return;
+      const unsubTiers = onSnapshot(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), (snap) => {
+          if (snap.exists() && snap.data().list) {
+              setTierSettings(snap.data().list);
+          }
+      });
+      return () => unsubTiers();
+  }, [user]);
+
+  // Save Tiers to DB
+  const handleSaveTiers = async (newTiers) => {
+      if(!user) return;
+      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: newTiers }, {merge: true});
+      triggerCapy("Tier settings updated!");
+  };
+
   // UI States
   const [editingProduct, setEditingProduct] = useState(null);
   const [examiningProduct, setExaminingProduct] = useState(null);
   const [returningTransaction, setReturningTransaction] = useState(null);
   const [tempImages, setTempImages] = useState({}); 
+  const [tempCustomerImage, setTempCustomerImage] = useState(null); // Staging for customer photo
   const [searchTerm, setSearchTerm] = useState("");
   const [useFrontForBack, setUseFrontForBack] = useState(false);
   const [boxDimensions, setBoxDimensions] = useState({ w: 55, h: 90, d: 22 });
@@ -2012,7 +2741,54 @@ export default function KPMInventoryApp() {
   const handleDeleteConsignmentData = async (customerName) => { if(!window.confirm(`Delete ALL history for ${customerName}?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN')); for(const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`); } catch(err) {} };
   const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
-  const handleCropConfirm = (base64) => { if (!activeCropContext) return; if (activeCropContext.type === 'mascot') { const newSettings = { ...appSettings, mascotImage: base64 }; setAppSettings(newSettings); if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true}); logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); } triggerCapy("Profile picture updated!"); } else if (activeCropContext.type === 'product') { setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); } setCropImageSrc(null); setActiveCropContext(null); };
+ 
+  // --- UPDATED: HANDLE CROP CONFIRM (CLEAN VERSION) ---
+  const handleCropConfirm = (base64) => { 
+      if (!activeCropContext) return; 
+      
+      if (activeCropContext.type === 'mascot') { 
+          const newSettings = { ...appSettings, mascotImage: base64 }; 
+          setAppSettings(newSettings); 
+          if(user) { 
+              setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true}); 
+              logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); 
+          } 
+          triggerCapy("Profile picture updated!"); 
+      
+      } else if (activeCropContext.type === 'product') { 
+          setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); 
+      
+      } else if (activeCropContext.type === 'tier') {
+          const idx = activeCropContext.index;
+          const newTiers = [...tierSettings];
+          newTiers[idx].value = base64; 
+          setTierSettings(newTiers);
+          handleSaveTiers(newTiers);
+          triggerCapy("Tier Icon Updated!");
+
+      } else if (activeCropContext.type === 'customer_staging') {
+          setTempCustomerImage(base64); 
+          triggerCapy("Store photo ready!");
+      }
+      
+      setCropImageSrc(null); 
+      setActiveCropContext(null); 
+  };
+
+  // --- NEW: TIER ICON FILE HANDLER ---
+  function handleTierIconSelect(e, index) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            setCropImageSrc(reader.result);
+            setActiveCropContext({ type: 'tier', index: index, face: 'front' });
+            setBoxDimensions({ w: 100, h: 100, d: 0 }); // Square crop for icons
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = null;
+}
   const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
@@ -2394,6 +3170,17 @@ export default function KPMInventoryApp() {
   const handleEditCompNameChange = (e) => setEditCompanyName(e.target.value);
   const mainContentClass = isSidebarCollapsed ? 'ml-20' : 'ml-64';
 
+// --- NEW: SAVE MAP HOME BASE ---
+  const handleSetMapHome = async (center, zoom) => {
+      if(!user || !isAdmin) return;
+      try {
+          const newSettings = { ...appSettings, mapHome: { lat: center.lat, lng: center.lng, zoom } };
+          setAppSettings(newSettings);
+          await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true});
+          triggerCapy("New Map Home Base Saved! 🏠");
+      } catch(err) { console.error(err); alert("Failed to save map home."); }
+  };
+
   const renderSettings = () => {
       if (!user) return null; 
       return (
@@ -2473,6 +3260,53 @@ export default function KPMInventoryApp() {
                 </div>
             </div>
             
+{/* TIER MANAGER (ADMIN ONLY) */}
+            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
+                </div>
+                
+                <div className="space-y-3">
+                    {tierSettings.map((tier, idx) => (
+                        <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
+                            {/* Color Picker (Border Color) */}
+                            <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"/>
+                            
+                            {/* Label Input */}
+                            <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; handleSaveTiers(newTiers); }} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Name"/>
+                            
+                            {/* Icon Type Toggle */}
+                            <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                                <option value="emoji">Emoji</option>
+                                <option value="image">Custom Logo</option>
+                            </select>
+
+                            {/* DYNAMIC INPUT AREA */}
+                            <div className="flex-1">
+                                {tier.iconType === 'image' ? (
+                                    <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 transition-colors text-xs font-bold text-slate-600 dark:text-slate-300">
+                                        <Upload size={14}/> {tier.value && tier.value.startsWith('data:') ? "Change Logo" : "Upload PNG"}
+                                        <input type="file" accept="image/png, image/jpeg" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" />
+                                    </label>
+                                ) : (
+                                    <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji (e.g. 👑)"/>
+                                )}
+                            </div>
+                            
+                            {/* Preview */}
+                            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 relative" style={{ borderColor: tier.color }}>
+                                {tier.iconType === 'image' ? (
+                                    tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" alt="icon"/> : <ImageIcon size={14} className="opacity-30"/>
+                                ) : (
+                                    <span className="text-lg">{tier.value}</span>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    <p className="text-[10px] text-slate-400 mt-2">*Changes affect Map Pins and Dropdowns immediately.</p>
+                </div>
+            </div>
+
             {/* Mascot Settings */}
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
                 {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
@@ -2492,6 +3326,8 @@ export default function KPMInventoryApp() {
     {activeMessages.map((msg, idx) => (
         <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
             {editingMsgIndex === idx ? (
+
+
                 // EDIT MODE: Show Input + Save + Cancel
                 <div className="flex gap-2 w-full animate-fade-in">
                     <input 
@@ -2689,7 +3525,9 @@ export default function KPMInventoryApp() {
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
             {[
-                { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' }, 
+                { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
+                { id: 'map_war_room', icon: Globe, label: 'Strategic Map' },
+                { id: 'journey', icon: MapPin, label: 'Journey Plan' }, 
                 { id: 'inventory', icon: Package, label: 'Inventory' }, 
                 { id: 'sales', icon: ShoppingCart, label: 'Sales POS' }, 
                 { id: 'consignment', icon: Truck, label: 'Titip (Consign)' },
@@ -2852,6 +3690,38 @@ export default function KPMInventoryApp() {
                         </div>
                     </div>
                     </div>
+                )}
+
+                {/* STRATEGIC MAP TAB */}
+                {activeTab === 'map_war_room' && (
+                    <MapMissionControl 
+                        customers={customers} 
+                        transactions={transactions} 
+                        inventory={inventory}  // <--- 🚨 ADD THIS EXACT LINE HERE 🚨
+                        db={db} 
+                        appId={appId} 
+                        user={user} 
+                        logAudit={logAudit} 
+                        triggerCapy={triggerCapy}
+                        isAdmin={isAdmin}
+                        savedHome={appSettings?.mapHome}
+                        onSetHome={handleSetMapHome}
+                        tierSettings={tierSettings}
+                    />
+                )}
+
+                {/* JOURNEY PLAN TAB */}
+                {activeTab === 'journey' && (
+                    <JourneyView 
+                        customers={customers} 
+                        db={db} 
+                        appId={appId} 
+                        user={user} 
+                        logAudit={logAudit} 
+                        triggerCapy={triggerCapy} 
+                        setActiveTab={setActiveTab} 
+                        tierSettings={tierSettings} // <--- ADD THIS LINE
+                    />
                 )}
 
                 {/* INVENTORY */}
@@ -3222,7 +4092,30 @@ export default function KPMInventoryApp() {
 {/* ... Consignment line is usually here ... */}
 
 {/* PASTE THIS MISSING LINE HERE: */}
-{activeTab === 'customers' && <CustomerManagement customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} />}
+{activeTab === 'customers' && (
+                    <CustomerManagement 
+                        customers={customers} 
+                        db={db} 
+                        appId={appId} 
+                        user={user} 
+                        logAudit={logAudit} 
+                        triggerCapy={triggerCapy} 
+                        isAdmin={isAdmin} 
+                        tierSettings={tierSettings}
+                        // NEW PROPS FOR CROPPER:
+                        onRequestCrop={(file) => {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                setCropImageSrc(reader.result);
+                                setActiveCropContext({ type: 'customer_staging', face: 'front' });
+                                setBoxDimensions({ w: 100, h: 100, d: 0 }); // Square crop
+                            };
+                            reader.readAsDataURL(file);
+                        }}
+                        croppedImage={tempCustomerImage}
+                        onClearCroppedImage={() => setTempCustomerImage(null)}
+                    />
+                )}
 
 
                 {activeTab === 'sales' && (
