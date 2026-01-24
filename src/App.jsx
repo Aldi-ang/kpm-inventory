@@ -184,7 +184,7 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
   const handleMouseUp = () => { setIsDraggingImage(false); setResizingHandle(null); };
   const executeCrop = () => {
     const canvas = document.createElement('canvas'); 
-    const BASE_RES = 600; 
+    const BASE_RES = 250; 
     const ratio = cropBox.w / cropBox.h;
     
     if (ratio > 1) { canvas.width = BASE_RES; canvas.height = BASE_RES / ratio; } 
@@ -1016,7 +1016,6 @@ const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, trigg
 
 
 // --- HELPER: MAP CONTROLLER (DEFINED OUTSIDE TO PREVENT RE-RENDERS) ---
-// This component handles camera movements safely without resetting on every click.
 const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome }) => {
     const map = useMap();
     const isFirstRun = useRef(true);
@@ -1041,12 +1040,12 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
             const center = [latSum / mapPoints.length, lngSum / mapPoints.length];
             map.flyTo(center, 13, { duration: 1.5 });
         }
-    }, [selectedRegion, selectedCity, map]); // <--- NOT dependent on selectedStore
+    }, [selectedRegion, selectedCity, map]); 
 
     return null;
 };
 
-// --- FIXED: MAP MISSION CONTROL (DYNAMIC TIERS + ALL PREVIOUS FIXES) ---
+// --- FIXED: MAP MISSION CONTROL (CLEAN & WORKING) ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
     const [selectedStore, setSelectedStore] = useState(null);
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
@@ -1179,11 +1178,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 });
     };
 
-    // --- UPDATED: DYNAMIC TIER LOOKUP ---
     const MarkerWithZoom = ({ store }) => {
         const map = useMap();
-        
-        // Find the correct Tier Definition (Icon + Label)
         const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
 
         return (
@@ -1205,16 +1201,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <div className="p-3 bg-slate-900/95 backdrop-blur relative z-10">
                             <h3 className="font-bold text-sm mb-1 truncate text-white">{store.name}</h3>
                             <div className="flex justify-between items-center text-[10px] text-slate-400">
-                                {/* DYNAMIC TIER BADGE */}
                                 <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600 flex items-center gap-1 font-bold">
-                                    {tierDef.iconType === 'image' ? (
-                                        <img src={tierDef.value} className="w-3 h-3 object-contain"/> 
-                                    ) : (
-                                        <span>{tierDef.value}</span>
-                                    )}
+                                    {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : <span>{tierDef.value}</span>}
                                     <span>{tierDef.label}</span>
                                 </span>
-                                
                                 <span className={store.status === 'overdue' ? 'text-red-400 font-bold bg-red-900/20 px-1.5 py-0.5 rounded' : 'text-emerald-400 font-bold'}>{store.diffDays <= 0 ? 'LATE' : `${store.diffDays}d left`}</span>
                             </div>
                         </div>
@@ -1269,6 +1259,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             if (!store.phone) return "#";
             const cleanNumber = store.phone.replace(/\D/g, '').replace(/^0/, '62');
             return `https://wa.me/${cleanNumber}`;
+        };
+
+        const getGpsLink = () => {
+            if (store.latitude && store.longitude) {
+                return `http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`;
+            }
+            const query = encodeURIComponent(`${store.address || ''}, ${store.city || ''}`);
+            return `http://googleusercontent.com/maps.google.com/?q=${query}`;
         };
 
         const HudTooltip = ({ active, payload, label }) => {
@@ -1350,14 +1348,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         </div>
                     </div>
                 )}
-                <a href={`http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm"><MapPin size={16}/> GPS Navigation</a>
+                
+                <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm">
+                    <MapPin size={16}/> GPS Navigation
+                </a>
             </div>
         );
     };
 
     return (
         <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
-            {/* CONTROLS */}
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
                 <div className="flex gap-2 pointer-events-auto">
                     <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
@@ -1378,11 +1378,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <button onClick={() => setIsAddingMode(!isAddingMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${isAddingMode ? 'bg-orange-500 text-white border-orange-400 animate-pulse scale-105' : 'bg-white text-slate-700 border-slate-200'}`}><MapPin size={16}/> {isAddingMode ? "Click Map to Drop" : "Add Store"}</button>
             </div>
 
-            {/* MAP */}
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
                 
-                {/* USE STABLE CONTROLLER */}
                 <MapEffectController 
                     selectedRegion={selectedRegion}
                     selectedCity={selectedCity}
@@ -1391,25 +1389,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 />
 
                 <LayersControl position="bottomright">
-                    
-                    {/* OPTION 1: BALANCED DARK MODE (Brightened, Visible) */}
                     <LayersControl.BaseLayer checked name="Game Mode (Balanced)">
-                        <TileLayer 
-                            className="balanced-dark-tile"
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
-                            attribution='© CARTO'
-                        />
+                        <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-
-                    {/* OPTION 2: BLUEPRINT / HIGH VISIBILITY (Inverted Light Map) */}
                     <LayersControl.BaseLayer name="Blueprint (High Vis)">
-                        <TileLayer 
-                            className="blueprint-tile"
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-                            attribution='© OpenStreetMap'
-                        />
+                        <TileLayer className="blueprint-tile" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OpenStreetMap' />
                     </LayersControl.BaseLayer>
-
                     <LayersControl.BaseLayer name="Satellite">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
@@ -1427,78 +1412,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {selectedStore && <StoreHUD store={selectedStore} />}
             
             <style>{`
-                .leaflet-tooltip-pane { 
-                    z-index: 9999 !important; 
-                    pointer-events: none !important; 
-                }
-
-                .leaflet-control-zoom a {
-                    background-color: white !important;
-                    color: black !important;
-                    border: 2px solid #ccc !important;
-                    width: 36px !important;
-                    height: 36px !important;
-                    line-height: 36px !important;
-                    font-size: 18px !important;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
-                }
-                .leaflet-control-zoom a:hover {
-                    background-color: #f1f5f9 !important;
-                }
-
-                .custom-icon .marker-inner {
-                    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    transform-origin: center center;
-                }
-                .custom-icon:hover .marker-inner {
-                    transform: scale(1.2);
-                    filter: drop-shadow(0 0 10px gold);
-                }
-                .custom-icon:hover {
-                    z-index: 10000 !important;
-                }
-
-                .custom-leaflet-tooltip { 
-                    background: transparent !important; 
-                    border: none !important; 
-                    box-shadow: none !important; 
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    opacity: 1 !important;
-                }
+                .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
+                .leaflet-control-zoom a { background-color: white !important; color: black !important; border: 2px solid #ccc !important; width: 36px !important; height: 36px !important; line-height: 36px !important; font-size: 18px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important; }
+                .leaflet-control-zoom a:hover { background-color: #f1f5f9 !important; }
+                .custom-icon .marker-inner { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: center center; }
+                .custom-icon:hover .marker-inner { transform: scale(1.2); filter: drop-shadow(0 0 10px gold); }
+                .custom-icon:hover { z-index: 10000 !important; }
+                .custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; opacity: 1 !important; }
                 .custom-leaflet-tooltip::before { display: none !important; }
-
-                .store-3d-card {
-                    transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px);
-                    opacity: 0;
-                    transform-origin: bottom center;
-                }
-
-                .custom-leaflet-tooltip .store-3d-card {
-                    animation: popIn 0.3s forwards;
-                }
-
-                @keyframes popIn {
-                    0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; }
-                    100% { 
-                        transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); 
-                        opacity: 1; 
-                        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8);
-                    }
-                }
-
-                /* FIXED: REMOVED AGGRESSIVE CONTRAST, ADDED BRIGHTNESS */
-                .balanced-dark-tile {
-                    filter: brightness(1.2); 
-                }
-
-                /* FIXED: HIGH VISIBILITY BLUEPRINT MODE (Inverted OSM) */
-                .blueprint-tile {
-                    filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.8);
-                }
-
-                @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-                @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+                .store-3d-card { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; transform-origin: bottom center; }
+                .custom-leaflet-tooltip .store-3d-card { animation: popIn 0.3s forwards; }
+                @keyframes popIn { 0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; } 100% { transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); opacity: 1; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8); } }
+                .balanced-dark-tile { filter: brightness(1.2); }
+                .blueprint-tile { filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.8); }
             `}</style>
         </div>
     );
@@ -1566,8 +1492,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, setAct
     // --- FIXED: GOOGLE MAPS LINK ---
     const getMapsLink = (c) => {
         // Use standard Google Maps URL format
-        if (c.latitude && c.longitude) return `https://www.google.com/maps?q=${c.latitude},${c.longitude}`;
-        return `https://www.google.com/maps?q=${encodeURIComponent(c.address || c.name)}`;
+        if (c.latitude && c.longitude) return `http://googleusercontent.com/maps.google.com/?q=${c.latitude},${c.longitude}`;
+        return `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(c.address || c.name)}`;
     };
 
     return (
@@ -2393,7 +2319,6 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
     );
 };
 
-
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {
   const [user, setUser] = useState(null);
@@ -2525,6 +2450,18 @@ export default function KPMInventoryApp() {
       return () => unsubTiers();
   }, [user]);
 
+// --- MISSING FUNCTION: SAVE TIERS TO DATABASE ---
+  const handleSaveTiers = async (newTiers) => {
+      if (!user) return;
+      try {
+          await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: newTiers }, { merge: true });
+          // No alert needed here to avoid spamming while typing
+      } catch (err) {
+          console.error("Error saving tiers:", err);
+          alert("Failed to save tier settings.");
+      }
+  };
+
   // --- NEW: EXPORT TIER ICONS ---
   const handleExportTiers = () => {
       if(!tierSettings) return;
@@ -2542,7 +2479,7 @@ export default function KPMInventoryApp() {
       triggerCapy("Map Icons Exported!");
   };
 
-  // --- NEW: IMPORT TIER ICONS ---
+  // --- FIXED: SMART IMPORT (AUTO-RESIZE TO FIT DATABASE) ---
   const handleImportTiers = (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -2553,15 +2490,43 @@ export default function KPMInventoryApp() {
       reader.onload = async (event) => {
           try {
               const json = JSON.parse(event.target.result);
-              // Validation check
+              // Validation
               if (json.meta?.type !== 'kpm_tier_config' || !Array.isArray(json.tiers)) {
                   throw new Error("Invalid Icon Config File");
               }
               
-              setTierSettings(json.tiers);
-              await handleSaveTiers(json.tiers); // Save to Database
-              triggerCapy("Map Icons Imported Successfully!");
+              triggerCapy("Optimizing icons... please wait.");
+
+              // --- AUTO-COMPRESSION LOGIC ---
+              const resizedTiers = await Promise.all(json.tiers.map(async (tier) => {
+                  // Only compress if it's an image and looks large (base64 string > 50kb)
+                  if (tier.iconType === 'image' && tier.value && tier.value.length > 50000) { 
+                      return new Promise((resolve) => {
+                          const img = new Image();
+                          img.src = tier.value;
+                          img.onload = () => {
+                              const canvas = document.createElement('canvas');
+                              // Resize to 120px (Perfect for Map Icons, small file size)
+                              const scale = 120 / Math.max(img.width, img.height);
+                              canvas.width = img.width * scale;
+                              canvas.height = img.height * scale;
+                              const ctx = canvas.getContext('2d');
+                              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                              // Export as compressed PNG
+                              resolve({ ...tier, value: canvas.toDataURL('image/png', 0.8) });
+                          };
+                          img.onerror = () => resolve(tier); // If fail, keep original
+                      });
+                  }
+                  return tier;
+              }));
+              // -----------------------------
+
+              setTierSettings(resizedTiers);
+              await handleSaveTiers(resizedTiers); // Now safe to save!
+              triggerCapy("Map Icons Imported & Optimized!");
           } catch (err) {
+              console.error(err);
               alert("Import Failed: " + err.message);
           }
       };
