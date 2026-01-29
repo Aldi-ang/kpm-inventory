@@ -13,6 +13,12 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 
+import MapMissionControl from './MapMissionControl';
+import JourneyView from './JourneyView';
+import StockOpnameView from './StockOpnameView';
+import MerchantSalesView from './MerchantSalesView';
+import MusicPlayer from './MusicPlayer';
+
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -138,73 +144,129 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const DatabaseBackupIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>;
 
+// --- HIGH PERFORMANCE IMAGE CROPPER (FIXED: BORDER ON TOP) ---
 const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChange, face }) => {
+  const imgRef = useRef(null);
+  const boxRef = useRef(null);
+  const containerRef = useRef(null);
+  
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [maxDim, setMaxDim] = useState(300); 
-  const [cropBox, setCropBox] = useState({ w: 200, h: 200 });
-  const [isInitialized, setIsInitialized] = useState(false);
-  const containerRef = useRef(null);
-  const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [resizingHandle, setResizingHandle] = useState(null); 
-  const lastPos = useRef({ x: 0, y: 0 });
-  const imageRef = useRef(null);
+  
+  // Mutable state for drag logic
+  const state = useRef({
+    isDragging: false,
+    dragType: null,
+    startX: 0,
+    startY: 0,
+    initialPanX: 0,
+    initialPanY: 0,
+    initialW: 200,
+    initialH: 200,
+    panX: 0,
+    panY: 0,
+    w: 200,
+    h: 200
+  });
 
   useEffect(() => {
-    if (containerRef.current && !isInitialized) {
+    if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
         const padding = 60;
         let axisX = 'w'; let axisY = 'h';
         if (face === 'left' || face === 'right') axisX = 'd';
         if (face === 'top' || face === 'bottom') axisY = 'd';
+        
         const ratio = dimensions[axisX] / dimensions[axisY];
         let initialW, initialH;
-        if (ratio > 1) { initialW = Math.min(320, width-padding); initialH = initialW / ratio; } 
-        else { initialH = Math.min(320, height-padding); initialW = initialH * ratio; }
-        setCropBox({ w: initialW, h: initialH });
-        setIsInitialized(true);
-    }
-  }, [face, dimensions, isInitialized]);
+        
+        if (ratio > 1) { 
+            initialW = Math.min(320, width - padding); 
+            initialH = initialW / ratio; 
+        } else { 
+            initialH = Math.min(320, height - padding); 
+            initialW = initialH * ratio; 
+        }
 
-  const handleImageMouseDown = (e) => { e.stopPropagation(); setIsDraggingImage(true); lastPos.current = { x: e.clientX, y: e.clientY }; };
-  const handleResizeMouseDown = (e, handle) => { e.stopPropagation(); e.preventDefault(); setResizingHandle(handle); lastPos.current = { x: e.clientX, y: e.clientY }; };
-  const handleMouseMove = (e) => {
-    const clientX = e.clientX; const clientY = e.clientY;
-    if (isDraggingImage) {
-      const dx = clientX - lastPos.current.x; const dy = clientY - lastPos.current.y;
-      setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy })); lastPos.current = { x: clientX, y: clientY };
-    } else if (resizingHandle) {
-      const dx = clientX - lastPos.current.x; const dy = clientY - lastPos.current.y;
-      if (resizingHandle.includes('r')) setCropBox(prev => ({ ...prev, w: Math.max(50, prev.w + dx) }));
-      if (resizingHandle.includes('b')) setCropBox(prev => ({ ...prev, h: Math.max(50, prev.h + dy) }));
-      lastPos.current = { x: clientX, y: clientY };
+        state.current.w = initialW;
+        state.current.h = initialH;
+        if(boxRef.current) {
+            boxRef.current.style.width = `${initialW}px`;
+            boxRef.current.style.height = `${initialH}px`;
+        }
+    }
+  }, [face, dimensions]);
+
+  useEffect(() => {
+    updateImageTransform();
+  }, [zoom, rotation]);
+
+  const updateImageTransform = () => {
+    if (imgRef.current) {
+        imgRef.current.style.transform = `translate3d(-50%, -50%, 0) translate3d(${state.current.panX}px, ${state.current.panY}px, 0) scale(${zoom}) rotate(${rotation}deg)`;
     }
   };
-  const handleMouseUp = () => { setIsDraggingImage(false); setResizingHandle(null); };
+
+  const handleMouseDown = (e, type) => {
+    e.preventDefault();
+    e.stopPropagation();
+    state.current.isDragging = true;
+    state.current.dragType = type;
+    state.current.startX = e.clientX;
+    state.current.startY = e.clientY;
+    state.current.initialPanX = state.current.panX;
+    state.current.initialPanY = state.current.panY;
+    state.current.initialW = state.current.w;
+    state.current.initialH = state.current.h;
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const onMouseMove = (e) => {
+    if (!state.current.isDragging) return;
+    const dx = e.clientX - state.current.startX;
+    const dy = e.clientY - state.current.startY;
+
+    if (state.current.dragType === 'move') {
+        state.current.panX = state.current.initialPanX + dx;
+        state.current.panY = state.current.initialPanY + dy;
+        updateImageTransform();
+    } else {
+        let newW = state.current.initialW;
+        let newH = state.current.initialH;
+        if (state.current.dragType.includes('r')) newW = Math.max(50, state.current.initialW + dx);
+        if (state.current.dragType.includes('b')) newH = Math.max(50, state.current.initialH + dy);
+        state.current.w = newW;
+        state.current.h = newH;
+        if (boxRef.current) {
+            boxRef.current.style.width = `${newW}px`;
+            boxRef.current.style.height = `${newH}px`;
+        }
+    }
+  };
+
+  const onMouseUp = () => {
+    state.current.isDragging = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+
   const executeCrop = () => {
     const canvas = document.createElement('canvas'); 
-    const BASE_RES = 250; 
-    const ratio = cropBox.w / cropBox.h;
-    
+    const BASE_RES = 500;
+    const ratio = state.current.w / state.current.h;
     if (ratio > 1) { canvas.width = BASE_RES; canvas.height = BASE_RES / ratio; } 
     else { canvas.height = BASE_RES; canvas.width = BASE_RES * ratio; }
     
     const ctx = canvas.getContext('2d'); 
-    
-    // --- CHANGE 1: CLEAR RECT INSTEAD OF FILL WHITE (FOR TRANSPARENCY) ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const img = imageRef.current; 
+    const img = imgRef.current; 
     ctx.translate(canvas.width / 2, canvas.height / 2); 
     ctx.rotate((rotation * Math.PI) / 180);
-    
-    const scaleFactor = canvas.width / cropBox.w; 
-    ctx.translate(offset.x * scaleFactor, offset.y * scaleFactor); 
+    const scaleFactor = canvas.width / state.current.w; 
+    ctx.translate(state.current.panX * scaleFactor, state.current.panY * scaleFactor); 
     ctx.scale(zoom * scaleFactor, zoom * scaleFactor);
-    ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    
-    // --- CHANGE 2: EXPORT AS PNG (PRESERVES TRANSPARENCY) ---
+    if (img) ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
     onCrop(canvas.toDataURL('image/png', 1.0));
   };
   
@@ -212,34 +274,71 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
     <div className="flex flex-col mb-4">
         <div className="flex justify-between items-center mb-1">
             <label className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400">{label}</label>
-            <div className="flex items-center gap-1"><input type="number" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: Math.max(1, parseInt(e.target.value) || 0)})} className="w-12 text-right text-xs font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-200 border border-transparent focus:border-orange-500 outline-none"/><span className="text-[10px] text-slate-400">mm</span></div>
+            <div className="flex items-center gap-1">
+                <input type="number" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: Math.max(1, parseInt(e.target.value) || 0)})} className="w-12 text-right text-xs font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-200 border border-transparent focus:border-orange-500 outline-none"/>
+                <span className="text-[10px] text-slate-400">mm</span>
+            </div>
         </div>
-        <input type="range" min="1" max={maxDim} step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className="w-full h-3 rounded-full appearance-none cursor-pointer accent-orange-500 bg-orange-100 dark:bg-orange-900/30"/>
+        <input type="range" min="1" max="300" step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className="w-full h-3 rounded-full appearance-none cursor-pointer accent-orange-500 bg-orange-100 dark:bg-orange-900/30"/>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-fade-in" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+    <div className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col bg-slate-900 relative">
+        
+        {/* WORKSPACE */}
+        <div className="flex-1 flex flex-col bg-slate-900 relative select-none">
             <div className="p-4 z-30 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
-                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10"><h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide"><Crop size={14} className="text-cyan-400"/> Align {face}</h3></div>
+                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide"><Crop size={14} className="text-cyan-400"/> Align {face}</h3>
+                </div>
             </div>
-            <div className="flex-1 flex items-center justify-center overflow-hidden relative cursor-grab active:cursor-grabbing" ref={containerRef}>
-                <div className="relative transition-all duration-75" style={{ width: cropBox.w, height: cropBox.h }}>
-                    <div className="absolute inset-0 border-[3px] border-cyan-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-20 pointer-events-none"></div>
-                    <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 w-6 h-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ew-resize flex items-center justify-center pointer-events-auto" onMouseDown={(e) => handleResizeMouseDown(e, 'r')}><Move size={12} className="text-cyan-600 rotate-90"/></div>
-                    <div className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-6 w-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ns-resize flex items-center justify-center pointer-events-auto" onMouseDown={(e) => handleResizeMouseDown(e, 'b')}><Move size={12} className="text-cyan-600"/></div>
-                    <div className="absolute bottom-[-10px] right-[-10px] w-8 h-8 bg-cyan-500 border-4 border-white rounded-full z-30 cursor-nwse-resize pointer-events-auto" onMouseDown={(e) => handleResizeMouseDown(e, 'rb')}/>
-                    <div className="absolute inset-0 overflow-visible pointer-events-auto" onMouseDown={handleImageMouseDown}>
-                        <img ref={imageRef} src={imageSrc} className="absolute max-w-none origin-center" style={{ transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom}) rotate(${rotation}deg)`, left: '50%', top: '50%', userSelect: 'none', pointerEvents: 'none'}}/>
+            
+            <div className="flex-1 flex items-center justify-center overflow-hidden relative" ref={containerRef}>
+                {/* CROP BOX */}
+                <div 
+                    ref={boxRef}
+                    className="relative"
+                    style={{ width: 200, height: 200 }} 
+                >
+                    {/* --- 1. IMAGE LAYER (Z-10) - RENDERED FIRST --- */}
+                    <div className="absolute inset-0 overflow-visible cursor-move z-10" onMouseDown={(e) => handleMouseDown(e, 'move')}>
+                        <img 
+                            ref={imgRef}
+                            src={imageSrc} 
+                            className="absolute max-w-none origin-center" 
+                            style={{ 
+                                left: '50%', 
+                                top: '50%', 
+                                transform: `translate3d(-50%, -50%, 0) scale(${zoom}) rotate(${rotation}deg)`,
+                                userSelect: 'none', 
+                                pointerEvents: 'none'
+                            }}
+                        />
                     </div>
+
+                    {/* --- 2. BORDER & SHADOW LAYER (Z-20) - RENDERED SECOND --- */}
+                    {/* This shadow dims the area outside the box, and the border sits ON TOP of the image */}
+                    <div className="absolute inset-0 border-[3px] border-cyan-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-20 pointer-events-none"></div>
+                    
+                    {/* --- 3. HANDLES LAYER (Z-30) - RENDERED LAST --- */}
+                    <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 w-6 h-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ew-resize flex items-center justify-center shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-r')}><Move size={12} className="text-cyan-600 rotate-90"/></div>
+                    <div className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-6 w-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ns-resize flex items-center justify-center shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-b')}><Move size={12} className="text-cyan-600"/></div>
+                    <div className="absolute bottom-[-10px] right-[-10px] w-8 h-8 bg-cyan-500 border-4 border-white rounded-full z-30 cursor-nwse-resize shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-rb')}/>
                 </div>
             </div>
         </div>
+
+        {/* SIDEBAR */}
         <div className="w-full md:w-80 bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 border-l dark:border-slate-700 overflow-y-auto z-40">
             <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700"><div className="flex items-center gap-2"><Maximize2 size={18} className="text-orange-500"/><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">3D Size</h4></div></div>
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                        <Maximize2 size={18} className="text-orange-500"/>
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">3D Size</h4>
+                    </div>
+                </div>
                 <div><DimSlider label="Width" val={dimensions.w} axis="w" /><DimSlider label="Height" val={dimensions.h} axis="h" /><DimSlider label="Depth" val={dimensions.d} axis="d" /></div>
             </div>
             <div className="space-y-6">
@@ -258,7 +357,10 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
                     <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
                 </div>
             </div>
-            <div className="mt-auto pt-4 flex gap-3"><button onClick={onCancel} className="px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 dark:text-slate-300 font-bold hover:bg-slate-200 transition-colors">Cancel</button><button onClick={executeCrop} className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-orange-500/40 transition-all transform active:scale-95"><Crop size={20}/> Crop & Save</button></div>
+            <div className="mt-auto pt-4 flex gap-3">
+                <button onClick={onCancel} className="px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 dark:text-slate-300 font-bold hover:bg-slate-200 transition-colors">Cancel</button>
+                <button onClick={executeCrop} className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-orange-500/40 transition-all transform active:scale-95"><Crop size={20}/> Crop & Save</button>
+            </div>
         </div>
       </div>
     </div>
@@ -280,15 +382,16 @@ const AdminAuthModal = ({ onClose, onSuccess }) => {
     );
 };
 
-// --- NEW: CAPYBARA MASCOT V5 (SEQUENTIAL DIALOGUE & SELF-CONTAINED DEFAULTS) ---
-const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticImageSrc }) => {
-    // ASSETS
-    const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4"; 
-    const DISCO_MUSIC_URL = "/disco_music.mp3"; 
+const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticImageSrc, user, scale }) => {
+    // --- LOCAL ASSETS (PUBLIC FOLDER) ---
     const NORMAL_IMAGE_URL = "/mr capy.png"; 
+    const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
+    const DISCO_MUSIC_URL = "/disco_music.mp3";
+    // ------------------------------------ // <--- ADDED user
+    // ... (keep constants) ...
 
-    // FALLBACK MESSAGES (In case none are passed)
-    const DEFAULT_MESSAGES = [
+    // FALLBACK MESSAGES
+    const LOGGED_IN_MESSAGES = [
         "Welcome back, Boss!",
         "Stock looks good today.",
         "Don't forget to record samples!",
@@ -300,6 +403,18 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
         "Any new products to add?",
         "You are doing great today! ⭐"
     ];
+
+    const LOCKED_MESSAGES = [
+        "System Locked. 🔒",
+        "Please identify yourself.",
+        "I cannot let you in without a badge.",
+        "Access Denied. 🛑",
+        "Who goes there?"
+    ];
+
+    // Select messages based on User status
+    const DEFAULT_MESSAGES = user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES;
+
 
     // Combine passed messages with defaults if empty
     const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
@@ -413,19 +528,31 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
 
     return (
         <div 
-            className={`fixed bottom-0 right-0 z-[60] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
+            className={`fixed bottom-0 right-0 z-[9999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
             onClick={onMascotClick}
             style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
         >
-            <div className="relative w-48 h-48 md:w-64 md:h-64">
-                {/* ANIMATED PIXEL CLOUD */}
+            {/* --- APPLY SCALE TO THIS INNER DIV --- */}
+            <div 
+                className="relative w-32 h-32 md:w-48 md:h-48 transition-transform duration-300 origin-bottom-right"
+                style={{ transform: `scale(${scale || 1})` }}
+            > 
+                
+                {/* Reduced Size */}
+                
+                {/* HIGH CONTRAST SPEECH BUBBLE */}
                 {activeMessage && (
                     <div className="absolute bottom-[85%] right-[20%] z-20 animate-pop-in pointer-events-none">
-                        <div className="relative bg-white border-4 border-black p-4 min-w-[160px] max-w-[200px] text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]">
-                            <p className="text-[10px] md:text-xs font-bold text-black font-mono leading-tight">
+                        {/* Force white bg and black text with !important via style prop to override theme */}
+                        <div 
+                            className="relative border-4 border-green-600 p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(0,100,0,0.5)]"
+                            style={{ backgroundColor: '#ffffff', color: '#000000' }} 
+                        >
+                            <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>
                                 {activeMessage}
                             </p>
-                            <div className="absolute -bottom-3 right-8 w-4 h-4 bg-white border-r-4 border-b-4 border-black rotate-45"></div>
+                            {/* Speech arrow */}
+                            <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-green-600 rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
                         </div>
                     </div>
                 )}
@@ -433,7 +560,7 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
                 <img 
                     src={NORMAL_IMAGE_URL} 
                     alt="Mascot" 
-                    className="w-full h-full object-contain drop-shadow-xl hover:brightness-110 transition-all origin-bottom-right"
+                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" // Added glow
                     onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}
                 />
             </div>
@@ -443,40 +570,86 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
             `}</style>
         </div>
     );
-};
+}
 
+// --- FIXED: EXAMINE MODAL (RESIDENT EVIL STYLE AUTO-ROTATION) ---
 const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
   const [rotation, setRotation] = useState({ x: -15, y: 25 });
   const [isDragging, setIsDragging] = useState(false);
   const [viewScale, setViewScale] = useState(2.8);
   const [isScaleLocked, setIsScaleLocked] = useState(false);
+  
   const lastMousePos = useRef({ x: 0, y: 0 });
   const [dimensions, setDimensions] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
   const initialRotation = { x: -15, y: 25 };
+
+  // --- NEW: AUTO-ROTATION LOOP ---
+  useEffect(() => {
+    let animationFrameId;
+
+    const animate = () => {
+      // Only rotate if the user is NOT holding the object
+      if (!isDragging) {
+        setRotation(prev => ({ ...prev, y: prev.y + 0.4 })); // 0.4 is a nice slow "Item Box" speed
+      }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    // Start loop
+    animationFrameId = requestAnimationFrame(animate);
+
+    // Cleanup when closing
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isDragging]); // Re-binds when dragging state changes
+  // -------------------------------
+
   const handleDimensionsChange = (newDims) => { setDimensions(newDims); if (onUpdateProduct) onUpdateProduct({ ...product, dimensions: newDims }); };
   const handleReset = () => { setRotation(initialRotation); setViewScale(2.8); };
   const handleZoom = (delta) => { if (isScaleLocked) return; setViewScale(prev => Math.min(5, Math.max(0.5, prev + delta))); };
+  
   const w = dimensions.w * viewScale; const h = dimensions.h * viewScale; const d = dimensions.d * viewScale;
+  
   const handleMouseDown = (e) => { setIsDragging(true); lastMousePos.current = { x: e.clientX, y: e.clientY }; };
-  const handleMouseMove = (e) => { if (!isDragging) return; const deltaX = e.clientX - lastMousePos.current.x; const deltaY = e.clientY - lastMousePos.current.y; setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); lastMousePos.current = { x: e.clientX, y: e.clientY }; };
+  
+  const handleMouseMove = (e) => { 
+      if (!isDragging) return; 
+      const deltaX = e.clientX - lastMousePos.current.x; 
+      const deltaY = e.clientY - lastMousePos.current.y; 
+      setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
+      lastMousePos.current = { x: e.clientX, y: e.clientY }; 
+  };
+  
   const handleMouseUp = () => setIsDragging(false);
+  
   const renderFace = (imageSrc, defaultColor = "bg-white") => { if (imageSrc) return <img src={imageSrc} className="w-full h-full object-cover" alt="texture" />; return <div className={`w-full h-full ${defaultColor} border border-slate-400 opacity-90`}></div>; };
+  
   const images = product.images || {};
   const frontImage = images.front || product.image;
   const backImage = product.useFrontForBack ? frontImage : images.back;
+  
   const BoxSlider = ({ label, val, axis }) => (
     <div className="flex flex-col gap-1"><div className="flex justify-between text-[10px] text-white/70 uppercase font-bold"><span>{label}</span><span>{val}mm</span></div><input type="range" min="10" max="300" step="1" value={val} onChange={(e) => handleDimensionsChange({ ...dimensions, [axis]: parseInt(e.target.value) })} className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-orange-500" onMouseDown={(e) => e.stopPropagation()}/></div>
   );
+
   return (
     <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4 overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       <button onClick={onClose} className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
+      
       <div className="absolute top-8 right-24 z-50 flex gap-2" onMouseDown={(e) => e.stopPropagation()}>
          <button onClick={() => handleZoom(-0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomOut size={18}/></button>
          <button onClick={() => setIsScaleLocked(!isScaleLocked)} className={`p-2 rounded-full hover:bg-white/20 ${isScaleLocked ? 'bg-orange-600 text-white' : 'bg-black/60 text-white'}`}>{isScaleLocked ? <Lock size={18}/> : <Unlock size={18}/>}</button>
          <button onClick={() => handleZoom(0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomIn size={18}/></button>
       </div>
+
       {isAdmin && (<div className="absolute top-8 left-8 z-50 bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl w-48 shadow-xl" onMouseDown={(e) => e.stopPropagation()}><div className="flex justify-between items-center mb-3"><h4 className="text-xs font-bold text-white flex items-center gap-2"><Maximize2 size={12} className="text-orange-500"/> Dimensions</h4><button onClick={handleReset} className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors"><RefreshCcw size={10} /> Reset</button></div><div className="space-y-4"><BoxSlider label="Width" val={dimensions.w} axis="w" /><BoxSlider label="Height" val={dimensions.h} axis="h" /><BoxSlider label="Depth" val={dimensions.d} axis="d" /></div></div>)}
-      <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0"><h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2><p className="text-emerald-400 text-xs mt-2 tracking-widest animate-pulse">DRAG TO ROTATE OBJECT</p></div>
+      
+      <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0">
+          <h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2>
+          <p className="text-emerald-400 text-xs mt-2 tracking-widest animate-pulse">
+              {isDragging ? "INSPECTING OBJECT..." : "AUTOMATIC ROTATION"}
+          </p>
+      </div>
+
       <div className="relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
         <div className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`, transformStyle: 'preserve-3d', transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}>
           <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-slate-400" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
@@ -487,6 +660,7 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-slate-300")}</div>
         </div>
       </div>
+
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-orange-300">
            <span>STOCK: {product.stock} Bks</span>
@@ -879,8 +1053,10 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction Reports</h2>
-                <button onClick={() => setReportView(true)} className="w-full md:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl shadow-sm hover:shadow-md hover:border-orange-500 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-white group">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
+                
+                {/* --- CHANGED THIS BUTTON TO ORANGE FOR VISIBILITY --- */}
+                <button onClick={() => setReportView(true)} className="w-full md:w-auto bg-orange-600 border border-orange-400 px-6 py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-white hover:bg-orange-500 hover:scale-105 transition-all group">
+                    <div className="bg-white/20 p-2 rounded-lg text-white group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
                     <span>Open Analytics Dashboard</span>
                 </button>
             </div>
@@ -1011,597 +1187,28 @@ const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, trigg
             </div>
         </div>
     );
-};
+};          
 
-
-
-// --- HELPER: MAP CONTROLLER (DEFINED OUTSIDE TO PREVENT RE-RENDERS) ---
-const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome }) => {
-    const map = useMap();
-    const isFirstRun = useRef(true);
-
-    // 1. INITIAL LOAD (Go to Saved Home)
-    useEffect(() => {
-        if (isFirstRun.current) {
-            if (savedHome && savedHome.lat && savedHome.lng) {
-                map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
-            } else {
-                map.locate().on("locationfound", (e) => map.flyTo(e.latlng, 13));
-            }
-            isFirstRun.current = false;
-        }
-    }, [map, savedHome]);
-
-    // 2. REGION/CITY CHANGE (Only runs when filters change)
-    useEffect(() => {
-        if (selectedRegion !== "All" && mapPoints.length > 0) {
-            let latSum = 0, lngSum = 0;
-            mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
-            const center = [latSum / mapPoints.length, lngSum / mapPoints.length];
-            map.flyTo(center, 13, { duration: 1.5 });
-        }
-    }, [selectedRegion, selectedCity, map]); 
-
-    return null;
-};
-
-// --- FIXED: MAP MISSION CONTROL (CLEAN & WORKING) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
-    const [selectedStore, setSelectedStore] = useState(null);
-    const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
-    const [isAddingMode, setIsAddingMode] = useState(false); 
-    const [newPinCoords, setNewPinCoords] = useState(null);
-    
-    const [selectedRegion, setSelectedRegion] = useState("All"); 
-    const [selectedCity, setSelectedCity] = useState("All");     
-    const [mapBounds, setMapBounds] = useState(null); 
-
-    const activeTiers = tierSettings || [
-        { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
-        { id: 'Gold', label: 'Gold', color: '#fbbf24', iconType: 'emoji', value: '🥇' },
-        { id: 'Silver', label: 'Silver', color: '#94a3b8', iconType: 'emoji', value: '🥈' },
-        { id: 'Bronze', label: 'Bronze', color: '#78350f', iconType: 'emoji', value: '🥉' }
-    ];
-
-    // 1. DATA PROCESSING
-    const { mapPoints, locationTree } = useMemo(() => {
-        const tree = {}; 
-        const validStores = customers
-            .filter(c => c.latitude && c.longitude)
-            .map(c => {
-                const lat = parseFloat(c.latitude);
-                const lng = parseFloat(c.longitude);
-                if (isNaN(lat) || isNaN(lng)) return null;
-
-                // DATA FIX: FORCE "JALAN PEMUDA" TO "MUNTILAN"
-                let reg = c.region || "Uncategorized";
-                let cit = c.city || "Uncategorized";
-                const addr = (c.address || "").toLowerCase();
-
-                if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) {
-                    cit = "Muntilan"; 
-                }
-
-                if (!tree[reg]) tree[reg] = new Set();
-                tree[reg].add(cit);
-
-                const last = c.lastVisit ? new Date(c.lastVisit) : new Date(0);
-                const next = new Date(last);
-                next.setDate(last.getDate() + (parseInt(c.visitFreq) || 7));
-                const diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
-                
-                let status = 'ok';
-                if (diffDays <= 0) status = 'overdue';
-                else if (diffDays <= 2) status = 'soon';
-
-                return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays };
-            })
-            .filter(c => c !== null);
-
-        const filtered = validStores.filter(c => {
-            if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
-            if (selectedCity !== "All" && c.city !== selectedCity) return false;
-            const tier = c.tier || 'Silver';
-            if (!filterTier.includes(tier)) return false;
-            return true;
-        });
-
-        const treeArray = Object.keys(tree).reduce((acc, reg) => {
-            acc[reg] = Array.from(tree[reg]).sort();
-            return acc;
-        }, {});
-
-        return { mapPoints: filtered, locationTree: treeArray };
-    }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
-
-    const AdminControls = () => {
-        const map = useMapEvents({});
-        const saveView = () => { if(onSetHome) onSetHome(map.getCenter(), map.getZoom()); };
-        if(!isAdmin) return null;
-        return (
-            <div className="absolute top-[80px] left-[10px] z-[9999]">
-                <button onClick={saveView} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
-                    <MapPin size={14}/> Set Home
-                </button>
-            </div>
-        );
-    };
-
-    const MapClicker = () => {
-        useMapEvents({
-            click(e) {
-                if (isAddingMode) {
-                    setNewPinCoords(e.latlng);
-                    const coordString = `${e.latlng.lat}, ${e.latlng.lng}`;
-                    navigator.clipboard.writeText(coordString);
-                    if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
-                } else {
-                    setSelectedStore(null);
-                }
-            },
-        });
-        return null;
-    };
-
-    const getIcon = (store, isTemp = false) => {
-        if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
-
-        const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
-        let content = '';
-        if (tierDef.iconType === 'image') {
-            content = `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
-        } else {
-            content = `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
-        }
-
-        let glow = store.status === 'overdue' ? `box-shadow: 0 0 0 4px #ef4444; animation: pulse 1.5s infinite;` : '';
-        let border = `border: 3px solid ${tierDef.color || '#94a3b8'};`;
-
-        return L.divIcon({
-            className: 'custom-icon', 
-            html: `<div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} overflow: hidden;">${content}</div>`,
-            iconSize: [34, 34],
-            iconAnchor: [17, 17]
-        });
-    };
-
-    const toggleTierFilter = (tierId) => {
-        setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
-    };
-
-    const toggleAllTiers = () => {
-        setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
-    };
-
-    const handlePinClick = (store, map) => {
-        setSelectedStore(store);
-        map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 });
-    };
-
-    const MarkerWithZoom = ({ store }) => {
-        const map = useMap();
-        const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
-
-        return (
-            <Marker 
-                key={store.id} 
-                position={[store.latitude, store.longitude]} 
-                icon={getIcon(store)} 
-                eventHandlers={{ click: () => handlePinClick(store, map) }}
-                riseOnHover={true}
-            >
-                <LeafletTooltip direction="top" offset={[0, -40]} opacity={1} className="custom-leaflet-tooltip">
-                    <div className="store-3d-card w-48 bg-slate-900 text-white rounded-xl border-2 border-slate-600 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none z-20"></div>
-                        {store.storeImage ? (
-                            <img src={store.storeImage} className="w-full h-28 object-cover" alt={store.name} onError={(e) => e.target.style.display = 'none'}/>
-                        ) : (
-                            <div className="w-full h-24 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-slate-600"><Store size={32}/></div>
-                        )}
-                        <div className="p-3 bg-slate-900/95 backdrop-blur relative z-10">
-                            <h3 className="font-bold text-sm mb-1 truncate text-white">{store.name}</h3>
-                            <div className="flex justify-between items-center text-[10px] text-slate-400">
-                                <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600 flex items-center gap-1 font-bold">
-                                    {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : <span>{tierDef.value}</span>}
-                                    <span>{tierDef.label}</span>
-                                </span>
-                                <span className={store.status === 'overdue' ? 'text-red-400 font-bold bg-red-900/20 px-1.5 py-0.5 rounded' : 'text-emerald-400 font-bold'}>{store.diffDays <= 0 ? 'LATE' : `${store.diffDays}d left`}</span>
-                            </div>
-                        </div>
-                    </div>
-                </LeafletTooltip>
-            </Marker>
-        );
-    };
-
-    const StoreHUD = ({ store }) => {
-        const [showConsignDetails, setShowConsignDetails] = useState(false);
-
-        const stats = useMemo(() => {
-            const storeTrans = transactions.filter(t => t.customerName === store.name);
-            const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
-            const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
-            const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
-            const currentConsignment = Math.max(0, totalTitip - totalPaid);
-            
-            const itemMap = {}; 
-            storeTrans.forEach(t => {
-                if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                    t.items.forEach(i => {
-                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
-                        const bks = convertToBks(i.qty, i.unit, prod);
-                        if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 };
-                        itemMap[i.productId].qty += bks;
-                    });
-                }
-                else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                    const list = t.items || t.itemsPaid || [];
-                    list.forEach(i => {
-                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
-                        const bks = convertToBks(i.qty, i.unit, prod);
-                        if (itemMap[i.productId]) itemMap[i.productId].qty -= bks;
-                    });
-                }
-            });
-            const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
-
-            const graphData = storeTrans.filter(t => t.type === 'SALE').reduce((acc, t) => {
-                const date = t.date.substring(5);
-                const found = acc.find(i => i.date === date);
-                if (found) found.total += t.total; else acc.push({ date, total: t.total });
-                return acc;
-            }, []).sort((a,b) => a.date.localeCompare(b.date)).slice(-5);
-            
-            return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
-        }, [store, transactions, inventory]);
-
-        const getWhatsappLink = () => {
-            if (!store.phone) return "#";
-            const cleanNumber = store.phone.replace(/\D/g, '').replace(/^0/, '62');
-            return `https://wa.me/${cleanNumber}`;
-        };
-
-        const getGpsLink = () => {
-            if (store.latitude && store.longitude) {
-                return `http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`;
-            }
-            const query = encodeURIComponent(`${store.address || ''}, ${store.city || ''}`);
-            return `http://googleusercontent.com/maps.google.com/?q=${query}`;
-        };
-
-        const HudTooltip = ({ active, payload, label }) => {
-            if (active && payload && payload.length) {
-                return (
-                    <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl">
-                        <p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p>
-                        <p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p>
-                    </div>
-                );
-            }
-            return null;
-        };
-
-        return (
-            <div className="absolute left-4 top-20 bottom-4 w-80 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-slate-700 p-6 overflow-y-auto z-[1000] animate-slide-in-left">
-                <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
-                <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">{store.name}</h2>
-                <p className="text-slate-400 text-xs mb-4 flex items-center gap-1"><MapPin size={12}/> {store.city}</p>
-
-                {isAdmin && store.phone && (
-                    <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center">
-                        <span className="text-sm font-mono">{store.phone}</span>
-                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="p-2 bg-green-600 rounded-lg hover:bg-green-500 transition-colors flex items-center gap-2 text-xs font-bold"><Phone size={14}/> Chat</a>
-                    </div>
-                )}
-
-                <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
-                    <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
-                    <div>
-                        <p className="text-[10px] uppercase font-bold opacity-70">Next Visit</p>
-                        <p className="font-bold text-sm">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p>
-                    </div>
-                </div>
-
-                {isAdmin && (
-                    <div className="space-y-4 mb-6">
-                        {stats.currentConsignment > 0 && (
-                            <div className="p-3 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
-                                <div 
-                                    className="flex justify-between items-center cursor-pointer"
-                                    onClick={() => setShowConsignDetails(!showConsignDetails)}
-                                >
-                                    <div>
-                                        <p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p>
-                                        <p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p>
-                                    </div>
-                                    <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}>
-                                        <ChevronRight size={16} className="text-orange-500 rotate-90"/>
-                                    </div>
-                                </div>
-
-                                {showConsignDetails && (
-                                    <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
-                                        {stats.activeItems.length > 0 ? (
-                                            stats.activeItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-xs items-center">
-                                                    <span className="text-slate-300 font-medium">{item.name}</span>
-                                                    <span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-xs text-slate-400 italic text-center">No item details found.</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
-                        <div className="h-32 bg-slate-800 rounded-xl p-2 border border-slate-700">
-                            <p className="text-[10px] text-slate-500 mb-1">Sales Trend</p>
-                            <ResponsiveContainer width="100%" height="90%">
-                                <BarChart data={stats.graphData}>
-                                    <Tooltip content={<HudTooltip />} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
-                                    <Bar dataKey="total" fill="#10b981" radius={[2,2,0,0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                )}
-                
-                <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm">
-                    <MapPin size={16}/> GPS Navigation
-                </a>
-            </div>
-        );
-    };
-
-    return (
-        <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
-            <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
-                <div className="flex gap-2 pointer-events-auto">
-                    <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                        <MapPin size={16} className="text-orange-500 ml-2"/>
-                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Regions</option>{Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}</select>
-                    </div>
-                    {selectedRegion !== "All" && locationTree[selectedRegion] && (<div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in"><span className="text-slate-400 text-xs ml-2">City:</span><select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Cities</option>{locationTree[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}</select></div>)}
-                </div>
-                <div className="flex gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
-                    <button onClick={toggleAllTiers} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>All</button>
-                    {activeTiers.map(tier => (
-                        <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white border border-slate-500 shadow-md transform scale-105' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
-                            {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{tier.value}</span>}
-                            {tier.label}
-                        </button>
-                    ))}
-                </div>
-                <button onClick={() => setIsAddingMode(!isAddingMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${isAddingMode ? 'bg-orange-500 text-white border-orange-400 animate-pulse scale-105' : 'bg-white text-slate-700 border-slate-200'}`}><MapPin size={16}/> {isAddingMode ? "Click Map to Drop" : "Add Store"}</button>
-            </div>
-
-            <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
-                <ZoomControl position="topleft" />
-                
-                <MapEffectController 
-                    selectedRegion={selectedRegion}
-                    selectedCity={selectedCity}
-                    mapPoints={mapPoints}
-                    savedHome={savedHome}
-                />
-
-                <LayersControl position="bottomright">
-                    <LayersControl.BaseLayer checked name="Game Mode (Balanced)">
-                        <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Blueprint (High Vis)">
-                        <TileLayer className="blueprint-tile" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OpenStreetMap' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satellite">
-                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
-                    </LayersControl.BaseLayer>
-                </LayersControl>
-
-                <AdminControls />
-                <MapClicker />
-                {mapBounds && <Rectangle bounds={mapBounds} pathOptions={{ color: '#f97316', weight: 2, fillOpacity: 0.1, dashArray: '5, 10' }} />}
-                
-                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} />)}
-                
-                {newPinCoords && <Marker position={newPinCoords} icon={getIcon({}, true)}><Popup>New Location: {newPinCoords.lat.toFixed(5)}, {newPinCoords.lng.toFixed(5)}</Popup></Marker>}
-            </MapContainer>
-
-            {selectedStore && <StoreHUD store={selectedStore} />}
-            
-            <style>{`
-                .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
-                .leaflet-control-zoom a { background-color: white !important; color: black !important; border: 2px solid #ccc !important; width: 36px !important; height: 36px !important; line-height: 36px !important; font-size: 18px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important; }
-                .leaflet-control-zoom a:hover { background-color: #f1f5f9 !important; }
-                .custom-icon .marker-inner { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: center center; }
-                .custom-icon:hover .marker-inner { transform: scale(1.2); filter: drop-shadow(0 0 10px gold); }
-                .custom-icon:hover { z-index: 10000 !important; }
-                .custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; opacity: 1 !important; }
-                .custom-leaflet-tooltip::before { display: none !important; }
-                .store-3d-card { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; transform-origin: bottom center; }
-                .custom-leaflet-tooltip .store-3d-card { animation: popIn 0.3s forwards; }
-                @keyframes popIn { 0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; } 100% { transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); opacity: 1; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8); } }
-                .balanced-dark-tile { filter: brightness(1.2); }
-                .blueprint-tile { filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.8); }
-            `}</style>
-        </div>
-    );
-};
-
-// --- FIXED: JOURNEY VIEW (DYNAMIC TIERS + WORKING MAP LINKS) ---
-const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, setActiveTab, tierSettings }) => {
-    const [selectedStore, setSelectedStore] = useState(null);
-    const [checkInNote, setCheckInNote] = useState("");
-    const [isCheckingIn, setIsCheckingIn] = useState(false);
-
-    // 1. FILTER: Find stores due for a visit
-    const todaysMission = useMemo(() => {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-
-        return customers.map(c => {
-            if (!c.lastVisit) return { ...c, status: 'urgent', daysOverdue: 99 }; 
-            
-            const last = new Date(c.lastVisit);
-            const freq = parseInt(c.visitFreq || 7);
-            const nextDue = new Date(last);
-            nextDue.setDate(last.getDate() + freq);
-            
-            const diffTime = nextDue - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            let status = 'ok';
-            if (diffDays <= 0) status = 'overdue';
-            else if (diffDays <= 2) status = 'soon';
-            
-            return { ...c, diffDays, status, nextDue };
-        })
-        .filter(c => c.status === 'overdue' || c.status === 'soon') 
-        .sort((a, b) => {
-            if (a.status !== b.status) return a.status === 'overdue' ? -1 : 1;
-            // Simple sort by tier priority (Platinum > Gold > Silver > Bronze)
-            const getScore = (tierId) => {
-                const idx = tierSettings ? tierSettings.findIndex(t => t.id === tierId) : -1;
-                return idx === -1 ? 100 : idx; // Lower index = Higher Priority in default list
-            };
-            return getScore(a.tier) - getScore(b.tier);
-        });
-    }, [customers, tierSettings]);
-
-    const handleCheckIn = async (store) => {
-        setIsCheckingIn(true);
-        try {
-            const todayStr = new Date().toISOString().split('T')[0];
-            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), {
-                lastVisit: todayStr,
-                updatedAt: serverTimestamp()
-            });
-            await logAudit("VISIT_CHECKIN", `Visited ${store.name}. Note: ${checkInNote || "Routine Check"}`);
-            triggerCapy(`Check-in complete at ${store.name}! Great job!`);
-            setSelectedStore(null);
-            setCheckInNote("");
-        } catch (err) {
-            console.error(err);
-            alert("Check-in failed.");
-        }
-        setIsCheckingIn(false);
-    };
-
-    // --- FIXED: GOOGLE MAPS LINK ---
-    const getMapsLink = (c) => {
-        // Use standard Google Maps URL format
-        if (c.latitude && c.longitude) return `http://googleusercontent.com/maps.google.com/?q=${c.latitude},${c.longitude}`;
-        return `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(c.address || c.name)}`;
-    };
-
-    return (
-        <div className="max-w-3xl mx-auto animate-fade-in space-y-6">
-            {/* HEADER */}
-            <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
-                <div className="relative z-10 flex justify-between items-end">
-                    <div>
-                        <h2 className="text-2xl font-bold flex items-center gap-2"><MapPin size={24} className="text-orange-500"/> Daily Mission</h2>
-                        <p className="text-slate-400 text-sm mt-1">{todaysMission.length} stores require your attention today.</p>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-3xl font-bold text-orange-500">{todaysMission.length}</div>
-                        <div className="text-xs uppercase font-bold tracking-widest opacity-50">Pending Visits</div>
-                    </div>
-                </div>
-                <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10"><MapPin size={200} /></div>
-            </div>
-
-            {/* CHECK-IN MODAL */}
-            {selectedStore && (
-                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl border dark:border-slate-700">
-                        <h3 className="text-xl font-bold dark:text-white mb-1">Check In</h3>
-                        <p className="text-sm text-slate-500 mb-4">You are at <span className="font-bold text-orange-500">{selectedStore.name}</span></p>
-                        <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Visit Result / Notes</label>
-                        <textarea value={checkInNote} onChange={e => setCheckInNote(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border dark:border-slate-600 dark:text-white text-sm mb-4 h-24" placeholder="e.g. Owner wasn't there, Restocked 2 Bal..."/>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setSelectedStore(null)} className="py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
-                            <button onClick={() => handleCheckIn(selectedStore)} disabled={isCheckingIn} className="py-3 rounded-xl font-bold bg-orange-500 text-white shadow-lg hover:bg-orange-600">{isCheckingIn ? "Saving..." : "Confirm Visit"}</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* MISSION LIST */}
-            <div className="space-y-4">
-                {todaysMission.length === 0 ? (
-                    <div className="text-center py-20 opacity-50"><ShieldCheck size={64} className="mx-auto mb-4 text-emerald-500"/><h3 className="text-xl font-bold dark:text-white">All Clear!</h3><p className="text-slate-500">You have completed all scheduled visits for today.</p></div>
-                ) : (
-                    todaysMission.map(store => {
-                        // DYNAMIC TIER LOOKUP
-                        const tierDef = tierSettings ? tierSettings.find(t => t.id === store.tier) : null;
-                        
-                        return (
-                            <div key={store.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-                                            {store.name}
-                                            {/* --- FIXED: DYNAMIC TIER BADGE --- */}
-                                            {tierDef && (
-                                                <span 
-                                                    className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold"
-                                                    style={{ 
-                                                        borderColor: tierDef.color, 
-                                                        backgroundColor: `${tierDef.color}15`, // 15 = low opacity hex
-                                                        color: tierDef.color 
-                                                    }}
-                                                >
-                                                    {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value}
-                                                    {tierDef.label.toUpperCase()}
-                                                </span>
-                                            )}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {store.city} {store.region ? `(${store.region})` : ''}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`text-xs font-bold px-2 py-1 rounded ${store.diffDays < 0 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>{store.diffDays < 0 ? `${Math.abs(store.diffDays)} Days Late` : 'Due Soon'}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 border-t dark:border-slate-700 pt-3">
-                                    <a href={getMapsLink(store)} target="_blank" rel="noreferrer" className="flex-1 py-2 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-100"><MapPin size={16}/> Route</a>
-                                    <button onClick={() => setSelectedStore(store)} className="flex-1 py-2 bg-emerald-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-100"><ShieldCheck size={16}/> Check In</button>
-                                    <button onClick={() => { setActiveTab('sales'); }} className="px-4 py-2 bg-orange-50 dark:bg-slate-700 text-orange-600 dark:text-orange-300 rounded-lg text-sm font-bold hover:bg-orange-100">Sell</button>
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-        </div>
-    );
-};
-
-          
-
-// --- UPGRADED: CUSTOMER MANAGEMENT (WITH PHOTO UPLOAD) ---
+// --- UPGRADED: CUSTOMER MANAGEMENT (RESTORED EMBED LINK FIELD) ---
 const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [formData, setFormData] = useState({ 
         name: '', phone: '', region: '', city: '', address: '', 
-        gmapsUrl: '', latitude: '', longitude: '', storeImage: '', 
+        gmapsUrl: '', embedHtml: '', // <--- Added embedHtml here
+        latitude: '', longitude: '', storeImage: '', 
         tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] 
     });
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
     
-    // LISTEN FOR CROPPED IMAGE FROM PARENT
     useEffect(() => {
         if (croppedImage) {
             setFormData(prev => ({ ...prev, storeImage: croppedImage }));
-            onClearCroppedImage(); // Clear from parent so it doesn't loop
+            onClearCroppedImage(); 
         }
     }, [croppedImage]);
 
-    // Combined Coords Input
     const [coordInput, setCoordInput] = useState("");
     const coordRef = useRef(null);
 
@@ -1683,7 +1290,7 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                 await logAudit("CUSTOMER_ADD", `Added: ${formData.name}`); 
                 triggerCapy("Customer added!"); 
             } 
-            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
+            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
             setCoordInput("");
         } catch (err) { console.error(err); } 
     };
@@ -1691,7 +1298,8 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
     const handleEdit = (c) => { 
         setFormData({ 
             name: c.name, phone: c.phone || '', region: c.region || '', city: c.city || '', 
-            address: c.address || '', gmapsUrl: c.gmapsUrl || '', storeImage: c.storeImage || '',
+            address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '', // <--- Load Saved Link
+            storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
             tier: c.tier || 'Silver', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0]
         }); 
@@ -1711,7 +1319,7 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', latitude: '', longitude: '', storeImage:'', tier: 'Silver', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
@@ -1732,13 +1340,12 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                             <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
                         </div>
                         
-                        {/* IMAGE UPLOAD UI */}
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Store Photo</label>
                             <div className="flex items-center gap-2">
                                 <label className="flex-1 cursor-pointer bg-white dark:bg-slate-800 border dark:border-slate-600 hover:border-indigo-500 rounded p-2 flex items-center justify-center gap-2 transition-colors">
                                     <Camera size={16} className="text-indigo-500"/>
-                                    <span className="text-xs font-bold dark:text-white">Upload / Camera</span>
+                                    <span className="text-xs font-bold dark:text-white">Upload</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                                 </label>
                                 {formData.storeImage && (
@@ -1751,12 +1358,12 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                         </div>
                     </div>
 
-                    {/* LOCATION TOOLS */}
+                    {/* LOCATION TOOLS (RESTORED EMBED LINK) */}
                     <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-3">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <MapPin size={16} className="text-orange-500"/>
-                                <span className="font-bold text-sm dark:text-white">Pinpoint Location</span>
+                                <span className="font-bold text-sm dark:text-white">Location & Street View</span>
                             </div>
                             <div className="flex gap-2">
                                 <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-md">
@@ -1773,9 +1380,21 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                         </div>
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
                         
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Coordinates (Lat, Lng)</label>
-                            <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" value={coordInput} onChange={handleCoordInputChange} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">GPS Coordinates</label>
+                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" value={coordInput} onChange={handleCoordInputChange} />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Street View Link (Iframe/URL)</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Paste Google Maps Link or Embed Code here..." 
+                                    className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white" 
+                                    value={formData.embedHtml} 
+                                    onChange={e => setFormData({...formData, embedHtml: e.target.value})} 
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -1786,26 +1405,33 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customers.map(c => (
-                    <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
-                        <div>
-                            <div className="flex justify-between items-start">
-                                <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
-                                {c.latitude ? <MapPin size={16} className="text-emerald-500"/> : <MapPin size={16} className="text-slate-300"/>}
+                {customers.map(c => {
+                    const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
+                    return (
+                        <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                            <div>
+                                <div className="flex justify-between items-start">
+                                    <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
+                                    {c.latitude ? <MapPin size={16} className="text-emerald-500"/> : <MapPin size={16} className="text-slate-300"/>}
+                                </div>
+                                <div className="flex gap-2 mb-2">
+                                    {tierDef ? (
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
+                                            {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
+                                        </span>
+                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
+                                </div>
+                                {(c.city || c.region) && <p className="text-xs font-bold text-slate-400 uppercase">{c.city} {c.region}</p>}
                             </div>
-                            <div className="flex gap-2 mb-2">
-                                <span className={`text-[10px] px-2 rounded-full border ${c.tier === 'Platinum' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : c.tier === 'Gold' ? 'bg-orange-100 text-orange-800 border-orange-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>{c.tier}</span>
-                            </div>
-                            {(c.city || c.region) && <p className="text-xs font-bold text-slate-400 uppercase">{c.city} {c.region}</p>}
+                            {isAdmin && (
+                                <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
+                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-100 text-slate-600 dark:text-slate-300">Edit</button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-100 text-red-500">Delete</button>
+                                </div>
+                            )}
                         </div>
-                        {isAdmin && (
-                            <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
-                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-100 text-slate-600 dark:text-slate-300">Edit</button>
-                                <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-100 text-red-500">Delete</button>
-                            </div>
-                        )}
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
@@ -2120,9 +1746,8 @@ const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => {
 };
 
 
-// --- NEW: SAMPLING FOLDER VIEW (YEAR > MONTH > DATE > LOCATION) ---
-const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder }) => {
-    // New State for Deep Navigation
+// --- 1. SAMPLING FOLDER VIEW (FIXED: EDIT BUTTON & DARK HOVER) ---
+const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder, onShowAnalytics }) => {
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -2135,7 +1760,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
             if (!s.date) return;
             const d = new Date(s.date);
             const year = d.getFullYear();
-            const month = d.toLocaleString('default', { month: 'long' }); // e.g. "January"
+            const month = d.toLocaleString('default', { month: 'long' });
             
             if (!structure[year]) structure[year] = {};
             if (!structure[year][month]) structure[year][month] = {};
@@ -2148,7 +1773,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
         return structure;
     }, [samplings]);
 
-    // --- LEVEL 4: ITEMS LIST (Inside a Location) ---
+    // --- LEVEL 4: ITEMS LIST (THE FIX IS HERE) ---
     if (selectedYear && selectedMonth && selectedDate && selectedLocation) {
         const items = folderStructure[selectedYear][selectedMonth][selectedDate][selectedLocation] || [];
         
@@ -2190,14 +1815,27 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                                 <table className="w-full text-sm text-left">
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {groupItems.map(s => (
-                                            <tr key={s.id} className="hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                                            // --- FIX: DARKER HOVER COLOR (bg-black/5 for light, bg-white/5 for dark) ---
+                                            <tr key={s.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                                 <td className="p-3 font-medium dark:text-white pl-4">{s.productName}</td>
                                                 <td className="p-3 text-right text-red-500 font-bold">-{s.qty}</td>
                                                 <td className="p-3 text-right flex justify-end gap-2 pr-4">
                                                     {isAdmin && (
                                                         <>
-                                                        <button onClick={() => onEdit(s)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"><Pencil size={14}/></button>
-                                                        <button onClick={() => onDelete(s)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><Trash2 size={14}/></button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); onEdit(s); }} // STOP PROPAGATION FIX
+                                                                className="p-1.5 text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded transition-colors"
+                                                                title="Edit Item"
+                                                            >
+                                                                <Pencil size={14}/>
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); onDelete(s); }} 
+                                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 rounded transition-colors"
+                                                                title="Delete Item"
+                                                            >
+                                                                <Trash2 size={14}/>
+                                                            </button>
                                                         </>
                                                     )}
                                                 </td>
@@ -2225,10 +1863,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                         <div key={loc} onClick={() => setSelectedLocation(loc)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-indigo-100 dark:bg-slate-700 rounded-lg text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
-                                <div>
-                                    <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3>
-                                    <p className="text-xs text-slate-500">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p>
-                                </div>
+                                <div><h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3><p className="text-xs text-slate-500">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p></div>
                             </div>
                         </div>
                     ))}
@@ -2249,9 +1884,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                         const locCount = Object.keys(folderStructure[selectedYear][selectedMonth][date]).length;
                         return (
                             <div key={date} onClick={() => setSelectedDate(date)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all text-center">
-                                <div className="w-12 h-12 mx-auto bg-orange-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors mb-3">
-                                    <span className="font-bold text-lg">{new Date(date).getDate()}</span>
-                                </div>
+                                <div className="w-12 h-12 mx-auto bg-orange-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors mb-3"><span className="font-bold text-lg">{new Date(date).getDate()}</span></div>
                                 <h3 className="font-bold text-sm dark:text-white">{new Date(date).toLocaleDateString(undefined, {weekday:'short'})}</h3>
                                 <p className="text-[10px] text-slate-500 mt-1">{locCount} Locations</p>
                             </div>
@@ -2265,10 +1898,8 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
     // --- LEVEL 1: MONTH FOLDERS (Inside a Year) ---
     if (selectedYear) {
         const months = Object.keys(folderStructure[selectedYear] || {});
-        // Sort months chronologically
         const monthOrder = { "January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12 };
         months.sort((a, b) => monthOrder[a] - monthOrder[b]);
-
         return (
             <div className="animate-fade-in">
                 <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Years</button>
@@ -2278,10 +1909,7 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
                         <div key={month} onClick={() => setSelectedMonth(month)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-blue-50 dark:bg-slate-700 rounded-lg text-blue-500 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                <div>
-                                    <h3 className="font-bold text-lg dark:text-white">{month}</h3>
-                                    <p className="text-xs text-slate-500">{Object.keys(folderStructure[selectedYear][month]).length} Dates Recorded</p>
-                                </div>
+                                <div><h3 className="font-bold text-lg dark:text-white">{month}</h3><p className="text-xs text-slate-500">{Object.keys(folderStructure[selectedYear][month]).length} Dates Recorded</p></div>
                             </div>
                         </div>
                     ))}
@@ -2294,23 +1922,18 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
     const years = Object.keys(folderStructure).sort((a, b) => b - a);
     return (
         <div className="animate-fade-in space-y-6">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Folder size={24} className="text-orange-500"/> Sampling Archives</h2>
+                <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
+            </div>
             {years.length === 0 ? (
-                 <div className="text-center py-20 text-slate-400">
-                    <Folder size={48} className="mx-auto mb-4 opacity-20"/>
-                    <p>No sampling records found.</p>
-                 </div>
+                 <div className="text-center py-20 text-slate-400"><Folder size={48} className="mx-auto mb-4 opacity-20"/><p>No sampling records found.</p></div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {years.map(year => (
                         <div key={year} onClick={() => setSelectedYear(year)} className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
                             <Folder size={100} className="absolute -right-6 -bottom-6 text-white opacity-5 group-hover:opacity-10 transition-opacity"/>
-                            <div className="relative z-10">
-                                <h3 className="text-3xl font-bold mb-1">{year}</h3>
-                                <div className="h-1 w-12 bg-orange-500 rounded mb-3"></div>
-                                <p className="text-sm text-slate-400 font-mono">
-                                    {Object.keys(folderStructure[year]).length} Months Active
-                                </p>
-                            </div>
+                            <div className="relative z-10"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-orange-500 rounded mb-3"></div><p className="text-sm text-slate-400 font-mono">{Object.keys(folderStructure[year]).length} Months Active</p></div>
                         </div>
                     ))}
                 </div>
@@ -2319,10 +1942,571 @@ const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEd
     );
 };
 
+// --- FIXED: SAMPLING MODAL (UNLOCKED PRODUCT SELECTION) ---
+const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory }) => {
+    // Initialize with default or existing data
+    const [formData, setFormData] = useState({ 
+        date: new Date().toISOString().split('T')[0], 
+        reason: '', 
+        productId: '', 
+        productName: '', 
+        qty: 1, 
+        note: '' 
+    });
+
+    useEffect(() => {
+        if (initialData && !initialData.isNew) {
+            // EDIT MODE: Load existing data
+            setFormData({
+                ...initialData,
+                date: initialData.date || new Date().toISOString().split('T')[0],
+            });
+        } else {
+            // NEW MODE: Reset form
+            setFormData({ 
+                date: new Date().toISOString().split('T')[0], 
+                reason: '', 
+                productId: '', 
+                productName: '', 
+                qty: 1, 
+                note: '' 
+            });
+        }
+    }, [initialData]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const product = inventory.find(p => p.id === formData.productId);
+        
+        // Pass all data back to parent
+        onSubmit({ 
+            ...formData, 
+            productName: product ? product.name : formData.productName 
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><X size={20}/></button>
+                <h2 className="text-xl font-bold mb-4 dark:text-white">{initialData?.isNew ? 'New Sample Entry' : 'Edit Sample Details'}</h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold text-slate-500">Date</label>
+                            <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-slate-500">Qty</label>
+                            <input type="number" min="1" value={formData.qty} onChange={e=>setFormData({...formData, qty: parseInt(e.target.value)})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                        </div>
+                    </div>
+
+                    {/* --- FIXED: PRODUCT DROPDOWN IS ALWAYS ACTIVE NOW --- */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500">Product</label>
+                        <select 
+                            value={formData.productId} 
+                            onChange={e=>setFormData({...formData, productId: e.target.value})} 
+                            className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" 
+                            required
+                        >
+                            <option value="">Select Product...</option>
+                            {inventory.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold text-slate-500">Location / Store Name</label>
+                        <input value={formData.reason} onChange={e=>setFormData({...formData, reason: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Berkah" required/>
+                    </div>
+                    
+                    <div>
+                        <label className="text-xs font-bold text-slate-500">Notes (Folder Group)</label>
+                        <input value={formData.note} onChange={e=>setFormData({...formData, note: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Area 1"/>
+                    </div>
+                    
+                    <button className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl mt-2">
+                        {initialData?.isNew ? 'Add to Folder' : 'Save Changes'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// --- NEW: BIOHAZARD THEME (WITH LOGIN BUTTON RESTORED) ---
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin }) => {
+    
+    const handleLogout = () => {
+        if(window.confirm("Terminate Session?")) {
+            signOut(auth);
+            window.location.reload();
+        }
+    };
+
+    const handleLogin = async () => {
+        try {
+            await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            alert("Login Failed: " + error.message);
+        }
+    };
+
+    const allMenuItems = [
+        { id: 'dashboard', label: 'Overview' },
+        { id: 'map_war_room', label: 'Map System' },
+        { id: 'journey', label: 'Journey Plan' },
+        { id: 'inventory', label: 'Inventory' },
+        { id: 'sales', label: 'Sales Terminal' },
+        { id: 'consignment', label: 'Consignment' },
+        { id: 'stock_opname', label: 'Stock Opname' },
+        { id: 'customers', label: 'Customers' },
+        { id: 'sampling', label: 'Sampling' },
+        { id: 'transactions', label: 'Reports' },
+        { id: 'audit', label: 'Audit Logs' },
+        { id: 'settings', label: 'Settings' }
+    ];
+
+    const visibleMenu = allMenuItems.filter(item => 
+        isAdmin ? true : !['transactions', 'audit', 'stock_opname'].includes(item.id)
+    );
+
+    return (
+        <div className="min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
+            
+            {/* BACKGROUND */}
+            <div className="absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
+            <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#000000_3px)] opacity-20 pointer-events-none"></div>
+
+            {/* LEFT COLUMN: NAVIGATION */}
+            <div className="relative z-10 w-64 flex flex-col pt-8 pl-6 pr-4 border-r border-white/10 h-screen bg-black/60 backdrop-blur-md">
+                
+                {/* BRANDING */}
+                <h1 className="text-xl font-bold text-white mb-1 font-mono border-b-2 border-white/50 pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                    {appSettings?.companyName || "KPM SYSTEM"}
+                </h1>
+                <p className={`text-[9px] mb-6 font-bold animate-pulse font-mono ${user ? 'text-emerald-500' : 'text-red-500'}`}>
+                    /// {user ? "ONLINE" : "OFFLINE"}
+                </p>
+
+                {/* MENU (Only show if logged in) */}
+                {user ? (
+                    <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
+                        {visibleMenu.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`w-full text-left py-2 px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest clip-path-polygon ${
+                                    activeTab === item.id 
+                                    ? 'bg-white text-black pl-6 shadow-[0_0_10px_rgba(255,255,255,0.8)] border-l-4 border-orange-500' 
+                                    : 'text-gray-500 hover:text-white hover:pl-4 hover:bg-white/5'
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
+                ) : (
+                    <div className="flex-1 flex flex-col items-start pt-10 opacity-50">
+                        <div className="text-xs text-red-500 font-mono mb-2">ACCESS DENIED</div>
+                        <div className="h-0.5 w-10 bg-red-800 mb-4"></div>
+                        <p className="text-[10px] text-slate-500">Please authenticate to access the mainframe.</p>
+                    </div>
+                )}
+
+                {/* BOTTOM SECTION: PROFILE OR LOGIN BUTTON */}
+                <div className="mt-auto mb-4 border-t border-white/10 pt-4">
+                    {user ? (
+                        <div className="flex items-center gap-3">
+                            <img 
+                                src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
+                                className="w-10 h-10 rounded border border-white/30 object-cover bg-black"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[9px] text-gray-400 uppercase font-bold">OPERATIVE</p>
+                                <p className="text-xs text-white font-mono truncate" title={user.email}>{user.email?.split('@')[0]}</p>
+                            </div>
+                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-2 hover:bg-white/10 rounded transition-colors" title="Logout">
+                                <LogOut size={16}/>
+                            </button>
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={handleLogin}
+                            className="w-full flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-500 hover:text-emerald-300 border border-emerald-800 py-3 rounded uppercase text-xs font-bold tracking-widest transition-all"
+                        >
+                            <LogIn size={14}/> System Login
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* RIGHT COLUMN: CONTENT AREA */}
+            <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
+                {/* COMPACT HEADER */}
+                <div className="pt-6 px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0">
+                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none">
+                        {activeTab}
+                    </h2>
+                    <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <div className={`h-1.5 w-1.5 rounded-full animate-ping ${user ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                            <span className={`text-[9px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
+                        </div>
+                        <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
+                            {activeTab.replace(/_/g, ' ')}
+                        </div>
+                    </div>
+                    <div className="text-[10px] text-gray-500 font-mono text-right">
+                        <div>{new Date().toLocaleDateString()}</div>
+                        <div className="text-sm text-white">{new Date().toLocaleTimeString()}</div>
+                    </div>
+                </div>
+
+                {/* SCROLLABLE CONTENT */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
+                    <div className="biohazard-content max-w-full mx-auto">
+                        {children}
+                    </div>
+                </div>
+
+                {/* FOOTER */}
+                <div className="h-8 border-t border-white/10 flex items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
+                    <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
+                    <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
+                </div>
+            </div>
+
+            {/* VISIBILITY FIXES */}
+            <style>{`
+                .biohazard-content .text-slate-500 { color: #9ca3af !important; } 
+                .biohazard-content .text-slate-600 { color: #d1d5db !important; }
+                .biohazard-content .text-slate-700 { color: #e5e5e5 !important; }
+                .biohazard-content .text-gray-500 { color: #9ca3af !important; }
+                .biohazard-content .bg-white { 
+                    background-color: rgba(20, 20, 20, 0.85) !important; 
+                    border: 1px solid rgba(255,255,255,0.15) !important; 
+                    color: #e5e5e5 !important; 
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+                }
+                .biohazard-content input, .biohazard-content select { 
+                    background: rgba(0,0,0,0.6) !important; 
+                    border: 1px solid rgba(255,255,255,0.3) !important; 
+                    color: white !important; 
+                    font-family: monospace;
+                }
+                .biohazard-content thead { border-bottom: 1px solid white; color: white; text-transform: uppercase; font-size: 0.75rem; }
+                .biohazard-content tbody tr:hover { background-color: white !important; color: black !important; }
+                .biohazard-content tbody tr:hover td, .biohazard-content tbody tr:hover p, .biohazard-content tbody tr:hover span { color: black !important; }
+                .text-shadow-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+                .leaflet-container { z-index: 0; }
+            `}</style>
+        </div>
+    );
+};
+
+// --- HELPER: SLIDER COMPONENT (Moved Outside to Fix Lag) ---
+const DimensionControl = ({ label, val, axis, onChange, onInteract }) => (
+    <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] font-mono text-slate-400 w-8">{label}</span>
+        
+        {/* SLIDER */}
+        <input 
+            type="range" min="10" max="300" 
+            value={val} 
+            onMouseDown={() => onInteract(true)}
+            onMouseUp={() => onInteract(false)}
+            onTouchStart={() => onInteract(true)}
+            onTouchEnd={() => onInteract(false)}
+            onChange={(e) => onChange(axis, parseInt(e.target.value))}
+            className="flex-1 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
+        />
+        
+        {/* MANUAL NUMBER INPUT */}
+        <input 
+            type="number" 
+            value={val}
+            onChange={(e) => onChange(axis, parseInt(e.target.value))}
+            className="w-12 h-6 text-[10px] font-mono bg-black border border-white/20 text-white text-center rounded focus:border-orange-500 outline-none"
+        />
+        <span className="text-[10px] text-slate-500">mm</span>
+    </div>
+);
+
+// --- NEW: TRUE 3D ITEM INSPECTOR (ZOOM SAVING + FIXED BUTTONS) ---
+const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) => { 
+    const [rotation, setRotation] = useState({ x: -15, y: 35 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isInteracting, setIsInteracting] = useState(false); 
+    const lastMousePos = useRef({ x: 0, y: 0 });
+    
+    // 1. Initialize State with Saved Zoom
+    const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
+    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); // <--- LOADS SAVED ZOOM
+    const [showControls, setShowControls] = useState(false);
+    
+    // Sync when product changes
+    useEffect(() => {
+        setDims(product.dimensions || { w: 55, h: 90, d: 22 });
+        setZoom(product.defaultZoom || 3.0);
+    }, [product]);
+
+    // Auto-rotate
+    useEffect(() => {
+        let frameId;
+        const animate = () => {
+            if (!isDragging && !isInteracting) {
+                setRotation(prev => ({ ...prev, y: prev.y + 0.3 }));
+            }
+            frameId = requestAnimationFrame(animate);
+        };
+        frameId = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(frameId);
+    }, [isDragging, isInteracting]);
+
+    const handleMouseDown = (e) => { 
+        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; 
+        setIsDragging(true); 
+        lastMousePos.current = { x: e.clientX, y: e.clientY }; 
+    };
+    
+    const handleMouseMove = (e) => { 
+        if (!isDragging) return; 
+        const deltaX = e.clientX - lastMousePos.current.x; 
+        const deltaY = e.clientY - lastMousePos.current.y; 
+        setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
+        lastMousePos.current = { x: e.clientX, y: e.clientY }; 
+    };
+    const handleMouseUp = () => setIsDragging(false);
+
+    // 2. Check for Changes (Dims OR Zoom)
+    const hasChanged = 
+        JSON.stringify(dims) !== JSON.stringify(product.dimensions || { w: 55, h: 90, d: 22 }) ||
+        zoom !== (product.defaultZoom || 3.0);
+
+    // 3. Save Function (Sends Dims AND Zoom)
+    const handleSaveChanges = () => { 
+        if(onUpdateProduct) onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom }); 
+    };
+
+    const w = dims.w * zoom; 
+    const h = dims.h * zoom; 
+    const d = dims.d * zoom;
+
+    const renderFace = (img, fallbackColor) => img ? <img src={img} className="w-full h-full object-cover" /> : <div className={`w-full h-full ${fallbackColor} border border-white/10`}></div>;
+    const images = product.images || {};
+    const front = images.front || product.image;
+    const back = product.useFrontForBack ? front : images.back;
+
+    return (
+        <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-slate-900/20 to-black overflow-hidden">
+            
+            {/* 3D CONTROLS (Top Right) */}
+            {isAdmin && (
+                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel pointer-events-auto">
+                    <button 
+                        onClick={() => setShowControls(!showControls)} 
+                        className={`p-2 rounded-full border transition-all ${showControls ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/50 border-white/20 text-slate-400 hover:text-white'}`}
+                    >
+                        <Maximize2 size={16}/>
+                    </button>
+
+                    {showControls && (
+                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-72 shadow-2xl animate-fade-in-up">
+                            <h4 className="text-xs font-bold text-orange-500 mb-3 uppercase tracking-widest flex justify-between items-center">
+                                3D Configuration
+                                <div className="flex gap-1 bg-white/10 rounded p-1">
+                                    <button onClick={() => setZoom(z => Math.max(0.5, z-0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomOut size={12}/></button>
+                                    <span className="text-[10px] font-mono w-8 text-center">{zoom.toFixed(1)}x</span>
+                                    <button onClick={() => setZoom(z => Math.min(5, z+0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomIn size={12}/></button>
+                                </div>
+                            </h4>
+                            
+                            <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            
+                            {hasChanged && (
+                                <button 
+                                    onClick={handleSaveChanges}
+                                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 shadow-lg"
+                                >
+                                    <Save size={12}/> Save All Changes
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* 3D VIEWER */}
+            <div 
+                className="flex-1 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+            >
+                <div className="relative transform-style-3d transition-transform duration-75" style={{ width: w, height: h, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}>
+                    <div className="absolute inset-0 backface-hidden bg-white shadow-[0_0_30px_rgba(255,255,255,0.1)]" style={{ transform: `translateZ(${d/2}px)` }}>{renderFace(front, "bg-white")}</div>
+                    <div className="absolute inset-0 backface-hidden bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)` }}>{renderFace(back, "bg-slate-800")}</div>
+                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.right, "bg-slate-400")}</div>
+                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.left, "bg-slate-400")}</div>
+                    <div className="absolute bg-slate-200" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.top, "bg-slate-300")}</div>
+                    <div className="absolute bg-slate-400" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.bottom, "bg-slate-500")}</div>
+                </div>
+            </div>
+
+            {/* FLOATING ADMIN ACTIONS (Fixed: Moved out of text panel) */}
+            {isAdmin && (
+                <div className="absolute bottom-32 right-8 flex gap-2 z-[90] admin-actions">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onEdit(product); }} 
+                        className="px-4 py-2 bg-white/90 text-black text-xs font-bold uppercase hover:bg-white transition-colors tracking-widest shadow-lg border-2 border-transparent hover:border-orange-500"
+                    >
+                        Edit Item
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onDelete(product.id); }} 
+                        className="px-4 py-2 bg-red-900/80 text-red-500 border border-red-800 text-xs font-bold uppercase hover:bg-red-900 transition-colors tracking-widest shadow-lg"
+                    >
+                        Discard
+                    </button>
+                </div>
+            )}
+
+            {/* INFO PANEL */}
+            <div className="bg-black/90 border-t-2 border-orange-600 p-8 relative z-20 backdrop-blur-xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 className="text-4xl text-white font-serif tracking-widest uppercase mb-2 drop-shadow-md">{product.name}</h2>
+                        <div className="flex items-center gap-4">
+                            <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-xs font-mono font-bold tracking-wider">STOCK: {isAdmin ? product.stock : "**"}</span>
+                            <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">{product.type} // {product.taxStamp}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-6 text-xs font-mono border-t border-white/10 pt-6">
+                    <div className="bg-white/5 p-3 border-l-2 border-red-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Distributor</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceDistributor)}</p></div>
+                    <div className="bg-white/5 p-3 border-l-2 border-emerald-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Retail</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceRetail)}</p></div>
+                    <div className="bg-white/5 p-3 border-l-2 border-blue-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Grosir</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceGrosir)}</p></div>
+                    <div className="bg-white/5 p-3 border-l-2 border-yellow-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Ecer</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceEcer)}</p></div>
+                </div>
+            </div>
+            
+            <style>{`
+                .transform-style-3d { transform-style: preserve-3d; }
+                .backface-hidden { backface-visibility: hidden; }
+            `}</style>
+        </div>
+    );
+};
+
+// --- NEW: RESIDENT EVIL INVENTORY (SUPPORTS ZOOM SAVE) ---
+const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct }) => { 
+    const [selectedId, setSelectedId] = useState(null);
+    const [search, setSearch] = useState("");
+    const [activeSection, setActiveSection] = useState("ALL");
+
+    // Group Items
+    const sections = useMemo(() => {
+        const groups = { "ALL": inventory };
+        inventory.forEach(item => {
+            const type = item.type || "MISC";
+            if (!groups[type]) groups[type] = [];
+            groups[type].push(item);
+        });
+        return groups;
+    }, [inventory]);
+
+    useEffect(() => {
+        if (!selectedId && inventory.length > 0) setSelectedId(inventory[0].id);
+    }, [inventory]);
+
+    const sectionKeys = Object.keys(sections).sort();
+    const currentList = sections[activeSection].filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
+
+    return (
+        <div className="flex h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
+            {/* LEFT MENU */}
+            <div className="w-1/3 md:w-96 flex flex-col border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+                <div className="p-6 border-b border-white/20 bg-gradient-to-r from-white/10 to-transparent">
+                    <h3 className="text-white font-serif italic text-2xl mb-2 tracking-wide">Supply Case</h3>
+                    <div className="h-0.5 w-16 bg-orange-500 mb-6"></div>
+                    <div className="relative mb-6">
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH ITEMS..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-xs font-mono uppercase focus:border-orange-500 outline-none"/>
+                        <Search size={12} className="absolute left-2 top-2.5 text-slate-500"/>
+                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white"><Plus size={16}/></button>}
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                        {sectionKeys.map(sec => (
+                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${activeSection === sec ? 'bg-white text-black border-white' : 'text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'}`}>{sec}</button>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 p-2">
+                    {currentList.map(item => (
+                        <div key={item.id} onClick={() => setSelectedId(item.id)} className={`group p-3 cursor-pointer border border-transparent transition-all relative mb-1 flex items-center gap-3 ${selectedId === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'hover:bg-white/5'}`}>
+                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${selectedId === item.id ? 'border-orange-500' : 'border-white/10'}`}>
+                                {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover opacity-80"/> : <Package size={16} className="text-slate-600"/>}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className={`font-serif text-sm uppercase tracking-wide truncate transition-colors ${selectedId === item.id ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'}`}>{item.name}</h4>
+                                <p className="text-[9px] text-slate-600 font-mono">STOCK: {isAdmin ? item.stock : "**"}</p>
+                            </div>
+                            {selectedId === item.id && <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>}
+                        </div>
+                    ))}
+                </div>
+                <div className="p-4 border-t border-white/10 text-[9px] text-slate-600 font-mono flex justify-between items-center bg-black"><span>CAPACITY: {inventory.length} SLOTS</span><span>v3.4</span></div>
+            </div>
+
+            {/* RIGHT INSPECTOR */}
+            <div className="flex-1 relative bg-black flex flex-col">
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} 
+                        className="w-full h-full object-cover opacity-60 transition-opacity duration-500"
+                        onError={(e) => e.target.style.opacity = 0.1} 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
+                </div>
+
+                <div className="relative z-10 flex-1 h-full">
+                    {isAdmin && (
+                        <label className="absolute top-4 right-14 z-50 cursor-pointer group"> 
+                            <div className="bg-black/50 hover:bg-orange-600/80 backdrop-blur border border-white/20 p-2 rounded-full text-white transition-all shadow-lg"><ImageIcon size={16}/></div>
+                            <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
+                        </label>
+                    )}
+                    {selectedItem ? (
+                        <ItemInspector 
+                            product={selectedItem} 
+                            isAdmin={isAdmin} 
+                            onEdit={onEdit} 
+                            onDelete={onDelete} 
+                            onUpdateProduct={onUpdateProduct} // Changed prop name
+                        />
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-slate-500 font-serif italic text-2xl tracking-widest opacity-50">SELECT ITEM TO EXAMINE</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN APP COMPONENT ---
-export default function KPMInventoryApp() {
+export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [user, setUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // ... rest of your code ...
+  const [isAdmin, setIsAdmin] = useState(true);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPin, setAdminPin] = useState(null);       
   const [hasAdminPin, setHasAdminPin] = useState(false); 
@@ -2607,6 +2791,7 @@ export default function KPMInventoryApp() {
   const [editCompanyName, setEditCompanyName] = useState("");
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [editingSample, setEditingSample] = useState(null); 
+  const [showSamplingAnalytics, setShowSamplingAnalytics] = useState(false); // <--- NEW STATE
   const [editingFolder, setEditingFolder] = useState(null);
 
 
@@ -2744,7 +2929,7 @@ export default function KPMInventoryApp() {
   const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
  
-  // --- UPDATED: HANDLE CROP CONFIRM (CLEAN VERSION) ---
+  // --- UPDATED: HANDLE CROP CONFIRM ---
   const handleCropConfirm = (base64) => { 
       if (!activeCropContext) return; 
       
@@ -2771,6 +2956,15 @@ export default function KPMInventoryApp() {
       } else if (activeCropContext.type === 'customer_staging') {
           setTempCustomerImage(base64); 
           triggerCapy("Store photo ready!");
+
+      } else if (activeCropContext.type === 'inventory_bg') {
+          // --- NEW: SAVE INVENTORY BACKGROUND ---
+          const newSettings = { ...appSettings, inventoryBg: base64 };
+          setAppSettings(newSettings);
+          if(user) {
+              setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true});
+          }
+          triggerCapy("Inventory Backdrop Updated!");
       }
       
       setCropImageSrc(null); 
@@ -2794,6 +2988,24 @@ export default function KPMInventoryApp() {
   const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
   const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
+
+// --- NEW: INVENTORY BACKGROUND HANDLER ---
+  const handleInventoryBgSelect = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onload = () => {
+              setCropImageSrc(reader.result);
+              // Use a new crop context type for the inventory background
+              setActiveCropContext({ type: 'inventory_bg', face: 'front' });
+              setBoxDimensions({ w: 160, h: 90, d: 0 }); // 16:9 aspect ratio crop
+          };
+          reader.readAsDataURL(file);
+      }
+      e.target.value = null;
+  };
+
+
   const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
 
   const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries());
@@ -2896,6 +3108,27 @@ export default function KPMInventoryApp() {
         alert("Transaction Failed: " + err); 
     } 
   };
+
+// --- NEW: BRIDGE FUNCTION FOR MERCHANT SALES UI ---
+  const handleMerchantSale = (custName, payMethod, cartItems) => {
+      // 1. Update the main Cart State to match the Merchant UI
+      setCart(cartItems);
+
+      // 2. Create a fake "Form Event" that processTransaction expects
+      const syntheticEvent = {
+          preventDefault: () => {},
+          target: {
+              customerName: { value: custName },
+              paymentType: { value: payMethod }
+          }
+      };
+
+      // 3. Wait 100ms for the state to update, then process the sale
+      setTimeout(() => {
+          processTransaction(syntheticEvent);
+      }, 100);
+  };
+
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
 
   const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`), { date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() }); await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`); triggerCapy("Payment recorded!"); } catch (err) { console.error(err); } };
@@ -2972,15 +3205,14 @@ export default function KPMInventoryApp() {
       }
   };
 
-// --- NEW: UPDATE SINGLE SAMPLING (WITH NOTE & DATE) ---
-  const handleUpdateSampling = async (e) => {
-      e.preventDefault();
+// --- 3. UPDATE SINGLE SAMPLING LOGIC ---
+  const handleUpdateSampling = async (updatedData) => {
       if (!user || !editingSample) return;
-      const formData = new FormData(e.target);
-      const newQty = parseInt(formData.get('qty'));
-      const newDate = formData.get('date');
-      const newReason = formData.get('reason');
-      const newNote = formData.get('note');
+      
+      const newQty = parseInt(updatedData.qty);
+      const newDate = updatedData.date;
+      const newReason = updatedData.reason;
+      const newNote = updatedData.note;
 
       try {
           await runTransaction(db, async (t) => {
@@ -2988,12 +3220,13 @@ export default function KPMInventoryApp() {
               const prodDoc = await t.get(prodRef);
               
               // Adjust stock difference
+              // (If you change qty from 5 to 8, we need to deduct 3 more from stock)
               const oldQty = editingSample.qty;
               const diff = newQty - oldQty;
               
               if (prodDoc.exists() && diff !== 0) {
                   const currentStock = prodDoc.data().stock || 0;
-                  if (currentStock < diff) throw "Not enough stock for increase!";
+                  if (currentStock < diff) throw `Not enough stock to increase sample! (Need ${diff}, Has ${currentStock})`;
                   t.update(prodRef, { stock: currentStock - diff });
               }
 
@@ -3333,6 +3566,25 @@ export default function KPMInventoryApp() {
             <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
                 {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
                 <div className="flex justify-between items-center mb-4">
+
+{/* --- NEW: MASCOT SIZE SLIDER --- */}
+                <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
+                    <div className="flex justify-between mb-2">
+                        <label className="text-xs font-bold text-slate-500">MASCOT SIZE</label>
+                        <span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span>
+                    </div>
+                    <input 
+                        type="range" min="0.5" max="2.0" step="0.1" 
+                        value={appSettings.mascotScale || 1} 
+                        onChange={(e) => {
+                            const scale = parseFloat(e.target.value);
+                            setAppSettings(prev => ({ ...prev, mascotScale: scale }));
+                            setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true });
+                        }}
+                        className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
+                    />
+                </div>
+
                     <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Dialogues</h3>
                 </div>
                 
@@ -3433,808 +3685,352 @@ export default function KPMInventoryApp() {
       );
   }
 
+
+  // --- MAIN APP RENDER (BIOHAZARD THEME) ---
   return (
-    <div className={`min-h-screen flex ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
-      
+    <BiohazardTheme 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        user={user} 
+        appSettings={appSettings}
+        isAdmin={isAdmin}
+    >
+      {/* 1. GLOBAL MODALS */}
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
       {returningTransaction && <ReturnModal transaction={returningTransaction} onClose={() => setReturningTransaction(null)} onConfirm={executeReturn} />}
-
-
-      {/* --- NEW: SECURE ADMIN LOGIN MODAL --- */}
+      
+      {/* Admin Login Modal */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700">
-            
-            <div className="flex justify-center mb-6">
-                <div className="bg-orange-100 dark:bg-orange-900/30 p-4 rounded-full text-orange-600 dark:text-orange-400">
-                    {isSetupMode || !hasAdminPin ? <ShieldCheck size={48}/> : showRecoveryInput ? <ShieldAlert size={48}/> : <Lock size={48} />}
-                </div>
-            </div>
-
-            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">
-                {isSetupMode || !hasAdminPin ? "Setup Security" : showRecoveryInput ? "Recover Account" : "Admin Access"}
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-black border-2 border-white/30 p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(255,0,0,0.2)]">
+            <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/20 pb-4">
+                <span className="text-red-500 mr-2">///</span> Security Check
             </h2>
-            <p className="text-center text-slate-500 text-sm mb-6">
-                {isSetupMode || !hasAdminPin 
-                    ? "Set your PIN and Secret Word." 
-                    : showRecoveryInput 
-                        ? "Enter Secret Word to reset PIN."
-                        : "Enter PIN to unlock."}
-            </p>
-
-            {/* PIN INPUT */}
-            {!showRecoveryInput && (
-                <input 
-                    type="password" 
-                    inputMode="numeric"
-                    placeholder={isSetupMode || !hasAdminPin ? "Create PIN" : "Enter PIN"} 
-                    className="w-full text-center text-2xl tracking-widest p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 dark:text-white font-mono mb-4 focus:ring-2 focus:ring-orange-500 outline-none"
-                    value={inputPin}
-                    onChange={(e) => setInputPin(e.target.value)}
-                    autoFocus={!showRecoveryInput}
-                />
-            )}
-
-            {/* SECRET WORD INPUT (CLEAN - NO EXAMPLES) */}
-            {(isSetupMode || !hasAdminPin || showRecoveryInput) && (
-                <div className="mb-6 animate-fade-in">
-                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">
-                        {showRecoveryInput ? "Secret Word" : "Set Secret Word"}
-                    </label>
-                    <input 
-                        type="text" 
-                        placeholder={showRecoveryInput ? "Enter Secret Word" : "Create Secret Word"} 
-                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 dark:text-white font-medium focus:ring-2 focus:ring-orange-500 outline-none"
-                        value={inputRecovery}
-                        onChange={(e) => setInputRecovery(e.target.value)}
-                    />
-                </div>
-            )}
-
-            {/* MAIN ACTION BUTTON */}
-            <button 
-                onClick={
-                    showRecoveryInput ? handleVerifyRecovery : 
-                    (isSetupMode || !hasAdminPin) ? handleSetNewPin : 
-                    handlePinLogin
-                }
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95 mb-4"
-            >
-                {showRecoveryInput ? "Verify & Reset" : (isSetupMode || !hasAdminPin) ? "Save Settings" : "Unlock"}
-            </button>
-
-            {/* FORGOT PIN LINK */}
-            {!isSetupMode && hasAdminPin && !showRecoveryInput && (
-                <button 
-                    onClick={handleForgotPin}
-                    className="w-full text-slate-400 hover:text-orange-500 text-xs font-bold uppercase tracking-wider mb-4"
-                >
-                    Forgot PIN?
+            
+            <input 
+                type="password" 
+                placeholder="ENTER PIN" 
+                className="w-full bg-white/5 border border-white/30 p-4 text-center text-white text-2xl mb-6 outline-none font-mono tracking-[0.5em] focus:border-red-500 focus:bg-white/10 transition-all placeholder:text-white/20 placeholder:tracking-normal placeholder:text-sm" 
+                value={inputPin} 
+                onChange={(e) => setInputPin(e.target.value)} 
+                onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} // <--- PRESS ENTER TO SUBMIT
+                autoFocus 
+            />
+            
+            <div className="flex gap-4">
+                <button onClick={() => setShowAdminLogin(false)} className="flex-1 py-3 border border-white/20 text-gray-400 hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-colors">
+                    Abort
                 </button>
-            )}
-
-            {/* CANCEL BUTTON */}
-            <button 
-                onClick={() => { 
-                    setShowAdminLogin(false); 
-                    setShowRecoveryInput(false);
-                    setIsSetupMode(false);
-                    setInputPin(""); 
-                    setInputRecovery("");
-                }}
-                className="w-full py-3 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-            >
-                Cancel
-            </button>
+                <button onClick={handlePinLogin} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white uppercase text-xs font-bold tracking-widest shadow-lg transition-colors">
+                    Access
+                </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* SIDEBAR */}
-      <nav className={`fixed left-0 top-0 h-screen bg-slate-900 text-slate-300 border-r border-slate-800 z-40 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'} shadow-xl`}>
-        <div className="flex-none p-4 flex items-center justify-between border-b border-slate-800 h-16">
-           {!isSidebarCollapsed && (
-               <div className="flex items-center gap-2 overflow-hidden">
-                 <img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
-                 <h1 className="font-bold text-sm text-white truncate">{appSettings?.companyName || 'KPM'}</h1>
-               </div>
-           )}
-           <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 hover:bg-slate-700 rounded text-slate-400">
-               {isSidebarCollapsed ? <Menu size={20}/> : <ChevronLeft size={20}/>}
-           </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
-            {[
-                { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
-                { id: 'map_war_room', icon: Globe, label: 'Strategic Map' },
-                { id: 'journey', icon: MapPin, label: 'Journey Plan' }, 
-                { id: 'inventory', icon: Package, label: 'Inventory' }, 
-                { id: 'sales', icon: ShoppingCart, label: 'Sales POS' }, 
-                { id: 'consignment', icon: Truck, label: 'Titip (Consign)' },
-                { id: 'stock_opname', icon: ClipboardCheck, label: 'Stock Opname' },
-                { id: 'customers', icon: Store, label: 'Customers' },
-                { id: 'sampling', icon: ClipboardList, label: 'Sampling' },
-                { id: 'transactions', icon: FileText, label: 'Reports' }, 
-                { id: 'audit', icon: History, label: 'Audit Logs' },
-                { id: 'settings', icon: Settings, label: 'Settings' }
-          ]
-          // NEW: HIDE REPORTS/AUDIT/STOCK OPNAME IF NOT ADMIN
-          .filter(item => isAdmin ? true : !['transactions', 'audit', 'stock_opname'].includes(item.id))
-          .map(item => (
-              <button 
-                key={item.id} 
-                onClick={() => setActiveTab(item.id)} 
-                className={`w-full flex items-center p-3 transition-colors relative group ${activeTab === item.id ? 'bg-orange-600 text-white' : 'hover:bg-slate-800 hover:text-white'} ${isSidebarCollapsed ? 'justify-center' : 'px-4'}`}
-                title={isSidebarCollapsed ? item.label : ''}
-              >
-                <item.icon size={20} className="flex-shrink-0" />
-                {!isSidebarCollapsed && <span className="ml-3 text-sm font-medium truncate">{item.label}</span>}
-                {isSidebarCollapsed && <span className="absolute left-16 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none">{item.label}</span>}
-              </button>
-            ))}
-        </div>
-        
-        {/* SIDEBAR FOOTER: LOGOUT */}
-        {user && (
-            <div className="p-4 border-t border-slate-800">
-                <button onClick={() => signOut(auth)} className={`flex items-center text-red-500 hover:text-red-400 ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} w-full transition-colors`}>
-                    <LogOut size={20} />
-                    {!isSidebarCollapsed && <span className="text-sm font-bold">Sign Out</span>}
+      {/* 2. LOGIN SCREEN (If not logged in) */}
+      {!user && (
+        <div className="absolute inset-0 z-50 bg-black flex items-center justify-center font-mono">
+            <div className="absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-30 pointer-events-none animate-pulse"></div>
+            <div className="relative z-10 bg-black/80 border-2 border-white/20 p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+                <h1 className="text-4xl font-bold text-white mb-2 tracking-widest">{appSettings?.companyName || "KPM SYSTEM"}</h1>
+                <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-600 to-transparent mb-8"></div>
+                <p className="text-red-500 font-bold mb-8 text-sm tracking-[0.2em] animate-pulse">/// AUTHENTICATION REQUIRED ///</p>
+                <button onClick={() => signInWithPopup(auth, googleProvider)} className="bg-white text-black px-6 py-4 font-bold uppercase hover:bg-gray-300 transition-colors w-full tracking-widest text-sm border-l-4 border-red-600">
+                    Initialize Session
                 </button>
             </div>
-        )}
-      </nav>
-
-      {/* MAIN CONTENT AREA - FIXED MARGINS */}
-      <main className={`flex-1 ${mainContentClass} p-6 md:p-8 transition-all duration-300 min-h-screen bg-slate-50 dark:bg-slate-900 overflow-x-hidden`}>
-        {/* MOBILE HEADER */}
-        <div className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-30 ml-[-5rem] sm:ml-0"> 
-          <div className="flex items-center gap-2 pl-20 md:pl-0"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-8 h-8 rounded-full border border-orange-500 object-cover" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><h1 className="font-bold text-sm">{appSettings?.companyName || 'KPM Inventory'}</h1></div>
-          <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
         </div>
+      )}
 
-        <div className="max-w-7xl mx-auto">
-          {/* HEADER AREA WITH SIGN IN BUTTON */}
-          <div className="flex justify-between items-center mb-8">
-             <h1 className="text-2xl font-bold capitalize">{activeTab.replace('_', ' ')}</h1>
-             <div className="flex items-center gap-3">
-               {!user ? (
-                   <button onClick={() => signInWithPopup(auth, googleProvider)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all dark:text-white">
-                       <LogIn size={18} className="text-blue-500" />
-                       Sign In with Google
-                   </button>
-               ) : (
-                   <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                       <span className="text-xs font-medium dark:text-slate-300 truncate max-w-[150px]">{user.email}</span>
-                   </div>
-               )}
-               <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
-                   {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
-               </button>
-             </div>
-          </div>
-
-          {!user ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                  <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-3xl max-w-lg shadow-xl border border-slate-200 dark:border-slate-700">
-                      <Lock className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                      <h2 className="text-2xl font-bold dark:text-white mb-2">Welcome to KPM Inventory</h2>
-                      <p className="text-slate-500 mb-6">Please sign in using the button in the top right to access your inventory, sales, and analytics.</p>
-                      <div className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-900 p-3 rounded-lg">
-                          Secure Cloud Sync • Real-time Updates • Admin Controls
+      {/* 3. MAIN TABS (Only render if user exists) */}
+      {user && (
+        <>
+          {activeTab === 'dashboard' && (
+              <div className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
+                          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
+                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
+                      </div>
+                      <div className="border-l-4 border-orange-500 bg-white/5 p-6 backdrop-blur-sm">
+                          <h3 className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-1">Revenue</h3>
+                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').reduce((acc, t) => acc + (t.total || 0), 0)) : "****"}</p>
+                      </div>
+                      <div className="border-l-4 border-emerald-500 bg-white/5 p-6 backdrop-blur-sm">
+                          <h3 className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-1">Net Profit</h3>
+                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "****"}</p>
                       </div>
                   </div>
-              </div>
-          ) : (
-              <>
-                {/* DASHBOARD */}
-                {activeTab === 'dashboard' && (
-                    <div className="space-y-6 animate-fade-in">
-
-                    {/* DASHBOARD CARDS ROW (SECURE MODE) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* 1. Inventory Value */}
-                        <div className="bg-gradient-to-br from-slate-600 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-                            <p className="text-slate-300 text-sm font-medium uppercase tracking-wider">Inventory Assets</p>
-                            <div className="flex items-center gap-2 mt-1">
-                                <h3 className="text-2xl font-bold">
-                                    {isAdmin ? formatRupiah(totalStockValue) : "Rp •••••••"}
-                                </h3>
-                                {!isAdmin && <Lock size={16} className="opacity-50" />}
-                            </div>
-                        </div>
-
-                        {/* 2. Revenue */}
-                        <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-                            <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Total Revenue</p>
-                            <div className="flex items-center gap-2 mt-1">
-                                <h3 className="text-2xl font-bold">
-                                    {isAdmin ? formatRupiah(
-                                    transactions
-                                        .filter(t => t.type === 'SALE' || t.type === 'RETURN')
-                                        .reduce((acc, t) => acc + (t.total || 0), 0)
-                                    ) : "Rp •••••••"}
-                                </h3>
-                                {!isAdmin && <Lock size={16} className="opacity-50" />}
-                            </div>
-                        </div>
-
-                        {/* 3. NET PROFIT */}
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-                            <p className="text-emerald-100 text-sm font-medium uppercase tracking-wider">Net Profit (Cuan)</p>
-                            <div className="flex items-center gap-2 mt-1">
-                                <h3 className="text-2xl font-bold">
-                                    {isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "Rp •••••••"}
-                                </h3>
-                                {!isAdmin && <Lock size={16} className="opacity-50" />}
-                            </div>
-                            <p className="text-[10px] opacity-70 mt-1">Revenue - Distributor Price</p>
-                        </div>
-                    </div>
-
-                    {/* DAILY PERFORMANCE CHART (SECURE MODE) */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm relative overflow-hidden">
-                        <h3 className="font-semibold mb-4 dark:text-white">Daily Performance (Stacked by Customer)</h3>
-                        
-                        {/* PRIVACY SHIELD */}
-                        {!isAdmin && (
-                            <div className="absolute inset-0 z-10 bg-slate-100/50 dark:bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center text-slate-500">
-                                <div className="bg-white dark:bg-slate-800 p-4 rounded-full shadow-lg mb-2">
-                                    <Lock size={32} className="text-orange-500"/>
-                                </div>
-                                <p className="font-bold text-sm uppercase tracking-widest">Analytics Locked</p>
-                                <button onClick={() => setShowAdminLogin(true)} className="mt-4 text-xs font-bold text-blue-500 hover:underline">Tap to Unlock</button>
-                            </div>
-                        )}
-
-                        <div className="h-80">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData.data}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1}/>
-                                    <XAxis dataKey="date" fontSize={12} stroke="#94a3b8"/>
-                                    <YAxis fontSize={12} stroke="#94a3b8"/>
-                                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'transparent'}}/>
-                                    <Legend />
-                                    {chartData.keys.map((key, index) => (
-                                        <Bar 
-                                            key={key} 
-                                            dataKey={key} 
-                                            stackId="a" 
-                                            fill={getRandomColor(key)} 
-                                            radius={index === chartData.keys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                                        />
-                                    ))}
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                    </div>
-                )}
-
-                {/* STRATEGIC MAP TAB */}
-                {activeTab === 'map_war_room' && (
-                    <MapMissionControl 
-                        customers={customers} 
-                        transactions={transactions} 
-                        inventory={inventory}  // <--- 🚨 ADD THIS EXACT LINE HERE 🚨
-                        db={db} 
-                        appId={appId} 
-                        user={user} 
-                        logAudit={logAudit} 
-                        triggerCapy={triggerCapy}
-                        isAdmin={isAdmin}
-                        savedHome={appSettings?.mapHome}
-                        onSetHome={handleSetMapHome}
-                        tierSettings={tierSettings}
-                    />
-                )}
-
-                {/* JOURNEY PLAN TAB */}
-                {activeTab === 'journey' && (
-                    <JourneyView 
-                        customers={customers} 
-                        db={db} 
-                        appId={appId} 
-                        user={user} 
-                        logAudit={logAudit} 
-                        triggerCapy={triggerCapy} 
-                        setActiveTab={setActiveTab} 
-                        tierSettings={tierSettings} // <--- ADD THIS LINE
-                    />
-                )}
-
-                {/* INVENTORY */}
-                {activeTab === 'inventory' && (
-                    <div className="space-y-6 animate-fade-in">
-                    <div className="flex gap-4">
-                        <input type="text" placeholder="Search products..." className="flex-1 bg-white dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700 dark:text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        
-                        {/* EXPORT BUTTON DELETED HERE */}
-                        
-                        {/* ONLY SHOW ADD BUTTON IF ADMIN */}
-                        {isAdmin && (
-                            <button onClick={() => { setEditingProduct({}); setTempImages({}); setBoxDimensions({w:55, h:90, d:22}); setUseFrontForBack(false); }} className="bg-orange-500 text-white px-4 rounded-xl flex items-center gap-2"><Plus size={20}/> Add New</button>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredInventory.map(item => (
-                        <div key={item.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700 shadow-sm p-4">
-                            <div className="flex gap-3 mb-4">
-                                <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden shrink-0">
-                                {(item.images?.front || item.image) ? <img src={item.images?.front || item.image} className="w-full h-full object-cover"/> : <Package className="w-full h-full p-4 text-slate-400"/>}
-                                </div>
-                                <div>
-                                <h3 className="font-bold leading-tight dark:text-white">{item.name}</h3>
-                                <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full dark:text-slate-300">{item.type}</span>
-                                <p className="text-emerald-500 font-bold mt-1">{isAdmin ? item.stock : "****"} Bks</p>
-                                </div>
-                            </div>
-                            
-                            {/* LOCKED: BUTTONS HIDDEN FOR NON-ADMIN */}
-                            <div className="flex gap-2">
-                                <button onClick={() => setExaminingProduct(item)} className={`bg-slate-100 dark:bg-slate-700 py-2 rounded-lg text-sm font-medium dark:text-white ${isAdmin ? 'flex-1' : 'w-full'}`}>Examine</button>
-                                
-                                {isAdmin && (
-                                    <>
-                                        <button onClick={() => { setEditingProduct(item); setTempImages(item.images || {}); setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); setUseFrontForBack(item.useFrontForBack || false); }} className="p-2 text-slate-400 hover:text-orange-500"><Settings size={18}/></button>
-                                        <button onClick={() => deleteProduct(item.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                        ))}
-                    </div>
-                    {editingProduct && (
-                        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
-                            {!isAdmin && (
-                                <div className="mb-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg flex items-center gap-3">
-                                    <Lock className="text-blue-500" />
-                                    <div><h4 className="font-bold text-sm text-blue-600 dark:text-blue-400">View Only Mode</h4><p className="text-xs text-slate-500">Only Admin can edit product details, images, and dimensions.</p></div>
-                                </div>
-                            )}
-                            <form onSubmit={handleSaveProduct}>
-                            <div className="flex justify-between mb-4"><h2 className="text-xl font-bold dark:text-white">Product Details</h2><button type="button" onClick={() => setEditingProduct(null)}><X className="dark:text-white"/></button></div>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                    <input name="name" defaultValue={editingProduct.name} required placeholder="Merk Rokok" className={`w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/>
-                                    
-                                    {isAdmin && (
-                                        <>
-                                        <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700 flex items-center justify-between"><div className="text-xs"><span className="font-bold text-orange-500 block">DIMENSIONS</span><span className="text-slate-400">{boxDimensions.w}mm x {boxDimensions.h}mm x {boxDimensions.d}mm</span></div><div className="text-[10px] text-slate-400 italic">Edit via "EDIT" on images below</div></div>
-                                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-3">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-xs font-bold text-orange-500 block">3D TEXTURES</span>
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input type="checkbox" checked={useFrontForBack} onChange={(e) => setUseFrontForBack(e.target.checked)} className="w-3 h-3 accent-orange-500" />
-                                                    <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold uppercase">Front = Back</span>
-                                                </label>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-2 text-center">
-                                                {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
-                                                    const imgSource = tempImages[face] || (editingProduct.images ? editingProduct.images[face] : null);
-                                                    const isBackDisabled = face === 'back' && useFrontForBack;
-                                                    
-                                                    if (isBackDisabled) {
-                                                        return (
-                                                            <div key={face} className="bg-slate-50 dark:bg-slate-800 rounded h-16 border dark:border-slate-700 flex flex-col items-center justify-center opacity-50">
-                                                                <span className="text-[10px] uppercase text-slate-400 font-bold">{face}</span>
-                                                                <span className="text-[8px] text-slate-400">(Linked to Front)</span>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    return (
-                                                        <div key={face} className="relative group bg-slate-100 dark:bg-slate-700 rounded h-16 border dark:border-slate-600 overflow-hidden">
-                                                            {/* Display Area - Click to Edit or Upload */}
-                                                            <div 
-                                                                className="w-full h-full cursor-pointer" 
-                                                                onClick={() => { if(imgSource) handleEditExisting(face, imgSource); else document.getElementById(`file-${face}`).click(); }}
-                                                            >
-                                                                {imgSource ? (
-                                                                    <img src={imgSource} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center text-[10px] uppercase text-slate-400 hover:text-orange-500 transition-colors">
-                                                                        <Upload size={12} className="mr-1"/> {face}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Hidden File Input */}
-                                                            <input 
-                                                                id={`file-${face}`} 
-                                                                type="file" 
-                                                                accept="image/*" 
-                                                                onChange={(e) => handleProductFaceUpload(e, face)} 
-                                                                className="hidden" 
-                                                            />
-
-                                                            {/* Hover Overlay Actions */}
-                                                            {imgSource && (
-                                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={(e) => { e.stopPropagation(); handleEditExisting(face, imgSource); }}
-                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
-                                                                        title="Edit/Crop Existing"
-                                                                    >
-                                                                        <Crop size={12}/>
-                                                                    </button>
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={(e) => { e.stopPropagation(); document.getElementById(`file-${face}`).click(); }}
-                                                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white"
-                                                                        title="Replace File"
-                                                                    >
-                                                                        <Replace size={12}/>
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                        </>
-                                    )}
-                                    <textarea name="description" defaultValue={editingProduct.description} placeholder="Lore" className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20 text-sm"/>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-2"><select name="type" defaultValue={editingProduct.type} className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} disabled={!isAdmin}><option>SKM</option><option>SKT</option><option>SPM</option></select><input name="taxStamp" defaultValue={editingProduct.taxStamp} placeholder="Cukai Year" className={`p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white ${!isAdmin ? 'opacity-70 pointer-events-none' : ''}`} readOnly={!isAdmin}/></div>
-                                    <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
-
-                                    {/* NEW: DISTRIBUTOR PRICE (FACTORY COST) */}
-                                    <div className="mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                                        <label className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-300">Distributor Price (Factory Modal)</label>
-                                        <input 
-                                            name="priceDistributor" 
-                                            type="number" 
-                                            placeholder="Rp 0" 
-                                            defaultValue={editingProduct.priceDistributor} 
-                                            className="w-full p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono text-blue-600"
-                                            readOnly={!isAdmin}
-                                        />
-                                    </div>
-
-                                    {/* NEW: MINIMUM STOCK ALERT LEVEL */}
-                                    <div className="mb-2">
-                                        <label className="text-[10px] uppercase font-bold text-orange-500">Alert Me If Stock Below:</label>
-                                        <input 
-                                            name="minStock" 
-                                            type="number" 
-                                            placeholder="e.g. 10" 
-                                            defaultValue={editingProduct.minStock} 
-                                            className="w-full p-1 border border-orange-200 bg-orange-50 rounded dark:bg-slate-800 dark:border-orange-900 dark:text-white"
-                                            readOnly={!isAdmin}
-                                        />
-                                    </div>
-
-                                    <p className="text-xs font-bold text-orange-500 mb-2">PRICES (PER BKS)</p>
-
-                                    {/* NEW: BUY PRICE (MODAL) */}
-                                    <input name="priceEcer" type="number" placeholder="Ecer" defaultValue={editingProduct.priceEcer} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
-
-                                    <input name="priceRetail" type="number" placeholder="Retail" defaultValue={editingProduct.priceRetail} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
-
-                                    <input name="priceGrosir" type="number" placeholder="Grosir" defaultValue={editingProduct.priceGrosir} className="w-full mb-2 p-1 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" readOnly={!isAdmin}/>
-
-                                    <input name="stock" type="number" placeholder="Stock Qty" defaultValue={editingProduct.stock} className="w-full p-1 border border-emerald-500 rounded dark:bg-slate-800 dark:text-white" readOnly={!isAdmin}/>
-                                    </div>
-                                </div>
-                            </div>
-                            {isAdmin && <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold mt-6">SAVE PRODUCT</button>}
-                            </form>
-                        </div>
-                        </div>
-                    )}
-                    </div>
-                )}
-
-
-
-                {/* STOCK OPNAME */}
-                {activeTab === 'stock_opname' && (
-                    <div className="space-y-6 animate-fade-in">
-                    <h2 className="text-2xl font-bold dark:text-white">Stock Opname (Physical Count)</h2>
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700 overflow-hidden">
-                        <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700">
-                            <tr>
-                            <th className="p-4">Product</th>
-                            <th className="p-4 text-center">System Stock</th>
-                            <th className="p-4 text-center">Physical Stock</th>
-                            <th className="p-4 text-center">Variance</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {inventory.map(item => {
-                            const actual = opnameData[item.id] !== undefined ? opnameData[item.id] : item.stock;
-                            const diff = actual - item.stock;
-                            return (
-                                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                <td className="p-4 font-medium dark:text-white">{item.name}</td>
-                                <td className="p-4 text-center dark:text-slate-300">{item.stock}</td>
-                                <td className="p-4 text-center">
-                                    <input 
-                                    type="number" 
-                                    min="0"
-                                    value={actual}
-                                    onChange={(e) => handleOpnameChange(item.id, parseInt(e.target.value))}
-                                    className={`w-20 p-2 text-center border rounded ${diff !== 0 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'dark:bg-slate-800 dark:border-slate-600'} dark:text-white`}
-                                    />
-                                </td>
-                                <td className={`p-4 text-center font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>
-                                    {diff > 0 ? `+${diff}` : diff}
-                                </td>
-                                </tr>
-                            );
-                            })}
-                        </tbody>
-                        </table>
-                    </div>
-                    <div className="flex justify-end">
-                        <button onClick={handleOpnameSubmit} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
-                        <Save size={20} /> Save Adjustments
-                        </button>
-                    </div>
-                    </div>
-                )}
-
-                {/* SAMPLING TAB - REDESIGNED */}
-                {activeTab === 'sampling' && (
-                    <div className="space-y-6 animate-fade-in">
-
-
-	{/* NEW: FOLDER EDIT MODAL (Phone Friendly) */}
-                    {editingFolder && (
-                        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
-                            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl border dark:border-slate-700">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-                                        <Folder size={20} className="text-orange-500"/> Edit Folder
-                                    </h3>
-                                    <button onClick={() => setEditingFolder(null)}><X className="dark:text-white"/></button>
-                                </div>
-                                
-                                <form onSubmit={processFolderEdit} className="space-y-4">
-                                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg text-xs text-orange-800 dark:text-orange-200 mb-2">
-                                        <p className="font-bold">You are moving all items from:</p>
-                                        <p>{editingFolder.oldReason}</p>
-                                        <p className="font-mono opacity-70">{editingFolder.oldDate}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">New Location Name</label>
-                                        <input 
-                                            name="newReason" 
-                                            defaultValue={editingFolder.oldReason} 
-                                            className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold"
-                                            placeholder="e.g. Pasar Sraten"
-                                            required 
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">New Date</label>
-                                        <div className="relative">
-                                            {/* THIS IS THE CALENDAR DROP DOWN (Native Date Picker) */}
-                                            <input 
-                                                name="newDate" 
-                                                type="date" 
-                                                defaultValue={editingFolder.oldDate} 
-                                                className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold"
-                                                required 
-                                            />
-                                            <Calendar className="absolute right-3 top-3.5 text-slate-400 dark:text-white pointer-events-none" size={20}/>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2 pt-2">
-                                        <button type="button" onClick={() => setEditingFolder(null)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-slate-500 dark:text-slate-300">Cancel</button>
-                                        <button type="submit" className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold shadow-lg hover:bg-orange-600 transition-colors">Save Changes</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-
-                        {/* 1. Header & Controls */}
-                        {!editingSample && (
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
-                                    <ClipboardList size={24} className="text-orange-500"/> Sampling Records
-                                </h2>
-                                <div className="flex gap-2 w-full md:w-auto">
-                                    {/* RECORD NEW BUTTON (Opens Modal) */}
-                                    <button onClick={() => setEditingSample({ isNew: true })} className="flex-1 md:flex-none bg-orange-500 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md hover:bg-orange-600 transition-all flex items-center justify-center gap-2 font-bold">
-                                        <Plus size={20}/> Record Sample
-                                    </button>
-                                    
-                                    {/* ANALYTICS BUTTON (Admin Only) */}
-                                    {isAdmin && (
-                                        <button onClick={() => setEditingSample('analytics')} className="flex-1 md:flex-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-6 py-3 rounded-xl shadow-sm hover:border-orange-500 transition-all flex items-center justify-center gap-2 font-bold text-slate-700 dark:text-white">
-                                            <TrendingUp size={20} className="text-blue-500"/> Analytics
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 2. Content Switching */}
-                        {editingSample === 'analytics' ? (
-                            <SamplingAnalyticsView samplings={samplings} inventory={inventory} onBack={() => setEditingSample(null)} />
-
-                        ) : editingSample?.isNew ? (
-    // NEW: SHOPPING CART STYLE SAMPLING VIEW
-    <SamplingCartView 
-        inventory={inventory} 
-        isAdmin={isAdmin} 
-        onCancel={() => setEditingSample(null)} 
-        onSubmit={handleBatchSamplingSubmit} 
-    />
-) : editingSample && !editingSample.isNew && editingSample !== 'analytics' ? (
-    // EDIT EXISTING MODAL (Updated with Notes)
-    <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Sample Record</h3>
-            <form onSubmit={handleUpdateSampling} className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded text-xs text-blue-600 dark:text-blue-300 mb-2"><strong>Note:</strong> Changing quantity will automatically adjust product stock.</div>
-                <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingSample.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                <div><label className="text-xs font-bold text-slate-500">Product</label><input disabled value={editingSample.productName} className="w-full p-2 border rounded bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"/></div>
-                <div><label className="text-xs font-bold text-slate-500">Quantity (Bks)</label><input name="qty" type="number" defaultValue={editingSample.qty} min="1" className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                <div><label className="text-xs font-bold text-slate-500">Location</label><input name="reason" defaultValue={editingSample.reason} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                
-                {/* NEW: EDIT NOTE FIELD */}
-                <div><label className="text-xs font-bold text-slate-500">Description / Note</label><input name="note" defaultValue={editingSample.note} placeholder="Store name, etc." className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                
-                <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingSample(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Update</button></div>
-            </form>
-        </div>
-    </div>
-) : (
-    // MAIN FOLDER VIEW (Now passed onEditFolder)
-    <SamplingFolderView 
-        samplings={samplings} 
-        isAdmin={isAdmin} 
-        onRecordSample={() => setEditingSample({isNew:true})} 
-        onDelete={handleDeleteSampling} 
-        onEdit={(s) => setEditingSample(s)}
-        onEditFolder={handleBatchFolderEdit} 
-    />
-)}
-</div>  
-)}      
-                
-                {/* OTHER TABS */}
-                {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} isAdmin={isAdmin} />}
-{/* ... Consignment line is usually here ... */}
-
-{/* PASTE THIS MISSING LINE HERE: */}
-{activeTab === 'customers' && (
-                    <CustomerManagement 
-                        customers={customers} 
-                        db={db} 
-                        appId={appId} 
-                        user={user} 
-                        logAudit={logAudit} 
-                        triggerCapy={triggerCapy} 
-                        isAdmin={isAdmin} 
-                        tierSettings={tierSettings}
-                        // NEW PROPS FOR CROPPER:
-                        onRequestCrop={(file) => {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                setCropImageSrc(reader.result);
-                                setActiveCropContext({ type: 'customer_staging', face: 'front' });
-                                setBoxDimensions({ w: 100, h: 100, d: 0 }); // Square crop
-                            };
-                            reader.readAsDataURL(file);
-                        }}
-                        croppedImage={tempCustomerImage}
-                        onClearCroppedImage={() => setTempCustomerImage(null)}
-                    />
-                )}
-
-
-                {activeTab === 'sales' && (
-                    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] animate-fade-in">
-                        {/* LEFT COLUMN: PRODUCT GRID */}
-                        <div className="lg:w-2/3 flex flex-col">
-                            <input className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 dark:text-white mb-4" placeholder="Search item..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/>
-                            <div className="flex-1 overflow-y-auto bg-slate-900 rounded-2xl shadow-inner border border-slate-700 p-6 relative">
-                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 159px, #475569 160px)'}}></div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-                                    {filteredInventory.map(item => (
-                                        <div key={item.id} onClick={() => addToCart(item)} className="group relative flex flex-col items-center cursor-pointer perspective-1000">
-                                            <div className="absolute bottom-0 w-32 h-4 bg-black/40 rounded-[100%] blur-md group-hover:bg-black/60 transition-colors"></div>
-                                            <div className="relative z-10 w-24 h-32 transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-105" style={{ transformStyle: 'preserve-3d' }}>
-                                                {(item.images?.front || item.image) ? (
-                                                    <img src={item.images?.front || item.image} className="w-full h-full object-cover drop-shadow-2xl rounded-sm" style={{filter: 'contrast(1.1)'}}/>
-                                                ) : (
-                                                    <div className="w-full h-full bg-slate-700 flex items-center justify-center border border-slate-600 rounded-sm shadow-xl"><Package className="text-slate-500"/></div>
-                                                )}
-                                                <div className="absolute -top-2 -right-4 bg-yellow-100 text-yellow-900 text-[10px] font-bold px-2 py-1 shadow-md border border-yellow-200 transform rotate-12 z-20 rounded-sm flex items-center gap-1"><Tag size={8} className="fill-yellow-900"/> {formatRupiah(item.priceRetail)}</div>
-                                            </div>
-                                            <div className="mt-4 text-center z-10">
-                                                <h4 className="font-bold text-xs text-slate-300 leading-tight w-24 truncate">{item.name}</h4>
-                                                <p className="text-[9px] text-slate-500 dark:text-slate-400 w-24 truncate mt-0.5 h-3">{item.description || ""}</p>
-                                                <div className={`text-[10px] font-mono mt-1 px-2 py-0.5 rounded-full inline-block ${item.stock < 10 ? 'bg-red-900/50 text-red-400 border border-red-800' : 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'}`}>{isAdmin ? item.stock : "**"} Left</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* RIGHT COLUMN: CART */}
-                        <div className="lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col border dark:border-slate-700">
-                            <div className="p-4 border-b dark:border-slate-700 font-bold dark:text-white flex items-center gap-2"><ShoppingCart size={20}/> Current Cart</div>
-                            
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {cart.map(item => (
-                                    <div key={item.productId} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-700">
-                                        <div className="flex justify-between font-bold text-sm dark:text-white">
-                                            <span>{item.name}</span> 
-                                            <button onClick={() => removeFromCart(item.productId)} className="text-red-400">x</button>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-1 mt-2">
-                                            <input type="number" value={item.qty} onChange={e=>updateCartItem(item.productId, 'qty', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white text-center"/>
-                                            <select value={item.unit} onChange={e=>updateCartItem(item.productId, 'unit', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white">
-                                                <option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option>
-                                            </select>
-                                            <select value={item.priceTier} onChange={e=>updateCartItem(item.productId, 'priceTier', e.target.value)} className="p-1 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 text-xs dark:text-white">
-                                                <option>Ecer</option><option>Retail</option><option>Grosir</option>
-                                            </select>
-                                        </div>
-                                        <div className="text-right font-bold text-emerald-600 mt-1">{formatRupiah(item.calculatedPrice * item.qty)}</div>
-                                    </div>
+                  
+                  <div className="bg-black/40 border border-white/10 p-6 h-96">
+                      <h3 className="text-white mb-4 uppercase text-xs font-bold tracking-widest border-b border-white/10 pb-2">Performance Graph</h3>
+                      <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData.data}>
+                                <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff"/>
+                                <XAxis dataKey="date" stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
+                                <YAxis stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
+                                <Tooltip contentStyle={{backgroundColor: '#000', border: '1px solid #fff', color: '#fff'}} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
+                                <Legend />
+                                {chartData.keys.map((key, index) => (
+                                    <Bar key={key} dataKey={key} stackId="a" fill={getRandomColor(key)} />
                                 ))}
-                            </div>
+                            </BarChart>
+                      </ResponsiveContainer>
+                  </div>
+              </div>
+          )}
 
-                            <div className="p-4 border-t dark:border-slate-700">
-                                <form onSubmit={processTransaction}>
-                                    <div className="mb-3 relative">
-                                        <input name="customerName" required list="customersList" placeholder="Customer Name" className="w-full p-2 bg-transparent border-b dark:border-slate-700 dark:text-white text-sm" autoComplete="off"/>
-                                        <datalist id="customersList">{customers.map(c => <option key={c.id} value={c.name} />)}</datalist>
+          {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
+          
+          {activeTab === 'inventory' && (
+          <div className="h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative">
+              
+              <ResidentEvilInventory 
+                  inventory={filteredInventory}
+                  isAdmin={isAdmin}
+                  backgroundSrc={appSettings?.inventoryBg}
+                  onUploadBg={handleInventoryBgSelect}
+                  
+                  // --- UPDATED SAVE FUNCTION ---
+                  onUpdateProduct={async (id, updates) => {
+                      // updates contains { dimensions: ..., defaultZoom: ... }
+                      try {
+                          await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id), updates);
+                          triggerCapy("3D Settings Saved! 📦");
+                          // Update local state immediately
+                          setInventory(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+                      } catch(err) { console.error(err); alert("Save failed"); }
+                  }}
+                  // ---------------------------
+
+                  onDelete={(id) => deleteProduct(id)}
+                  onEdit={(item) => { 
+                      setEditingProduct(item); 
+                      setTempImages(item.images || {}); 
+                      setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); 
+                      setUseFrontForBack(item.useFrontForBack || false); 
+                  }}
+                  onAddNew={() => { 
+                      setEditingProduct({}); 
+                      setTempImages({}); 
+                      setBoxDimensions({w:55, h:90, d:22}); 
+                      setUseFrontForBack(false); 
+                  }}
+              />
+              
+              {/* EDIT MODAL - AUTO HIDES WHEN CROPPING (fixes "Menu doesn't exit") */}
+              {editingProduct && (
+                <div 
+                    className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300"
+                    style={{ display: cropImageSrc ? 'none' : 'flex' }} // <--- MAGIC FIX: Hides when cropping
+                >
+                    <div className="bg-black border border-white/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-white hover:text-red-500"><X size={24}/></button>
+                        <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/20 pb-2">
+                            {editingProduct.id ? "Edit Record" : "New Entry"}
+                        </h2>
+                        
+                        <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-orange-500 outline-none"/></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-gray-500 block mb-1">STOCK</label><input name="stock" type="number" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-emerald-500/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
+                                        <div><label className="text-gray-500 block mb-1">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
+                                    </div>
+                                    
+                                    {/* RESTORED: FRONT = BACK TOGGLE */}
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="checkbox" 
+                                            id="useFront" 
+                                            checked={useFrontForBack} 
+                                            onChange={(e) => setUseFrontForBack(e.target.checked)}
+                                            className="accent-orange-500 w-4 h-4"
+                                        />
+                                        <label htmlFor="useFront" className="text-white text-xs cursor-pointer select-none">Use Front Image for Back</label>
                                     </div>
 
-                                    <select name="paymentType" className="w-full mb-3 p-2 rounded bg-slate-100 dark:bg-slate-700 dark:text-white text-sm">
-                                        <option value="Cash">Cash</option>
-                                        <option value="QRIS">QRIS</option>
-                                        <option value="Transfer">Transfer (BCA/Mandiri)</option>
-                                        <option value="Titip">Titip (Consignment)</option>
-                                    </select>
-
-                                    <button disabled={cart.length===0} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold">CHARGE {formatRupiah(cart.reduce((a,i)=>a+(i.calculatedPrice*i.qty),0))}</button>
-                                </form>
+                                    {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN) */}
+                                    <div className="p-3 border border-dashed border-white/30 text-center bg-white/5">
+                                        <p className="text-orange-500 font-bold mb-2">TEXTURE ASSETS</p>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
+                                                const hasImg = tempImages[face] || (editingProduct.images && editingProduct.images[face]);
+                                                return (
+                                                    <div 
+                                                        key={face} 
+                                                        className="h-12 bg-black border border-white/10 flex items-center justify-center text-[9px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-white transition-colors relative group overflow-hidden" 
+                                                        onClick={() => document.getElementById(`file-edit-${face}`).click()}
+                                                    >
+                                                        {hasImg ? (
+                                                            <>
+                                                                <img src={hasImg} className="w-full h-full object-cover opacity-50 group-hover:opacity-100"/>
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Pencil size={12} className="text-white"/>
+                                                                </div>
+                                                                {/* RESTORED: Edit from existing button */}
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); handleEditExisting(face, hasImg); }}
+                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-white opacity-0 group-hover:opacity-100 z-20"
+                                                                    title="Edit Crop"
+                                                                >
+                                                                    <Crop size={8}/>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            face
+                                                        )}
+                                                        <input id={`file-edit-${face}`} type="file" className="hidden" onChange={(e) => handleProductFaceUpload(e, face)}/>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h3 className="text-white border-b border-white/10 pb-1 mb-2">PRICING ENGINE</h3>
+                                    <div><label className="text-gray-500 block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-white/5 border border-red-900/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                    <div><label className="text-gray-500 block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-white/5 border border-emerald-900/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
+                                    <div><label className="text-gray-500 block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-white/5 border border-blue-900/50 text-blue-400 focus:border-blue-500 outline-none"/></div>
+                                    <div><label className="text-gray-500 block mb-1">ECER PRICE</label><input name="priceEcer" type="number" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-white/5 border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
+                                </div>
                             </div>
-                        </div>
+                            <button className="w-full bg-white text-black font-bold py-4 mt-6 uppercase hover:bg-gray-300 tracking-widest text-sm">Update Database</button>
+                        </form>
                     </div>
-                )}
+                </div>
+              )}
+          </div>
+      )}
 
-                {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
-                
-                {activeTab === 'audit' && (
-                    <div className="space-y-6 animate-fade-in"><h2 className="text-2xl font-bold dark:text-white">System Audit Logs</h2><div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border dark:border-slate-700"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b dark:border-slate-700"><tr><th className="p-4">Action</th><th className="p-4">Details</th><th className="p-4 text-right">Time</th></tr></thead><tbody>{auditLogs.map(log => (<tr key={log.id} className="border-b dark:border-slate-700"><td className="p-4 font-bold text-orange-500">{log.action}</td><td className="p-4 dark:text-slate-300">{log.details}</td><td className="p-4 text-right text-slate-400 text-xs">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td></tr>))}</tbody></table></div></div>
-                )}
+          {activeTab === 'sales' && (
+          <MerchantSalesView 
+              inventory={filteredInventory}
+              user={user}
+              appSettings={appSettings}
+              onProcessSale={handleMerchantSale}
+              onInspect={(item) => setExaminingProduct(item)} // Right-click to examine!
+          />
+      )}
 
-                {activeTab === 'settings' && renderSettings()}
+          {activeTab === 'customers' && (
+              <CustomerManagement 
+                  customers={customers} 
+                  db={db} 
+                  appId={appId} 
+                  user={user} 
+                  logAudit={logAudit} 
+                  triggerCapy={triggerCapy} 
+                  isAdmin={isAdmin} 
+                  tierSettings={tierSettings}
+                  onRequestCrop={(file) => {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                          setCropImageSrc(reader.result);
+                          setActiveCropContext({ type: 'customer_staging', face: 'front' });
+                          setBoxDimensions({ w: 100, h: 100, d: 0 }); // Square crop
+                      };
+                      reader.readAsDataURL(file);
+                  }}
+                  croppedImage={tempCustomerImage}
+                  onClearCroppedImage={() => setTempCustomerImage(null)}
+              />
+          )}
+
+          {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} isAdmin={isAdmin} />}
+          {activeTab === 'stock_opname' && (
+              <StockOpnameView 
+                  inventory={inventory} 
+                  db={db} 
+                  appId={appId} 
+                  user={user} 
+                  logAudit={logAudit}
+                  triggerCapy={triggerCapy}
+              />
+          )}
+          {activeTab === 'sampling' && (
+              <>
+                  {/* EDIT FOLDER MODAL */}
+                  {editingFolder && (
+                      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+                              <h3 className="font-bold text-lg mb-4 dark:text-white">Rename Folder</h3>
+                              <form onSubmit={processFolderEdit} className="space-y-4">
+                                  <div><label className="text-xs font-bold text-slate-500">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
+                                  <div><label className="text-xs font-bold text-slate-500">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
+                                  <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Move</button></div>
+                              </form>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* EDIT ITEM MODAL (The one you asked for) */}
+                  <SampleEntryModal 
+                      isOpen={!!editingSample} 
+                      onClose={() => setEditingSample(null)} 
+                      initialData={editingSample} 
+                      inventory={inventory}
+                      onSubmit={editingSample?.isNew ? handleBatchSamplingSubmit : handleUpdateSampling} // Logic switcher
+                  />
+
+                  {/* MAIN VIEW */}
+                  {showSamplingAnalytics ? (
+                      <SamplingAnalyticsView samplings={samplings} inventory={inventory} onBack={() => setShowSamplingAnalytics(false)} />
+                  ) : (
+                      <SamplingFolderView 
+                          samplings={samplings} 
+                          isAdmin={isAdmin} 
+                          onRecordSample={() => setEditingSample({isNew:true})} // New Item
+                          onDelete={handleDeleteSampling} 
+                          onEdit={(s) => setEditingSample(s)} // Edit Item
+                          onEditFolder={handleBatchFolderEdit}
+                          onShowAnalytics={() => setShowSamplingAnalytics(true)}
+                      />
+                  )}
               </>
           )}
-        </div>
-      </main>
+          
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
+          
+          {activeTab === 'audit' && (
+              <div className="bg-black/50 border border-white/20 p-6 h-full overflow-y-auto font-mono text-xs">
+                  <table className="w-full text-left">
+                      <thead className="text-gray-500 border-b border-white/10 uppercase"><tr><th className="p-2">Action</th><th className="p-2">Details</th><th className="p-2 text-right">Time</th></tr></thead>
+                      <tbody>
+                          {auditLogs.map(log => (
+                              <tr key={log.id} className="hover:bg-white/5 border-b border-white/5 text-gray-300">
+                                  <td className="p-2 text-orange-500">{log.action}</td>
+                                  <td className="p-2">{log.details}</td>
+                                  <td className="p-2 text-right text-gray-500">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+          
+          {activeTab === 'settings' && renderSettings()}
+        </>
+      )}
 
-      {/* MASCOT - NOW WITH DISCO STATE PASSED DOWN */}
+      {/* GLOBAL WIDGETS */}
       <CapybaraMascot 
-          isDiscoMode={isDiscoMode}
+          isDiscoMode={isDiscoMode} 
           message={showCapyMsg ? capyMsg : null} 
           onClick={() => cycleMascotMessage()} 
           staticImageSrc={appSettings?.mascotImage} 
+          user={user} 
+          
+          // --- ADD THIS LINE ---
+          scale={appSettings?.mascotScale || 1} 
       />
-    </div>
+      <MusicPlayer />
+    </BiohazardTheme>
   );
 }
