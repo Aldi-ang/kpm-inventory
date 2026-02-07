@@ -2281,18 +2281,15 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
     const [isInteracting, setIsInteracting] = useState(false); 
     const lastMousePos = useRef({ x: 0, y: 0 });
     
-    // 1. Initialize State with Saved Zoom
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
-    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); // <--- LOADS SAVED ZOOM
+    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
     const [showControls, setShowControls] = useState(false);
     
-    // Sync when product changes
     useEffect(() => {
         setDims(product.dimensions || { w: 55, h: 90, d: 22 });
         setZoom(product.defaultZoom || 3.0);
     }, [product]);
 
-    // Auto-rotate
     useEffect(() => {
         let frameId;
         const animate = () => {
@@ -2318,17 +2315,6 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
         setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
         lastMousePos.current = { x: e.clientX, y: e.clientY }; 
     };
-    const handleMouseUp = () => setIsDragging(false);
-
-    // 2. Check for Changes (Dims OR Zoom)
-    const hasChanged = 
-        JSON.stringify(dims) !== JSON.stringify(product.dimensions || { w: 55, h: 90, d: 22 }) ||
-        zoom !== (product.defaultZoom || 3.0);
-
-    // 3. Save Function (Sends Dims AND Zoom)
-    const handleSaveChanges = () => { 
-        if(onUpdateProduct) onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom }); 
-    };
 
     const w = dims.w * zoom; 
     const h = dims.h * zoom; 
@@ -2342,114 +2328,86 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
     return (
         <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-slate-900/20 to-black overflow-hidden">
             
-            {/* 3D CONTROLS (Top Right) */}
+            {/* 3D CONTROLS */}
             {isAdmin && (
-                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel pointer-events-auto">
-                    <button 
-                        onClick={() => setShowControls(!showControls)} 
-                        className={`p-2 rounded-full border transition-all ${showControls ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/50 border-white/20 text-slate-400 hover:text-white'}`}
-                    >
+                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel">
+                    <button onClick={() => setShowControls(!showControls)} className={`p-2 rounded-full border border-white/20 ${showControls ? 'bg-orange-500 text-white' : 'bg-black/50 text-slate-400'}`}>
                         <Maximize2 size={16}/>
                     </button>
-
                     {showControls && (
-                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-72 shadow-2xl animate-fade-in-up">
-                            <h4 className="text-xs font-bold text-orange-500 mb-3 uppercase tracking-widest flex justify-between items-center">
-                                3D Configuration
-                                <div className="flex gap-1 bg-white/10 rounded p-1">
-                                    <button onClick={() => setZoom(z => Math.max(0.5, z-0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomOut size={12}/></button>
-                                    <span className="text-[10px] font-mono w-8 text-center">{zoom.toFixed(1)}x</span>
-                                    <button onClick={() => setZoom(z => Math.min(5, z+0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomIn size={12}/></button>
-                                </div>
-                            </h4>
-                            
-                            <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            
-                            {hasChanged && (
-                                <button 
-                                    onClick={handleSaveChanges}
-                                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 shadow-lg"
-                                >
-                                    <Save size={12}/> Save All Changes
-                                </button>
-                            )}
+                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-64 shadow-2xl">
+                             <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 bg-emerald-600 text-white text-[10px] font-bold py-2 rounded">Save 3D Layout</button>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* 3D VIEWER */}
+            {/* 3D VIEWER - FIXED DEPTH & FLICKERING */}
             <div 
                 className="flex-1 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+                style={{ perspective: '1200px' }}
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)}
             >
-                <div className="relative transform-style-3d transition-transform duration-75" style={{ width: w, height: h, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}>
-                    <div className="absolute inset-0 backface-hidden bg-white shadow-[0_0_30px_rgba(255,255,255,0.1)]" style={{ transform: `translateZ(${d/2}px)` }}>{renderFace(front, "bg-white")}</div>
-                    <div className="absolute inset-0 backface-hidden bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)` }}>{renderFace(back, "bg-slate-800")}</div>
-                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.right, "bg-slate-400")}</div>
-                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.left, "bg-slate-400")}</div>
-                    <div className="absolute bg-slate-200" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.top, "bg-slate-300")}</div>
-                    <div className="absolute bg-slate-400" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.bottom, "bg-slate-500")}</div>
+                <div 
+                    className="relative" 
+                    style={{ 
+                        width: w, height: h, 
+                        transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                        transformStyle: 'preserve-3d', // <--- FIXED: FORCES 3D DEPTH
+                        willChange: 'transform' // <--- FIXED: REDUCES FLICKER
+                    }}
+                >
+                    <div className="absolute inset-0 bg-white" style={{ transform: `translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(front, "bg-white")}</div>
+                    <div className="absolute inset-0 bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-slate-800")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-slate-400")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.left, "bg-slate-400")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.top, "bg-slate-300")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-slate-500")}</div>
                 </div>
             </div>
 
-            {/* FLOATING ADMIN ACTIONS (Fixed: Moved out of text panel) */}
-            {isAdmin && (
-                <div className="absolute bottom-32 right-8 flex gap-2 z-[90] admin-actions">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onEdit(product); }} 
-                        className="px-4 py-2 bg-white/90 text-black text-xs font-bold uppercase hover:bg-white transition-colors tracking-widest shadow-lg border-2 border-transparent hover:border-orange-500"
-                    >
-                        Edit Item
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onDelete(product.id); }} 
-                        className="px-4 py-2 bg-red-900/80 text-red-500 border border-red-800 text-xs font-bold uppercase hover:bg-red-900 transition-colors tracking-widest shadow-lg"
-                    >
-                        Discard
-                    </button>
-                </div>
-            )}
-
-            {/* INFO PANEL */}
-            <div className="bg-black/90 border-t-2 border-orange-600 p-8 relative z-20 backdrop-blur-xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 className="text-4xl text-white font-serif tracking-widest uppercase mb-2 drop-shadow-md">{product.name}</h2>
-                        <div className="flex items-center gap-4">
-                            <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-xs font-mono font-bold tracking-wider">STOCK: {isAdmin ? product.stock : "**"}</span>
-                            <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">{product.type} // {product.taxStamp}</span>
+            {/* PRODUCT DATA & CLEAN ACTIONS */}
+            <div className="bg-black/90 border-t-2 border-orange-600 p-6 md:p-8 relative z-20 backdrop-blur-xl">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+                    <div className="w-full">
+                        <h2 className="text-xl md:text-3xl text-white font-serif tracking-widest uppercase mb-1">{product.name}</h2>
+                        <div className="flex items-center gap-3">
+                            <span className="bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-500/50 text-emerald-400 text-[10px] font-mono font-bold">STOCK: {isAdmin ? product.stock : "**"}</span>
+                            <span className="text-[9px] text-slate-500 font-mono uppercase">{product.type}</span>
                         </div>
                     </div>
+
+                    {/* MOVED: Clean buttons at the top of the info panel */}
+                    {isAdmin && (
+                        <div className="flex gap-2 w-full md:w-auto">
+                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-colors">Edit</button>
+                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 bg-red-900/30 text-red-500 border border-red-800 text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">Discard</button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Updated for Mobile: changed 'grid-cols-4' to 'grid-cols-2 lg:grid-cols-4' */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 text-xs font-mono border-t border-white/10 pt-6">
-                    <div className="bg-white/5 p-3 border-l-2 border-red-500">
-                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Distributor</p>
-                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceDistributor)}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[9px] md:text-xs font-mono border-t border-white/10 pt-4">
+                    <div className="bg-white/5 p-2 border-l-2 border-red-500">
+                        <p className="text-slate-500 uppercase mb-1">Dist</p>
+                        <p className="text-white font-bold">{formatRupiah(product.priceDistributor)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-2 border-emerald-500">
-                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Retail</p>
-                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceRetail)}</p>
+                    <div className="bg-white/5 p-2 border-l-2 border-emerald-500">
+                        <p className="text-slate-500 uppercase mb-1">Retail</p>
+                        <p className="text-white font-bold">{formatRupiah(product.priceRetail)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-2 border-blue-500">
-                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Grosir</p>
-                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceGrosir)}</p>
+                    <div className="bg-white/5 p-2 border-l-2 border-blue-500">
+                        <p className="text-slate-500 uppercase mb-1">Grosir</p>
+                        <p className="text-white font-bold">{formatRupiah(product.priceGrosir)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-2 border-yellow-500">
-                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Ecer</p>
-                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceEcer)}</p>
+                    <div className="bg-white/5 p-2 border-l-2 border-yellow-500">
+                        <p className="text-slate-500 uppercase mb-1">Ecer</p>
+                        <p className="text-white font-bold">{formatRupiah(product.priceEcer)}</p>
                     </div>
                 </div>
             </div>
-            
-            <style>{`
-                .transform-style-3d { transform-style: preserve-3d; }
-                .backface-hidden { backface-visibility: hidden; }
-            `}</style>
         </div>
     );
 };
@@ -2460,7 +2418,6 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
 
-    // Group Items by Category
     const sections = useMemo(() => {
         const groups = { "ALL": inventory };
         inventory.forEach(item => {
@@ -2471,125 +2428,68 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
         return groups;
     }, [inventory]);
 
-    // Default to the first item if nothing is selected
     useEffect(() => {
         if (!selectedId && inventory.length > 0) setSelectedId(inventory[0].id);
     }, [inventory]);
 
     const sectionKeys = Object.keys(sections).sort();
-    const currentList = sections[activeSection].filter(i => 
-        i.name.toLowerCase().includes(search.toLowerCase())
-    );
-
-    const selectedItem = useMemo(() => {
-        return inventory.find(i => i.id === selectedId) || (inventory.length > 0 ? inventory[0] : null);
-    }, [selectedId, inventory]);
+    const currentList = sections[activeSection].filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
             
-            {/* LEFT MENU: SUPPLY CASE */}
-            <div className="w-full md:w-96 h-1/2 md:h-full flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
-                <div className="p-6 border-b border-white/20 bg-gradient-to-r from-white/10 to-transparent">
-                    <h3 className="text-white font-serif italic text-2xl mb-2 tracking-wide">Supply Case</h3>
-                    <div className="h-0.5 w-16 bg-orange-500 mb-6"></div>
-                    
-                    <div className="relative mb-6">
-                        <input 
-                            value={search} 
-                            onChange={e => setSearch(e.target.value)} 
-                            placeholder="SEARCH ITEMS..." 
-                            className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-xs font-mono uppercase focus:border-orange-500 outline-none"
-                        />
+            {/* SUPPLY CASE: 45% Height on Mobile for better visibility */}
+            <div className="w-full md:w-96 h-[45%] md:h-full flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+                <div className="p-4 md:p-6 border-b border-white/20">
+                    <h3 className="text-white font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
+                    <div className="relative mb-3">
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-[10px] font-mono outline-none"/>
                         <Search size={12} className="absolute left-2 top-2.5 text-slate-500"/>
-                        {isAdmin && (
-                            <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white">
-                                <Plus size={16}/>
-                            </button>
-                        )}
+                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white"><Plus size={16}/></button>}
                     </div>
-
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                         {sectionKeys.map(sec => (
-                            <button 
-                                key={sec} 
-                                onClick={() => setActiveSection(sec)} 
-                                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${
-                                    activeSection === sec 
-                                    ? 'bg-white text-black border-white' 
-                                    : 'text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'
-                                }`}
-                            >
-                                {sec}
-                            </button>
+                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[8px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-white text-black' : 'text-slate-500 border-slate-700'}`}>{sec}</button>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 p-2">
+                {/* SCROLLABLE LIST AREA */}
+                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-white/10">
                     {currentList.map(item => (
                         <div 
                             key={item.id} 
                             onClick={() => setSelectedId(item.id)} 
-                            className={`group p-3 cursor-pointer border border-transparent transition-all relative mb-1 flex items-center gap-3 ${
-                                selectedId === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'hover:bg-white/5'
-                            }`}
+                            className={`p-3 md:p-3 cursor-pointer border mb-1 flex items-center gap-3 transition-all ${selectedId === item.id ? 'bg-white/10 border-white/20' : 'border-transparent'}`}
                         >
-                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${
-                                selectedId === item.id ? 'border-orange-500' : 'border-white/10'
-                            }`}>
-                                {item.images?.front ? (
-                                    <img src={item.images.front} className="w-full h-full object-cover opacity-80" alt="item" />
-                                ) : (
-                                    <Package size={16} className="text-slate-600"/>
-                                )}
+                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${selectedId === item.id ? 'border-orange-500' : 'border-white/10'}`}>
+                                {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover" /> : <Package size={16} className="text-slate-600"/>}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className={`font-serif text-sm uppercase tracking-wide truncate transition-colors ${
-                                    selectedId === item.id ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'
-                                }`}>
-                                    {item.name}
-                                </h4>
-                                <p className="text-[9px] text-slate-600 font-mono">
-                                    STOCK: {isAdmin ? item.stock : "**"}
-                                </p>
+                                <h4 className={`text-xs uppercase tracking-wide truncate ${selectedId === item.id ? 'text-orange-400' : 'text-slate-400'}`}>{item.name}</h4>
+                                <p className="text-[9px] text-slate-600 font-mono">STK: {isAdmin ? item.stock : "**"}</p>
                             </div>
-                            {selectedId === item.id && (
-                                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
-                            )}
                         </div>
                     ))}
-                </div>
-
-                <div className="p-4 border-t border-white/10 text-[9px] text-slate-600 font-mono flex justify-between items-center bg-black">
-                    <span>CAPACITY: {inventory.length} SLOTS</span>
-                    <span>v3.4</span>
+                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-600 mt-10">NO ITEMS FOUND</p>}
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: ITEM INSPECTOR */}
-            <div className="flex-1 relative bg-black flex flex-col h-1/2 md:h-full">
+            {/* INSPECTOR AREA: 55% Height on Mobile */}
+            <div className="flex-1 h-[55%] md:h-full relative bg-black">
                 <div className="absolute inset-0 z-0">
-                    <img 
-                        src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} 
-                        className="w-full h-full object-cover opacity-60 transition-opacity duration-500"
-                        alt="background"
-                        onError={(e) => e.target.style.opacity = 0.1} 
-                    />
+                    <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
                 </div>
-
-                <div className="relative z-10 flex-1 h-full">
+                <div className="relative z-10 h-full">
                     {isAdmin && (
-                        <label className="absolute top-4 right-14 z-50 cursor-pointer group"> 
-                            <div className="bg-black/50 hover:bg-orange-600/80 backdrop-blur border border-white/20 p-2 rounded-full text-white transition-all shadow-lg">
-                                <ImageIcon size={16}/>
-                            </div>
+                        <label className="absolute top-4 right-14 z-50 cursor-pointer"> 
+                            <div className="bg-black/50 p-2 rounded-full text-white border border-white/10"><ImageIcon size={14}/></div>
                             <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
                         </label>
                     )}
-                    
-                    {selectedItem ? (
+                    {selectedItem && (
                         <ItemInspector 
                             product={selectedItem} 
                             isAdmin={isAdmin} 
@@ -2597,10 +2497,6 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
                             onDelete={onDelete} 
                             onUpdateProduct={onUpdateProduct} 
                         />
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-slate-500 font-serif italic text-2xl tracking-widest opacity-50">
-                            SELECT ITEM TO EXAMINE
-                        </div>
                     )}
                 </div>
             </div>
