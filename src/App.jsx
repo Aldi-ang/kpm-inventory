@@ -2425,11 +2425,24 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-6 text-xs font-mono border-t border-white/10 pt-6">
-                    <div className="bg-white/5 p-3 border-l-2 border-red-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Distributor</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceDistributor)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-emerald-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Retail</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceRetail)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-blue-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Grosir</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceGrosir)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-yellow-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Ecer</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceEcer)}</p></div>
+                {/* Updated for Mobile: changed 'grid-cols-4' to 'grid-cols-2 lg:grid-cols-4' */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 text-xs font-mono border-t border-white/10 pt-6">
+                    <div className="bg-white/5 p-3 border-l-2 border-red-500">
+                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Distributor</p>
+                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceDistributor)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-2 border-emerald-500">
+                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Retail</p>
+                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceRetail)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-2 border-blue-500">
+                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Grosir</p>
+                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceGrosir)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-2 border-yellow-500">
+                        <p className="text-slate-500 uppercase mb-1 text-[9px]">Ecer</p>
+                        <p className="text-white font-bold text-sm">{formatRupiah(product.priceEcer)}</p>
+                    </div>
                 </div>
             </div>
             
@@ -2447,7 +2460,7 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
 
-    // Group Items
+    // Group Items by Category
     const sections = useMemo(() => {
         const groups = { "ALL": inventory };
         inventory.forEach(item => {
@@ -2458,58 +2471,109 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
         return groups;
     }, [inventory]);
 
+    // Default to the first item if nothing is selected
     useEffect(() => {
         if (!selectedId && inventory.length > 0) setSelectedId(inventory[0].id);
     }, [inventory]);
 
     const sectionKeys = Object.keys(sections).sort();
-    const currentList = sections[activeSection].filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
-   const selectedItem = useMemo(() => {
-        // Safe fallback: if inventory is empty, return null to avoid crashing 'ItemInspector'
+    const currentList = sections[activeSection].filter(i => 
+        i.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const selectedItem = useMemo(() => {
         return inventory.find(i => i.id === selectedId) || (inventory.length > 0 ? inventory[0] : null);
     }, [selectedId, inventory]);
 
     return (
-        <div className="flex h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
-            {/* LEFT MENU */}
-            <div className="w-1/3 md:w-96 flex flex-col border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col md:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
+            
+            {/* LEFT MENU: SUPPLY CASE */}
+            <div className="w-full md:w-96 h-1/2 md:h-full flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
                 <div className="p-6 border-b border-white/20 bg-gradient-to-r from-white/10 to-transparent">
                     <h3 className="text-white font-serif italic text-2xl mb-2 tracking-wide">Supply Case</h3>
                     <div className="h-0.5 w-16 bg-orange-500 mb-6"></div>
+                    
                     <div className="relative mb-6">
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH ITEMS..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-xs font-mono uppercase focus:border-orange-500 outline-none"/>
+                        <input 
+                            value={search} 
+                            onChange={e => setSearch(e.target.value)} 
+                            placeholder="SEARCH ITEMS..." 
+                            className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-xs font-mono uppercase focus:border-orange-500 outline-none"
+                        />
                         <Search size={12} className="absolute left-2 top-2.5 text-slate-500"/>
-                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white"><Plus size={16}/></button>}
+                        {isAdmin && (
+                            <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white">
+                                <Plus size={16}/>
+                            </button>
+                        )}
                     </div>
+
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
                         {sectionKeys.map(sec => (
-                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${activeSection === sec ? 'bg-white text-black border-white' : 'text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'}`}>{sec}</button>
+                            <button 
+                                key={sec} 
+                                onClick={() => setActiveSection(sec)} 
+                                className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${
+                                    activeSection === sec 
+                                    ? 'bg-white text-black border-white' 
+                                    : 'text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'
+                                }`}
+                            >
+                                {sec}
+                            </button>
                         ))}
                     </div>
                 </div>
+
                 <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 p-2">
                     {currentList.map(item => (
-                        <div key={item.id} onClick={() => setSelectedId(item.id)} className={`group p-3 cursor-pointer border border-transparent transition-all relative mb-1 flex items-center gap-3 ${selectedId === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'hover:bg-white/5'}`}>
-                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${selectedId === item.id ? 'border-orange-500' : 'border-white/10'}`}>
-                                {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover opacity-80"/> : <Package size={16} className="text-slate-600"/>}
+                        <div 
+                            key={item.id} 
+                            onClick={() => setSelectedId(item.id)} 
+                            className={`group p-3 cursor-pointer border border-transparent transition-all relative mb-1 flex items-center gap-3 ${
+                                selectedId === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'hover:bg-white/5'
+                            }`}
+                        >
+                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${
+                                selectedId === item.id ? 'border-orange-500' : 'border-white/10'
+                            }`}>
+                                {item.images?.front ? (
+                                    <img src={item.images.front} className="w-full h-full object-cover opacity-80" alt="item" />
+                                ) : (
+                                    <Package size={16} className="text-slate-600"/>
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className={`font-serif text-sm uppercase tracking-wide truncate transition-colors ${selectedId === item.id ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'}`}>{item.name}</h4>
-                                <p className="text-[9px] text-slate-600 font-mono">STOCK: {isAdmin ? item.stock : "**"}</p>
+                                <h4 className={`font-serif text-sm uppercase tracking-wide truncate transition-colors ${
+                                    selectedId === item.id ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'
+                                }`}>
+                                    {item.name}
+                                </h4>
+                                <p className="text-[9px] text-slate-600 font-mono">
+                                    STOCK: {isAdmin ? item.stock : "**"}
+                                </p>
                             </div>
-                            {selectedId === item.id && <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>}
+                            {selectedId === item.id && (
+                                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                            )}
                         </div>
                     ))}
                 </div>
-                <div className="p-4 border-t border-white/10 text-[9px] text-slate-600 font-mono flex justify-between items-center bg-black"><span>CAPACITY: {inventory.length} SLOTS</span><span>v3.4</span></div>
+
+                <div className="p-4 border-t border-white/10 text-[9px] text-slate-600 font-mono flex justify-between items-center bg-black">
+                    <span>CAPACITY: {inventory.length} SLOTS</span>
+                    <span>v3.4</span>
+                </div>
             </div>
 
-            {/* RIGHT INSPECTOR */}
-            <div className="flex-1 relative bg-black flex flex-col">
+            {/* RIGHT COLUMN: ITEM INSPECTOR */}
+            <div className="flex-1 relative bg-black flex flex-col h-1/2 md:h-full">
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} 
                         className="w-full h-full object-cover opacity-60 transition-opacity duration-500"
+                        alt="background"
                         onError={(e) => e.target.style.opacity = 0.1} 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
@@ -2518,27 +2582,31 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
                 <div className="relative z-10 flex-1 h-full">
                     {isAdmin && (
                         <label className="absolute top-4 right-14 z-50 cursor-pointer group"> 
-                            <div className="bg-black/50 hover:bg-orange-600/80 backdrop-blur border border-white/20 p-2 rounded-full text-white transition-all shadow-lg"><ImageIcon size={16}/></div>
+                            <div className="bg-black/50 hover:bg-orange-600/80 backdrop-blur border border-white/20 p-2 rounded-full text-white transition-all shadow-lg">
+                                <ImageIcon size={16}/>
+                            </div>
                             <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
                         </label>
                     )}
+                    
                     {selectedItem ? (
                         <ItemInspector 
                             product={selectedItem} 
                             isAdmin={isAdmin} 
                             onEdit={onEdit} 
                             onDelete={onDelete} 
-                            onUpdateProduct={onUpdateProduct} // Changed prop name
+                            onUpdateProduct={onUpdateProduct} 
                         />
                     ) : (
-                        <div className="h-full flex items-center justify-center text-slate-500 font-serif italic text-2xl tracking-widest opacity-50">SELECT ITEM TO EXAMINE</div>
+                        <div className="h-full flex items-center justify-center text-slate-500 font-serif italic text-2xl tracking-widest opacity-50">
+                            SELECT ITEM TO EXAMINE
+                        </div>
                     )}
                 </div>
             </div>
         </div>
     );
 };
-
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [user, setUser] = useState(null);
