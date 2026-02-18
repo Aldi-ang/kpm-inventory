@@ -13,14 +13,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 15000000 
       },
       manifest: {
-        name: 'KPM System', // <--- CHANGED: This is what Windows actually reads!
-        short_name: 'KPM', 
+        name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts
+        short_name: 'KPM by AK',     // <--- CHANGED: Shorter name for mobile home screens
         description: 'Resident Evil styled offline inventory manager',
         theme_color: '#000000',
         background_color: '#0f0e0d',
         display: 'standalone', 
         orientation: 'portrait',
-      icons: [
+        icons: [
           {
             src: '/icon-192.png',
             sizes: '192x192',
