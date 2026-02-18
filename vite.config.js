@@ -20,23 +20,18 @@ export default defineConfig({
         background_color: '#0f0e0d',
         display: 'standalone', 
         orientation: 'portrait',
-       icons: [
+      icons: [
           {
-            src: '/favicon.ico',   // <--- The native Windows icon
-            sizes: 'any',          // Tells Windows it can scale it however it wants
-            type: 'image/x-icon'   // Strict Windows icon format
-          },
-          {
-            src: '/app-icon.png',  // Keep the PNGs for Android/Chrome internal UI
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/app-icon.png',
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'any maskable'
           }
         ]
       }
