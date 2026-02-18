@@ -84,8 +84,11 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
 
     return (
         <div className="h-full flex flex-col animate-fade-in space-y-4">
+
+
             {/* HEADER */}
-            <div className="flex justify-between items-end bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700">
+            {/* FIX: flex-col on mobile, flex-row on desktop (md) */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
                         <ClipboardList size={24} className="text-orange-500"/> Stock Opname
@@ -95,18 +98,21 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
                     </p>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                    <div className="relative">
+                <div className="w-full md:w-auto flex items-center gap-2">
+                    <div className="relative w-full md:w-auto">
+                        {/* FIX: w-full on mobile, w-64 on desktop */}
                         <input 
                             value={search} 
                             onChange={(e) => setSearch(e.target.value)} 
                             placeholder="Scan or Search Product..." 
-                            className="bg-white dark:bg-slate-900 border dark:border-slate-600 pl-9 pr-4 py-2 rounded-lg text-sm w-64 focus:border-orange-500 outline-none dark:text-white"
+                            className="bg-white dark:bg-slate-900 border dark:border-slate-600 pl-9 pr-4 py-2 rounded-lg text-sm w-full md:w-64 focus:border-orange-500 outline-none dark:text-white"
                         />
                         <Search size={16} className="absolute left-3 top-2.5 text-slate-400"/>
                     </div>
                 </div>
             </div>
+
+
 
             {/* TABLE CONTAINER */}
             <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-700 shadow-inner overflow-hidden flex flex-col">

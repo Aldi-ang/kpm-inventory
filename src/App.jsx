@@ -1533,10 +1533,15 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                                 </button>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Region (Kabupaten)" />
-                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
+
+
+                        {/* FIX: Stack inputs on mobile */}
+                        <div className="flex flex-col md:flex-row gap-2">
+                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Region (Kabupaten)" />
+                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
                         </div>
+
+                        
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

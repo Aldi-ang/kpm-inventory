@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 
@@ -48,6 +48,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [newPinCoords, setNewPinCoords] = useState(null);
     
+    // --- NEW: MOBILE MENU TOGGLE ---
+    const [showControls, setShowControls] = useState(false);
+
     // GAMIFICATION STATE
     const [conquestMode, setConquestMode] = useState(false); // Toggle for "Game Mode"
 
@@ -231,7 +234,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         );
     };
 
-// --- NEW: GAME HUD OVERLAY ---
+    // --- NEW: GAME HUD OVERLAY ---
     const GameHUD = () => {
         if (!conquestMode) return null;
 
@@ -412,35 +415,54 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
             <GameHUD />  {/* <--- ADD THIS LINE HERE */}
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
-                <div className="flex gap-2 pointer-events-auto">
-                    <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                        <MapPin size={16} className="text-orange-500 ml-2"/>
-                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Regions</option>{Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}</select>
-                    </div>
-                    {selectedRegion !== "All" && locationTree[selectedRegion] && (<div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in"><span className="text-slate-400 text-xs ml-2">City:</span><select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Cities</option>{locationTree[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}</select></div>)}
-                </div>
                 
-                {/* TIER FILTER */}
-                <div className="flex gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
-                    <button onClick={toggleAllTiers} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>All</button>
-                    {activeTiers.map(tier => (
-                        <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white border border-slate-500 shadow-md transform scale-105' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
-                            {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{tier.value}</span>}
-                            {tier.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* GAME MODE TOGGLE (NEW) */}
+                {/* --- FIX: MOBILE MENU TOGGLE BUTTON --- */}
+                {/* This button only appears on mobile (md:hidden) */}
                 <button 
-                    onClick={() => setConquestMode(!conquestMode)} 
-                    className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}
+                    onClick={() => setShowControls(!showControls)}
+                    className="md:hidden pointer-events-auto bg-slate-900/90 text-white p-2.5 rounded-xl border border-slate-600 shadow-xl mb-2 hover:bg-slate-800 transition-colors backdrop-blur-md"
                 >
-                    {conquestMode ? <Swords size={16}/> : <Shield size={16}/>} 
-                    {conquestMode ? "Conquest Mode: ON" : "Territory View"}
+                    {showControls ? <X size={20}/> : <Menu size={20}/>}
                 </button>
 
-                <button onClick={() => setIsAddingMode(!isAddingMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${isAddingMode ? 'bg-orange-500 text-white border-orange-400 animate-pulse scale-105' : 'bg-white text-slate-700 border-slate-200'}`}><MapPin size={16}/> {isAddingMode ? "Click Map to Drop" : "Add Store"}</button>
+                {/* --- FIX: CONTROL CONTAINER (Collapsible on Mobile) --- */}
+                {/* Hidden on mobile unless showControls is true. Always visible on desktop. */}
+                <div className={`
+                    flex flex-col gap-2 items-end transition-all duration-300 origin-top-right
+                    ${showControls ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none h-0'} 
+                    md:opacity-100 md:scale-100 md:pointer-events-auto md:h-auto
+                `}>
+                    <div className="flex gap-2 pointer-events-auto">
+                        <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                            <MapPin size={16} className="text-orange-500 ml-2"/>
+                            <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Regions</option>{Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}</select>
+                        </div>
+                        {selectedRegion !== "All" && locationTree[selectedRegion] && (<div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in"><span className="text-slate-400 text-xs ml-2">City:</span><select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Cities</option>{locationTree[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}</select></div>)}
+                    </div>
+                    
+                    {/* --- FIX: TIER FILTER (Stacked Vertical on Mobile) --- */}
+                    {/* Changed 'flex' to 'flex flex-col md:flex-row' */}
+                    <div className="flex flex-col md:flex-row gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
+                        <button onClick={toggleAllTiers} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>All</button>
+                        {activeTiers.map(tier => (
+                            <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white border border-slate-500 shadow-md transform scale-105' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
+                                {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{tier.value}</span>}
+                                {tier.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* GAME MODE TOGGLE */}
+                    <button 
+                        onClick={() => setConquestMode(!conquestMode)} 
+                        className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}
+                    >
+                        {conquestMode ? <Swords size={16}/> : <Shield size={16}/>} 
+                        {conquestMode ? "Conquest Mode: ON" : "Territory View"}
+                    </button>
+
+                    <button onClick={() => setIsAddingMode(!isAddingMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${isAddingMode ? 'bg-orange-500 text-white border-orange-400 animate-pulse scale-105' : 'bg-white text-slate-700 border-slate-200'}`}><MapPin size={16}/> {isAddingMode ? "Click Map to Drop" : "Add Store"}</button>
+                </div>
             </div>
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>

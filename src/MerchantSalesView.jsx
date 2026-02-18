@@ -16,7 +16,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [customerName, setCustomerName] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("Cash");
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-    const [receiptData, setReceiptData] = useState(null); // <--- ADD THIS
+    const [receiptData, setReceiptData] = useState(null); 
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -56,7 +56,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
-            // --- CHANGED: Default Tier is now Ecer ---
             return [...prev, { 
                 productId: product.id, name: product.name, qty: 1, unit: 'Bks', 
                 priceTier: 'Ecer', calculatedPrice: product.priceEcer || 0, product 
@@ -83,7 +82,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }));
     };
 
-    // --- NEW: WHATSAPP FORMATTER ---
     const handleWhatsAppShare = () => {
         if (!receiptData) return;
         
@@ -107,7 +105,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
-    // --- UPDATED: CHECKOUT HANDLER ---
     const handleFinalDeal = () => {
         if (cart.length === 0 || !customerName.trim()) return;
         
@@ -116,10 +113,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalCart = [...cart];
         const finalTotal = cartTotal;
 
-        // 1. Process Sale in Database (Triggers App.jsx)
         onProcessSale(finalCust, finalMethod, finalCart);
         
-        // 2. Generate Receipt UI Data
         setReceiptData({
             customer: finalCust,
             method: finalMethod,
@@ -128,7 +123,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             date: new Date().toLocaleString('id-ID')
         });
 
-        // 3. Clear Cart & Play Merchant Animation
         setCart([]); 
         setCustomerName("");
         setMerchantMood("deal"); 
@@ -145,13 +139,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
-    // --- MANIFEST UI (INLINED TO FIX TYPING BUG) ---
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-72 border-l-2'}`}>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-40 pointer-events-none"></div>
             <div className="p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
-            {/* SEARCHABLE CUSTOMER INPUT */}
             <div className="p-3 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc]" ref={dropdownRef}>
                 <div className="relative">
                     <input 
@@ -159,7 +151,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         onFocus={() => setShowCustomerDropdown(true)}
                         onChange={(e) => setCustomerName(e.target.value)} 
                         placeholder="SEARCH OR TYPE NAME..." 
-                        className="w-full bg-transparent border-b border-[#8b7256] text-[#3e3226] p-1 text-xs font-bold uppercase outline-none mb-2" 
+                        className="w-full bg-transparent border-b border-[#8b7256] text-[#3e3226] p-1 text-xs font-bold uppercase outline-none mb-2 placeholder:text-[#8b7256]/70" 
                     />
                     <ChevronDown size={14} className="absolute right-1 top-1 opacity-40" />
                 </div>
@@ -190,7 +182,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 {cart.map((item, idx) => (
                     <div key={idx} className="flex flex-col border-b border-dashed border-[#a89070]/50 pb-2 mb-1">
                         <div className="flex justify-between items-start">
-                            <span className="text-[11px] font-bold w-32 leading-tight uppercase">{item.name}</span>
+                            {/* FIX 1: Added break-words to sidebar items */}
+                            <span className="text-[11px] font-bold w-32 leading-tight uppercase break-words whitespace-normal">{item.name}</span>
                             <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800"><X size={14}/></button>
                         </div>
 
@@ -219,7 +212,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         <div className="flex h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
-            {/* MOBILE TABS */}
             <div className="md:hidden absolute top-0 inset-x-0 h-12 flex border-b border-[#5c4b3a] bg-[#0f0e0d] z-50">
                 <button onClick={() => setMobileTab('products')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Wares</button>
                 <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Merchant ({cart.length})</button>
@@ -265,9 +257,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <div className="flex-1 p-2 flex items-center justify-center relative overflow-hidden">
                                 {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all" alt="product"/> : <Box size={32} className="text-[#3e3226]"/>}
                             </div>
-
-
-                            {/* --- MEGA INCREASED: Product Box Info (Ecer) --- */}
                             <div className="h-16 bg-black/40 border-t border-[#3e3226] p-2 flex flex-col justify-between font-mono">
                                 <h4 className="text-[#d4c5a3] text-[11px] md:text-xs font-bold truncate uppercase">{item.name}</h4>
                                 <div className="flex justify-between items-center mt-1">
@@ -275,17 +264,14 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     <span className="text-[#ff9d00] text-sm md:text-base font-black">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
                                 </div>
                             </div>
-
                         </div>
                     ))}
                 </div>
             </div>
             <div className="hidden md:flex">{renderManifestUI(false)}</div>
-            {/* --- NEW: THERMAL RECEIPT MODAL --- */}
+            
             {receiptData && (
                 <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
-                    
-                    {/* CSS ISOLATION: Hides the dark app background when printing */}
                     <style>{`
                         @media print { 
                             body * { visibility: hidden; } 
@@ -313,7 +299,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
                                 {receiptData.items.map((item, i) => (
                                     <div key={i} className="mb-2">
-                                        <div className="font-bold uppercase text-xs">{item.name}</div>
+                                        {/* FIX 2: Added break-words to receipt items */}
+                                        <div className="font-bold uppercase text-xs break-words whitespace-normal">{item.name}</div>
                                         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
                                             <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)}</span>
                                             <span className="text-black font-bold">{new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
@@ -332,7 +319,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             </div>
                         </div>
 
-                        {/* Action Buttons (Hidden on Print) */}
                         <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-xs shadow-md"><Printer size={16}/> Print</button>
                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-xs shadow-md"><MessageSquare size={16}/> WhatsApp</button>
@@ -340,7 +326,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
             )}
-
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #3e3226; border-radius: 2px; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; }`}</style>
         </div>
     );
