@@ -763,6 +763,7 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)] animate-fade-in">
+
             {/* LEFT LIST */}
             <div className={`lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-700 flex flex-col ${selectedCustomer ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-4 border-b dark:border-slate-700"><h2 className="font-bold text-lg dark:text-white flex items-center gap-2"><Truck size={20}/> Active Consignments</h2></div>
@@ -1228,7 +1229,29 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
   }
   
   const groupedByMonth = selectedCustomer.history.reduce((groups, t) => { const date = new Date(t.date); const key = date.toLocaleString('default', { month: 'long', year: 'numeric' }); if (!groups[key]) groups[key] = []; groups[key].push(t); return groups; }, {});
-  return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td><td className="p-3 text-slate-600 dark:text-slate-300">{t.items ? `${t.items.length} Items` : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}{t.paymentType === 'Titip' && <span className="ml-2 text-xs text-orange-500 font-bold">(Consignment)</span>}</td><td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>{formatRupiah(t.amountPaid || t.total)}</td></tr>))}</tbody></table></div></div>))}</div></div></div>);
+  return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td>
+  
+  {/* FIX: Detailed Item List with Wrapping & Clean Amount Column */}
+<td className="p-3 text-slate-600 dark:text-slate-300 max-w-[150px] md:max-w-[300px] break-words whitespace-normal text-xs leading-relaxed">
+    {/* Show full list of items instead of just "5 Items" */}
+    {t.items 
+        ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") 
+        : t.itemsPaid 
+            ? `Payment for ${t.itemsPaid.length} Items` 
+            : 'N/A'
+    }
+    {/* Consignment Badge on new line */}
+    {t.paymentType === 'Titip' && (
+        <span className="block mt-1 text-[10px] text-orange-500 font-bold tracking-wider">
+            (CONSIGNMENT)
+        </span>
+    )}
+</td>
+<td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>
+    {formatRupiah(t.amountPaid || t.total)}
+</td>
+  
+  </tr>))}</tbody></table></div></div>))}</div></div></div>);
 };
 // --- NEW: CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
@@ -1338,8 +1361,41 @@ const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, trigg
                             </div>
                             <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><button className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-600">Add Log</button></div>
                         </form>
-                        <div className="flex-1 overflow-y-auto">
-                            <table className="w-full text-sm text-left"><thead className="text-slate-500 font-bold border-b dark:border-slate-700"><tr><th className="pb-3 pl-2">Product</th><th className="pb-3">Price</th><th className="pb-3">Performance</th><th className="pb-3">Notes</th><th className="pb-3 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{benchmarks.map(b => (<tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50"><td className="py-3 pl-2"><div className="font-bold dark:text-white">{b.product}</div><div className="text-xs text-slate-500">{b.brand}</div></td><td className="py-3 font-mono text-red-500 font-bold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}</td><td className="py-3"><span className={`text-[10px] px-2 py-1 rounded-full border ${b.volume === 'High Sales' ? 'bg-green-100 text-green-700 border-green-200' : b.volume === 'Slow Moving' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>{b.volume}</span></td><td className="py-3 text-slate-500 text-xs italic">{b.notes}</td><td className="py-3 text-right pr-2"><button onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button></td></tr>))}</tbody></table>
+                        {/* --- FIX 3: SCROLLABLE COMPETITOR TABLE --- */}
+                        <div className="flex-1 overflow-y-auto overflow-x-auto pb-2">
+                            <table className="w-full text-sm text-left min-w-[600px]">
+                                <thead className="text-slate-500 font-bold border-b dark:border-slate-700">
+                                    <tr>
+                                        <th className="pb-3 pl-2 w-1/3">Product</th>
+                                        <th className="pb-3 w-1/6">Price</th>
+                                        <th className="pb-3 w-1/4">Performance</th>
+                                        <th className="pb-3 w-1/4">Notes</th>
+                                        <th className="pb-3 text-right pr-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                    {benchmarks.map(b => (
+                                        <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                                            <td className="py-3 pl-2">
+                                                <div className="font-bold dark:text-white truncate max-w-[150px]">{b.product}</div>
+                                                <div className="text-xs text-slate-500">{b.brand}</div>
+                                            </td>
+                                            <td className="py-3 font-mono text-red-500 font-bold whitespace-nowrap">
+                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}
+                                            </td>
+                                            <td className="py-3">
+                                                <span className={`text-[10px] px-2 py-1 rounded-full border whitespace-nowrap ${b.volume === 'High Sales' ? 'bg-green-100 text-green-700 border-green-200' : b.volume === 'Slow Moving' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
+                                                    {b.volume}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 text-slate-500 text-xs italic truncate max-w-[150px]">{b.notes}</td>
+                                            <td className="py-3 text-right pr-2">
+                                                <button onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1485,30 +1541,30 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
                     </div>
 
-                    {/* STRATEGY & IMAGE UPLOAD */}
+                    {/* STRATEGY & IMAGE UPLOAD - FIXED ALIGNMENT */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Tier</label>
-                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold">
+                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none">
                                 {tierSettings && tierSettings.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 {!tierSettings && <option value="Silver">Silver</option>}
                             </select>
                         </div>
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Last Visit</label>
-                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
+                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/>
                         </div>
                         
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Store Photo</label>
-                            <div className="flex items-center gap-2">
-                                <label className="flex-1 cursor-pointer bg-white dark:bg-slate-800 border dark:border-slate-600 hover:border-indigo-500 rounded p-2 flex items-center justify-center gap-2 transition-colors">
+                            <div className="flex items-center gap-2 h-10">
+                                <label className="flex-1 h-full cursor-pointer bg-white dark:bg-slate-800 border dark:border-slate-600 hover:border-indigo-500 rounded p-2 flex items-center justify-center gap-2 transition-colors">
                                     <Camera size={16} className="text-indigo-500"/>
                                     <span className="text-xs font-bold dark:text-white">Upload</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                                 </label>
                                 {formData.storeImage && (
-                                    <div className="w-9 h-9 rounded border border-indigo-200 overflow-hidden shrink-0 group relative">
+                                    <div className="w-10 h-full rounded border border-indigo-200 overflow-hidden shrink-0 group relative">
                                         <img src={formData.storeImage} className="w-full h-full object-cover" />
                                         <button type="button" onClick={() => setFormData({...formData, storeImage: ''})} className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100"><X size={12}/></button>
                                     </div>
@@ -1541,7 +1597,7 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                             <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
                         </div>
 
-                        
+
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4482,26 +4538,40 @@ const handleGitHubMirror = async () => {
                         <label className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer"><Upload size={14}/><input type="file" accept=".json" onChange={handleImportTiers} className="hidden" /></label>
                     </div>
                 </div>
-                <div className="space-y-3">
-                    {tierSettings.map((tier, idx) => (
-                        <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
-                            <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"/>
-                            <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; setTierSettings(newTiers); }} onBlur={() => handleSaveTiers(tierSettings)} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                            <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
-                            <div className="flex-1">
-                                {tier.iconType === 'image' ? (
-                                    <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change" : "Upload"}<input type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label>
-                                ) : (
-                                    <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
-                                )}
+                {/* --- FIX 5: SCROLLABLE SETTINGS LIST --- */}
+                <div className="overflow-x-auto pb-2">
+                    <div className="space-y-3 min-w-[600px]">
+                        {tierSettings.map((tier, idx) => (
+                            <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
+                                {/* Color Picker */}
+                                <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
+                                
+                                {/* Label Input */}
+                                <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; setTierSettings(newTiers); }} onBlur={() => handleSaveTiers(tierSettings)} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                
+                                {/* Icon Type Select */}
+                                <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
+                                
+                                {/* Value Input / Upload Button */}
+                                <div className="flex-1">
+                                    {tier.iconType === 'image' ? (
+                                        <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change" : "Upload"}<input type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label>
+                                    ) : (
+                                        <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                    )}
+                                </div>
+
+                                {/* Preview Circle */}
+                                <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0" style={{ borderColor: tier.color }}>
+                                    {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
+                                </div>
                             </div>
-                            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800" style={{ borderColor: tier.color }}>
-                                {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
+             </div>
+
+        
 
             {/* 5. MASCOT SETTINGS (SIZE + DIALOGUE) */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">

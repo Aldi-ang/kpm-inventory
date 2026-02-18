@@ -84,10 +84,7 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
 
     return (
         <div className="h-full flex flex-col animate-fade-in space-y-4">
-
-
             {/* HEADER */}
-            {/* FIX: flex-col on mobile, flex-row on desktop (md) */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
@@ -100,7 +97,6 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
                 
                 <div className="w-full md:w-auto flex items-center gap-2">
                     <div className="relative w-full md:w-auto">
-                        {/* FIX: w-full on mobile, w-64 on desktop */}
                         <input 
                             value={search} 
                             onChange={(e) => setSearch(e.target.value)} 
@@ -111,8 +107,6 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
                     </div>
                 </div>
             </div>
-
-
 
             {/* TABLE CONTAINER */}
             <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-700 shadow-inner overflow-hidden flex flex-col">
@@ -129,16 +123,13 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredItems.map(item => {
-                                // --- FIXED: Value is empty string if undefined ---
                                 const actual = counts[item.id] !== undefined ? counts[item.id] : '';
-                                
                                 const variance = getVariance(item);
                                 const hasEntry = counts[item.id] !== undefined;
                                 const isMatch = hasEntry && variance === 0;
                                 const isMismatch = hasEntry && variance !== 0;
 
                                 return (
-                                    // --- FIXED: Dark Grey Hover (bg-white/10) ---
                                     <tr key={item.id} className={`group transition-colors hover:bg-slate-100 dark:hover:bg-white/10 ${isMismatch ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${isMatch ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
                                         <td className="p-4">
                                             <div className="font-bold dark:text-white">{item.name}</div>
@@ -182,26 +173,26 @@ const StockOpnameView = ({ inventory, db, appId, user, logAudit, triggerCapy }) 
                     </table>
                 </div>
 
-                {/* FOOTER ACTIONS */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t dark:border-slate-700 flex justify-between items-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase">
+                {/* --- FIX 1: RESPONSIVE FOOTER STACKING --- */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="text-xs text-slate-500 font-bold uppercase w-full md:w-auto text-center md:text-left">
                         {Object.keys(counts).length} items counted • {Object.values(counts).filter((c, i) => {
                             const itemId = Object.keys(counts)[i];
                             const item = inventory.find(x => x.id === itemId);
                             return item && (c - item.stock) !== 0;
                         }).length} discrepancies
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex w-full md:w-auto gap-3">
                         <button 
                             onClick={() => setCounts({})}
-                            className="px-4 py-2 text-slate-500 hover:text-red-500 font-bold text-xs flex items-center gap-2 transition-colors"
+                            className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-slate-500 hover:text-red-500 font-bold text-xs flex items-center gap-2 transition-colors bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg md:border-none md:bg-transparent"
                         >
                             <RefreshCcw size={14}/> Reset All
                         </button>
                         <button 
                             onClick={handleCommit}
                             disabled={isSubmitting || Object.keys(counts).length === 0}
-                            className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
+                            className="flex-1 md:flex-none justify-center bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 md:py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
                         >
                             {isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Save size={16}/>}
                             Finalize Adjustment
