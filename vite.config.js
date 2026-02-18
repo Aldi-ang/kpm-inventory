@@ -25,13 +25,13 @@ export default defineConfig({
             src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any'
+            purpose: 'any' // <--- Tells Chrome to respect the transparent cut-out
           },
           {
             src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any' // <--- Removed 'maskable' so Android/PC doesn't force a background
           }
         ]
       }
