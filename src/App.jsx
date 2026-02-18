@@ -6,7 +6,8 @@ import {
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
-  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music
+  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database
+
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -33,25 +34,26 @@ L.Icon.Default.mergeOptions({
 });
 
 // --- FIREBASE IMPORTS ---
-import { initializeApp } from "firebase/app";        // <-- WAS MISSING
-import { getAnalytics } from "firebase/analytics";   // <-- WAS MISSING
+import { initializeApp } from "firebase/app";        
+import { getAnalytics } from "firebase/analytics";   
 import { 
   getAuth, 
   onAuthStateChanged, 
   signOut, 
   signInWithPopup, 
   signInWithRedirect, 
-  getRedirectResult,
+  getRedirectResult,     // <--- You already have this, perfect!
   GoogleAuthProvider,
-  setPersistence,        // <--- ADD THIS
-  browserLocalPersistence // <--- ADD THIS
+  setPersistence,        
+  browserLocalPersistence 
 } from 'firebase/auth';
 
+// --- PINPOINT: Firestore Imports (Around Line 41) ---
 import { 
   getFirestore, 
   collection, 
   doc, 
-  getDoc, // <--- THIS WAS MISSING!
+  getDoc, 
   addDoc, 
   setDoc, 
   updateDoc, 
@@ -61,7 +63,8 @@ import {
   query, 
   orderBy, 
   runTransaction, 
-  writeBatch
+  writeBatch,
+  enableIndexedDbPersistence // <--- ADD THIS FOR OFFLINE MODE
 } from "firebase/firestore";
 
 // --- FIREBASE CONFIGURATION ---
@@ -74,6 +77,8 @@ const firebaseConfig = {
   appId: "1:168352992942:web:3702ffb579bec0a93ea73f",
   measurementId: "G-CM3Z2Q412T"
 };
+// Pinpoint: Add to your existing firebase/auth or firestore imports
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
 // ... imports ...
 
@@ -82,6 +87,18 @@ let analytics;
 try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+const storage = getStorage(app);
+
+// --- NEW: FIREBASE OFFLINE PERSISTENCE ---
+enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code == 'failed-precondition') {
+        console.warn("Offline Mode: Multiple tabs open, persistence enabled in first tab only.");
+    } else if (err.code == 'unimplemented') {
+        console.warn("Offline Mode: Browser doesn't support local caching.");
+    }
+});
+
 const googleProvider = new GoogleAuthProvider();
 
 // --- MISSING LINE: ADD THIS BACK ---
@@ -392,7 +409,26 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
     const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
     const DISCO_MUSIC_URL = "/disco_music.mp3";
     // ------------------------------------ // <--- ADDED user
-    // ... (keep constants) ...
+
+// Inside CapybaraMascot component
+useEffect(() => {
+    const lastBackup = localStorage.getItem('last_usb_backup');
+    const now = new Date().getTime();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+    // If it's been more than 7 days, force a reminder peek
+    if (!lastBackup || (now - lastBackup) > sevenDays) {
+        setInternalMsg("⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!");
+        setIsPeeking(true);
+    }
+}, []);
+
+// Update this when you click the Physical Safe button
+const handlePhysicalBackup = () => {
+    handleBackupData(); // Your existing backup function
+    localStorage.setItem('last_usb_backup', new Date().getTime());
+    triggerCapy("Physical safety confirmed! See you next week. 💾");
+};
 
     // FALLBACK MESSAGES
     const LOGGED_IN_MESSAGES = [
@@ -781,12 +817,14 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
     );
 };
 
-const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId }) => {
+// --- PINPOINT: Top of HistoryReportView (Line 508) ---
+const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, appSettings }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [reportView, setReportView] = useState(false);
   const [rangeType, setRangeType] = useState('daily');
   const [targetDate, setTargetDate] = useState(getCurrentDate());
   const [editingTrans, setEditingTrans] = useState(null);
+  const [viewingReceipt, setViewingReceipt] = useState(null); // <--- NEW: Controls the Receipt Modal
 
   // Filter Transactions based on Date Range
   const filteredTransactions = useMemo(() => {
@@ -942,6 +980,40 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
   const customerStats = useMemo(() => { const stats = {}; transactions.forEach(t => { const name = t.customerName || 'Unknown'; if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] }; stats[name].count += 1; if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; if (t.date > stats[name].lastDate) stats[name].lastDate = t.date; stats[name].history.push(t); }); return Object.values(stats).sort((a,b) => b.total - a.total); }, [transactions]);
 
+// --- PINPOINT: Paste right above "if (reportView) {" (Line 598) ---
+  const handleWhatsAppShare = () => {
+      if (!viewingReceipt) return;
+      
+      let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n`;
+      text += `*OFFICIAL RECEIPT (REPRINT)*\n`;
+      text += `------------------------\n`;
+      
+      // Formatting Date properly from Firestore Timestamp or Fallback Date
+      const receiptDate = viewingReceipt.timestamp 
+          ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') 
+          : viewingReceipt.date;
+          
+      text += `Date: ${receiptDate}\n`;
+      text += `Customer: ${viewingReceipt.customerName}\n`;
+      text += `Payment: ${viewingReceipt.paymentType || 'Cash'}\n`;
+      text += `------------------------\n`;
+      
+      if (viewingReceipt.items && viewingReceipt.items.length > 0) {
+          viewingReceipt.items.forEach(item => {
+              text += `${item.qty} ${item.unit} ${item.name}\n`;
+              text += `   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
+          });
+      } else {
+          text += `${viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment' : 'Transaction Record'}\n`;
+      }
+      
+      text += `------------------------\n`;
+      text += `*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\n`;
+      text += `Thank you for your business!`;
+
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   if (reportView) {
       return (
         <div className="animate-fade-in max-w-5xl mx-auto">
@@ -956,6 +1028,75 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              <div><label className="text-xs font-bold text-slate-500">Total Value (Rp)</label><input name="total" type="number" defaultValue={editingTrans.total || editingTrans.amountPaid} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
                              <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Changes</button></div>
                          </form>
+                     </div>
+                 </div>
+             )}
+
+             {/* --- PINPOINT: Paste below Edit Modal, above Header Controls (Line 615) --- */}
+             {/* NEW: THERMAL RECEIPT MODAL FOR PAST TRANSACTIONS */}
+             {viewingReceipt && (
+                 <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+                     <style>{`
+                         @media print { 
+                             body * { visibility: hidden; } 
+                             .print-receipt, .print-receipt * { visibility: visible; } 
+                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } 
+                             .no-print { display: none !important; }
+                         }
+                     `}</style>
+                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-200 animate-fade-in">
+                         <button onClick={() => setViewingReceipt(null)} className="no-print absolute -top-12 right-0 text-white hover:text-red-500"><X size={32}/></button>
+                         
+                         <div className="p-6 pb-2">
+                             <div className="text-center mb-6">
+                                 <h2 className="text-2xl font-black uppercase tracking-widest">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] text-gray-500 font-bold mt-1">OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest">REPRINT COPY</p>
+                             </div>
+                             
+                             <div className="border-t-2 border-dashed border-gray-400 py-3 mb-3 text-xs">
+                                 <div className="flex justify-between"><span>DATE:</span><span>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                 <div className="flex justify-between"><span>CUST:</span><span className="font-bold">{viewingReceipt.customerName}</span></div>
+                                 <div className="flex justify-between"><span>TYPE:</span><span className="uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
+                             </div>
+
+                             <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
+                                 {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
+                                     <div key={i} className="mb-2">
+                                         <div className="font-bold uppercase text-xs">{item.name}</div>
+                                         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+                                             <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                             <span className="text-black font-bold">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                         </div>
+                                     </div>
+                                 )) : (
+                                     <div className="flex items-center justify-center h-full text-gray-400 text-[10px] uppercase tracking-widest text-center">
+                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment Record' : 'No Itemized Data Available'}
+                                     </div>
+                                 )}
+                             </div>
+
+                             <div className="flex justify-between items-center text-lg font-black mb-6">
+                                 <span>TOTAL</span>
+                                 <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
+                             </div>
+                             
+                             <div className="text-center text-[10px] text-gray-500 mb-4 font-bold">
+                                 <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
+                             </div>
+                         </div>
+
+                        {/* --- PINPOINT: Action Buttons inside viewingReceipt Modal --- */}
+                         <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
+                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-xs shadow-md">
+                                 <Printer size={16}/> Print Receipt
+                             </button>
+                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-xs shadow-md">
+                                 <MessageSquare size={16}/> WhatsApp
+                             </button>
+                         </div>
+
+                         
                      </div>
                  </div>
              )}
@@ -1031,13 +1172,27 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                         <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:print:bg-slate-200 dark:print:text-black border dark:border-slate-600">{t.type}</span></td>
                                         <td className="p-3 text-xs text-slate-500">{t.paymentType || 'Cash'}</td>
                                         <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.total || t.amountPaid)}</td>
+                                        
+                                        {/* --- PINPOINT: Transaction Log Action Buttons (Line 690) --- */}
                                         <td className="p-3 text-right print:hidden">
-                                            {isAdmin && (
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setEditingTrans(t)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"><Pencil size={14}/></button>
-                                                    <button onClick={() => onDeleteTransaction(t)} className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"><Trash2 size={14}/></button>
-                                                </div>
-                                            )}
+                                            <div className="flex justify-end gap-2">
+                                                {/* NEW: VIEW RECEIPT BUTTON */}
+                                                <button onClick={() => setViewingReceipt(t)} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200 dark:hover:text-white dark:hover:bg-slate-700 rounded transition-colors" title="View Receipt">
+                                                    <FileText size={14}/>
+                                                </button>
+                                                
+                                                {isAdmin && (
+                                                    <>
+                                                        <button onClick={() => setEditingTrans(t)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors" title="Edit">
+                                                            <Pencil size={14}/>
+                                                        </button>
+                                                        <button onClick={() => onDeleteTransaction(t)} className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="Delete">
+                                                            <Trash2 size={14}/>
+                                                        </button>
+                                                    </>
+                                                )}
+
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -2044,33 +2199,14 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
     );
 };
 
-// --- NEW: BIOHAZARD THEME (WITH LOGIN BUTTON RESTORED) ---
-const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin }) => {
+// --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+    
     const handleLogout = () => {
         if(window.confirm("Terminate Session?")) {
             signOut(auth);
             window.location.reload();
-        }
-    };
-
-   const handleLogin = async () => {
-        setLoginError(null); // Reset errors
-        try {
-            // 1. Force persistence (Store login in Local Storage)
-            await setPersistence(auth, browserLocalPersistence);
-            
-            // 2. Use POPUP (It works better on localhost than Redirect)
-            const result = await signInWithPopup(auth, googleProvider);
-            
-            // 3. Success!
-            console.log("Login Success:", result.user);
-            setUser(result.user);
-            
-        } catch (error) {
-            console.error("Login Error:", error);
-            // Show the error on screen so we know exactly what's wrong
-            setLoginError(`Error: ${error.code} - ${error.message}`);
         }
     };
 
@@ -2096,39 +2232,41 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     return (
         <div className="min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             
-            {/* BACKGROUND */}
+            {/* BACKGROUND LAYERS */}
             <div className="absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
 
-            {/* --- MOBILE MENU BUTTON --- */}
+            {/* --- 1. FIXED MOBILE MENU BUTTON --- */}
+            {/* Added inset-inline-start-4 for better phone compatibility */}
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden absolute top-4 left-4 z-50 p-2 bg-orange-600 text-white rounded shadow-lg hover:bg-orange-500 transition-colors"
+                className="md:hidden fixed top-6 left-6 z-[100] p-4 bg-orange-600/90 backdrop-blur-md text-white rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
             >
-                <Menu size={24} />
+                {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
-            <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#000000_3px)] opacity-20 pointer-events-none"></div>
 
             {/* LEFT COLUMN: NAVIGATION */}
             <div className={`
-    fixed inset-y-0 left-0 z-40 w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-16 md:pt-8 pl-6 pr-4 transition-transform duration-300
-    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-    md:relative md:translate-x-0
-`}>
+                fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-24 md:pt-8 pl-6 pr-4 transition-transform duration-300
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+                md:relative md:translate-x-0
+            `}>
                 
                 {/* BRANDING */}
-                <h1 className="text-xl font-bold text-white mb-1 font-mono border-b-2 border-white/50 pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                <h1 className="text-xl font-bold text-white mb-6 font-mono border-b-2 border-white/50 pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                     {appSettings?.companyName || "KPM SYSTEM"}
                 </h1>
-               
 
-                {/* MENU (Only show if logged in) */}
+                {/* MENU (Auto-closes on selection) */}
                 {user ? (
                     <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
                         {visibleMenu.map(item => (
                             <button
                                 key={item.id}
-                                onClick={() => setActiveTab(item.id)}
+                                onClick={() => { 
+                                    setActiveTab(item.id); 
+                                    setIsMobileMenuOpen(false); // <--- FIXED: Closes sidebar immediately
+                                }}
                                 className={`w-full text-left py-2 px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest clip-path-polygon ${
                                     activeTab === item.id 
                                     ? 'bg-white text-black pl-6 shadow-[0_0_10px_rgba(255,255,255,0.8)] border-l-4 border-orange-500' 
@@ -2143,30 +2281,31 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                     <div className="flex-1 flex flex-col items-start pt-10 opacity-50">
                         <div className="text-xs text-red-500 font-mono mb-2">ACCESS DENIED</div>
                         <div className="h-0.5 w-10 bg-red-800 mb-4"></div>
-                        <p className="text-[10px] text-slate-500">Please authenticate to access the mainframe.</p>
+                        <p className="text-[10px] text-slate-500">Authentication required.</p>
                     </div>
                 )}
 
-                {/* BOTTOM SECTION: PROFILE OR LOGIN BUTTON */}
+                {/* BOTTOM SECTION */}
                 <div className="mt-auto mb-4 border-t border-white/10 pt-4">
                     {user ? (
                         <div className="flex items-center gap-3">
                             <img 
                                 src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
                                 className="w-10 h-10 rounded border border-white/30 object-cover bg-black"
+                                alt="avatar"
                             />
                             <div className="flex-1 min-w-0">
                                 <p className="text-[9px] text-gray-400 uppercase font-bold">OPERATIVE</p>
-                                <p className="text-xs text-white font-mono truncate" title={user.email}>{user.email?.split('@')[0]}</p>
+                                <p className="text-xs text-white font-mono truncate">{user.email?.split('@')[0]}</p>
                             </div>
-                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-2 hover:bg-white/10 rounded transition-colors" title="Logout">
+                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-2 rounded transition-colors" title="Logout">
                                 <LogOut size={16}/>
                             </button>
                         </div>
                     ) : (
                         <button 
-                            onClick={handleLogin}
-                            className="w-full flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-500 hover:text-emerald-300 border border-emerald-800 py-3 rounded uppercase text-xs font-bold tracking-widest transition-all"
+                            onClick={onLogin}
+                            className="w-full flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-500 border border-emerald-800 py-3 rounded uppercase text-xs font-bold tracking-widest transition-all"
                         >
                             <LogIn size={14}/> System Login
                         </button>
@@ -2177,27 +2316,22 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             {/* RIGHT COLUMN: CONTENT AREA */}
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
-                {/* COMPACT HEADER (With Mobile Fix) */}
-                <div className="pt-16 md:pt-6 px-4 md:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
-                    {/* Background Faded Title */}
+                {/* HEADER (With safety padding for mobile menu) */}
+                <div className="pt-24 md:pt-6 px-4 md:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden md:block">
                         {activeTab}
                     </h2>
 
                     <div>
-                        {/* Status Dot */}
                         <div className="flex items-center gap-2 mb-0.5">
-                            <div className={`h-1.5 w-1.5 rounded-full animate-ping ${user ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></div>
                             <span className={`text-[9px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
-                        
-                        {/* Main Title */}
                         <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
                             {activeTab.replace(/_/g, ' ')}
                         </div>
                     </div>
 
-                    {/* Clock / Date Widget */}
                     <div className="text-[10px] text-gray-500 font-mono text-right">
                         <div>{new Date().toLocaleDateString()}</div>
                         <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
@@ -2211,41 +2345,27 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                     </div>
                 </div>
 
-                {/* FOOTER */}
-                <div className="h-8 border-t border-white/10 flex items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
+                {/* --- 2. HIDE FOOTER ON MOBILE --- */}
+                {/* Added 'hidden md:flex' to ensure it stays invisible on phones */}
+                <div className="hidden md:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
                     <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
                     <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
                 </div>
-            </div>
 
-            {/* VISIBILITY FIXES */}
+            </div>
+            
+            {/* GLOBAL STYLE OVERRIDES */}
             <style>{`
-                .biohazard-content .text-slate-500 { color: #9ca3af !important; } 
-                .biohazard-content .text-slate-600 { color: #d1d5db !important; }
-                .biohazard-content .text-slate-700 { color: #e5e5e5 !important; }
-                .biohazard-content .text-gray-500 { color: #9ca3af !important; }
                 .biohazard-content .bg-white { 
                     background-color: rgba(20, 20, 20, 0.85) !important; 
                     border: 1px solid rgba(255,255,255,0.15) !important; 
                     color: #e5e5e5 !important; 
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
                 }
-                .biohazard-content input, .biohazard-content select { 
-                    background: rgba(0,0,0,0.6) !important; 
-                    border: 1px solid rgba(255,255,255,0.3) !important; 
-                    color: white !important; 
-                    font-family: monospace;
-                }
-                .biohazard-content thead { border-bottom: 1px solid white; color: white; text-transform: uppercase; font-size: 0.75rem; }
-                .biohazard-content tbody tr:hover { background-color: white !important; color: black !important; }
-                .biohazard-content tbody tr:hover td, .biohazard-content tbody tr:hover p, .biohazard-content tbody tr:hover span { color: black !important; }
                 .text-shadow-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-                .leaflet-container { z-index: 0; }
             `}</style>
         </div>
     );
 };
-
 // --- HELPER: SLIDER COMPONENT (Moved Outside to Fix Lag) ---
 const DimensionControl = ({ label, val, axis, onChange, onInteract }) => (
     <div className="flex items-center gap-2 mb-2">
@@ -2281,18 +2401,15 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
     const [isInteracting, setIsInteracting] = useState(false); 
     const lastMousePos = useRef({ x: 0, y: 0 });
     
-    // 1. Initialize State with Saved Zoom
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
-    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); // <--- LOADS SAVED ZOOM
+    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
     const [showControls, setShowControls] = useState(false);
     
-    // Sync when product changes
     useEffect(() => {
         setDims(product.dimensions || { w: 55, h: 90, d: 22 });
         setZoom(product.defaultZoom || 3.0);
     }, [product]);
 
-    // Auto-rotate
     useEffect(() => {
         let frameId;
         const animate = () => {
@@ -2318,17 +2435,6 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
         setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
         lastMousePos.current = { x: e.clientX, y: e.clientY }; 
     };
-    const handleMouseUp = () => setIsDragging(false);
-
-    // 2. Check for Changes (Dims OR Zoom)
-    const hasChanged = 
-        JSON.stringify(dims) !== JSON.stringify(product.dimensions || { w: 55, h: 90, d: 22 }) ||
-        zoom !== (product.defaultZoom || 3.0);
-
-    // 3. Save Function (Sends Dims AND Zoom)
-    const handleSaveChanges = () => { 
-        if(onUpdateProduct) onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom }); 
-    };
 
     const w = dims.w * zoom; 
     const h = dims.h * zoom; 
@@ -2342,101 +2448,90 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
     return (
         <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-slate-900/20 to-black overflow-hidden">
             
-            {/* 3D CONTROLS (Top Right) */}
+            {/* 3D CONTROLS */}
             {isAdmin && (
-                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel pointer-events-auto">
-                    <button 
-                        onClick={() => setShowControls(!showControls)} 
-                        className={`p-2 rounded-full border transition-all ${showControls ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/50 border-white/20 text-slate-400 hover:text-white'}`}
-                    >
+                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel">
+                    <button onClick={() => setShowControls(!showControls)} className={`p-2 rounded-full border border-white/20 ${showControls ? 'bg-orange-500 text-white' : 'bg-black/50 text-slate-400'}`}>
                         <Maximize2 size={16}/>
                     </button>
-
                     {showControls && (
-                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-72 shadow-2xl animate-fade-in-up">
-                            <h4 className="text-xs font-bold text-orange-500 mb-3 uppercase tracking-widest flex justify-between items-center">
-                                3D Configuration
-                                <div className="flex gap-1 bg-white/10 rounded p-1">
-                                    <button onClick={() => setZoom(z => Math.max(0.5, z-0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomOut size={12}/></button>
-                                    <span className="text-[10px] font-mono w-8 text-center">{zoom.toFixed(1)}x</span>
-                                    <button onClick={() => setZoom(z => Math.min(5, z+0.2))} className="p-1 hover:bg-white/20 rounded"><ZoomIn size={12}/></button>
-                                </div>
-                            </h4>
-                            
-                            <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            
-                            {hasChanged && (
-                                <button 
-                                    onClick={handleSaveChanges}
-                                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 shadow-lg"
-                                >
-                                    <Save size={12}/> Save All Changes
-                                </button>
-                            )}
+                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-64 shadow-2xl">
+                             <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                             <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 bg-emerald-600 text-white text-[10px] font-bold py-2 rounded">Save 3D Layout</button>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* 3D VIEWER */}
+            {/* 3D VIEWER - FIXED DEPTH & FLICKERING */}
             <div 
                 className="flex-1 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+                style={{ perspective: '1200px' }}
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)}
             >
-                <div className="relative transform-style-3d transition-transform duration-75" style={{ width: w, height: h, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}>
-                    <div className="absolute inset-0 backface-hidden bg-white shadow-[0_0_30px_rgba(255,255,255,0.1)]" style={{ transform: `translateZ(${d/2}px)` }}>{renderFace(front, "bg-white")}</div>
-                    <div className="absolute inset-0 backface-hidden bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)` }}>{renderFace(back, "bg-slate-800")}</div>
-                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.right, "bg-slate-400")}</div>
-                    <div className="absolute bg-slate-300" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2 }}>{renderFace(images.left, "bg-slate-400")}</div>
-                    <div className="absolute bg-slate-200" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.top, "bg-slate-300")}</div>
-                    <div className="absolute bg-slate-400" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2 }}>{renderFace(images.bottom, "bg-slate-500")}</div>
+                <div 
+                    className="relative" 
+                    style={{ 
+                        width: w, height: h, 
+                        transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                        transformStyle: 'preserve-3d', // <--- FIXED: FORCES 3D DEPTH
+                        willChange: 'transform' // <--- FIXED: REDUCES FLICKER
+                    }}
+                >
+                    <div className="absolute inset-0 bg-white" style={{ transform: `translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(front, "bg-white")}</div>
+                    <div className="absolute inset-0 bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-slate-800")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-slate-400")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.left, "bg-slate-400")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.top, "bg-slate-300")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-slate-500")}</div>
                 </div>
             </div>
 
-            {/* FLOATING ADMIN ACTIONS (Fixed: Moved out of text panel) */}
-            {isAdmin && (
-                <div className="absolute bottom-32 right-8 flex gap-2 z-[90] admin-actions">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onEdit(product); }} 
-                        className="px-4 py-2 bg-white/90 text-black text-xs font-bold uppercase hover:bg-white transition-colors tracking-widest shadow-lg border-2 border-transparent hover:border-orange-500"
-                    >
-                        Edit Item
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onDelete(product.id); }} 
-                        className="px-4 py-2 bg-red-900/80 text-red-500 border border-red-800 text-xs font-bold uppercase hover:bg-red-900 transition-colors tracking-widest shadow-lg"
-                    >
-                        Discard
-                    </button>
-                </div>
-            )}
-
-            {/* INFO PANEL */}
-            <div className="bg-black/90 border-t-2 border-orange-600 p-8 relative z-20 backdrop-blur-xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 className="text-4xl text-white font-serif tracking-widest uppercase mb-2 drop-shadow-md">{product.name}</h2>
-                        <div className="flex items-center gap-4">
-                            <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-xs font-mono font-bold tracking-wider">STOCK: {isAdmin ? product.stock : "**"}</span>
-                            <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">{product.type} // {product.taxStamp}</span>
+            {/* PRODUCT DATA & CLEAN ACTIONS */}
+            <div className="bg-black/90 border-t-2 border-orange-600 p-6 md:p-8 relative z-20 backdrop-blur-xl">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+                    <div className="w-full">
+                        <h2 className="text-xl md:text-3xl text-white font-serif tracking-widest uppercase mb-2">{product.name}</h2>
+                        <div className="flex items-center gap-3">
+                            {/* --- INCREASED STOCK SIZE HERE --- */}
+                            <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-sm md:text-base font-mono font-bold tracking-widest">
+                                STOCK: {isAdmin ? product.stock : "**"}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
                     </div>
+
+                    {/* MOVED: Clean buttons at the top of the info panel */}
+                    {isAdmin && (
+                        <div className="flex gap-2 w-full md:w-auto">
+                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-colors">Edit</button>
+                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 bg-red-900/30 text-red-500 border border-red-800 text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">Discard</button>
+                        </div>
+                    )}
                 </div>
 
-                <div className="grid grid-cols-4 gap-6 text-xs font-mono border-t border-white/10 pt-6">
-                    <div className="bg-white/5 p-3 border-l-2 border-red-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Distributor</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceDistributor)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-emerald-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Retail</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceRetail)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-blue-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Grosir</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceGrosir)}</p></div>
-                    <div className="bg-white/5 p-3 border-l-2 border-yellow-500"><p className="text-slate-500 uppercase mb-1 text-[9px]">Ecer</p><p className="text-white font-bold text-sm">{formatRupiah(product.priceEcer)}</p></div>
+                {/* --- INCREASED PRICING ENGINE FONT SIZES HERE --- */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-white/10 pt-5 mt-2">
+                    <div className="bg-white/5 p-3 border-l-4 border-red-500">
+                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
+                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceDistributor)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-4 border-emerald-500">
+                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
+                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceRetail)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-4 border-blue-500">
+                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
+                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceGrosir)}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 border-l-4 border-yellow-500">
+                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ecer</p>
+                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
+                    </div>
                 </div>
             </div>
-            
-            <style>{`
-                .transform-style-3d { transform-style: preserve-3d; }
-                .backface-hidden { backface-visibility: hidden; }
-            `}</style>
         </div>
     );
 };
@@ -2447,7 +2542,6 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
 
-    // Group Items
     const sections = useMemo(() => {
         const groups = { "ALL": inventory };
         inventory.forEach(item => {
@@ -2464,74 +2558,98 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
 
     const sectionKeys = Object.keys(sections).sort();
     const currentList = sections[activeSection].filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
-   const selectedItem = useMemo(() => {
-        // Safe fallback: if inventory is empty, return null to avoid crashing 'ItemInspector'
-        return inventory.find(i => i.id === selectedId) || (inventory.length > 0 ? inventory[0] : null);
-    }, [selectedId, inventory]);
+    const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
-        <div className="flex h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
-            {/* LEFT MENU */}
-            <div className="w-1/3 md:w-96 flex flex-col border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
-                <div className="p-6 border-b border-white/20 bg-gradient-to-r from-white/10 to-transparent">
-                    <h3 className="text-white font-serif italic text-2xl mb-2 tracking-wide">Supply Case</h3>
-                    <div className="h-0.5 w-16 bg-orange-500 mb-6"></div>
-                    <div className="relative mb-6">
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH ITEMS..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-xs font-mono uppercase focus:border-orange-500 outline-none"/>
+        <div className="flex flex-col md:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
+            
+            {/* SUPPLY CASE: 45% Height on Mobile for better visibility */}
+            <div className="w-full md:w-96 h-[45%] md:h-full flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+                <div className="p-4 md:p-6 border-b border-white/20">
+                    <h3 className="text-white font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
+                    <div className="relative mb-3">
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-[10px] font-mono outline-none"/>
                         <Search size={12} className="absolute left-2 top-2.5 text-slate-500"/>
                         {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white"><Plus size={16}/></button>}
                     </div>
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                         {sectionKeys.map(sec => (
-                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${activeSection === sec ? 'bg-white text-black border-white' : 'text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'}`}>{sec}</button>
+                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[8px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-white text-black' : 'text-slate-500 border-slate-700'}`}>{sec}</button>
                         ))}
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 p-2">
-                    {currentList.map(item => (
-                        <div key={item.id} onClick={() => setSelectedId(item.id)} className={`group p-3 cursor-pointer border border-transparent transition-all relative mb-1 flex items-center gap-3 ${selectedId === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'hover:bg-white/5'}`}>
-                            <div className={`w-10 h-10 border flex items-center justify-center bg-black ${selectedId === item.id ? 'border-orange-500' : 'border-white/10'}`}>
-                                {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover opacity-80"/> : <Package size={16} className="text-slate-600"/>}
+
+            
+                {/* SCROLLABLE LIST AREA */}
+                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-white/10">
+                    {currentList.map(item => {
+                        const isLowStock = item.stock <= (item.minStock || 5);
+                        return (
+                            <div 
+                                key={item.id} 
+                                onClick={() => setSelectedId(item.id)} 
+                                // INCREASED: Padding (p-4), Gap (gap-4), and Margin (mb-2)
+                                className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-white/10 border-white/20 shadow-md' : 'border-transparent'}`}
+                            >
+                                {/* INCREASED: Glowing Red Alert Bar is thicker */}
+                                {isLowStock && isAdmin && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>
+                                )}
+
+                                {/* INCREASED: Image Thumbnail size from w-10 to w-12 */}
+                                <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-orange-500' : isLowStock && isAdmin ? 'border-red-500' : 'border-white/10'}`}>
+                                    {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover" /> : <Package size={20} className="text-slate-600"/>}
+                                    {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-red-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    {/* INCREASED: Product Name is now text-base and font-black */}
+                                    <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-orange-400' : isLowStock && isAdmin ? 'text-red-400' : 'text-slate-300'}`}>
+                                        {item.name}
+                                    </h4>
+                                    
+                                    <div className="flex items-center gap-3 mt-1.5">
+                                        {/* INCREASED: Stock number is now text-base and bolder */}
+                                        <p className={`text-sm md:text-base font-mono ${isLowStock && isAdmin ? 'text-red-500 font-bold' : 'text-slate-400 font-bold'}`}>
+                                            STK: {isAdmin ? item.stock : "**"}
+                                        </p>
+                                        
+                                        {/* INCREASED: LOW badge is now text-xs, wider, and has a slight glow */}
+                                        {isLowStock && isAdmin && (
+                                            <span className="text-xs font-black bg-red-900/50 text-red-400 px-2 py-0.5 rounded border border-red-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)]">
+                                                Low
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className={`font-serif text-sm uppercase tracking-wide truncate transition-colors ${selectedId === item.id ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'}`}>{item.name}</h4>
-                                <p className="text-[9px] text-slate-600 font-mono">STOCK: {isAdmin ? item.stock : "**"}</p>
-                            </div>
-                            {selectedId === item.id && <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>}
-                        </div>
-                    ))}
+                        );
+                    })}
+                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-600 mt-10">NO ITEMS FOUND</p>}
                 </div>
-                <div className="p-4 border-t border-white/10 text-[9px] text-slate-600 font-mono flex justify-between items-center bg-black"><span>CAPACITY: {inventory.length} SLOTS</span><span>v3.4</span></div>
             </div>
 
-            {/* RIGHT INSPECTOR */}
-            <div className="flex-1 relative bg-black flex flex-col">
+            {/* INSPECTOR AREA: 55% Height on Mobile */}
+            <div className="flex-1 h-[55%] md:h-full relative bg-black">
                 <div className="absolute inset-0 z-0">
-                    <img 
-                        src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} 
-                        className="w-full h-full object-cover opacity-60 transition-opacity duration-500"
-                        onError={(e) => e.target.style.opacity = 0.1} 
-                    />
+                    <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
                 </div>
-
-                <div className="relative z-10 flex-1 h-full">
+                <div className="relative z-10 h-full">
                     {isAdmin && (
-                        <label className="absolute top-4 right-14 z-50 cursor-pointer group"> 
-                            <div className="bg-black/50 hover:bg-orange-600/80 backdrop-blur border border-white/20 p-2 rounded-full text-white transition-all shadow-lg"><ImageIcon size={16}/></div>
+                        <label className="absolute top-4 right-14 z-50 cursor-pointer"> 
+                            <div className="bg-black/50 p-2 rounded-full text-white border border-white/10"><ImageIcon size={14}/></div>
                             <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
                         </label>
                     )}
-                    {selectedItem ? (
+                    {selectedItem && (
                         <ItemInspector 
                             product={selectedItem} 
                             isAdmin={isAdmin} 
                             onEdit={onEdit} 
                             onDelete={onDelete} 
-                            onUpdateProduct={onUpdateProduct} // Changed prop name
+                            onUpdateProduct={onUpdateProduct} 
                         />
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-slate-500 font-serif italic text-2xl tracking-widest opacity-50">SELECT ITEM TO EXAMINE</div>
                     )}
                 </div>
             </div>
@@ -2539,11 +2657,228 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     );
 };
 
+
+// --- MODIFIED: AUDIT VAULT EXPLORER (SPLIT-PACKET VERSION) ---
+
+const AuditVaultExplorer = ({ db, storage, appId, user, isAdmin, logAudit, setBackupToast }) => {
+    // ... rest of the code ...
+    const [path, setPath] = useState({ year: null, month: null, day: null });
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    const years = ["2025", "2026"];
+    const months = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const days = Array.from({length: 31}, (_, i) => (i + 1).toString().padStart(2, '0'));
+
+    // --- REVERSAL LOGIC: FETCH EXTERNAL SNAPSHOT & RESTORE ---
+    const handleRestoreFromSnapshot = async (logEntry) => {
+        if (!isAdmin || !logEntry.snapshotPath) return;
+        
+        const confirmMsg = `[RE TERMINAL]: DOWNLOADING CLOUD ARCHIVE...\n\nTarget: ${logEntry.action}\n\nProceed with reconstruction?`;
+        
+        if (window.confirm(confirmMsg)) {
+            try {
+                setLoading(true);
+                // 1. FETCH THE EXTERNAL FILE FROM STORAGE
+                const fileRef = storageRef(storage, logEntry.snapshotPath);
+                const downloadUrl = await getDownloadURL(fileRef);
+                const response = await fetch(downloadUrl);
+                const snapshot = await response.json();
+
+                // 2. AUTO-SAVE SAFETY SNAPSHOT
+                await logAudit("PRE_REVERT_SAFETY", `Auto-archived before reverting to ${logEntry.action}`, true);
+
+                const batch = writeBatch(db);
+                
+                if (snapshot.inventory) {
+                    snapshot.inventory.forEach(item => {
+                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
+                    });
+                }
+                if (snapshot.customers) {
+                    snapshot.customers.forEach(c => {
+                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), c);
+                    });
+                }
+
+                await batch.commit();
+                setBackupToast(true); 
+                setTimeout(() => window.location.reload(), 2000);
+                
+            } catch (err) {
+                console.error("CLOUD_REVERSION_FAILURE:", err);
+                setLoading(false);
+                alert("SYSTEM ERROR: Cloud data packet corrupted.");
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (path.year && path.month && path.day && user?.uid) {
+            setLoading(true);
+            const dateKey = `${path.year}-${path.month}-${path.day}`;
+            const vaultPath = `artifacts/${appId}/users/${user.uid}/audit_vault/${dateKey}/logs`;
+            
+            const q = query(collection(db, vaultPath), orderBy('timestamp', 'desc'));
+            const unsub = onSnapshot(q, (snap) => {
+                setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setLoading(false);
+            }, (err) => {
+                console.error("Vault Error:", err);
+                setLoading(false);
+            });
+            return () => unsub();
+        }
+    }, [path, db, appId, user?.uid]);
+
+    const formatM = (m) => new Date(2000, parseInt(m) - 1).toLocaleString('default', { month: 'long' });
+
+    return (
+        <div className="bg-black/20 border border-white/10 rounded-2xl p-6 min-h-[400px] font-mono text-xs">
+            {/* Breadcrumbs */}
+            <div className="flex gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-6 border-b border-white/5 pb-2">
+                <button onClick={() => setPath({year:null, month:null, day:null})} className="hover:text-white">VAULT</button>
+                {path.year && <><span>/</span><button onClick={() => setPath({...path, month:null, day:null})} className="text-orange-500">{path.year}</button></>}
+                {path.month && <><span>/</span><button onClick={() => setPath({...path, day:null})} className="text-orange-500">{formatM(path.month)}</button></>}
+                {path.day && <><span>/</span><span className="text-white">{path.day}</span></>}
+            </div>
+
+            {/* Folder Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {!path.year && years.map(y => (
+                    <button key={y} onClick={() => setPath({...path, year: y})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-orange-500 group transition-all">
+                        <Folder size={24} className="text-orange-500 mb-2 group-hover:scale-110 transition-transform"/>
+                        <span className="text-white font-bold">{y}</span>
+                    </button>
+                ))}
+                {path.year && !path.month && months.map(m => (
+                    <button key={m} onClick={() => setPath({...path, month: m})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-blue-500 group transition-all">
+                        <Calendar size={24} className="text-blue-500 mb-2"/>
+                        <span className="text-white">{formatM(m)}</span>
+                    </button>
+                ))}
+                {path.month && !path.day && days.map(d => (
+                    <button key={d} onClick={() => setPath({...path, day: d})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-emerald-500 group transition-all">
+                        <div className="text-lg font-black text-white/20 group-hover:text-emerald-500">{d}</div>
+                        <span className="text-[8px] text-slate-500 uppercase">DAY</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Log List */}
+            {path.day && (
+                <div className="mt-4 space-y-2 animate-fade-in">
+                    {loading ? <p className="text-orange-500 animate-pulse text-center py-10 uppercase tracking-widest">/// Decrypting Sector ///</p> : logs.map(log => (
+                        <div key={log.id} className="p-3 bg-white/5 border-l-2 border-orange-500 flex justify-between items-center group">
+                            <div className="flex-1">
+                                <p className="text-white font-bold uppercase flex items-center gap-2">
+                                    {log.action}
+                                    {log.snapshotId && (
+                                        <span className="text-[7px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded tracking-tighter animate-pulse">
+                                            REMOTE SNAPSHOT LOADED
+                                        </span>
+                                    )}
+                                </p>
+                                <p className="text-slate-400 text-[10px]">{log.details}</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                {log.snapshotId && isAdmin && (
+                                    <button 
+                                        onClick={() => handleRestoreFromSnapshot(log)}
+                                        className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                    >
+                                        <RotateCcw size={10}/> Revert
+                                    </button>
+                                )}
+                                <span className="text-slate-600 text-[9px]">{log.timeStr}</span>
+                            </div>
+                        </div>
+                    ))}
+                    {!loading && logs.length === 0 && <p className="text-slate-600 italic py-10 text-center uppercase tracking-widest">/// Sector Empty ///</p>}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// --- SIMPLIFIED: STABLE SAFETY STATUS WIDGET ---
+// --- UPDATED: SAFETY STATUS (SYNCED WITH SETTINGS) ---
+const SafetyStatus = ({ auditLogs = [], sessionStatus }) => {
+    // 1. Get Limits
+    const resetThreshold = parseInt(localStorage.getItem('indicator_reset_time') || '0');
+    const now = new Date();
+    const todayStr = now.toLocaleDateString();
+
+    // 2. CLOUD SYNC LOGIC (Matches Settings)
+    const confirmedMirror = auditLogs.find(log => 
+        (log.action === "DATABASE_MIRROR" || log.action === "MASTER_BACKUP") && 
+        log.timestamp && 
+        (log.timestamp.seconds * 1000 > resetThreshold)
+    );
+    // If we clicked the button (sessionStatus.cloud) OR we found a valid log -> GREEN
+    const isCloudSecure = sessionStatus?.cloud || !!confirmedMirror;
+
+    // 3. USB SAFE LOGIC (Matches Settings)
+    const lastUSB = parseInt(localStorage.getItem('last_usb_backup') || '0');
+    const isUsbValidInDb = lastUSB > resetThreshold && (now.getTime() - lastUSB) < (7 * 24 * 60 * 60 * 1000);
+    const isUsbSecure = sessionStatus?.usb || isUsbValidInDb;
+
+    // 4. SNAPSHOT LOGIC
+    const todaySnapshots = auditLogs.filter(log => {
+        if (!log.isSavePoint || !log.timestamp || !log.timestamp.seconds) return false;
+        try {
+            const logDate = new Date(log.timestamp.seconds * 1000).toLocaleDateString();
+            return logDate === todayStr;
+        } catch (e) { return false; }
+    }).length;
+    // If manual recovery button pressed OR we have logs -> GREEN
+    const isRecoverySecure = sessionStatus?.recovery || todaySnapshots > 0;
+
+    return (
+        <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm flex gap-6 shadow-lg mb-6">
+            {/* CLOUD INDICATOR */}
+            <div className="flex-1">
+                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">Cloud Sync</p>
+                <div className={`text-sm font-black flex items-center gap-2 ${isCloudSecure ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${isCloudSecure ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                    {isCloudSecure ? 'SECURE' : 'REQUIRED'}
+                </div>
+            </div>
+            
+            <div className="w-[1px] bg-white/10"></div>
+            
+            {/* USB INDICATOR */}
+            <div className="flex-1 text-center">
+                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">USB Safe</p>
+                <div className={`text-sm font-black flex justify-center items-center gap-2 ${isUsbSecure ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${isUsbSecure ? 'bg-emerald-500' : 'bg-orange-500'}`}></div>
+                    {isUsbSecure ? 'SECURE' : 'OUTDATED'}
+                </div>
+            </div>
+            
+            <div className="w-[1px] bg-white/10"></div>
+            
+            {/* SNAPSHOT COUNTER */}
+            <div className="flex-1 text-right">
+                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">Save Points</p>
+                <div className={`text-sm font-black flex justify-end items-center gap-2 font-mono ${isRecoverySecure ? 'text-emerald-400' : 'text-slate-400'}`}>
+                    <History size={14} className={isRecoverySecure ? "animate-pulse" : "opacity-30"}/>
+                    {todaySnapshots.toString().padStart(2, '0')} <span className="text-[8px] text-slate-600">TODAY</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [user, setUser] = useState(null);
   // ... rest of your code ...
   const [isAdmin, setIsAdmin] = useState(true);
+  const [sessionStatus, setSessionStatus] = useState({ recovery: false, usb: false, cloud: false });
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPin, setAdminPin] = useState(null);       
   const [hasAdminPin, setHasAdminPin] = useState(false); 
@@ -2551,93 +2886,304 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [isSetupMode, setIsSetupMode] = useState(false); 
   const [showForgotPin, setShowForgotPin] = useState(false);
   const [loginError, setLoginError] = useState(null); // <--- Add this to track login errors
+  const [backupToast, setBackupToast] = useState(false);
 
-// --- NEW: ADMIN PIN & RECOVERY LOGIC ---
 
-  // 1. Recovery & Pin States
-  const [recoveryAnswer, setRecoveryAnswer] = useState(""); 
-  const [inputRecovery, setInputRecovery] = useState("");   
-  const [showRecoveryInput, setShowRecoveryInput] = useState(false);
 
-  // 2. Fetch PIN & Secret Word on Load
-  useEffect(() => {
-    const fetchAdminSettings = async () => {
-        if(!user) return;
-        const ref = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin');
-        const snap = await getDoc(ref);
-        if(snap.exists() && snap.data().pin) {
-            setAdminPin(snap.data().pin);
-            setRecoveryAnswer(snap.data().recoveryWord || ""); 
-            setHasAdminPin(true);
-        } else {
-            setHasAdminPin(false);
-        }
-    };
-    fetchAdminSettings();
-  }, [user]);
 
-  // 3. Create/Set New PIN
-  const handleSetNewPin = async () => {
-      if(inputPin.length < 4) { alert("PIN must be at least 4 digits."); return; }
-      if(!inputRecovery.trim()) { alert("Please set a Secret Recovery Word."); return; }
-      if(!user) return;
-      
-      await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin'), { 
-          pin: inputPin,
-          recoveryWord: inputRecovery.trim().toLowerCase(),
-          updatedAt: new Date().toISOString()
-      });
-      
-      setAdminPin(inputPin);
-      setRecoveryAnswer(inputRecovery.trim().toLowerCase());
-      setHasAdminPin(true);
-      setIsAdmin(true); 
-      setIsSetupMode(false);
-      setShowAdminLogin(false);
-      setInputPin("");
-      setInputRecovery("");
-      triggerCapy("Security settings saved.");
+
+// Helper to include Hours and Minutes in the filename
+  // --- DOWNLOAD ENGINE HELPERS ---
+  const getCurrentTimestamp = () => {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    return `${date}_${h}-${m}`; // Example: 2026-02-13_08-30
   };
 
-  // 4. Login with PIN
+  const triggerDownload = (name, data) => {
+    try {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a); // Required for some browser security layers
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Download Error:", err);
+    }
+  };
+
+  // --- UPDATED: MASTER PROTOCOL (Forces Green Indicators) ---
+  const handleMasterProtocol = async () => {
+    if (!user || !isAdmin) return;
+    const ts = getCurrentTimestamp();
+    
+    const recovery = { meta: { type: "RECOVERY", ts }, inventory, customers, appSettings };
+    const usb = { meta: { type: "USB_SAFE", ts }, inventory, transactions, customers, samplings, appSettings };
+    const mirror = { meta: { type: "CLOUD_MIRROR", ts }, inventory, transactions, customers, samplings, appSettings, auditLogs };
+
+    triggerCapy("Initiating Triple-Layer Backup... 🛡️");
+
+    // Sequential Downloads
+    setTimeout(() => triggerDownload(`FOLDER_RECOVERY--POINT_${ts}.json`, recovery), 0);
+    setTimeout(() => triggerDownload(`FOLDER_USB--SAFE_OFFSITE_${ts}.json`, usb), 1500);
+    setTimeout(() => triggerDownload(`FOLDER_CLOUD--MIRROR_SYNC_${ts}.json`, mirror), 3000);
+
+    localStorage.setItem('last_usb_backup', new Date().getTime().toString());
+    
+    // --- FORCE GREEN LIGHTS IMMEDIATELY ---
+    setSessionStatus({ recovery: true, usb: true, cloud: true }); 
+
+    await logAudit("MASTER_BACKUP", `Triple Redundancy executed at ${ts}`, true);
+    triggerCapy("Protocol Complete! Files sent to sorting. 💾");
+  };
+
+
+  
+  // --- NEW: ULTRA-SLIM SNAPSHOT (STRIPS EVERYTHING BUT NUMBERS) ---
+  const getUltraSlimSnapshot = () => {
+    // We only keep the ID, current Stock, and Price tiers. 
+    // We strip Names, Descriptions, and Images to save 90% more space.
+    const ultraSlimInventory = inventory.map(item => ({
+        id: item.id,
+        stock: item.stock,
+        pD: item.priceDistributor,
+        pR: item.priceRetail,
+        pG: item.priceGrosir,
+        pE: item.priceEcer
+    }));
+    
+    const ultraSlimCustomers = customers.map(c => ({
+        id: c.id,
+        tier: c.tier,
+        lastV: c.lastVisit
+    }));
+
+    return {
+        inventory: ultraSlimInventory,
+        customers: ultraSlimCustomers,
+        appSettings: { companyName: appSettings.companyName } // Only essential settings
+    };
+  };
+
+  // --- LOGIC: CHECK IF USB BACKUP IS CURRENTLY SECURE (Within 7 Days) ---
+  const lastUSB = localStorage.getItem('last_usb_backup');
+  const isUsbSecure = lastUSB && (new Date().getTime() - parseInt(lastUSB)) < (7 * 24 * 60 * 60 * 1000);
+  
+  
+
+  // --- 1. FULL CLOUD MIRROR (FOR SECURITY) ---
+  const handleCloudMirror = async () => {
+    if(!user) return;
+    const mirrorPayload = {
+      meta: { timestamp: new Date().toISOString(), app: "KPM_MIRROR", operator: user.email },
+      inventory, transactions, customers, samplings, appSettings
+    };
+    const blob = new Blob([JSON.stringify(mirrorPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CLOUD_MIRROR_${getCurrentDate()}.json`;
+    a.click();
+    await logAudit("DATABASE_MIRROR", "Manual offsite cloud mirror created");
+    triggerCapy("Mirror Synchronized! Upload this to your private Google Drive.");
+  };
+
+  // --- 2. GRANULAR TEAM SHARING: EXPORT ---
+  const handleExportGranular = (type) => {
+    if(!user) return;
+    let exportData = {
+        meta: { 
+            type: `kpm_share_${type}`, 
+            signature: `KPM-AUTO-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
+            date: new Date().toISOString(), 
+            owner: user.email 
+        }
+    };
+
+    if (type === 'products' || type === 'both') {
+        exportData.inventory = inventory; //
+        exportData.appSettings = appSettings; // Shares tiers and branding
+    }
+    if (type === 'customers' || type === 'both') {
+        exportData.customers = customers; //
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `KPM_SHARE_${type.toUpperCase()}_${getCurrentDate()}.json`;
+    a.click();
+    triggerCapy(`Differentiated ${type} data signed and ready!`);
+};
+
+  // --- 3. GRANULAR TEAM SHARING: IMPORT ---
+  const handleImportGranular = (e, targetType) => {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+    if(!window.confirm(`Import ${targetType} data? This will overwrite existing items with the same ID.`)) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            const batch = writeBatch(db);
+
+            if ((targetType === 'products' || targetType === 'both') && data.inventory) {
+                data.inventory.forEach(item => {
+                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
+                });
+            }
+            if ((targetType === 'customers' || targetType === 'both') && data.customers) {
+                data.customers.forEach(c => {
+                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), c);
+                });
+            }
+            
+            await batch.commit();
+            triggerCapy(`${targetType.toUpperCase()} data imported successfully!`);
+        } catch (err) { alert("Import Failed: " + err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value = null; 
+  };
+const handleGitHubMirror = async () => {
+    if(!user) return;
+    
+    // Package all critical business data
+    const mirrorPayload = {
+      meta: { 
+        timestamp: new Date().toISOString(), 
+        app: "KPM_SYSTEM_MIRROR",
+        operator: user.email 
+      },
+      inventory,
+      transactions,
+      customers,
+      samplings,
+      appSettings
+    };
+
+    triggerCapy("Initiating Offsite Mirror... ☁️");
+
+    try {
+      // Note: In a production environment, you would use a secure backend 
+      // or a specific API key stored in Firebase Secrets.
+      // For now, this triggers a secondary JSON backup download as a 'Manual Mirror'.
+      const blob = new Blob([JSON.stringify(mirrorPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `OFFSITE_MIRROR_${getCurrentDate()}.json`;
+      a.click();
+      
+      await logAudit("DATABASE_MIRROR", "Manual offsite cloud mirror created");
+      triggerCapy("Mirror Synchronized! Move this to your Cloud Drive.");
+    } catch (err) {
+      console.error(err);
+      triggerCapy("Mirror failed. Check console.");
+    }
+  };
+
+
+
+// --- PINPOINT: Line 1770 (Objective 4: Advanced Security Logic) ---
+  const [recoveryWord, setRecoveryWord] = useState("");
+  const [isResetMode, setIsResetMode] = useState(false);
+  const [authShake, setAuthShake] = useState(false); // For visual "Wrong Password" feedback
+
+  // 1. INITIAL CHECK: Does a PIN exist?
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+        if (!user) return;
+        const ref = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin');
+        const snap = await getDoc(ref);
+        
+        if (snap.exists() && snap.data().pin) {
+            setAdminPin(snap.data().pin);
+            setRecoveryWord(snap.data().recoveryWord || "");
+            setHasAdminPin(true);
+            setIsSetupMode(false);
+        } else {
+            // No PIN found: Force Setup Mode
+            setHasAdminPin(false);
+            setIsSetupMode(true);
+        }
+    };
+    checkAdminStatus();
+  }, [user]);
+
+  // 2. SETUP: Create PIN & Secret Word
+  const handleSetupSecurity = async (newPin, secretWord) => {
+    if (newPin.length < 4) { triggerCapy("PIN too short! (Min 4)"); return; }
+    if (!secretWord.trim()) { triggerCapy("Secret word required!"); return; }
+
+    const cleanWord = secretWord.trim().toLowerCase();
+    
+    // Save to Firestore
+    await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin'), {
+        pin: newPin,
+        recoveryWord: cleanWord,
+        updatedAt: serverTimestamp()
+    });
+
+    // Update Local State
+    setAdminPin(newPin);
+    setRecoveryWord(cleanWord);
+    setHasAdminPin(true);
+    setIsSetupMode(false);
+    setIsAdmin(true); // Auto-login after setup
+    setShowAdminLogin(false);
+    
+    triggerCapy("Security Protocol Established! 🛡️");
+  };
+
+  // 3. LOGIN: Verify PIN
   const handlePinLogin = () => {
-      if(inputPin === adminPin) {
+      if (inputPin === adminPin) {
           setIsAdmin(true);
           setShowAdminLogin(false);
           setInputPin("");
-          triggerCapy("Welcome back.");
+          triggerCapy("Access Granted. Welcome, Boss.");
       } else {
-          alert("Wrong PIN!");
+          // Wrong PIN Animation
+          setAuthShake(true);
+          setTimeout(() => setAuthShake(false), 500);
           setInputPin("");
+          triggerCapy("Access Denied.");
       }
   };
 
-  // 5. Start Recovery
-  const handleForgotPin = () => {
-      setShowRecoveryInput(true); 
-      setInputPin("");
+  // 4. RESET: Verify Secret Word
+  const handleResetPin = (word) => {
+    if (word.trim().toLowerCase() === recoveryWord) {
+        setIsResetMode(false);
+        setIsSetupMode(true); // Allow them to set a new PIN
+        triggerCapy("Identity Verified. Create new PIN.");
+    } else {
+        setAuthShake(true);
+        setTimeout(() => setAuthShake(false), 500);
+        triggerCapy("Verification Failed.");
+    }
   };
 
-  // 6. Verify Secret Word
-  const handleVerifyRecovery = () => {
-      if(inputRecovery.trim().toLowerCase() === recoveryAnswer) {
-          alert("Secret Word Correct! Please create a NEW PIN.");
-          setIsSetupMode(true);       
-          setShowRecoveryInput(false); 
-          setInputRecovery("");
-      } else {
-          alert("Wrong Secret Word.");
-      }
-  };
-
-  // 7. Change PIN
+// --- PINPOINT: Line 1830 (Add this missing function to fix the crash) ---
   const handleChangePin = () => {
-      if(!window.confirm("Change Admin PIN?")) return;
+      // Switches the modal to "Setup Mode" so you can overwrite the old PIN
       setIsSetupMode(true); 
       setShowAdminLogin(true);
+      setIsResetMode(false);
       setInputPin("");
-      setInputRecovery("");
+      triggerCapy("Initialize PIN Reset Protocol.");
   };
+
+
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(true);
@@ -2651,6 +3197,28 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
+
+  const hasAlertedLowStock = useRef(false);
+
+  // 1. Calculate low stock items (Threshold is minStock or default to 5)
+  const lowStockItems = useMemo(() => {
+      return inventory.filter(item => item.stock <= (item.minStock || 5));
+  }, [inventory]);
+
+  // 2. Capybara Intercept on Login
+  useEffect(() => {
+      if (user && isAdmin && lowStockItems.length > 0 && !hasAlertedLowStock.current) {
+          // Find the most valuable item running out
+          const priorityItem = [...lowStockItems].sort((a, b) => (b.priceRetail || 0) - (a.priceRetail || 0))[0];
+          
+          setTimeout(() => {
+              triggerCapy(`⚠️ BOSS! ${priorityItem.name} is critically low (${priorityItem.stock} left). Restock needed!`);
+          }, 3500); // 3.5s delay so it triggers right after the welcome message
+          
+          hasAlertedLowStock.current = true;
+      }
+  }, [user, isAdmin, lowStockItems]);
+  
 
 // --- NEW: TIER SETTINGS STATE ---
   const DEFAULT_TIERS = [
@@ -2834,13 +3402,27 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
 
 
-  // --- AUTHENTICATION FLOW ---
+  // --- AUTHENTICATION FLOW & REDIRECT CATCHER ---
   useEffect(() => {
+    // 1. Catch the user when Google bounces them back to the app
+    getRedirectResult(auth).then((result) => {
+        if (result && result.user) {
+            console.log("Redirect Login Success:", result.user);
+            setUser(result.user);
+            if (result.user.email) setCurrentUserEmail(result.user.email);
+        }
+    }).catch((error) => {
+        console.error("Redirect Error:", error);
+        setLoginError(`Login Failed: ${error.message}`);
+    });
+
+    // 2. Standard listener to keep them logged in
     const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
         setIsAdmin(false);
         if (currentUser?.email) setCurrentUserEmail(currentUser.email);
     });
+    
     return () => unsubAuth();
   }, []);
 
@@ -2916,31 +3498,65 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('kpm_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('kpm_theme', 'light'); }
   }, [darkMode]);
 
-  const handleLogin = async () => {
+ const handleLogin = async () => {
         setLoginError(null); // Reset errors
         try {
             // 1. Force persistence (Store login in Local Storage)
             await setPersistence(auth, browserLocalPersistence);
             
-            // 2. Use POPUP (It works better on localhost than Redirect)
+            // 2. Use POPUP (Highly reliable now that the button is wired up!)
             const result = await signInWithPopup(auth, googleProvider);
             
-            // 3. Success!
+            // 3. Catch the user immediately
             console.log("Login Success:", result.user);
             setUser(result.user);
+            if (result.user.email) setCurrentUserEmail(result.user.email);
             
         } catch (error) {
             console.error("Login Error:", error);
-            // Show the error on screen so we know exactly what's wrong
+            alert(`Login Failed: ${error.message}`); // Forces a visible popup if it fails
             setLoginError(`Error: ${error.code} - ${error.message}`);
         }
     };
+
   const handleLogout = async () => { await signOut(auth); setUser(null); setInventory([]); setTransactions([]); setIsAdmin(false); };
 
   // --- ACTIONS ---
-  const logAudit = async (action, details) => { try { if(user) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_logs`), { action, details, timestamp: serverTimestamp() }); } catch (err) {} };
+ 
+  // --- MODIFIED: SYSTEM LOG ENGINE (FIXED 4TH DOWNLOAD BUG) ---
+  const logAudit = async (action, details, includeSnapshot = false) => {
+    if (!user) return;
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+
+    try {
+        // FIX: Only trigger the extra generic download if it is NOT the Master Protocol
+        // This prevents the 4th file from appearing while still keeping the indicators GREEN.
+        if (includeSnapshot && action !== "MASTER_BACKUP" && action !== "BACKUP_SINGLE") {
+            handleBackupData(); 
+            triggerCapy("System Save File Downloaded! 💾");
+        }
+
+        const logData = {
+            action,
+            details,
+            user: user.email,
+            timestamp: serverTimestamp(),
+            timeStr: now.toLocaleTimeString(),
+            isSavePoint: includeSnapshot // This MUST remain true for the indicators to work
+        };
+
+        // Log to Firestore
+        await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_logs`), logData);
+        await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/audit_vault/${dateKey}/logs`), logData);
+
+    } catch (err) {
+        console.error("Log Error:", err);
+    }
+  };
   
   const cycleMascotMessage = () => {
+    // Uses the latest activeMessages list to cycle dialogue
     const nextIndex = (msgIndex + 1) % activeMessages.length;
     setMsgIndex(nextIndex);
     const message = activeMessages[nextIndex];
@@ -2949,7 +3565,14 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     setTimeout(() => setShowCapyMsg(false), 8000); 
   };
   
-  const triggerCapy = (msg) => { const message = msg || "Hello!"; setCapyMsg(message); setShowCapyMsg(true); setTimeout(() => setShowCapyMsg(false), 8000); };
+  // Re-usable function to pop up the mascot with a custom message
+  const triggerCapy = (msg) => { 
+    const message = msg || "Hello!"; 
+    setCapyMsg(message); 
+    setShowCapyMsg(true); 
+    // Auto-hide after 8 seconds to prevent screen clutter
+    setTimeout(() => setShowCapyMsg(false), 8000); 
+  };
   
   const handleAddMascotMessage = async () => {
       if(!newMascotMessage.trim() || !user) return;
@@ -2965,6 +3588,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       const currentMessages = appSettings.mascotMessages || [];
       const updatedMessages = currentMessages.filter(m => m !== msgToDelete);
       await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotMessages: updatedMessages }, {merge: true});
+      triggerCapy("Dialogue removed.");
   };
 
 // --- NEW: SAVE EDITED MASCOT MESSAGE ---
@@ -3005,17 +3629,16 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
  
-  // --- UPDATED: HANDLE CROP CONFIRM ---
+ 
+// --- UPDATED: TARGETED MERCHANT SAVING ---
   const handleCropConfirm = (base64) => { 
       if (!activeCropContext) return; 
       
+      const collPath = `artifacts/${appId}/users/${user.uid}/settings/general`;
+
       if (activeCropContext.type === 'mascot') { 
-          const newSettings = { ...appSettings, mascotImage: base64 }; 
-          setAppSettings(newSettings); 
-          if(user) { 
-              setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true}); 
-              logAudit("SETTINGS_UPDATE", "Updated Mascot Image"); 
-          } 
+          setAppSettings(prev => ({ ...prev, mascotImage: base64 }));
+          if(user) setDoc(doc(db, collPath), { mascotImage: base64 }, {merge: true});
           triggerCapy("Profile picture updated!"); 
       
       } else if (activeCropContext.type === 'product') { 
@@ -3029,176 +3652,322 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           handleSaveTiers(newTiers);
           triggerCapy("Tier Icon Updated!");
 
-      } else if (activeCropContext.type === 'customer_staging') {
-          setTempCustomerImage(base64); 
-          triggerCapy("Store photo ready!");
-
       } else if (activeCropContext.type === 'inventory_bg') {
-          // --- NEW: SAVE INVENTORY BACKGROUND ---
-          const newSettings = { ...appSettings, inventoryBg: base64 };
-          setAppSettings(newSettings);
-          if(user) {
-              setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true});
-          }
+          setAppSettings(prev => ({ ...prev, inventoryBg: base64 }));
+          if(user) setDoc(doc(db, collPath), { inventoryBg: base64 }, {merge: true});
           triggerCapy("Inventory Backdrop Updated!");
+
+      // --- FIXED: TARGETED MERCHANT SPRITE SAVING ---
+      } else if (activeCropContext.type.startsWith('merchant_')) {
+          const moodKey = activeCropContext.type.split('_')[1]; // Extracts 'idle', 'talking', or 'deal'
+          const settingsKey = `merchant_${moodKey}`;
+          
+          // 1. Update local state immediately
+          setAppSettings(prev => ({ ...prev, [settingsKey]: base64 }));
+          
+          // 2. Perform targeted update to Firestore (avoids overwriting other settings)
+          if(user) {
+              setDoc(doc(db, collPath), { [settingsKey]: base64 }, {merge: true});
+              logAudit("SETTINGS_UPDATE", `Updated Merchant ${moodKey} visual`);
+          }
+          triggerCapy(`Merchant ${moodKey} visual updated!`);
       }
       
       setCropImageSrc(null); 
       setActiveCropContext(null); 
   };
-
-  // --- NEW: TIER ICON FILE HANDLER ---
+  // --- FILE HANDLERS ---
   function handleTierIconSelect(e, index) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-            setCropImageSrc(reader.result);
-            setActiveCropContext({ type: 'tier', index: index, face: 'front' });
-            setBoxDimensions({ w: 100, h: 100, d: 0 }); // Square crop for icons
-        };
-        reader.readAsDataURL(file);
-    }
-    e.target.value = null;
-}
-  const handleMascotSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'mascot', face: 'front' }); setBoxDimensions({ w: 100, h: 100, d: 100 }); }; reader.readAsDataURL(file); } e.target.value = null; };
-  const handleProductFaceUpload = (e, face) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { setCropImageSrc(reader.result); setActiveCropContext({ type: 'product', face }); }; reader.readAsDataURL(file); } e.target.value = null; };
-  const handleEditExisting = (face, imgSource) => { setCropImageSrc(imgSource); setActiveCropContext({ type: 'product', face }); };
+      const file = e.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onload = () => {
+              setCropImageSrc(reader.result);
+              setActiveCropContext({ type: 'tier', index: index, face: 'front' });
+              setBoxDimensions({ w: 100, h: 100, d: 0 }); 
+          };
+          reader.readAsDataURL(file);
+      }
+      e.target.value = null;
+  }
 
-// --- NEW: INVENTORY BACKGROUND HANDLER ---
+  const handleMascotSelect = (e) => { 
+      const file = e.target.files[0]; 
+      if (file) { 
+          const reader = new FileReader(); 
+          reader.onload = () => { 
+              setCropImageSrc(reader.result); 
+              setActiveCropContext({ type: 'mascot', face: 'front' }); 
+              setBoxDimensions({ w: 100, h: 100, d: 100 }); 
+          }; 
+          reader.readAsDataURL(file); 
+      } 
+      e.target.value = null; 
+  };
+
+  const handleProductFaceUpload = (e, face) => { 
+      const file = e.target.files[0]; 
+      if (file) { 
+          const reader = new FileReader(); 
+          reader.onload = () => { 
+              setCropImageSrc(reader.result); 
+              setActiveCropContext({ type: 'product', face }); 
+          }; 
+          reader.readAsDataURL(file); 
+      } 
+      e.target.value = null; 
+  };
+
+  const handleEditExisting = (face, imgSource) => { 
+      setCropImageSrc(imgSource); 
+      setActiveCropContext({ type: 'product', face }); 
+  };
+
   const handleInventoryBgSelect = (e) => {
       const file = e.target.files[0];
       if (file) {
           const reader = new FileReader();
           reader.onload = () => {
               setCropImageSrc(reader.result);
-              // Use a new crop context type for the inventory background
               setActiveCropContext({ type: 'inventory_bg', face: 'front' });
-              setBoxDimensions({ w: 160, h: 90, d: 0 }); // 16:9 aspect ratio crop
+              setBoxDimensions({ w: 160, h: 90, d: 0 }); 
           };
           reader.readAsDataURL(file);
       }
       e.target.value = null;
   };
 
+  // --- SETTINGS ACTIONS ---
+  const handleSaveCompanyName = () => { 
+      if(user) { 
+          setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); 
+          logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); 
+      } 
+      triggerCapy("Company name updated!"); 
+  };
 
-  const handleSaveCompanyName = () => { if(user) { setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); } triggerCapy("Company name updated!"); };
+  // --- PRODUCT MANAGEMENT ---
+  const handleSaveProduct = async (e) => { 
+      e.preventDefault(); 
+      if (!user) return; 
+      try { 
+          const formData = new FormData(e.target); 
+          const data = Object.fromEntries(formData.entries());
+          const numFields = ['stock', 'minStock', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; 
+          numFields.forEach(field => data[field] = Number(data[field]) || 0); 
+          
+          data.images = { ...(editingProduct?.images || {}), ...tempImages }; 
+          data.dimensions = { ...boxDimensions }; 
+          data.useFrontForBack = useFrontForBack; 
+          data.updatedAt = serverTimestamp(); 
+          
+          if (editingProduct?.id) { 
+              await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); 
+              await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); 
+              triggerCapy("Product updated successfully!"); 
+          } else { 
+              data.createdAt = serverTimestamp(); 
+              await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); 
+              await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); 
+              triggerCapy("New product added!"); 
+          } 
+          setEditingProduct(null); 
+          setTempImages({}); 
+          setUseFrontForBack(false); 
+      } catch (err) { 
+          console.error(err); 
+          triggerCapy("Error saving product!"); 
+      } 
+  };
 
-  const handleSaveProduct = async (e) => { e.preventDefault(); if (!user) return; try { const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries());
+  const handleUpdateProduct = async (updatedProduct) => { 
+      setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); 
+      if (editingProduct && editingProduct.id === updatedProduct.id) { 
+          setEditingProduct(updatedProduct); 
+      } 
+      if(isAdmin && user && updatedProduct.id) { 
+          try { 
+              await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); 
+          } catch(e) {} 
+      } 
+  };
 
- // Added 'priceDistributor' to the list so it gets saved as a number
-        const numFields = ['stock', 'minStock', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; numFields.forEach(field => data[field] = Number(data[field]) || 0); data.images = { ...(editingProduct?.images || {}), ...tempImages }; data.dimensions = { ...boxDimensions }; data.useFrontForBack = useFrontForBack; data.updatedAt = serverTimestamp(); if (editingProduct?.id) { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); triggerCapy("Product updated successfully!"); } else { data.createdAt = serverTimestamp(); await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); triggerCapy("New product added!"); } setEditingProduct(null); setTempImages({}); setUseFrontForBack(false); } catch (err) { console.error(err); triggerCapy("Error saving product!"); } };
-  const handleUpdateProduct = async (updatedProduct) => { setInventory(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item)); if (editingProduct && editingProduct.id === updatedProduct.id) { setEditingProduct(updatedProduct); } if(isAdmin && user && updatedProduct.id) { try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); } catch(e) {} } };
-  const deleteProduct = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); triggerCapy("Item removed."); } catch (err) { triggerCapy("Delete failed"); } } };
+  const deleteProduct = async (id) => { 
+      if (window.confirm("Are you sure you want to delete this product?")) { 
+          try { 
+              await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); 
+              await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); 
+              triggerCapy("Item removed."); 
+          } catch (err) { 
+              triggerCapy("Delete failed"); 
+          } 
+      } 
+  };
+
+  // --- STOCK OPNAME ---
   const handleOpnameChange = (id, val) => { setOpnameData(prev => ({ ...prev, [id]: val })); };
-  const handleOpnameSubmit = async () => { if (!user) return; const updates = []; inventory.forEach(item => { const actual = opnameData[item.id]; if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); } }); if (updates.length === 0) { triggerCapy("No changes to save!"); return; } if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; try { await runTransaction(db, async (transaction) => { updates.forEach(update => { const ref = doc(db, `artifacts/${appId}/users/${user.uid}/products`, update.id); transaction.update(ref, { stock: update.new }); }); }); updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); setOpnameData({}); triggerCapy("Stock Opname saved successfully!"); } catch (err) { console.error(err); alert("Failed to update stock: " + err.message); } };
-  const addToCart = (product) => { setCart(prev => { const existing = prev.find(item => item.productId === product.id); if (existing) return prev.map(item => item.productId === product.id ? { ...item, qty: item.qty + 1 } : item); return [...prev, { productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: 'Retail', calculatedPrice: product.priceRetail, product }]; }); };
-  const updateCartItem = (productId, field, value) => { setCart(prev => prev.map(item => { if (item.productId === productId) { const newItem = { ...item, [field]: value }; const { unit, priceTier: tier, product: prod } = newItem; let base = 0; if (tier === 'Ecer') base = prod.priceEcer || 0; if (tier === 'Retail') base = prod.priceRetail || 0; if (tier === 'Grosir') base = prod.priceGrosir || 0; let mult = 1; if (unit === 'Slop') mult = prod.packsPerSlop || 10; if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); newItem.calculatedPrice = base * mult; return newItem; } return item; })); };
+  
+  const handleOpnameSubmit = async () => { 
+      if (!user) return; 
+      const updates = []; 
+      inventory.forEach(item => { 
+          const actual = opnameData[item.id]; 
+          if (actual !== undefined && actual !== item.stock && !isNaN(actual)) { 
+              updates.push({ id: item.id, name: item.name, old: item.stock, new: actual }); 
+          } 
+      }); 
+      if (updates.length === 0) { triggerCapy("No changes to save!"); return; } 
+      if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; 
+      try { 
+          await runTransaction(db, async (transaction) => { 
+              updates.forEach(update => { 
+                  const ref = doc(db, `artifacts/${appId}/users/${user.uid}/products`, update.id); 
+                  transaction.update(ref, { stock: update.new }); 
+              }); 
+          }); 
+          updates.forEach(u => { logAudit("STOCK_OPNAME", `Adjusted ${u.name}: ${u.old} -> ${u.new}`); }); 
+          setOpnameData({}); 
+          triggerCapy("Stock Opname saved successfully!"); 
+      } catch (err) { 
+          console.error(err); 
+          alert("Failed to update stock: " + err.message); 
+      } 
+  };
+
+  // --- CART & SALES LOGIC ---
+  const addToCart = (product) => { 
+      setCart(prev => { 
+          const existing = prev.find(item => item.productId === product.id); 
+          if (existing) return prev.map(item => item.productId === product.id ? { ...item, qty: item.qty + 1 } : item); 
+          return [...prev, { productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: 'Retail', calculatedPrice: product.priceRetail, product }]; 
+      }); 
+  };
+
+  const updateCartItem = (productId, field, value) => { 
+      setCart(prev => prev.map(item => { 
+          if (item.productId === productId) { 
+              const newItem = { ...item, [field]: value }; 
+              const { unit, priceTier: tier, product: prod } = newItem; 
+              let base = 0; 
+              if (tier === 'Ecer') base = prod.priceEcer || 0; 
+              if (tier === 'Retail') base = prod.priceRetail || 0; 
+              if (tier === 'Grosir') base = prod.priceGrosir || 0; 
+              if (tier === 'Distributor') base = prod.priceDistributor || 0;
+              
+              let mult = 1; 
+              if (unit === 'Slop') mult = prod.packsPerSlop || 10; 
+              if (unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); 
+              if (unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10); 
+              
+              newItem.calculatedPrice = base * mult; 
+              return newItem; 
+          } 
+          return item; 
+      })); 
+  };
+
   const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
 
-  // --- START: REPLACE THE OLD processTransaction FUNCTION WITH THIS ---
+  // --- CORE TRANSACTION ENGINE ---
   const processTransaction = async (e, manualData = null) => { 
-    if (e) e.preventDefault(); 
-    if (!user) return; 
-    
-    // 1. DETERMINE SOURCE: Is this a normal form submit OR a 3D Merchant sale?
-    const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName').trim(); 
-    const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
-    
-    // 2. DETERMINE CART: Use the manual cart (Merchant) or the global cart state (POS)
-    const activeCart = manualData ? manualData.cart : cart;
-    
-    // Calculate total revenue from the ACTIVE cart
-    const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
-    
-    if(!customerName) { alert("Customer Name is required!"); return; } 
+      if (e) e.preventDefault(); 
+      if (!user) return; 
+      
+      const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName').trim(); 
+      const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
+      const activeCart = manualData ? manualData.cart : cart;
+      const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
+      
+      if(!customerName) { alert("Customer Name is required!"); return; } 
 
-    try { 
-        await runTransaction(db, async (firestoreTrans) => { 
-            const updatesToPerform = [];
-            const transactionItems = []; 
-            let totalProfit = 0; 
+      try { 
+          await runTransaction(db, async (firestoreTrans) => { 
+              const updatesToPerform = [];
+              const transactionItems = []; 
+              let totalProfit = 0; 
 
-            for (const item of activeCart) { 
-                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); 
-                const prodDoc = await firestoreTrans.get(prodRef); 
-                
-                if(!prodDoc.exists()) throw `Product ${item.name} not found`; 
-                const prodData = prodDoc.data(); 
-                
-                // Recalculate Units
-                let mult = 1; 
-                if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; 
-                if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
-                if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
-                
-                const qtyToDeduct = item.qty * mult; 
-                if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
-                
-                // Profit Calc
-                const distributorPrice = prodData.priceDistributor || 0; 
-                const totalCost = distributorPrice * qtyToDeduct; 
-                const totalRevenueItem = item.calculatedPrice * item.qty; 
-                const itemProfit = totalRevenueItem - totalCost; 
-                
-                totalProfit += itemProfit;
-                updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
-                
-                // Snapshot data for history
-                transactionItems.push({ 
-                    ...item, 
-                    distributorPriceSnapshot: distributorPrice, 
-                    profitSnapshot: itemProfit 
-                });
-            } 
+              for (const item of activeCart) { 
+                  const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); 
+                  const prodDoc = await firestoreTrans.get(prodRef); 
+                  
+                  if(!prodDoc.exists()) throw `Product ${item.name} not found`; 
+                  const prodData = prodDoc.data(); 
+                  
+                  let mult = 1; 
+                  if (item.unit === 'Slop') mult = prodData.packsPerSlop || 10; 
+                  if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
+                  if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
+                  
+                  const qtyToDeduct = item.qty * mult; 
+                  if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
+                  
+                  const distributorPrice = prodData.priceDistributor || 0; 
+                  const totalCost = distributorPrice * qtyToDeduct; 
+                  const totalRevenueItem = item.calculatedPrice * item.qty; 
+                  const itemProfit = totalRevenueItem - totalCost; 
+                  
+                  totalProfit += itemProfit;
+                  updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                  
+                  transactionItems.push({ 
+                      ...item, 
+                      distributorPriceSnapshot: distributorPrice, 
+                      profitSnapshot: itemProfit 
+                  });
+              } 
 
-            // Execute Updates
-            for (const update of updatesToPerform) { firestoreTrans.update(update.ref, { stock: update.newStock }); }
-            
-            const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); 
-            firestoreTrans.set(transRef, { 
-                date: getCurrentDate(), 
-                customerName, 
-                paymentType, 
-                items: transactionItems, 
-                total: totalRevenue,
-                totalProfit: totalProfit, 
-                type: 'SALE', 
-                timestamp: serverTimestamp() 
-            }); 
-        }); 
+              for (const update of updatesToPerform) { firestoreTrans.update(update.ref, { stock: update.newStock }); }
+              
+              const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); 
+              firestoreTrans.set(transRef, { 
+                  date: getCurrentDate(), 
+                  customerName, 
+                  paymentType, 
+                  items: transactionItems, 
+                  total: totalRevenue,
+                  totalProfit: totalProfit, 
+                  type: 'SALE', 
+                  timestamp: serverTimestamp() 
+              }); 
+          }); 
 
-        await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
-        
-        // Only clear the global cart if we used it (don't clear it if we used manualData)
-        if (!manualData) setCart([]); 
-        
-        triggerCapy("Sale Recorded! Profit Calculated. 💰"); 
-    } catch(err) { 
-        console.error(err);
-        alert("Transaction Failed: " + err); 
-    } 
+          await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
+          if (!manualData) setCart([]); 
+          triggerCapy("Sale Recorded! Profit Calculated. 💰"); 
+      } catch(err) { 
+          console.error(err);
+          alert("Transaction Failed: " + err); 
+      } 
   };
 
 
-
-  // --- START: REPLACE THE OLD handleMerchantSale FUNCTION ---
   const handleMerchantSale = (custName, payMethod, cartItems) => {
-      // Direct call to the new processTransaction logic
-      // We pass null for 'e' (event) and an object for 'manualData'
+      // 1. Normalize the typed input
+      const inputTrimmed = custName.trim().toLowerCase();
+
+      // 2. SMART MATCH: Check if this name already exists in your official Customer Profiles
+      // This looks for an exact match OR if the typed name is part of an official name (e.g., "Aneka" matches "TOKO ANEKA (MTL)")
+      const existingProfile = customers.find(c => 
+          c.name.toLowerCase() === inputTrimmed || 
+          c.name.toLowerCase().includes(inputTrimmed)
+      );
+
+      // 3. Use the Official Name if found, otherwise Title Case the new name
+      const finalName = existingProfile 
+          ? existingProfile.name 
+          : custName.replace(/\b\w/g, l => l.toUpperCase());
+
       processTransaction(null, {
-          customerName: custName,
+          customerName: finalName,
           paymentType: payMethod,
           cart: cartItems
       });
   };
 
-
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
-
-  const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`), { date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() }); await logAudit("CONSIGNMENT_PAYMENT", `Received ${formatRupiah(amountPaid)} from ${customerName}`); triggerCapy("Payment recorded!"); } catch (err) { console.error(err); } };
-  const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, inventory.find(p=>p.id===item.productId)) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); await logAudit("RETURN", `Return from ${customerName}`); triggerCapy("Return Processed!"); } catch(err) { console.error(err); } };
-  const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales POS and select 'Titip' payment for ${name}`); setActiveTab('sales'); };
+  const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`), { date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() }); triggerCapy("Payment recorded!"); } catch (err) { console.error(err); } };
+  const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + (item.qty * 1) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); triggerCapy("Return Processed!"); } catch (err) { console.error(err); } };
+  const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
   
  // --- NEW: HANDLE BATCH SAMPLING (GLOBAL NOTE) ---
   const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
@@ -3354,24 +4123,30 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   };
 
   const handleBackupData = async () => {
-    if(!user) return;
+    if(!user || !isAdmin) return; 
+    
     const backupData = {
         meta: { date: new Date().toISOString(), user: user.email },
-        inventory,
-        transactions,
-        customers,
-        samplings,
-        appSettings,
-        auditLogs
+        inventory, transactions, customers, samplings, appSettings, auditLogs
     };
+    
     const jsonString = JSON.stringify(backupData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kpm_backup_${getCurrentDate()}.json`;
+    a.download = `USB_SAFE_BACKUP_${getCurrentDate()}.json`; 
     a.click();
-    triggerCapy("Data backup downloaded to your PC!");
+
+    // 1. Update the indicator (Turns status GREEN)
+    localStorage.setItem('last_usb_backup', new Date().getTime().toString());
+    
+    // 2. Show the Success Toast
+    setBackupToast(true);
+    setTimeout(() => setBackupToast(false), 4000); 
+    
+    await logAudit("USB_BACKUP", "Admin performed physical safe backup");
+    triggerCapy("Physical safety confirmed! 💾");
   };
 
   const handleRestoreData = async (e) => {
@@ -3481,275 +4256,322 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       } catch(err) { console.error(err); alert("Failed to save map home."); }
   };
 
-  const renderSettings = () => {
+
+
+
+
+
+
+
+
+// --- UPDATED: SINGLE BACKUP (Forces Specific Green Light) ---
+  const handleSingleBackup = async (type) => {
+      if (!user) return;
+      const ts = getCurrentTimestamp();
+      let data = {};
+      let filename = "";
+
+      if (type === "RECOVERY") {
+          data = { meta: { type: "RECOVERY", ts }, inventory, customers, appSettings };
+          filename = `FOLDER_RECOVERY--POINT_${ts}.json`;
+          setSessionStatus(prev => ({ ...prev, recovery: true })); // <--- Force Green
+      } else if (type === "USB") {
+          data = { meta: { type: "USB_SAFE", ts }, inventory, transactions, customers, samplings, appSettings };
+          filename = `FOLDER_USB--SAFE_OFFSITE_${ts}.json`;
+          setSessionStatus(prev => ({ ...prev, usb: true })); // <--- Force Green
+      } else if (type === "CLOUD") {
+          data = { meta: { type: "CLOUD_MIRROR", ts }, inventory, transactions, customers, samplings, appSettings, auditLogs };
+          filename = `FOLDER_CLOUD--MIRROR_SYNC_${ts}.json`;
+          setSessionStatus(prev => ({ ...prev, cloud: true })); // <--- Force Green
+      }
+
+      triggerDownload(filename, data);
+      await logAudit("BACKUP_SINGLE", `Manual download: ${type}`, true);
+      triggerCapy(`${type} Backup Saved! Status Secure.`);
+  };
+
+
+ const renderSettings = () => {
       if (!user) return null; 
+
+      // 1. LOCKSCREEN
+      if (!isAdmin) {
+          return (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
+                  <div className="relative mb-8">
+                      <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
+                      <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+                          <Lock size={40} className="animate-bounce-slow" />
+                      </div>
+                  </div>
+                  <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                  <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+              </div>
+          );
+      }
+
+      // --- LOGIC HUB: MERGING DATABASE + INSTANT SESSION STATUS ---
+      const resetThreshold = parseInt(localStorage.getItem('indicator_reset_time') || '0');
+      const sNow = new Date();
+      const sTodayStr = sNow.toLocaleDateString();
+
+      // 1. CHECK DATABASE (Slow/Permanent Record)
+      const confirmedMirror = auditLogs.find(log => 
+          (log.action === "DATABASE_MIRROR" || log.action === "MASTER_BACKUP") && 
+          log.timestamp && 
+          (log.timestamp.seconds * 1000 > resetThreshold)
+      );
+
+      const dbRecoveryCount = auditLogs.filter(log => {
+          if (!log.isSavePoint || !log.timestamp) return false;
+          const logTime = log.timestamp.seconds * 1000;
+          if (logTime < resetThreshold) return false;
+          return new Date(logTime).toLocaleDateString() === sTodayStr;
+      }).length;
+
+      const lastUsbTime = parseInt(localStorage.getItem('last_usb_backup') || '0');
+      const isUsbValidInDb = lastUsbTime > resetThreshold && (sNow.getTime() - lastUsbTime) < (7 * 24 * 60 * 60 * 1000);
+
+      // 2. THE FIX: COMBINE SESSION STATE (Instant) WITH DATABASE (Persistent)
+      const isRecoverySecure = sessionStatus.recovery || dbRecoveryCount > 0;
+      const isUsbSecure = sessionStatus.usb || isUsbValidInDb;
+      const isCloudSecure = sessionStatus.cloud || !!confirmedMirror;
+
+      // 3. RESET HANDLER
+      const handleResetIndicators = () => {
+          localStorage.setItem('indicator_reset_time', new Date().getTime().toString());
+          localStorage.removeItem('last_usb_backup'); 
+          setSessionStatus({ recovery: false, usb: false, cloud: false }); // <--- Forces Red
+          triggerCapy("Indicators Reset to REQUIRED state.");
+      };
+
       return (
-        <div className="animate-fade-in max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 dark:text-white">Settings</h2>
-
-
-            
-            {/* BACKUP & RESTORE SECTION */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><DatabaseBackupIcon /> Data Management</h3>
-                
-                {/* Personal Backup */}
-                <div className="flex gap-4 mb-6">
-                    <button onClick={handleBackupData} className="flex-1 bg-indigo-50 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-slate-600 text-indigo-700 dark:text-indigo-300 py-4 rounded-xl border border-indigo-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all">
-                        <Download size={24} />
-                        <span className="font-bold text-sm">Full Backup</span>
-                        <span className="text-[10px] opacity-70">Save Everything to PC</span>
+        <div className="animate-fade-in max-w-2xl mx-auto pb-20">
+            <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-white uppercase tracking-tighter">System Configuration</h2>
+                    <p className="text-[10px] text-emerald-500 font-mono font-bold animate-pulse">CLEARANCE: ADMIN VERIFIED</p>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={handleResetIndicators} className="bg-white/5 border border-slate-600 text-slate-400 px-3 py-1 rounded text-[10px] font-bold uppercase hover:bg-red-900/50 hover:text-red-400 hover:border-red-500 transition-all">
+                        Reset Indicators
                     </button>
-                    <label className="flex-1 bg-emerald-50 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-slate-600 text-emerald-700 dark:text-emerald-300 py-4 rounded-xl border border-emerald-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer">
-                        <UploadCloud size={24} />
-                        <span className="font-bold text-sm">Restore Data</span>
-                        <span className="text-[10px] opacity-70">Restore Everything from PC</span>
-                        <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
-                    </label>
-                </div>
-
-                {/* Shared Config (New Feature) */}
-                <div className="pt-6 border-t dark:border-slate-700">
-                    <h4 className="font-bold text-xs text-slate-500 mb-3 uppercase tracking-wider">Team Sharing (Manual)</h4>
-                    <div className="flex gap-4">
-                        <button onClick={handleExportSharedConfig} className="flex-1 bg-orange-50 dark:bg-slate-700 hover:bg-orange-100 dark:hover:bg-slate-600 text-orange-700 dark:text-orange-300 py-4 rounded-xl border border-orange-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all">
-                            <Globe size={24} />
-                            <span className="font-bold text-sm">Share Config</span>
-                            <span className="text-[10px] opacity-70">Export Catalog & Branding Only</span>
-                        </button>
-                        
-                        <label className="flex-1 bg-blue-50 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-slate-600 text-blue-700 dark:text-blue-300 py-4 rounded-xl border border-blue-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer">
-                            <Replace size={24} />
-                            <span className="font-bold text-sm">Import Config</span>
-                            <span className="text-[10px] opacity-70">Apply Shared Catalog & Branding</span>
-                            <input type="file" accept=".json" onChange={handleImportSharedConfig} className="hidden" />
-                        </label>
-                    </div>
+                    <button onClick={handleAdminLogout} className="bg-red-900/30 border border-red-800 text-red-500 px-4 py-1 rounded text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition-all">
+                        Lock Admin
+                    </button>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
-                <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
-                <input type="email" placeholder="Sign in via Google..." className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={currentUserEmail || ""} disabled/>
-                
-                <div className={`mt-4 p-4 rounded-xl border flex justify-between items-center ${isAdmin ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'}`}>
-                    <div>
-                        <p className={`font-bold text-sm ${isAdmin ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                            {isAdmin ? "Administrator Access" : "Standard User Access"}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                            {isAdmin ? "You have full control." : "Limited access."}
-                        </p>
-                    </div>
-                    {isAdmin ? (
-                        <div className="flex gap-2">
-                             <button onClick={handleChangePin} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors">
-                                Change PIN
-                             </button>
-                             <button onClick={handleAdminLogout} className="px-4 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
-                                Lock Admin
-                             </button>
-                        </div>
-                    ) : (
-                         <button onClick={() => setShowAdminLogin(true)} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors flex items-center gap-2">
-                            <Key size={12}/> Unlock
-                         </button>
-                    )}
-                         
-                </div>
-            </div>
-            
-{/* TIER MANAGER (ADMIN ONLY) - FIXED EDITING */}
-            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
+            {/* MASTER SECURITY CARD */}
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-orange-500/20 mb-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck size={120} className="text-orange-500" /></div>
+
+                <div className="relative z-10">
+                    <h3 className="font-bold text-xl mb-1 dark:text-white flex items-center gap-3"><ShieldCheck className="text-emerald-500" size={24}/> Master Security Protocol</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-8">Triple-Layer Data Redundancy</p>
                     
-                    <div className="flex gap-2">
-                        <button onClick={handleExportTiers} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors">
-                            <Download size={14}/> Export
-                        </button>
-                        <label className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer">
-                            <Upload size={14}/> Import
-                            <input type="file" accept=".json" onChange={handleImportTiers} className="hidden" />
-                        </label>
+                    <button onClick={handleMasterProtocol} className="w-full group relative bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-6 rounded-2xl font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 mb-6">
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-sm">EXECUTE MASTER BACKUP</span>
+                            <span className="text-[9px] opacity-70 font-mono tracking-normal">Generate 3 Recovery Points Now</span>
+                        </div>
+                    </button>
+
+                    {/* BIG LIVE STATUS INDICATORS */}
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                        {/* 1. RECOVERY STATUS */}
+                        <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isRecoverySecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
+                            {isRecoverySecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                            <div className="text-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest mb-1">RECOVERY</p>
+                                <p className="text-xs font-bold">{isRecoverySecure ? "SECURE" : "REQUIRED"}</p>
+                            </div>
+                        </div>
+
+                        {/* 2. USB STATUS */}
+                        <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isUsbSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-orange-500/20 border-orange-500 text-orange-500 animate-pulse'}`}>
+                            {isUsbSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                            <div className="text-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest mb-1">USB SAFE</p>
+                                <p className="text-xs font-bold">{isUsbSecure ? "SECURE" : "UPDATE"}</p>
+                            </div>
+                        </div>
+
+                        {/* 3. CLOUD STATUS */}
+                        <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isCloudSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
+                            {isCloudSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                            <div className="text-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest mb-1">CLOUD SYNC</p>
+                                <p className="text-xs font-bold">{isCloudSecure ? "SECURE" : "REQUIRED"}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* INDIVIDUAL DOWNLOADS */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 1</button>
+                        <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 2</button>
+                        <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 3</button>
                     </div>
                 </div>
-                
-                <div className="space-y-3">
-                    {tierSettings.map((tier, idx) => (
-                        <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
-                            {/* Color Picker */}
-                            <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"/>
-                            
-                            {/* Label Input - FIXED: Updates State on Change, Saves on Blur */}
-                            <input 
-                                value={tier.label} 
-                                onChange={(e) => { 
-                                    const newTiers = [...tierSettings]; 
-                                    newTiers[idx].label = e.target.value; 
-                                    setTierSettings(newTiers); // Instant UI Update
-                                }} 
-                                onBlur={() => handleSaveTiers(tierSettings)} // Save to DB when done typing
-                                className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" 
-                                placeholder="Name"
-                            />
-                            
-                            {/* Icon Type Toggle */}
-                            <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white">
-                                <option value="emoji">Emoji</option>
-                                <option value="image">Custom Logo</option>
-                            </select>
+            </div>
+  
+      
+  
+      
+  
 
-                            {/* DYNAMIC INPUT AREA */}
-                            <div className="flex-1">
-                                {tier.iconType === 'image' ? (
-                                    <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 transition-colors text-xs font-bold text-slate-600 dark:text-slate-300">
-                                        <Upload size={14}/> {tier.value && tier.value.startsWith('data:') ? "Change Logo" : "Upload PNG"}
-                                        <input type="file" accept="image/png, image/jpeg" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" />
-                                    </label>
-                                ) : (
-                                    <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji (e.g. 👑)"/>
-                                )}
+            {/* 2. TEAM SHARING (GRANULAR CONFIG) */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all">
+                <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4">Export specific datasets for your team</p>
+                
+                <div className="space-y-4">
+                    {[
+                        { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
+                        { label: 'Customer Directory', type: 'customers', icon: <User size={16}/> },
+                        { label: 'Full Configuration', type: 'both', icon: <Settings size={16}/> }
+                    ].map((item) => (
+                        <div key={item.type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700">
+                            <div className="flex items-center gap-3">
+                                <div className="text-orange-500">{item.icon}</div>
+                                <span className="text-sm font-bold dark:text-white">{item.label}</span>
                             </div>
-                            
-                            {/* Preview */}
-                            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 relative" style={{ borderColor: tier.color }}>
-                                {tier.iconType === 'image' ? (
-                                    tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" alt="icon"/> : <ImageIcon size={14} className="opacity-30"/>
-                                ) : (
-                                    <span className="text-lg">{tier.value}</span>
-                                )}
+                            <div className="flex gap-2">
+                                <button onClick={() => handleExportGranular(item.type)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors uppercase">Export</button>
+                                <label className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 cursor-pointer transition-colors uppercase">
+                                    Import
+                                    <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
+                                </label>
                             </div>
                         </div>
                     ))}
-                    <p className="text-[10px] text-slate-400 mt-2">*Changes affect Map Pins and Dropdowns immediately.</p>
                 </div>
             </div>
 
-            {/* Mascot Settings */}
-            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
-                {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
-                <div className="flex justify-between items-center mb-4">
-
-{/* --- NEW: MASCOT SIZE SLIDER --- */}
-                <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
-                    <div className="flex justify-between mb-2">
-                        <label className="text-xs font-bold text-slate-500">MASCOT SIZE</label>
-                        <span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span>
+            {/* 3. USER PROFILE & SECURITY */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
+                <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
+                <input type="email" className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white mb-4" value={currentUserEmail || ""} disabled/>
+                <div className="p-4 rounded-xl border flex justify-between items-center bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
+                    <div>
+                        <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                            Administrator Access Verified
+                        </p>
                     </div>
-                    <input 
-                        type="range" min="0.5" max="2.0" step="0.1" 
-                        value={appSettings.mascotScale || 1} 
-                        onChange={(e) => {
-                            const scale = parseFloat(e.target.value);
-                            setAppSettings(prev => ({ ...prev, mascotScale: scale }));
-                            setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true });
-                        }}
-                        className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
-                    />
+                    <div className="flex gap-2">
+                         <button onClick={handleChangePin} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 rounded-lg text-xs font-bold">Change PIN</button>
+                         <button onClick={handleAdminLogout} className="px-4 py-2 bg-white dark:bg-slate-900 border border-emerald-200 rounded-lg text-xs font-bold text-red-500">Lock Admin</button>
+                    </div>
                 </div>
+            </div>
 
-                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><MessageSquare size={20}/> Mascot Dialogues</h3>
+            {/* 4. TIER & MAP ICON MANAGER */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
+                    <div className="flex gap-2">
+                        <button onClick={handleExportTiers} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold"><Download size={14}/></button>
+                        <label className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer"><Upload size={14}/><input type="file" accept=".json" onChange={handleImportTiers} className="hidden" /></label>
+                    </div>
                 </div>
-                
+                <div className="space-y-3">
+                    {tierSettings.map((tier, idx) => (
+                        <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
+                            <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"/>
+                            <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; setTierSettings(newTiers); }} onBlur={() => handleSaveTiers(tierSettings)} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                            <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
+                            <div className="flex-1">
+                                {tier.iconType === 'image' ? (
+                                    <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change" : "Upload"}<input type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label>
+                                ) : (
+                                    <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                )}
+                            </div>
+                            <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800" style={{ borderColor: tier.color }}>
+                                {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* 5. MASCOT SETTINGS (SIZE + DIALOGUE) */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
+                <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white mb-4"><MessageSquare size={20}/> Mascot Settings</h3>
+                <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
+                    <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-500 uppercase">Mascot Size</label><span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span></div>
+                    <input type="range" min="0.5" max="2.0" step="0.1" value={appSettings.mascotScale || 1} onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }} className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"/>
+                </div>
                 <div className="mb-4">
                     <label className="text-xs font-bold text-slate-500 mb-1 block">Add New Dialogue Line</label>
                     <div className="flex gap-2">
                         <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Type a message..." value={newMascotMessage} onChange={(e) => setNewMascotMessage(e.target.value)}/>
-                        <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold flex items-center gap-2"><Plus size={16} /> Add</button>
+                        <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold">Add</button>
                     </div>
                 </div>
-
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-    {activeMessages.map((msg, idx) => (
-        <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
-            {editingMsgIndex === idx ? (
-
-
-                // EDIT MODE: Show Input + Save + Cancel
-                <div className="flex gap-2 w-full animate-fade-in">
-                    <input 
-                        autoFocus
-                        className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                        value={editMsgText}
-                        onChange={(e) => setEditMsgText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}
-                    />
-                    <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600" title="Save"><Save size={16}/></button>
-                    <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-500" title="Cancel"><X size={16}/></button>
+                    {activeMessages.map((msg, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                            {editingMsgIndex === idx ? (
+                                <div className="flex gap-2 w-full animate-fade-in">
+                                    <input autoFocus className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" value={editMsgText} onChange={(e) => setEditMsgText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
+                                    <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600"><Save size={16}/></button>
+                                    <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-500"><X size={16}/></button>
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
+                                    <div className="flex gap-2 shrink-0">
+                                        <button onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} className="text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
+                                        <button onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ))}
                 </div>
-            ) : (
-                // NORMAL MODE: Show Text + Edit + Delete
-                <>
-                    <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
-                    <div className="flex gap-2 shrink-0">
-                        <button 
-                            onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} 
-                            className="text-slate-400 hover:text-blue-500"
-                            title="Edit Message"
-                        >
-                            <Edit size={14}/>
-                        </button>
-                        <button 
-                            onClick={() => handleDeleteMascotMessage(msg)} 
-                            className="text-slate-400 hover:text-red-500"
-                            title="Delete Message"
-                        >
-                            <Trash2 size={14}/>
-                        </button>
+            </div>
+
+            {/* 6. COMPANY IDENTITY */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
+                <h3 className="font-bold text-lg mb-4 dark:text-white">Company Identity</h3>
+                <div className="flex gap-2">
+                    <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName || ""} onChange={handleEditCompNameChange}/>
+                    <button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold">Save Name</button>
+                </div>
+            </div>
+
+            {/* 7. PROFILE PICTURE */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
+                <h3 className="font-bold text-lg mb-4 dark:text-white"><ImageIcon size={20}/> Mascot Profile</h3>
+                <div className="flex items-start gap-6">
+                    <div className="flex flex-col items-center">
+                        <img src={appSettings?.mascotImage || "/mr capy.png"} className="w-24 h-24 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                        <span className="text-xs text-slate-400 mt-2">Current</span>
                     </div>
-                </>
-            )}
-        </div>
-    ))}
-</div>
-</div>
-
-            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
-                 {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
-                <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white">Company Identity</h3></div><div className="flex gap-2"><input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName || ""} onChange={handleEditCompNameChange}/><button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold flex items-center gap-2"><Save size={16} /> Save Name</button></div></div>
-            
-            <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300 ${!isAdmin ? 'opacity-50 grayscale pointer-events-none select-none relative overflow-hidden' : ''}`}>
-                {!isAdmin && <div className="absolute inset-0 z-10 bg-slate-50/10 dark:bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center"><div className="bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2"><Lock size={12}/> Locked</div></div>}
-                <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><ImageIcon size={20}/> Profile Picture</h3></div><div className="flex items-start gap-6"><div className="flex flex-col items-center"><img src={appSettings?.mascotImage || "/capybara.jpg"} className="w-32 h-32 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/><span className="text-xs text-slate-400 mt-2">Current</span></div><div className="flex-1"><label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium"><Upload size={16} /> Select & Crop<input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" /></label></div></div>
-
-
-{/* DANGER ZONE - DISCO MODE (ADMIN ONLY) */}
-            {isAdmin && (
-                <div className="mt-12 pt-8 border-t-2 border-red-100 dark:border-red-900/30">
-                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <ShieldAlert size={16}/> Danger Zone
-                    </h4>
-                    
-                    <button 
-                        onClick={triggerDiscoParty} 
-                        disabled={isDiscoMode}
-                        className={`w-full py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center gap-3 transition-all transform active:scale-95 border-b-4 border-red-800 ${isDiscoMode ? 'bg-slate-500 border-slate-700 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:shadow-red-500/40'}`}
-                    >
-                        {isDiscoMode ? (
-                            <>
-                                <Music size={24} className="animate-spin"/> 
-                                SYSTEM OVERLOAD: PARTYING...
-                            </>
-                        ) : (
-                            <>
-                                <ShieldAlert size={24} className="animate-pulse"/> 
-                                DO NOT PRESS: CAPY DISCO PROTOCOL
-                            </>
-                        )}
-                    </button>
-                    
-                    <p className="text-[10px] text-red-400 text-center mt-3 font-mono opacity-70">
-                        Warning: Initiating this protocol will result in extreme funkiness levels.
-                    </p>
+                    <div className="flex-1">
+                        <label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium">
+                            <Upload size={16} /> Select & Crop
+                            <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                        </label>
+                    </div>
                 </div>
-            )}
-		</div>
+            </div>
+
+            {/* 8. DANGER ZONE */}
+            <div className="mt-12 pt-8 border-t-2 border-red-100 dark:border-red-900/30">
+                <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16}/> Danger Zone</h4>
+                <button onClick={triggerDiscoParty} disabled={isDiscoMode} className={`w-full py-4 rounded-xl font-bold text-white shadow-xl transition-all ${isDiscoMode ? 'bg-slate-500' : 'bg-red-600 hover:bg-red-700'}`}>
+                    {isDiscoMode ? <><Music size={24} className="animate-spin"/> SYSTEM OVERLOAD...</> : <><ShieldAlert size={24} className="animate-pulse"/> DO NOT PRESS: CAPY DISCO PROTOCOL</>}
+                </button>
+                <p className="text-[10px] text-red-400 text-center mt-3 font-mono opacity-70">Warning: Extreme funkiness levels incoming.</p>
+            </div>
         </div>
       );
-  }
-
+  };
 
   // --- MAIN APP RENDER (BIOHAZARD THEME) ---
   return (
@@ -3759,73 +4581,92 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         user={user} 
         appSettings={appSettings}
         isAdmin={isAdmin}
+        onLogin={handleLogin} // <--- THIS IS THE MISSING LINK!
     >
       {/* 1. GLOBAL MODALS */}
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
       {returningTransaction && <ReturnModal transaction={returningTransaction} onClose={() => setReturningTransaction(null)} onConfirm={executeReturn} />}
       
-      {/* Admin Login Modal */}
+      {/* --- PINPOINT: Improved Admin Modal (Fixed Fonts & Layout) --- */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-black border-2 border-white/30 p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(255,0,0,0.2)]">
-            <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/20 pb-4">
-                <span className="text-red-500 mr-2">///</span> Security Check
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 font-mono">
+          <div className={`bg-black border-2 ${isResetMode ? 'border-orange-500' : 'border-red-600/50'} p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
+            
+            {/* Terminal Decoration */}
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent animate-pulse`}></div>
+            
+            <h2 className="text-xl font-black text-white mb-6 uppercase tracking-[0.2em]">
+                {isSetupMode ? "Initialize Security" : isResetMode ? "Identity Recovery" : "Security Check"}
             </h2>
-            
-            <input 
-                type="password" 
-                placeholder="ENTER PIN" 
-                className="w-full bg-white/5 border border-white/30 p-4 text-center text-white text-2xl mb-6 outline-none font-mono tracking-[0.5em] focus:border-red-500 focus:bg-white/10 transition-all placeholder:text-white/20 placeholder:tracking-normal placeholder:text-sm" 
-                value={inputPin} 
-                onChange={(e) => setInputPin(e.target.value)} 
-                onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} // <--- PRESS ENTER TO SUBMIT
-                autoFocus 
-            />
-            
-            <div className="flex gap-4">
-                <button onClick={() => setShowAdminLogin(false)} className="flex-1 py-3 border border-white/20 text-gray-400 hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-colors">
-                    Abort
-                </button>
-                <button onClick={handlePinLogin} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white uppercase text-xs font-bold tracking-widest shadow-lg transition-colors">
-                    Access
-                </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* 2. LOGIN SCREEN (If not logged in) */}
-      {!user && (
-        <div className="absolute inset-0 z-50 bg-black flex items-center justify-center font-mono">
-            {/* ... background divs ... */}
-            <div className="relative z-10 bg-black/80 border-2 border-white/20 p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(255,255,255,0.1)]">
-                <h1 className="text-4xl font-bold text-white mb-2 tracking-widest">{appSettings?.companyName || "KPM SYSTEM"}</h1>
-                <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-600 to-transparent mb-8"></div>
-                <p className="text-red-500 font-bold mb-8 text-sm tracking-[0.2em] animate-pulse">/// AUTHENTICATION REQUIRED ///</p>
-                
-                {/* --- NEW: ERROR MESSAGE DISPLAY --- */}
-                {loginError && (
-                    <div className="bg-red-900/50 border border-red-500 text-white text-xs p-3 mb-4 rounded text-left">
-                        {loginError}
+            {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
+            {isSetupMode ? (
+                <div className="space-y-4">
+                    <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest">Create Administrator Credentials</p>
+                    <input type="password" placeholder="CREATE PIN (4+ DIGITS)" id="setupPin" className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-xl outline-none focus:border-emerald-500 font-mono placeholder:text-white/20" maxLength={6}/>
+                    <input type="text" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono" />
+                    <button onClick={() => handleSetupSecurity(document.getElementById('setupPin').value, document.getElementById('setupWord').value)} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono">Save Credentials</button>
+                </div>
+            ) : isResetMode ? (
+                /* CASE 2: RECOVERY MODE */
+                <div className="space-y-4">
+                    <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
+                    <input type="text" id="resetWord" placeholder="WATERMELON..." className="w-full bg-white/5 border border-orange-500/50 p-4 text-center text-white text-xl outline-none uppercase tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20" autoFocus />
+                    <div className="flex gap-3">
+                        <button onClick={() => setIsResetMode(false)} className="flex-1 py-3 border border-white/20 text-gray-400 text-xs font-bold uppercase hover:bg-white/10 font-mono tracking-widest">Cancel</button>
+                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} className="flex-1 py-3 bg-orange-600 text-white text-xs font-bold uppercase hover:bg-orange-500 font-mono tracking-widest">Verify</button>
                     </div>
-                )}
-
-                <button 
-                    onClick={handleLogin} // <--- USE THE NEW HANDLE LOGIN
-                    className="bg-white text-black px-6 py-4 font-bold uppercase hover:bg-gray-300 transition-colors w-full tracking-widest text-sm border-l-4 border-red-600"
-                >
-                    Initialize Session (Popup)
-                </button>
-            </div>
+                </div>
+            ) : (
+                /* CASE 3: STANDARD LOGIN (Fixed Buttons) */
+                <div className="space-y-4">
+                    <input 
+                        type="password" 
+                        placeholder="ENTER PIN" 
+                        className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-3xl mb-4 outline-none font-mono tracking-[0.5em] focus:border-red-500 placeholder:text-white/10 placeholder:tracking-normal placeholder:text-sm transition-colors" 
+                        value={inputPin} 
+                        onChange={(e) => setInputPin(e.target.value)} 
+                        onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
+                        autoFocus 
+                    />
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setShowAdminLogin(false)} 
+                            className="flex-1 py-4 border border-white/20 text-gray-500 hover:text-white hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-all font-mono"
+                        >
+                            Abort
+                        </button>
+                        <button 
+                            onClick={handlePinLogin} 
+                            className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-mono"
+                        >
+                            Access
+                        </button>
+                    </div>
+                    
+                    <div className="pt-4">
+                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-600 hover:text-slate-400 uppercase font-bold transition-colors tracking-widest font-mono">
+                            Lost Key? Use Recovery Protocol
+                        </button>
+                    </div>
+                </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
-          {activeTab === 'dashboard' && (
-              <div className="space-y-8">
+         {activeTab === 'dashboard' && (
+              <div className="space-y-8 relative">
+                {/* --- PINPOINT: Pass sessionStatus here --- */}
+                <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
+                  
+                
+                  
+                  {/* Summary Cards Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
                           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
@@ -3840,24 +4681,93 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                           <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "****"}</p>
                       </div>
                   </div>
-                  
+
+                  {/* --- MODIFIED PHYSICAL SECURITY BLOCK: ADMIN ONLY + HIDE IF SECURE --- */}
+                  {isAdmin && !isUsbSecure && (
+                      <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-2xl flex justify-between items-center animate-pulse">
+                          <div className="flex items-center gap-3">
+                              <ShieldAlert className="text-orange-500" size={20}/>
+                              <p className="text-xs text-orange-200 font-bold uppercase tracking-wider">
+                                  Physical Security Protocol Required?
+                              </p>
+                          </div>
+                          <button 
+                              onClick={handleBackupData} 
+                              className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded-xl font-bold text-xs shadow-lg transition-all active:scale-95"
+                          >
+                              Run USB Safe Backup
+                          </button>
+                      </div>
+                  )}
+
+
+                  {/* --- PINPOINT: Dashboard Alert Widget (Line 2330) --- */}
+                  {/* CRITICAL STOCK ALERT WIDGET */}
+                  {isAdmin && lowStockItems.length > 0 && (
+                      <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-2xl shadow-lg relative overflow-hidden mb-6">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse"></div>
+                          <div className="flex items-center gap-3 mb-4">
+                              <AlertCircle className="text-red-500 animate-pulse" size={24}/>
+                              <h3 className="text-red-400 font-bold uppercase tracking-widest text-sm">Critical Stock Alerts</h3>
+                              <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStockItems.length} Items</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {lowStockItems.slice(0, 6).map(item => (
+                                  <div key={item.id} className="bg-black/50 border border-red-500/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-red-900/30 transition-colors" onClick={() => { setActiveTab('inventory'); }}>
+                                      <div className="min-w-0 flex-1">
+                                          <p className="text-white text-xs font-bold truncate">{item.name}</p>
+                                          <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wider">Threshold: {item.minStock || 5}</p>
+                                      </div>
+                                      <div className="text-right ml-2 shrink-0 bg-red-950/50 p-2 rounded-lg border border-red-900/50">
+                                          <p className="text-red-500 font-black text-lg leading-none">{item.stock}</p>
+                                          <p className="text-[8px] text-red-400 uppercase tracking-widest mt-1">Left</p>
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+                          {lowStockItems.length > 6 && (
+                              <button onClick={() => setActiveTab('inventory')} className="w-full mt-3 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-400 text-xs font-bold rounded-lg border border-red-900/50 transition-colors uppercase tracking-widest">
+                                  View All {lowStockItems.length} Depleted Items
+                              </button>
+                          )}
+                      </div>
+                  )}
+
+
+
+
+                  {/* Performance Graph Area */}
                   <div className="bg-black/40 border border-white/10 p-6 h-96">
                       <h3 className="text-white mb-4 uppercase text-xs font-bold tracking-widest border-b border-white/10 pb-2">Performance Graph</h3>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <BarChart data={chartData.data}>
                                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff"/>
                                 <XAxis dataKey="date" stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
                                 <YAxis stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
                                 <Tooltip contentStyle={{backgroundColor: '#000', border: '1px solid #fff', color: '#fff'}} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
                                 <Legend />
-                                {chartData.keys.map((key, index) => (
+                                {chartData.keys.map((key) => (
                                     <Bar key={key} dataKey={key} stackId="a" fill={getRandomColor(key)} />
                                 ))}
                             </BarChart>
                       </ResponsiveContainer>
                   </div>
+
+                  {/* RE TERMINAL TOAST (Kept here to ensure it works) */}
+                  {backupToast && (
+                      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1000] bg-black/90 border-2 border-emerald-500 text-emerald-500 px-10 py-5 rounded-none shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono flex flex-col items-center gap-2 animate-terminal-flicker">
+                          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
+                          <div className="flex items-center gap-3">
+                              <ShieldCheck size={28} className="animate-pulse" />
+                              <div className="text-lg font-black uppercase tracking-[0.3em]">Backup Initialized</div>
+                          </div>
+                          <div className="h-[1px] w-full bg-emerald-500/30"></div>
+                          <div className="text-[10px] uppercase tracking-widest opacity-70">Physical Data Integrity Confirmed</div>
+                      </div>
+                  )}
               </div>
           )}
+
 
           {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
           {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
@@ -3914,9 +4824,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-orange-500 outline-none"/></div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-gray-500 block mb-1">STOCK</label><input name="stock" type="number" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-emerald-500/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
-                                        <div><label className="text-gray-500 block mb-1">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
+
+                                  {/* --- PINPOINT: Edit Product Modal --- */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-emerald-500/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" defaultValue={editingProduct.minStock || 5} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
                                     </div>
                                     
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
@@ -3987,16 +4900,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
           
           {activeTab === 'sales' && (
-              <div className="h-full w-full"> 
-                  <MerchantSalesView 
-                      inventory={filteredInventory} // Ensure we use the filtered/full list
-                      user={user}
-                      appSettings={appSettings}
-                      onProcessSale={handleMerchantSale}
-                      onInspect={(item) => setExaminingProduct(item)} 
-                  />
-              </div>
-          )}
+      <div className="h-full w-full"> 
+          <MerchantSalesView 
+              inventory={filteredInventory} 
+              user={user} 
+              appSettings={appSettings}
+              customers={customers} // <--- ADD THIS: Passes the list for the dropdown
+              onProcessSale={handleMerchantSale}
+              onInspect={(item) => setExaminingProduct(item)} 
+          />
+      </div>
+  )}
 
 
           {activeTab === 'customers' && (
@@ -4076,25 +4990,56 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
               </>
           )}
           
-          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} />}
+          {/* --- PINPOINT: Main App Render Block (Line 2618) --- */}
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} appSettings={appSettings} />}
           
-          {activeTab === 'audit' && (
-              <div className="bg-black/50 border border-white/20 p-6 h-full overflow-y-auto font-mono text-xs">
-                  <table className="w-full text-left">
-                      <thead className="text-gray-500 border-b border-white/10 uppercase"><tr><th className="p-2">Action</th><th className="p-2">Details</th><th className="p-2 text-right">Time</th></tr></thead>
-                      <tbody>
-                          {auditLogs.map(log => (
-                              <tr key={log.id} className="hover:bg-white/5 border-b border-white/5 text-gray-300">
-                                  <td className="p-2 text-orange-500">{log.action}</td>
-                                  <td className="p-2">{log.details}</td>
-                                  <td className="p-2 text-right text-gray-500">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'Just now'}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-          
+         {activeTab === 'audit' && (
+    <div className="space-y-6 max-w-5xl mx-auto p-4">
+        <div className="flex justify-between items-end border-b border-white/10 pb-4">
+            <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <ShieldCheck className="text-orange-500"/> Audit Vault
+                </h2>
+                <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">Immutable Operation Archive</p>
+            </div>
+        </div>
+        
+        {/* --- FULLY OPTIMIZED EXPLORER --- */}
+        <AuditVaultExplorer 
+    db={db} 
+    storage={storage} // <--- ADD THIS LINE HERE
+    appId={appId} 
+    user={user} 
+    isAdmin={isAdmin} 
+    logAudit={logAudit} 
+    setBackupToast={setBackupToast} 
+/>
+        
+        <div className="mt-10">
+            <h3 className="text-xs font-bold text-slate-500 uppercase mb-4 opacity-50">Recent System Activity</h3>
+            <div className="bg-black/50 border border-white/10 rounded-xl overflow-hidden font-mono text-[10px]">
+                <table className="w-full text-left">
+                    <thead className="bg-white/5 text-slate-500">
+                        <tr><th className="p-3">Action</th><th className="p-3">Details</th><th className="p-3 text-right">Time</th></tr>
+                    </thead>
+                    <tbody>
+                        {auditLogs.slice(0, 8).map(log => (
+                            <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
+                                <td className="p-3 text-orange-500 font-bold">{log.action}</td>
+                                <td className="p-3 text-slate-300">{log.details}</td>
+                                <td className="p-3 text-right text-slate-500">
+                                    {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : 'Just now'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+)}
+
+
           {activeTab === 'settings' && renderSettings()}
         </>
       )}

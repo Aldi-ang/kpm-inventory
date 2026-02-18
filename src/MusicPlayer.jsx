@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
     Music, Play, Pause, SkipForward, SkipBack, 
-    Volume2, Minus, AlertCircle, Move, Repeat, 
-    Shuffle, List, X 
+    Volume2, Minus, Move, Repeat, Shuffle, List, X 
 } from 'lucide-react';
 
 // --- DYNAMIC MUSIC LOADING ---
@@ -22,10 +21,14 @@ const MusicPlayer = () => {
     // --- STATE ---
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(0);
-    const [isMinimized, setIsMinimized] = useState(false); // Default open
+    const [isMinimized, setIsMinimized] = useState(false);
     const [volume, setVolume] = useState(0.5);
     const [showPlaylist, setShowPlaylist] = useState(false);
     
+    // --- EXTRA BUTTON STATES ---
+    const [isLooping, setIsLooping] = useState(false);
+    const [isShuffling, setIsShuffling] = useState(false);
+
     // --- REFS ---
     const audioRef = useRef(null);
     const playerRef = useRef(null);
@@ -44,13 +47,32 @@ const MusicPlayer = () => {
     }, [isPlaying, volume, currentTrack]);
 
     const handleSongEnd = () => {
-        setCurrentTrack((prev) => (prev + 1) % TRACKS.length);
+        if (isLooping) {
+            // REPEAT ONE
+            audioRef.current.currentTime = 0;
+            audioRef.current.play();
+        } else if (isShuffling) {
+            // SHUFFLE MODE
+            let nextIndex;
+            do {
+                nextIndex = Math.floor(Math.random() * TRACKS.length);
+            } while (nextIndex === currentTrack && TRACKS.length > 1);
+            setCurrentTrack(nextIndex);
+        } else {
+            // NORMAL NEXT
+            setCurrentTrack((prev) => (prev + 1) % TRACKS.length);
+        }
     };
 
     const togglePlay = () => setIsPlaying(!isPlaying);
     
     const playNext = () => {
-        setCurrentTrack((prev) => (prev + 1) % TRACKS.length);
+        if (isShuffling) {
+             let nextIndex = Math.floor(Math.random() * TRACKS.length);
+             setCurrentTrack(nextIndex);
+        } else {
+             setCurrentTrack((prev) => (prev + 1) % TRACKS.length);
+        }
         setIsPlaying(true);
     };
 
@@ -66,7 +88,6 @@ const MusicPlayer = () => {
 
     // --- DRAG LOGIC ---
     const handleMouseDown = (e, isIconClick) => {
-        // Prevent drag if clicking buttons
         if (e.target.closest('button') || e.target.closest('input')) return;
         
         dragRef.current = {
@@ -99,20 +120,18 @@ const MusicPlayer = () => {
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    // --- RENDER ---
     return (
         <div 
             ref={playerRef}
-            style={{ top: '100px', left: '20px' }} 
-            // FIX: Added 'z-[9999]' so it ALWAYS floats above the sidebar
-            className={`fixed z-[9999] transition-all duration-0 ease-linear font-mono ${isMinimized ? 'w-12 h-12 rounded-full cursor-grab active:cursor-grabbing' : 'w-80 h-96 rounded-xl'} bg-slate-900 border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.3)] overflow-hidden`}
+            style={{ top: '100px', right: '20px', left: 'auto' }} // Default to Right side
+            className={`fixed z-[9999] transition-all duration-0 ease-linear font-mono ${isMinimized ? 'w-12 h-12 rounded-full cursor-grab active:cursor-grabbing' : 'w-80 h-[420px] rounded-xl'} bg-slate-900 border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.3)] overflow-hidden`}
         >
             <audio ref={audioRef} src={TRACKS[currentTrack].url} onEnded={handleSongEnd} />
 
             {isMinimized ? (
                 <div 
                     onMouseDown={(e) => handleMouseDown(e, true)}
-                    onClick={() => toggleView(false)} // Click to open
+                    onClick={() => toggleView(false)}
                     className="w-full h-full flex items-center justify-center text-orange-500 hover:bg-orange-500/20 animate-pulse hover:animate-none"
                     title="Drag to move, Click to open"
                 >
@@ -127,7 +146,7 @@ const MusicPlayer = () => {
                     >
                         <div className="flex items-center gap-2 text-orange-500 pointer-events-none">
                             <Move size={14} />
-                            <span className="text-[10px] font-bold tracking-widest uppercase">Cassette OS v2</span>
+                            <span className="text-[10px] font-bold tracking-widest uppercase">Cassette OS v2.1</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setShowPlaylist(!showPlaylist)} className={`text-orange-500 hover:text-white ${showPlaylist ? 'bg-orange-500/20 rounded' : ''}`}><List size={14} /></button>
@@ -139,7 +158,7 @@ const MusicPlayer = () => {
                     {showPlaylist && (
                         <div className="absolute inset-0 top-9 bottom-12 bg-slate-900/95 z-20 overflow-y-auto p-2 border-b border-orange-500/30 animate-fade-in custom-scrollbar">
                             <div className="flex justify-between items-center mb-2 px-2">
-                                <span className="text-[10px] text-orange-400 font-bold uppercase">Tracks Detected: {TRACKS.length}</span>
+                                <span className="text-[10px] text-orange-400 font-bold uppercase">Tracks: {TRACKS.length}</span>
                                 <button onClick={() => setShowPlaylist(false)}><X size={12} className="text-slate-400 hover:text-white"/></button>
                             </div>
                             <div className="space-y-1">
@@ -159,30 +178,49 @@ const MusicPlayer = () => {
                     {/* --- MAIN PLAYER CONTROLS --- */}
                     <div className="flex-1 bg-black/50 p-6 flex flex-col items-center justify-center relative">
                         {/* Spinning Disc Animation */}
-                        <div className={`w-32 h-32 rounded-full border-4 border-slate-700 flex items-center justify-center shadow-xl mb-6 relative overflow-hidden ${isPlaying ? 'animate-spin-slow' : ''}`}>
+                        <div className={`w-32 h-32 rounded-full border-4 border-slate-700 flex items-center justify-center shadow-xl mb-4 relative overflow-hidden ${isPlaying ? 'animate-spin-slow' : ''}`}>
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-50"></div>
                             <div className="w-10 h-10 bg-orange-600 rounded-full border-2 border-white/20 shadow-inner z-10"></div>
                             <div className="absolute inset-0 border-t-2 border-b-2 border-transparent bg-gradient-to-tr from-transparent via-white/10 to-transparent rotate-45"></div>
                         </div>
 
                         {/* Track Info */}
-                        <div className="w-full text-center mb-6 overflow-hidden">
+                        <div className="w-full text-center mb-4 overflow-hidden h-10">
                             <div className="whitespace-nowrap animate-marquee inline-block">
                                 <h3 className="text-orange-500 font-bold text-sm uppercase tracking-wider">{TRACKS[currentTrack].title}</h3>
                             </div>
-                            <p className="text-[10px] text-slate-500 font-mono mt-1">STEREO • 44.1kHz</p>
+                            <p className="text-[10px] text-slate-500 font-mono">STEREO • 44.1kHz</p>
                         </div>
 
-                        {/* Controls */}
+                        {/* UTILITY BUTTONS (Shuffle / Repeat) */}
+                        <div className="flex items-center gap-6 mb-4 w-full justify-center">
+                            <button 
+                                onClick={() => setIsShuffling(!isShuffling)} 
+                                className={`p-2 rounded-full transition-all ${isShuffling ? 'text-orange-400 bg-orange-900/30 ring-1 ring-orange-500' : 'text-slate-600 hover:text-white'}`}
+                                title="Shuffle"
+                            >
+                                <Shuffle size={14} />
+                            </button>
+                            
+                            <button 
+                                onClick={() => setIsLooping(!isLooping)} 
+                                className={`p-2 rounded-full transition-all ${isLooping ? 'text-orange-400 bg-orange-900/30 ring-1 ring-orange-500' : 'text-slate-600 hover:text-white'}`}
+                                title="Repeat One"
+                            >
+                                <Repeat size={14} />
+                            </button>
+                        </div>
+
+                        {/* PLAYBACK CONTROLS */}
                         <div className="flex items-center gap-6 mb-6">
-                            <button onClick={playPrev} className="text-slate-400 hover:text-white transition-colors"><SkipBack size={20} /></button>
+                            <button onClick={playPrev} className="text-slate-400 hover:text-white transition-colors"><SkipBack size={24} /></button>
                             <button 
                                 onClick={togglePlay} 
-                                className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-[0_0_15px_rgba(234,88,12,0.5)] hover:scale-105 transition-all"
+                                className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-[0_0_15px_rgba(234,88,12,0.5)] hover:scale-105 transition-all"
                             >
-                                {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1"/>}
+                                {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1"/>}
                             </button>
-                            <button onClick={playNext} className="text-slate-400 hover:text-white transition-colors"><SkipForward size={20} /></button>
+                            <button onClick={playNext} className="text-slate-400 hover:text-white transition-colors"><SkipForward size={24} /></button>
                         </div>
 
                         {/* Volume */}
