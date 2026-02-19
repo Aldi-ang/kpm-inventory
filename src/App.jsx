@@ -1130,7 +1130,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  </div>
                  
                  {/* SUMMARY CARDS */}
-                 <div className="grid grid-cols-3 gap-6 mb-8">
+                 {/* FIX: Stack vertically on mobile (grid-cols-1), side-by-side on desktop (md:grid-cols-3) */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                      <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p><p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
                      <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p><p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
                      <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Net Profit (Cuan)</p><p className="text-2xl font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
