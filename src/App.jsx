@@ -1157,7 +1157,26 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  {/* PRODUCT BREAKDOWN */}
                  <div className="mb-8">
                      <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="text-orange-500"/> Product Performance</h3>
-                     <table className="w-full text-sm text-left border-collapse"><thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300"><tr><th className="py-2">Product Name</th><th className="py-2 text-right">Qty (Bks)</th><th className="py-2 text-right">Revenue</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">{Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (<tr key={name}><td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td><td className="py-3 text-right text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td><td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td></tr>))}</tbody></table>
+                     <table className="w-full text-sm text-left border-collapse">
+                        <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
+                            <tr>
+                                <th className="py-2">Product Name</th>
+                                {/* FIX: Added pr-8 to give Qty breathing room from Revenue */}
+                                <th className="py-2 text-right pr-8">Qty (Bks)</th>
+                                <th className="py-2 text-right">Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
+                            {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
+                                <tr key={name}>
+                                    <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
+                                    {/* FIX: Matching pr-8 on the data cell */}
+                                    <td className="py-3 text-right pr-8 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
+                                    <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                     </table>
                  </div>
                  
                  {/* LOG */}
