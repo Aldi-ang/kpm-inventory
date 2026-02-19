@@ -2619,10 +2619,10 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
-        <div className="flex flex-col md:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
+        <div className="flex flex-col lg:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
             
             {/* SUPPLY CASE: 45% Height on Mobile for better visibility */}
-            <div className="w-full md:w-96 h-[45%] md:h-full flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+            <div className="w-full lg:w-96 h-[45%] lg:h-full flex flex-col border-b lg:border-b-0 lg:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
                 <div className="p-4 md:p-6 border-b border-white/20">
                     <h3 className="text-white font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
                     <div className="relative mb-3">
@@ -2688,7 +2688,7 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
             </div>
 
             {/* INSPECTOR AREA: 55% Height on Mobile */}
-            <div className="flex-1 h-[55%] md:h-full relative bg-black">
+            <div className="flex-1 h-[55%] lg:h-full relative bg-black">
                 <div className="absolute inset-0 z-0">
                     <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
@@ -4843,7 +4843,8 @@ const handleGitHubMirror = async () => {
                 
                   
                   {/* Summary Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* FIX: Changed md: to lg: so they stack vertically on landscape phones */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
                           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
                           <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
@@ -4887,8 +4888,11 @@ const handleGitHubMirror = async () => {
                               <h3 className="text-red-400 font-bold uppercase tracking-widest text-sm">Critical Stock Alerts</h3>
                               <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStockItems.length} Items</span>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {lowStockItems.slice(0, 6).map(item => (
+
+                          {/* FIX: Use lg: for 4 columns, default to 1 for landscape phones to prevent crushing */}
+                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+
+                              {lowStockItems.slice(0, 6).map(item => ( 
                                   <div key={item.id} className="bg-black/50 border border-red-500/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-red-900/30 transition-colors" onClick={() => { setActiveTab('inventory'); }}>
                                       <div className="min-w-0 flex-1">
                                           <p className="text-white text-xs font-bold truncate">{item.name}</p>
