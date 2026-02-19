@@ -3081,7 +3081,49 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     triggerCapy("Mirror Synchronized! Upload this to your private Google Drive.");
   };
 
-  // --- 2. GRANULAR TEAM SHARING: EXPORT (DEEP FETCH ADDED) ---
+  // --- NEW: DATA WIPE FUNCTION ---
+  const handleWipeData = async (type) => {
+    if (!user) return;
+    const confirmMsg = `WARNING: Are you sure you want to PERMANENTLY delete ${type === 'both' ? 'Products AND Customers' : type === 'products' ? 'Products & Prices' : 'Customer Profiles'}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    if (!window.confirm(`FINAL WARNING: This cannot be undone. Proceed with deletion?`)) return;
+
+    try {
+        triggerCapy(`Initiating data wipe for ${type}... 🗑️`);
+        const batch = writeBatch(db);
+        let deleteCount = 0;
+        
+        if (type === 'products' || type === 'both') {
+            inventory.forEach(item => {
+                batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id));
+                deleteCount++;
+            });
+        }
+
+        if (type === 'customers' || type === 'both') {
+            for (const cust of customers) {
+                // Delete competitor benchmarks first
+                const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`));
+                benchSnap.forEach(b => {
+                    batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`, b.id));
+                });
+                // Delete customer
+                batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, cust.id));
+                deleteCount++;
+            }
+        }
+
+        await batch.commit();
+        await logAudit("DATA_WIPE", `Wiped ${type} data.`);
+        triggerCapy(`Data wipe complete. Clean slate! ✨`);
+    } catch (err) {
+        console.error("Wipe failed:", err);
+        alert("Data Wipe Failed: " + err.message);
+    }
+  };
+
+  // --- 2. GRANULAR TEAM SHARING: EXPORT (WITH DEEP FETCH) ---
   const handleExportGranular = async (type) => {
     if(!user) return;
     let exportData = {
@@ -3097,19 +3139,18 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         exportData.inventory = inventory; 
         exportData.appSettings = appSettings; 
     }
-
+    
     if (type === 'customers' || type === 'both') {
         triggerCapy("Deep-fetching customer data... ⏳");
         const deepCustomers = [];
         
-        // Loop through all customers and dig out their competitor intel
         for (const cust of customers) {
             const custCopy = { ...cust };
             try {
+                // Dig into the sub-collection to grab the benchmarks
                 const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`));
                 custCopy.benchmarks = benchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             } catch (e) {
-                console.error("Failed to fetch benchmarks for", cust.name);
                 custCopy.benchmarks = [];
             }
             deepCustomers.push(custCopy);
@@ -3124,9 +3165,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     a.download = `KPM_SHARE_${type.toUpperCase()}_${getCurrentDate()}.json`;
     a.click();
     triggerCapy(`Differentiated ${type} data signed and ready!`);
-};
+  };
 
-  // --- 3. GRANULAR TEAM SHARING: IMPORT (DEEP RESTORE ADDED) ---
+  // --- 3. GRANULAR TEAM SHARING: IMPORT (WITH DEEP RESTORE) ---
   const handleImportGranular = (e, targetType) => {
     const file = e.target.files[0];
     if (!file || !user) return;
@@ -3142,21 +3183,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 data.inventory.forEach(item => {
                     batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
                 });
-                if(data.appSettings) {
-                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
-                }
             }
-            
             if ((targetType === 'customers' || targetType === 'both') && data.customers) {
                 data.customers.forEach(c => {
                     const cData = { ...c };
                     const benchmarks = cData.benchmarks || [];
                     delete cData.benchmarks; // Keep main profile clean
 
-                    // 1. Save main customer profile
+                    // Save customer
                     batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), cData);
-
-                    // 2. Restore competitor intel into the sub-collection
+                    
+                    // Save deep competitor data
                     benchmarks.forEach(b => {
                         batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${c.id}/benchmarks`, b.id), b);
                     });
@@ -3170,6 +3207,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     reader.readAsText(file);
     e.target.value = null; 
   };
+
+
+
 const handleGitHubMirror = async () => {
     if(!user) return;
     
@@ -4539,32 +4579,66 @@ const handleGitHubMirror = async () => {
       
   
 
-            {/* 2. TEAM SHARING (GRANULAR CONFIG) */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all">
-                <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4">Export specific datasets for your team</p>
+            {/* 2. TEAM SHARING & DATA RESET */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 
-                <div className="space-y-4">
-                    {[
-                        { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
-                        { label: 'Customer Directory', type: 'customers', icon: <User size={16}/> },
-                        { label: 'Full Configuration', type: 'both', icon: <Settings size={16}/> }
-                    ].map((item) => (
-                        <div key={item.type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700">
-                            <div className="flex items-center gap-3">
-                                <div className="text-orange-500">{item.icon}</div>
-                                <span className="text-sm font-bold dark:text-white">{item.label}</span>
+                {/* TEAM SHARING */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+                    <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4">Export specific datasets for your team</p>
+                    
+                    <div className="space-y-4">
+                        {[
+                            { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
+                            { label: 'Customer Directory', type: 'customers', icon: <User size={16}/> },
+                            { label: 'Full Configuration', type: 'both', icon: <Settings size={16}/> }
+                        ].map((item) => (
+                            <div key={item.type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-orange-500">{item.icon}</div>
+                                    <span className="text-sm font-bold dark:text-white">{item.label}</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleExportGranular(item.type)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors uppercase">Export</button>
+                                    <label className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 cursor-pointer transition-colors uppercase">
+                                        Import
+                                        <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
+                                    </label>
+                                </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => handleExportGranular(item.type)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors uppercase">Export</button>
-                                <label className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 cursor-pointer transition-colors uppercase">
-                                    Import
-                                    <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
-                                </label>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
+
+                {/* DATA WIPE (DANGER ZONE) */}
+                <div className="bg-red-50 dark:bg-red-950/20 p-6 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/50 transition-all">
+                    <h3 className="font-bold text-lg mb-1 text-red-600 dark:text-red-500 flex items-center gap-2"><Trash2 size={20}/> Data Wipe</h3>
+                    <p className="text-[10px] text-red-500/70 uppercase tracking-widest mb-4">Permanently delete active datasets</p>
+                    
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
+                            <div className="flex items-center gap-3 text-red-500">
+                                <Package size={16}/> <span className="text-sm font-bold">Wipe Products & Prices</span>
+                            </div>
+                            <button onClick={() => handleWipeData('products')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
+                            <div className="flex items-center gap-3 text-red-500">
+                                <User size={16}/> <span className="text-sm font-bold">Wipe Customers</span>
+                            </div>
+                            <button onClick={() => handleWipeData('customers')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 bg-red-600 rounded-xl border border-red-700 shadow-md">
+                            <div className="flex items-center gap-3 text-white">
+                                <ShieldAlert size={16}/> <span className="text-sm font-bold">Full Reset (Both)</span>
+                            </div>
+                            <button onClick={() => handleWipeData('both')} className="px-4 py-1.5 bg-black/20 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-black/40 transition-colors uppercase border border-white/20">Wipe All</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             {/* 3. USER PROFILE & SECURITY */}
