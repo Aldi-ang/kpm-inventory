@@ -1142,8 +1142,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2">
                         <Wallet size={20} className="text-emerald-500"/> Money Breakdown (Reconciliation)
                     </h3>
-                    {/* FIX: Changed grid-cols-2 to grid-cols-1 so they stack vertically on phones */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* FIX: Forced lg:grid-cols-4 to protect phone landscape mode */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                         {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
                             <div key={method} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
                                 <p className="text-xs uppercase font-bold text-slate-400 mb-1">{method}</p>
