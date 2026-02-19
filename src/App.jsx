@@ -54,6 +54,7 @@ import {
   collection, 
   doc, 
   getDoc, 
+  getDocs, 
   addDoc, 
   setDoc, 
   updateDoc, 
@@ -3080,24 +3081,40 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     triggerCapy("Mirror Synchronized! Upload this to your private Google Drive.");
   };
 
-  // --- 2. GRANULAR TEAM SHARING: EXPORT ---
-  const handleExportGranular = (type) => {
+  // --- 2. GRANULAR TEAM SHARING: EXPORT (DEEP FETCH ADDED) ---
+  const handleExportGranular = async (type) => {
     if(!user) return;
     let exportData = {
         meta: { 
             type: `kpm_share_${type}`, 
-            signature: `KPM-AUTO-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
+            signature: `KPM-AUTO-${Math.random().toString(36).substr(2, 9)}`, 
             date: new Date().toISOString(), 
             owner: user.email 
         }
     };
 
     if (type === 'products' || type === 'both') {
-        exportData.inventory = inventory; //
-        exportData.appSettings = appSettings; // Shares tiers and branding
+        exportData.inventory = inventory; 
+        exportData.appSettings = appSettings; 
     }
+
     if (type === 'customers' || type === 'both') {
-        exportData.customers = customers; //
+        triggerCapy("Deep-fetching customer data... ⏳");
+        const deepCustomers = [];
+        
+        // Loop through all customers and dig out their competitor intel
+        for (const cust of customers) {
+            const custCopy = { ...cust };
+            try {
+                const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`));
+                custCopy.benchmarks = benchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) {
+                console.error("Failed to fetch benchmarks for", cust.name);
+                custCopy.benchmarks = [];
+            }
+            deepCustomers.push(custCopy);
+        }
+        exportData.customers = deepCustomers; 
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -3109,7 +3126,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     triggerCapy(`Differentiated ${type} data signed and ready!`);
 };
 
-  // --- 3. GRANULAR TEAM SHARING: IMPORT ---
+  // --- 3. GRANULAR TEAM SHARING: IMPORT (DEEP RESTORE ADDED) ---
   const handleImportGranular = (e, targetType) => {
     const file = e.target.files[0];
     if (!file || !user) return;
@@ -3125,10 +3142,24 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 data.inventory.forEach(item => {
                     batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
                 });
+                if(data.appSettings) {
+                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
+                }
             }
+            
             if ((targetType === 'customers' || targetType === 'both') && data.customers) {
                 data.customers.forEach(c => {
-                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), c);
+                    const cData = { ...c };
+                    const benchmarks = cData.benchmarks || [];
+                    delete cData.benchmarks; // Keep main profile clean
+
+                    // 1. Save main customer profile
+                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), cData);
+
+                    // 2. Restore competitor intel into the sub-collection
+                    benchmarks.forEach(b => {
+                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${c.id}/benchmarks`, b.id), b);
+                    });
                 });
             }
             
