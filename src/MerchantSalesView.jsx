@@ -212,13 +212,15 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         <div className="flex h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
-            <div className="md:hidden absolute top-0 inset-x-0 h-12 flex border-b border-[#5c4b3a] bg-[#0f0e0d] z-50">
+            {/* FIX: Changed md:hidden to lg:hidden so tabs stay visible in landscape */}
+            <div className="lg:hidden absolute top-0 inset-x-0 h-12 flex border-b border-[#5c4b3a] bg-[#0f0e0d] z-50">
                 <button onClick={() => setMobileTab('products')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Wares</button>
                 <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Merchant ({cart.length})</button>
             </div>
 
-            <div className={`w-full md:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 md:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden md:flex'}`}>
-                <div className="h-48 md:flex-1 relative overflow-hidden bg-black shrink-0">
+            {/* FIX: Changed md: to lg: so left panel doesn't force side-by-side on short screens */}
+            <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+                <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
                         <div className="w-40 h-40 md:w-80 md:h-80 relative">
@@ -241,7 +243,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             </div>
 
-            <div className={`flex-1 flex-col bg-[#161412] pt-12 md:pt-0 ${mobileTab === 'products' ? 'flex h-full' : 'hidden md:flex'}`}>
+            x{/* FIX: Changed md: to lg: for the right panel */}
+            <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="flex gap-1 p-2 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-[#8b7256] text-black' : 'bg-[#26211c] text-[#6b5845]'}`}>{cat}</button> ))}
                 </div>
@@ -268,7 +271,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     ))}
                 </div>
             </div>
-            <div className="hidden md:flex">{renderManifestUI(false)}</div>
+            <div className="hidden lg:flex">{renderManifestUI(false)}</div>
             
             {receiptData && (
                 <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
