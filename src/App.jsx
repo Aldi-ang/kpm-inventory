@@ -409,29 +409,18 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
     const NORMAL_IMAGE_URL = "/mr capy.png"; 
     const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
     const DISCO_MUSIC_URL = "/disco_music.mp3";
-    // ------------------------------------ // <--- ADDED user
 
-// Inside CapybaraMascot component
-useEffect(() => {
-    const lastBackup = localStorage.getItem('last_usb_backup');
-    const now = new Date().getTime();
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    useEffect(() => {
+        const lastBackup = localStorage.getItem('last_usb_backup');
+        const now = new Date().getTime();
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
 
-    // If it's been more than 7 days, force a reminder peek
-    if (!lastBackup || (now - lastBackup) > sevenDays) {
-        setInternalMsg("⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!");
-        setIsPeeking(true);
-    }
-}, []);
+        if (!lastBackup || (now - lastBackup) > sevenDays) {
+            setInternalMsg("⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!");
+            setIsPeeking(true);
+        }
+    }, []);
 
-// Update this when you click the Physical Safe button
-const handlePhysicalBackup = () => {
-    handleBackupData(); // Your existing backup function
-    localStorage.setItem('last_usb_backup', new Date().getTime());
-    triggerCapy("Physical safety confirmed! See you next week. 💾");
-};
-
-    // FALLBACK MESSAGES
     const LOGGED_IN_MESSAGES = [
         "Welcome back, Boss!",
         "Stock looks good today.",
@@ -453,19 +442,12 @@ const handlePhysicalBackup = () => {
         "Who goes there?"
     ];
 
-    // Select messages based on User status
     const DEFAULT_MESSAGES = user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES;
-
-
-    // Combine passed messages with defaults if empty
     const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
 
-    // STATE
     const [isPeeking, setIsPeeking] = useState(false);
     const [isHiding, setIsHiding] = useState(false); 
     const [internalMsg, setInternalMsg] = useState(""); 
-    
-    // SEQUENCE TRACKER (Starts at 0)
     const msgIndexRef = useRef(0);
 
     // 1. HANDLE MUSIC
@@ -488,24 +470,19 @@ const handlePhysicalBackup = () => {
         let hideTimer;
 
         const scheduleNextPeek = () => {
-            const nextPeekTime = Math.random() * 30000 + 10000; // 10-40s random interval
+            // FIX: Increased delay! Now appears randomly between 1.5 and 3.5 minutes
+            const nextPeekTime = Math.random() * 120000 + 90000; 
             
             peekTimer = setTimeout(() => {
-                // GET NEXT MESSAGE IN ORDER
                 const currentIndex = msgIndexRef.current;
                 const nextText = dialogueList[currentIndex];
                 
-                // Set text
                 setInternalMsg(nextText);
-                
-                // Advance index for NEXT time (Loop back to 0 if at end)
                 msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
 
-                // Show him
                 setIsPeeking(true);
                 setIsHiding(false);
 
-                // Hide after 6 seconds
                 hideTimer = setTimeout(() => {
                     handleHide();
                 }, 6000); 
@@ -525,7 +502,7 @@ const handlePhysicalBackup = () => {
 
         scheduleNextPeek();
         return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); };
-    }, [isDiscoMode, dialogueList]); // Re-run if list changes
+    }, [isDiscoMode, dialogueList]); 
 
     // 3. SMART CLICK LOGIC
     const onMascotClick = () => {
@@ -564,8 +541,9 @@ const handlePhysicalBackup = () => {
     // --- RENDER: NORMAL MODE ---
     const activeMessage = message || internalMsg; 
     const showMascot = isPeeking || message; 
-    const slideClass = isHiding ? 'translate-x-[120%]' : 'translate-x-0'; 
-    const initialClass = 'translate-x-[120%]';
+    // FIX: Changed from 120% to 200% to ensure the wide text box is completely yanked off-screen
+    const slideClass = isHiding ? 'translate-x-[200%]' : 'translate-x-0'; 
+    const initialClass = 'translate-x-[200%]';
 
     return (
         <div 
@@ -573,18 +551,12 @@ const handlePhysicalBackup = () => {
             onClick={onMascotClick}
             style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
         >
-            {/* --- APPLY SCALE TO THIS INNER DIV --- */}
             <div 
                 className="relative w-32 h-32 md:w-48 md:h-48 transition-transform duration-300 origin-bottom-right"
                 style={{ transform: `scale(${scale || 1})` }}
             > 
-                
-                {/* Reduced Size */}
-                
-                {/* HIGH CONTRAST SPEECH BUBBLE */}
                 {activeMessage && (
                     <div className="absolute bottom-[85%] right-[20%] z-20 animate-pop-in pointer-events-none">
-                        {/* Force white bg and black text with !important via style prop to override theme */}
                         <div 
                             className="relative border-4 border-green-600 p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(0,100,0,0.5)]"
                             style={{ backgroundColor: '#ffffff', color: '#000000' }} 
@@ -592,7 +564,6 @@ const handlePhysicalBackup = () => {
                             <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>
                                 {activeMessage}
                             </p>
-                            {/* Speech arrow */}
                             <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-green-600 rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
                         </div>
                     </div>
@@ -601,7 +572,7 @@ const handlePhysicalBackup = () => {
                 <img 
                     src={NORMAL_IMAGE_URL} 
                     alt="Mascot" 
-                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" // Added glow
+                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right"
                     onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}
                 />
             </div>
