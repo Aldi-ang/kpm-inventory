@@ -209,7 +209,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     );
 
     return (
-        <div className="flex h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
+        <div className="flex h-[850px] lg:h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
+            {/* FIX: Forced an 850px height on mobile so the terminal expands fully. You can now use your thumb to vertically scroll the entire page. */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
             {/* FIX: Changed md:hidden to lg:hidden so tabs stay visible in landscape */}
@@ -220,29 +221,29 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
             {/* FIX: Changed md: to lg: so left panel doesn't force side-by-side on short screens */}
             <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                {/* FIX: Reduced h-48 to h-24 on mobile so the image doesn't eat all the vertical space */}
-                <div className="h-24 lg:flex-1 relative overflow-hidden bg-black shrink-0">
+                {/* FIX: Restored the beautiful h-48 Merchant height now that the page is scrollable! */}
+                <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
-                        {/* FIX: Shrunk the merchant character size to fit the new h-24 box */}
-                        <div className="w-24 h-24 md:w-80 md:h-80 relative">
+                        {/* FIX: Restored the 40x40 character size */}
+                        <div className="w-40 h-40 md:w-80 md:h-80 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
                     </div>
                     <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
                     <div className={`absolute inset-y-0 right-0 w-1/2 bg-[#1a1815] border-l-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ${doorsOpen ? 'translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
-                    <div className="absolute bottom-4 inset-x-4 z-30">
-                        <div className="bg-black/80 border-t border-b border-[#8b7256] p-2 text-center uppercase tracking-widest italic animate-pulse"> "{merchantMsg}" </div>
+                    <div className="absolute bottom-2 inset-x-4 z-30">
+                        <div className="bg-black/80 border-t border-b border-[#8b7256] p-2 text-center uppercase tracking-widest text-[10px] md:text-sm italic animate-pulse"> "{merchantMsg}" </div>
                     </div>
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
-                {/* FIX: Removed fixed h-32 and h-1/3 heights, using p-3 and compact spacing to save vertical space for the cart */}
-                <div className="p-3 bg-[#26211c] border-t-2 border-[#5c4b3a] flex flex-col shrink-0 z-20">
-                    <div className="flex justify-between items-end mb-2 border-b border-[#5c4b3a] pb-1 font-mono">
+                {/* FIX: Slightly increased padding to make Checkout button look premium again */}
+                <div className="p-4 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20">
+                    <div className="flex justify-between items-end mb-3 border-b border-[#5c4b3a] pb-2 font-mono">
                         <span className="text-[10px] font-bold text-[#8b7256] uppercase">Total Value (Rp)</span>
-                        <span className="text-xl md:text-3xl font-bold text-[#f5e6c8] leading-none"> {new Intl.NumberFormat('id-ID').format(cartTotal)} </span>
+                        <span className="text-2xl md:text-4xl font-bold text-[#f5e6c8] leading-none"> {new Intl.NumberFormat('id-ID').format(cartTotal)} </span>
                     </div>
-                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-2 border-2 text-sm md:text-xl font-bold uppercase tracking-widest transition-all active:translate-y-1 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#5c4b3a] to-[#3e3226] border-[#8b7256] text-[#f5e6c8]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50'}`}> {customerName.trim() ? "DEAL" : "SIGN MANIFEST >"} </button>
+                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-3 border-2 text-sm md:text-xl font-bold uppercase tracking-widest transition-all active:translate-y-1 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#5c4b3a] to-[#3e3226] border-[#8b7256] text-[#f5e6c8]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50'}`}> {customerName.trim() ? "DEAL" : "SIGN MANIFEST >"} </button>
                 </div>
             </div>
 
