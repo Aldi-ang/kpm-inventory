@@ -417,10 +417,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
                 
                 {/* --- FIX: MOBILE MENU TOGGLE BUTTON --- */}
-                {/* This button only appears on mobile (md:hidden) */}
+                {/* This button only appears on mobile (changed md to lg) */}
                 <button 
                     onClick={() => setShowControls(!showControls)}
-                    className="md:hidden pointer-events-auto bg-slate-900/90 text-white p-2.5 rounded-xl border border-slate-600 shadow-xl mb-2 hover:bg-slate-800 transition-colors backdrop-blur-md"
+                    className="lg:hidden pointer-events-auto bg-slate-900/90 text-white p-2.5 rounded-xl border border-slate-600 shadow-xl mb-2 hover:bg-slate-800 transition-colors backdrop-blur-md"
                 >
                     {showControls ? <X size={20}/> : <Menu size={20}/>}
                 </button>
@@ -430,7 +430,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <div className={`
                     flex flex-col gap-2 items-end transition-all duration-300 origin-top-right
                     ${showControls ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none h-0'} 
-                    md:opacity-100 md:scale-100 md:pointer-events-auto md:h-auto
+                    lg:opacity-100 lg:scale-100 lg:pointer-events-auto lg:h-auto
                 `}>
                     <div className="flex gap-2 pointer-events-auto">
                         <div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
@@ -439,10 +439,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         </div>
                         {selectedRegion !== "All" && locationTree[selectedRegion] && (<div className="bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 animate-fade-in"><span className="text-slate-400 text-xs ml-2">City:</span><select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 dark:text-white outline-none p-2 cursor-pointer min-w-[100px]"><option value="All">All Cities</option>{locationTree[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}</select></div>)}
                     </div>
-                    
-                    {/* --- FIX: TIER FILTER (Stacked Vertical on Mobile) --- */}
-                    {/* Changed 'flex' to 'flex flex-col md:flex-row' */}
-                    <div className="flex flex-col md:flex-row gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
+
+
+                   {/* --- FIX: TIER FILTER (Stacked Vertical on Mobile) --- */}
+                    {/* Changed 'flex' to 'flex flex-col lg:flex-row' */}
+                    <div className="flex flex-col lg:flex-row gap-1 bg-slate-900/90 p-1.5 rounded-xl backdrop-blur-md border border-slate-700 pointer-events-auto shadow-xl">
                         <button onClick={toggleAllTiers} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>All</button>
                         {activeTiers.map(tier => (
                             <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white border border-slate-500 shadow-md transform scale-105' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
@@ -451,6 +452,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             </button>
                         ))}
                     </div>
+
+
 
                     {/* GAME MODE TOGGLE */}
                     <button 
