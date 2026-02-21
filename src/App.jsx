@@ -2298,16 +2298,16 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             {/* Added inset-inline-start-4 for better phone compatibility */}
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden fixed top-6 left-6 z-[100] p-4 bg-orange-600/90 backdrop-blur-md text-white rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                className="lg:hidden fixed top-6 left-6 z-[100] p-4 bg-orange-600/90 backdrop-blur-md text-white rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
             >
                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
 
             {/* LEFT COLUMN: NAVIGATION */}
             <div className={`
-                fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-24 md:pt-8 pl-6 pr-4 transition-transform duration-300
+                fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-24 lg:pt-8 pl-6 pr-4 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-                md:relative md:translate-x-0
+                lg:relative lg:translate-x-0
             `}>
                 
                 {/* BRANDING */}
@@ -2375,8 +2375,8 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (With safety padding for mobile menu) */}
-                <div className="pt-24 md:pt-6 px-4 md:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
-                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden md:block">
+                <div className="pt-24 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
+                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
 
@@ -2404,8 +2404,8 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 </div>
 
                 {/* --- 2. HIDE FOOTER ON MOBILE --- */}
-                {/* Added 'hidden md:flex' to ensure it stays invisible on phones */}
-                <div className="hidden md:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
+                {/* Changed to lg:flex to ensure it stays completely invisible on landscape phones */}
+                <div className="hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
                     <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
                     <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
                 </div>
