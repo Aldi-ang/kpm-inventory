@@ -221,12 +221,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
             {/* FIX: Changed md: to lg: so left panel doesn't force side-by-side on short screens */}
             <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+               
+               
                 {/* FIX: Restored the beautiful h-48 Merchant height now that the page is scrollable! */}
                 <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
-                        {/* FIX: Restored the 40x40 character size */}
-                        <div className="w-40 h-40 md:w-80 md:h-80 relative">
+                       
+                       
+                        {/* FIX: Changed md: to lg: and matched the h-48 container size so the head never clips off on landscape phones */}
+                        <div className="w-48 h-48 lg:w-80 lg:h-80 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
                     </div>
@@ -237,6 +241,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
+               
+               
                 {/* FIX: Slightly increased padding to make Checkout button look premium again */}
                 <div className="p-4 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20">
                     <div className="flex justify-between items-end mb-3 border-b border-[#5c4b3a] pb-2 font-mono">
@@ -258,8 +264,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         <Search size={14} className="absolute left-2 top-2.5 text-[#5c4b3a]"/>
                     </div>
                 </div>
+
+
                 {/* FIX: Increased columns to 3 on mobile to make cards smaller, reduced padding and gaps */}
-                <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 custom-scrollbar">
+                {/* FIX: Added 'content-start' so cards pack tightly at the top instead of stretching down the page */}
+                <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 custom-scrollbar content-start">
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="aspect-[4/5] bg-[#1a1815] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-95">
                             <div className="flex-1 p-1 flex items-center justify-center relative overflow-hidden">
