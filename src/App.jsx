@@ -2295,7 +2295,6 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
 
             {/* --- 1. FIXED MOBILE MENU BUTTON --- */}
-            {/* FIX: Smaller button tucked tighter into the corner for landscape space */}
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
@@ -2305,17 +2304,17 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
             {/* LEFT COLUMN: NAVIGATION */}
             <div className={`
-                fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-24 lg:pt-8 pl-6 pr-4 transition-transform duration-300
+                fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:relative lg:translate-x-0
             `}>
                 
-                {/* BRANDING */}
-                <h1 className="text-xl font-bold text-white mb-6 font-mono border-b-2 border-white/50 pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                {/* BRANDING (Moved text beside burger button) */}
+                <h1 className="text-sm lg:text-xl font-bold text-white mb-6 font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)] ml-12 lg:ml-2 mt-0.5 lg:mt-0">
                     {appSettings?.companyName || "KPM SYSTEM"}
                 </h1>
 
-                {/* MENU (Auto-closes on selection) */}
+                {/* MENU */}
                 {user ? (
                     <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
                         {visibleMenu.map(item => (
@@ -2323,7 +2322,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                                 key={item.id}
                                 onClick={() => { 
                                     setActiveTab(item.id); 
-                                    setIsMobileMenuOpen(false); // <--- FIXED: Closes sidebar immediately
+                                    setIsMobileMenuOpen(false);
                                 }}
                                 className={`w-full text-left py-2 px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest clip-path-polygon ${
                                     activeTab === item.id 
@@ -2344,7 +2343,6 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 )}
 
                 {/* BOTTOM SECTION */}
-                {/* FIX: Made Operative profile significantly smaller to enhance feature list visibility */}
                 <div className="mt-auto mb-2 border-t border-white/10 pt-3">
                     {user ? (
                         <div className="flex items-center gap-2">
@@ -2375,27 +2373,27 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             {/* RIGHT COLUMN: CONTENT AREA */}
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
-                {/* HEADER */}
-                {/* FIX: Changed items-end to items-center and added background for better visibility */}
-                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex items-center justify-between border-b border-white/20 shrink-0 relative bg-black/90 backdrop-blur-md z-40">
-                    
-                    {/* LOGO & SEARCH CONTAINER */}
-                    <div className="flex items-center flex-1 gap-4">
-                        {/* FIX: New Logo placement. Pl-12 pushes it past the burger button on mobile. */}
-                        <h2 className="text-xl lg:text-2xl font-bold text-orange-500 uppercase select-none whitespace-nowrap pl-12 lg:pl-0 transition-all leading-none">
-                            KPM <span className="text-white/30">Inventory</span> 
-                            <span className="text-[10px] text-orange-400 block font-mono mt-0.5">BY AK</span>
-                        </h2>
-                    </div>
+                {/* HEADER (Restored to its original state) */}
+                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
+                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
+                        {activeTab}
+                    </h2>
 
-                    {/* DISCO BUTTON & CLOCK */}
-                    <div className="flex items-center gap-4">
-                         <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
-                            <div>{new Date().toLocaleDateString()}</div>
-                            <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></div>
+                            <span className={`text-[9px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
+                        </div>
+                        <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
+                            {activeTab.replace(/_/g, ' ')}
                         </div>
                     </div>
-                 </div>
+
+                    <div className="text-[10px] text-gray-500 font-mono text-right">
+                        <div>{new Date().toLocaleDateString()}</div>
+                        <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                </div>
 
                 {/* SCROLLABLE CONTENT */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
@@ -2404,8 +2402,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                     </div>
                 </div>
 
-                {/* --- 2. HIDE FOOTER ON MOBILE --- */}
-                {/* Changed to lg:flex to ensure it stays completely invisible on landscape phones */}
+                {/* FOOTER */}
                 <div className="hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
                     <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
                     <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
