@@ -5237,7 +5237,6 @@ const handleGitHubMirror = async () => {
           // --- ADD THIS LINE ---
           scale={appSettings?.mascotScale || 1} 
       />
-      <MusicPlayer />
     </BiohazardTheme>
   );
 }
