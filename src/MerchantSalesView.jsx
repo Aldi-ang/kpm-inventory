@@ -220,10 +220,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
             {/* FIX: Changed md: to lg: so left panel doesn't force side-by-side on short screens */}
             <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
+                {/* FIX: Reduced h-48 to h-24 on mobile so the image doesn't eat all the vertical space */}
+                <div className="h-24 lg:flex-1 relative overflow-hidden bg-black shrink-0">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
-                        <div className="w-40 h-40 md:w-80 md:h-80 relative">
+                        {/* FIX: Shrunk the merchant character size to fit the new h-24 box */}
+                        <div className="w-24 h-24 md:w-80 md:h-80 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
                     </div>
@@ -234,37 +236,40 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
-                <div className="h-32 md:h-1/3 bg-[#26211c] border-t-4 border-[#5c4b3a] p-4 flex flex-col shrink-0">
+                {/* FIX: Removed fixed h-32 and h-1/3 heights, using p-3 and compact spacing to save vertical space for the cart */}
+                <div className="p-3 bg-[#26211c] border-t-2 border-[#5c4b3a] flex flex-col shrink-0 z-20">
                     <div className="flex justify-between items-end mb-2 border-b border-[#5c4b3a] pb-1 font-mono">
                         <span className="text-[10px] font-bold text-[#8b7256] uppercase">Total Value (Rp)</span>
-                        <span className="text-2xl md:text-4xl font-bold text-[#f5e6c8]"> {new Intl.NumberFormat('id-ID').format(cartTotal)} </span>
+                        <span className="text-xl md:text-3xl font-bold text-[#f5e6c8] leading-none"> {new Intl.NumberFormat('id-ID').format(cartTotal)} </span>
                     </div>
-                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`flex-1 border-2 text-sm md:text-xl font-bold uppercase tracking-widest transition-all active:translate-y-1 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#5c4b3a] to-[#3e3226] border-[#8b7256] text-[#f5e6c8]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50'}`}> {customerName.trim() ? "DEAL" : "SIGN MANIFEST >"} </button>
+                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-2 border-2 text-sm md:text-xl font-bold uppercase tracking-widest transition-all active:translate-y-1 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#5c4b3a] to-[#3e3226] border-[#8b7256] text-[#f5e6c8]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50'}`}> {customerName.trim() ? "DEAL" : "SIGN MANIFEST >"} </button>
                 </div>
             </div>
 
-            x{/* FIX: Changed md: to lg: for the right panel */}
+            {/* FIX: Changed md: to lg: for the right panel */}
             <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="flex gap-1 p-2 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-[#8b7256] text-black' : 'bg-[#26211c] text-[#6b5845]'}`}>{cat}</button> ))}
                 </div>
-                <div className="p-3 border-b border-[#3e3226] flex gap-2">
+                <div className="p-2 border-b border-[#3e3226] flex gap-2">
                     <div className="relative flex-1">
                         <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/40 border border-[#3e3226] p-2 pl-8 text-[#d4c5a3] font-mono text-xs outline-none focus:border-[#8b7256]"/>
                         <Search size={14} className="absolute left-2 top-2.5 text-[#5c4b3a]"/>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 lg:grid-cols-4 gap-3 custom-scrollbar">
+                {/* FIX: Increased columns to 3 on mobile to make cards smaller, reduced padding and gaps */}
+                <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 custom-scrollbar">
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="aspect-[4/5] bg-[#1a1815] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-95">
-                            <div className="flex-1 p-2 flex items-center justify-center relative overflow-hidden">
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all" alt="product"/> : <Box size={32} className="text-[#3e3226]"/>}
+                            <div className="flex-1 p-1 flex items-center justify-center relative overflow-hidden">
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all" alt="product"/> : <Box size={24} className="text-[#3e3226]"/>}
                             </div>
-                            <div className="h-16 bg-black/40 border-t border-[#3e3226] p-2 flex flex-col justify-between font-mono">
-                                <h4 className="text-[#d4c5a3] text-[11px] md:text-xs font-bold truncate uppercase">{item.name}</h4>
-                                <div className="flex justify-between items-center mt-1">
-                                    <span className="text-[#5c4b3a] text-xs md:text-sm font-black">STK: {item.stock}</span>
-                                    <span className="text-[#ff9d00] text-sm md:text-base font-black">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
+                            {/* FIX: Shrunk the card footer height and text sizes */}
+                            <div className="h-12 md:h-16 bg-black/40 border-t border-[#3e3226] p-1.5 md:p-2 flex flex-col justify-between font-mono">
+                                <h4 className="text-[#d4c5a3] text-[9px] md:text-xs font-bold truncate uppercase">{item.name}</h4>
+                                <div className="flex justify-between items-center mt-0.5 md:mt-1">
+                                    <span className="text-[#5c4b3a] text-[9px] md:text-sm font-black">STK:{item.stock}</span>
+                                    <span className="text-[#ff9d00] text-[10px] md:text-base font-black">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
                                 </div>
                             </div>
                         </div>
