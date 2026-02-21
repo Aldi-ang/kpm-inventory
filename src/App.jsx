@@ -2375,28 +2375,27 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             {/* RIGHT COLUMN: CONTENT AREA */}
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
-                {/* HEADER (With safety padding for mobile menu) */}
-                {/* FIX: Reduced pt-24 to pt-16 to reclaim top vertical space */}
-                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
-                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
-                        {activeTab}
-                    </h2>
-
-                    <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></div>
-                            <span className={`text-[9px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
-                        </div>
-                        <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
-                            {activeTab.replace(/_/g, ' ')}
-                        </div>
+                {/* HEADER */}
+                {/* FIX: Changed items-end to items-center and added background for better visibility */}
+                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex items-center justify-between border-b border-white/20 shrink-0 relative bg-black/90 backdrop-blur-md z-40">
+                    
+                    {/* LOGO & SEARCH CONTAINER */}
+                    <div className="flex items-center flex-1 gap-4">
+                        {/* FIX: New Logo placement. Pl-12 pushes it past the burger button on mobile. */}
+                        <h2 className="text-xl lg:text-2xl font-bold text-orange-500 uppercase select-none whitespace-nowrap pl-12 lg:pl-0 transition-all leading-none">
+                            KPM <span className="text-white/30">Inventory</span> 
+                            <span className="text-[10px] text-orange-400 block font-mono mt-0.5">BY AK</span>
+                        </h2>
                     </div>
 
-                    <div className="text-[10px] text-gray-500 font-mono text-right">
-                        <div>{new Date().toLocaleDateString()}</div>
-                        <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    {/* DISCO BUTTON & CLOCK */}
+                    <div className="flex items-center gap-4">
+                         <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
+                            <div>{new Date().toLocaleDateString()}</div>
+                            <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
                     </div>
-                </div>
+                 </div>
 
                 {/* SCROLLABLE CONTENT */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
@@ -2689,8 +2688,8 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
                 </div>
             </div>
 
-            {/* INSPECTOR AREA: Explicit 500px height so the 3D model NEVER gets cut off on mobile */}
-            <div className="w-full h-[500px] lg:flex-1 lg:h-full relative bg-black shrink-0">
+            {/* INSPECTOR AREA: Increased to 600px to ensure the bottom price overlay is visible */}
+            <div className="w-full h-[600px] lg:flex-1 lg:h-full relative bg-black shrink-0">
                 <div className="absolute inset-0 z-0">
                     <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
