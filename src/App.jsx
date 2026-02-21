@@ -2344,6 +2344,10 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                 {/* BOTTOM SECTION */}
                 <div className="mt-auto mb-2 border-t border-white/10 pt-3">
+                    
+                    {/* NEW: DOCKED MUSIC PLAYER (Admin Only) */}
+                    {isAdmin && <MusicPlayer />}
+
                     {user ? (
                         <div className="flex items-center gap-2">
                             <img 
