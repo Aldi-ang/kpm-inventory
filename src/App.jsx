@@ -2295,12 +2295,12 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
 
             {/* --- 1. FIXED MOBILE MENU BUTTON --- */}
-            {/* Added inset-inline-start-4 for better phone compatibility */}
+            {/* FIX: Smaller button tucked tighter into the corner for landscape space */}
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden fixed top-6 left-6 z-[100] p-4 bg-orange-600/90 backdrop-blur-md text-white rounded-2xl shadow-[0_0_20px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                className="lg:hidden fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
             >
-                {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
             {/* LEFT COLUMN: NAVIGATION */}
@@ -2344,20 +2344,21 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 )}
 
                 {/* BOTTOM SECTION */}
-                <div className="mt-auto mb-4 border-t border-white/10 pt-4">
+                {/* FIX: Made Operative profile significantly smaller to enhance feature list visibility */}
+                <div className="mt-auto mb-2 border-t border-white/10 pt-3">
                     {user ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <img 
                                 src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
-                                className="w-10 h-10 rounded border border-white/30 object-cover bg-black"
+                                className="w-7 h-7 rounded border border-white/30 object-cover bg-black"
                                 alt="avatar"
                             />
                             <div className="flex-1 min-w-0">
-                                <p className="text-[9px] text-gray-400 uppercase font-bold">OPERATIVE</p>
-                                <p className="text-xs text-white font-mono truncate">{user.email?.split('@')[0]}</p>
+                                <p className="text-[8px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
+                                <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>
                             </div>
-                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-2 rounded transition-colors" title="Logout">
-                                <LogOut size={16}/>
+                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-1.5 rounded transition-colors" title="Logout">
+                                <LogOut size={14}/>
                             </button>
                         </div>
                     ) : (
@@ -2375,7 +2376,8 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (With safety padding for mobile menu) */}
-                <div className="pt-24 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
+                {/* FIX: Reduced pt-24 to pt-16 to reclaim top vertical space */}
+                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
@@ -4953,7 +4955,8 @@ const handleGitHubMirror = async () => {
           {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
           
           {activeTab === 'inventory' && (
-          <div className="h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative">
+          {/* FIX: Use h-auto on mobile to allow vertical scrolling instead of forcing elements to crash into each other */}
+          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
               
               <ResidentEvilInventory 
                   inventory={filteredInventory}
