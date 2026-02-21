@@ -2621,10 +2621,10 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
-        <div className="flex flex-col lg:flex-row h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
+        <div className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
             
-            {/* SUPPLY CASE: 45% Height on Mobile for better visibility */}
-            <div className="w-full lg:w-96 h-[45%] lg:h-full flex flex-col border-b lg:border-b-0 lg:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+            {/* SUPPLY CASE: Explicit 350px height instead of % to guarantee list visibility without collision */}
+            <div className="w-full lg:w-96 h-[350px] lg:h-full flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
                 <div className="p-4 md:p-6 border-b border-white/20">
                     <h3 className="text-white font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
                     <div className="relative mb-3">
@@ -2689,8 +2689,8 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
                 </div>
             </div>
 
-            {/* INSPECTOR AREA: 55% Height on Mobile */}
-            <div className="flex-1 h-[55%] lg:h-full relative bg-black">
+            {/* INSPECTOR AREA: Explicit 500px height so the 3D model NEVER gets cut off on mobile */}
+            <div className="w-full h-[500px] lg:flex-1 lg:h-full relative bg-black shrink-0">
                 <div className="absolute inset-0 z-0">
                     <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
@@ -4955,7 +4955,6 @@ const handleGitHubMirror = async () => {
           {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
           
           {activeTab === 'inventory' && (
-          {/* FIX: Use h-auto on mobile to allow vertical scrolling instead of forcing elements to crash into each other */}
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
               
               <ResidentEvilInventory 
