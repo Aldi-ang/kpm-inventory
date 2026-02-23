@@ -182,7 +182,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 {cart.map((item, idx) => (
                     <div key={idx} className="flex flex-col border-b border-dashed border-[#a89070]/50 pb-2 mb-1">
                         <div className="flex justify-between items-start">
-                            {/* FIX 1: Added break-words to sidebar items */}
                             <span className="text-[11px] font-bold w-32 leading-tight uppercase break-words whitespace-normal">{item.name}</span>
                             <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800"><X size={14}/></button>
                         </div>
@@ -210,26 +209,18 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     return (
         <div className="flex h-[850px] lg:h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
-            {/* FIX: Forced an 850px height on mobile so the terminal expands fully. You can now use your thumb to vertically scroll the entire page. */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
-            {/* FIX: Changed md:hidden to lg:hidden so tabs stay visible in landscape */}
             <div className="lg:hidden absolute top-0 inset-x-0 h-12 flex border-b border-[#5c4b3a] bg-[#0f0e0d] z-50">
                 <button onClick={() => setMobileTab('products')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Wares</button>
                 <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Merchant ({cart.length})</button>
             </div>
 
-            {/* FIX: Changed md: to lg: so left panel doesn't force side-by-side on short screens */}
             <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                
-               
-                {/* FIX: Restored the beautiful h-48 Merchant height now that the page is scrollable! */}
                 <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
-                       
-                       
-                        {/* FIX: Changed md: to lg: and matched the h-48 container size so the head never clips off on landscape phones */}
                         <div className="w-48 h-48 lg:w-80 lg:h-80 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
@@ -242,8 +233,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
                
-               
-                {/* FIX: Slightly increased padding to make Checkout button look premium again */}
                 <div className="p-4 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20">
                     <div className="flex justify-between items-end mb-3 border-b border-[#5c4b3a] pb-2 font-mono">
                         <span className="text-[10px] font-bold text-[#8b7256] uppercase">Total Value (Rp)</span>
@@ -253,7 +242,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             </div>
 
-            {/* FIX: Changed md: to lg: for the right panel */}
             <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="flex gap-1 p-2 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-[#8b7256] text-black' : 'bg-[#26211c] text-[#6b5845]'}`}>{cat}</button> ))}
@@ -265,23 +253,26 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
 
-
-                {/* FIX: Increased columns to 3 on mobile to make cards smaller, reduced padding and gaps */}
-                {/* FIX: Added 'content-start' so cards pack tightly at the top instead of stretching down the page */}
-                <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 custom-scrollbar content-start">
+                {/* FIX 1: PC Expansion. Added `md:p-4 md:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6` to give massive breathing room on big monitors */}
+                <div className="flex-1 overflow-y-auto p-2 md:p-4 grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-4 custom-scrollbar content-start">
                     {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="aspect-[4/5] bg-[#1a1815] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-95">
-                            <div className="flex-1 p-1 flex items-center justify-center relative overflow-hidden">
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all" alt="product"/> : <Box size={24} className="text-[#3e3226]"/>}
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="aspect-[4/5] bg-[#1a1815] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-95 shadow-xl">
+                            
+                            {/* Larger image area for PC */}
+                            <div className="flex-1 p-2 md:p-4 flex items-center justify-center relative overflow-hidden">
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all drop-shadow-xl" alt="product"/> : <Box size={32} className="text-[#3e3226]"/>}
                             </div>
-                            {/* FIX: Shrunk the card footer height and text sizes */}
-                            <div className="h-12 md:h-16 bg-black/40 border-t border-[#3e3226] p-1.5 md:p-2 flex flex-col justify-between font-mono">
-                                <h4 className="text-[#d4c5a3] text-[9px] md:text-xs font-bold truncate uppercase">{item.name}</h4>
-                                <div className="flex justify-between items-center mt-0.5 md:mt-1">
-                                    <span className="text-[#5c4b3a] text-[9px] md:text-sm font-black">STK:{item.stock}</span>
-                                    <span className="text-[#ff9d00] text-[10px] md:text-base font-black">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
+                            
+                            {/* FIX 2: Dynamic Footer. Uses h-auto and flex-wrap. The price drops to a new line safely if the card gets too squished, forever preventing overlap. */}
+                            <div className="h-auto min-h-[48px] md:min-h-[72px] bg-black/60 border-t border-[#3e3226] p-1.5 md:p-3 flex flex-col justify-between font-mono">
+                                <h4 className="text-[#d4c5a3] text-[9px] md:text-sm font-bold truncate uppercase mb-1 md:mb-2">{item.name}</h4>
+                                
+                                <div className="flex flex-wrap justify-between items-end gap-x-2 gap-y-1">
+                                    <span className="text-[#8b7256] text-[9px] md:text-xs font-black bg-black/80 px-1.5 md:px-2 py-0.5 rounded border border-[#3e3226]">STK:{item.stock}</span>
+                                    <span className="text-[#ff9d00] text-[10px] md:text-base font-black leading-none drop-shadow-md">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
                                 </div>
                             </div>
+
                         </div>
                     ))}
                 </div>
@@ -317,7 +308,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
                                 {receiptData.items.map((item, i) => (
                                     <div key={i} className="mb-2">
-                                        {/* FIX 2: Added break-words to receipt items */}
                                         <div className="font-bold uppercase text-xs break-words whitespace-normal">{item.name}</div>
                                         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
                                             <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)}</span>
