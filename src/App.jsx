@@ -2286,7 +2286,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     ];
 
     const visibleMenu = allMenuItems.filter(item => 
-        isAdmin ? true : !['transactions', 'audit', 'stock_opname'].includes(item.id)
+        isAdmin ? true : !['transactions', 'audit', 'stock_opname', 'restock_vault'].includes(item.id)
     );
 
     return (
@@ -5093,10 +5093,12 @@ const handleGitHubMirror = async () => {
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black">
               <RestockVaultView 
                   inventory={inventory} 
-                  procurements={procurements} // <--- PASSING THE LEDGER DATA
+                  procurements={procurements}
                   db={db} 
+                  storage={storage} 
                   appId={appId} 
                   user={user} 
+                  isAdmin={isAdmin}
                   logAudit={logAudit} 
                   triggerCapy={triggerCapy} 
               />
