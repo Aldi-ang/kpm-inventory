@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy }) => {
-    const [viewMode, setViewMode] = useState('cart'); // 'cart' | 'ledger'
+const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy }) => {
+    const [viewMode, setViewMode] = useState('cart'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPO, setExpandedPO] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,16 +13,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
 
-    // Edit/Print States
+    // Edit/Print/View States
     const [viewingAcceptance, setViewingAcceptance] = useState(null);
     const [editingPO, setEditingPO] = useState(null);
     const [editReceiptFile, setEditReceiptFile] = useState(null);
+    const [viewingImage, setViewingImage] = useState(null); // NEW: In-app image viewer
 
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
         supplierName: '',
         poNumber: `PO-${Date.now().toString().slice(-6)}`,
-        poDate: new Date().toISOString().split('T')[0], // <--- NEW: Editable PO Date (Defaults to today)
+        poDate: new Date().toISOString().split('T')[0],
         shippingCost: 0,
         exciseTax: 0,
         laborCost: 0,
@@ -44,7 +44,31 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const totalBasePrice = cart.reduce((sum, item) => sum + (parseFloat(item.qtyReceived || 0) * parseFloat(item.basePrice || 0)), 0);
     const totalItemsReceived = cart.reduce((sum, item) => sum + parseFloat(item.qtyReceived || 0), 0);
 
-    // --- FIXED: PROCESS RESTOCK WITH BATCH WRITES ---
+    // --- NEW: OFFLINE IMAGE COMPRESSOR (NO FIREBASE STORAGE NEEDED) ---
+    const compressImageToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Perfect size for receipts, keeps file size under ~100kb
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality JPEG
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
+
+    // --- PROCESS RESTOCK ---
     const handleProcessRestock = async () => {
         if (!user || !db) return alert("System disconnected. Cannot save.");
         if (cart.length === 0 || totalItemsReceived <= 0) return alert("Cart is empty or missing quantities.");
@@ -54,26 +78,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
         setIsSubmitting(true);
         try {
-            let receiptUrl = null;
-            if (receiptFile && storage) {
-                try {
-                    triggerCapy("Uploading Receipt Image... ⏳");
-                    const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${batchId}_${receiptFile.name}`);
-                    
-                    // FIX: 10 Second Timeout. If Firebase Storage is unconfigured, it won't spin infinitely.
-                    await Promise.race([
-                        uploadBytes(fileRef, receiptFile),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error("Storage Timeout! Check Firebase Storage rules.")), 10000))
-                    ]);
-                    receiptUrl = await getDownloadURL(fileRef);
-                } catch (uploadErr) {
-                    console.error("Storage upload error:", uploadErr);
-                    alert(`Upload Failed: ${uploadErr.message}. Saving shipment data without image.`);
-                    receiptUrl = null;
-                }
+            let base64Receipt = null;
+            if (receiptFile) {
+                triggerCapy("Compressing Receipt to Database... ⏳");
+                base64Receipt = await compressImageToBase64(receiptFile);
             }
 
-            // REPLACED runTransaction with writeBatch to prevent infinite spinning bugs offline
             const batch = writeBatch(db);
             for (const item of cart) {
                 const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
@@ -83,13 +93,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
             const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
             
-            // FIX: Force receiptUrl to be NULL instead of UNDEFINED to prevent database crashes
             const poRecord = { 
                 batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, 
-                timestamp: serverTimestamp(), 
-                date: poData.poDate, // <--- NEW: Uses your chosen date instead of forcing today silently
-                hasReceipt: !!receiptUrl, 
-                receiptUrl: receiptUrl || null 
+                timestamp: serverTimestamp(), date: poData.poDate, 
+                hasReceipt: !!base64Receipt, 
+                receiptUrl: base64Receipt || null 
             };
             
             batch.set(poRef, poRecord);
@@ -99,12 +107,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             if (triggerCapy) triggerCapy(`Shipment Secured! ${totalItemsReceived} units injected to stock.`);
             
             setCart([]);
-            setPoData({ 
-                supplierName: '', 
-                poNumber: `PO-${Date.now().toString().slice(-6)}`, 
-                poDate: new Date().toISOString().split('T')[0], // <--- Resets back to today
-                shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' 
-            });
+            setPoData({ supplierName: '', poNumber: `PO-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
             setReceiptFile(null);
             setViewMode('ledger');
             
@@ -112,7 +115,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             console.error(error); 
             alert("Procurement Failed: " + error.message); 
         } finally {
-            setIsSubmitting(false); // Guarantees the spinner stops
+            setIsSubmitting(false); 
         }
     };
 
@@ -133,7 +136,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         return structure;
     }, [procurements]);
 
-    // --- FIXED: LEDGER DELETE (USING BATCH) ---
+    // --- LEDGER DELETE ---
     const handleDeletePO = async (po) => {
         if(!window.confirm(`Delete PO ${po.poNumber}? WARNING: This will DEDUCT the received items back out of your inventory!`)) return;
         try {
@@ -151,7 +154,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         } catch(e) { alert("Failed to delete: " + e.message); }
     };
 
-    // --- FIXED: LEDGER EDIT (MUTATION PREVENTION + NEW RECEIPT UPLOAD) ---
+    // --- LEDGER EDIT ---
     const handleSaveEditPO = async (e) => {
         e.preventDefault();
         if(!editingPO) return;
@@ -161,27 +164,15 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         const newLanded = newTotalBase + (parseFloat(editingPO.shippingCost)||0) + (parseFloat(editingPO.laborCost)||0) + (parseFloat(editingPO.exciseTax)||0);
 
         try {
-            // FIX: Force fallback to NULL to stop the "Undefined field" crash seen in Image 2
             let newReceiptUrl = editingPO.receiptUrl || null;
             let newHasReceipt = editingPO.hasReceipt || false;
             
-            if (editReceiptFile && storage) {
-                try {
-                    triggerCapy("Uploading New Receipt... ⏳");
-                    const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${editingPO.batchId}_${editReceiptFile.name}`);
-                    
-                    // FIX: Added 10 second timeout here too
-                    await Promise.race([
-                        uploadBytes(fileRef, editReceiptFile),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error("Storage Timeout")), 10000))
-                    ]);
-                    newReceiptUrl = await getDownloadURL(fileRef);
-                    newHasReceipt = true;
-                } catch (err) {
-                    console.error("Storage upload error:", err);
-                    alert(`Warning: Receipt upload failed (${err.message}). Saving other edits...`);
-                    newReceiptUrl = editingPO.receiptUrl || null;
-                }
+            if (editReceiptFile) {
+                triggerCapy("Compressing New Receipt... ⏳");
+                newReceiptUrl = await compressImageToBase64(editReceiptFile);
+                newHasReceipt = true;
+            } else if (editingPO.receiptUrl === null) {
+                newHasReceipt = false;
             }
 
             const batch = writeBatch(db);
@@ -189,7 +180,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             
             for (const editedItem of editingPO.items) {
                 const oldItem = originalPO.items.find(i => i.id === editedItem.id);
-                // Math is fixed because we deep-cloned the editing state!
                 const diff = (parseInt(editedItem.qtyReceived) || 0) - (parseInt(oldItem?.qtyReceived) || 0);
                 
                 if (diff !== 0) {
@@ -220,9 +210,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         }
     };
 
-    // ==========================================
-    // RENDER: LEDGER FOLDERS & PO LIST
-    // ==========================================
     const renderLedger = () => {
         if (selectedYear && selectedMonth && selectedDate) {
             const pos = folderStructure[selectedYear][selectedMonth][selectedDate] || [];
@@ -288,7 +275,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                             <div className="mt-4 grid grid-cols-2 gap-2">
                                                 <button onClick={() => setViewingAcceptance(po)} className="bg-slate-800 hover:bg-slate-700 text-white border border-white/10 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><Printer size={12}/> Print GRN</button>
                                                 {po.receiptUrl ? (
-                                                    <button onClick={() => window.open(po.receiptUrl, '_blank')} className="bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><ExternalLink size={12}/> View Receipt</button>
+                                                    <button onClick={() => setViewingImage(po.receiptUrl)} className="bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><ImageIcon size={12}/> View Receipt</button>
                                                 ) : (
                                                     <span className="bg-slate-900 text-slate-600 border border-white/5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2"><FileText size={12}/> No Receipt</span>
                                                 )}
@@ -298,7 +285,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                 <div className="mt-4 flex gap-2 pt-4 border-t border-white/5">
                                                     <button 
                                                         onClick={() => {
-                                                            // DEEP CLONE prevents state mutation bugs
                                                             const poClone = { ...po, items: po.items.map(i => ({...i})) };
                                                             setEditingPO(poClone);
                                                             setEditReceiptFile(null);
@@ -379,6 +365,14 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-full text-slate-300 font-sans p-2 relative">
             
+            {/* --- IN-APP IMAGE VIEWER MODAL --- */}
+            {viewingImage && (
+                <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-black/50 p-2 rounded-full"><X size={32}/></button>
+                    <img src={viewingImage} alt="Receipt" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/20" />
+                </div>
+            )}
+
             {/* --- ACCEPTANCE LETTER MODAL (PRINT) --- */}
             {viewingAcceptance && (
                  <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
@@ -458,12 +452,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Update Digital Receipt</h3>
                                 <div className="flex flex-col md:flex-row md:items-start gap-4 bg-black p-3 border border-white/10 rounded">
                                     {editingPO.receiptUrl && !editReceiptFile ? (
-                                        <a href={editingPO.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/50 px-3 py-2 rounded text-xs font-bold hover:bg-blue-900/50 transition-colors shrink-0"><ExternalLink size={14}/> View Current Receipt</a>
+                                        <button type="button" onClick={() => setViewingImage(editingPO.receiptUrl)} className="flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/50 px-3 py-2 rounded text-xs font-bold hover:bg-blue-900/50 transition-colors shrink-0">
+                                            <ImageIcon size={14}/> View Current
+                                        </button>
                                     ) : (
                                         <span className="text-xs text-slate-500 italic shrink-0 mt-2">No previous receipt.</span>
                                     )}
                                     <div className="flex-1 w-full">
-                                        {/* FIX: Split Upload vs Remove into two distinct states */}
                                         {editReceiptFile ? (
                                             <div className="flex items-center justify-between bg-white/5 border border-white/10 px-3 py-2 rounded">
                                                 <span className="text-xs font-bold text-emerald-400 truncate mr-2">{editReceiptFile.name}</span>
@@ -472,7 +467,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                         ) : (
                                             <label className="text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 px-4 py-2 rounded cursor-pointer transition-colors border border-white/10 flex items-center justify-center gap-2 w-full">
                                                 <UploadCloud size={14}/> Upload Replacement File
-                                                <input type="file" className="hidden" onChange={(e) => setEditReceiptFile(e.target.files[0])}/>
+                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => setEditReceiptFile(e.target.files[0])}/>
                                             </label>
                                         )}
                                     </div>
@@ -577,11 +572,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/10">
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Shipment Meta</h3>
-                                        {/* NEW: ARRIVAL DATE FIELD (Uses Phone's Native Calendar) */}
                                         <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mb-1"><Calendar size={12}/> Arrival Date</label><input type="date" value={poData.poDate} onChange={e => setPoData({...poData, poDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" /></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase">PO / Invoice Number</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase">Supplier / Factory</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
-                                        <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mt-2"><Calendar size={12}/> Global Expiry Date</label><input type="date" value={poData.expiryDate} onChange={e => setPoData({...poData, expiryDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono"/></div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -595,7 +588,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><Receipt size={14}/> 3. Digital Vault</h3>
-                                        {/* FIX: Rebuilt drag zone to include a working Remove File button */}
                                         <div className="border-2 border-dashed border-white/10 bg-black/50 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors h-[120px]">
                                             {receiptFile ? (
                                                 <>
@@ -606,8 +598,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                             ) : (
                                                 <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full hover:text-orange-500 transition-colors text-slate-600">
                                                     <UploadCloud size={24} className="mb-1" />
-                                                    <p className="text-xs font-bold text-white">Upload Invoice Photo/PDF</p>
-                                                    <input type="file" className="hidden" onChange={(e) => setReceiptFile(e.target.files[0])} />
+                                                    <p className="text-[10px] font-bold text-white uppercase tracking-widest">Image to Database</p>
+                                                    <p className="text-[8px] text-emerald-500 font-mono mt-1">100% FREE NO STORAGE API</p>
+                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setReceiptFile(e.target.files[0])} />
                                                 </label>
                                             )}
                                         </div>
@@ -632,7 +625,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                         className={`w-full md:w-auto font-bold uppercase tracking-widest py-3 px-6 rounded-lg shadow-lg transition-all flex justify-center items-center gap-2 text-sm ${isSubmitting ? 'bg-slate-500 text-slate-300 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white active:scale-95 shadow-[0_0_20px_rgba(234,88,12,0.3)]'}`}
                                     >
                                         {isSubmitting ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />} 
-                                        {isSubmitting ? "Locking..." : "Lock to Vault"}
+                                        {isSubmitting ? "Processing..." : "Lock to Vault"}
                                     </button>
                                 </div>
                             </div>
