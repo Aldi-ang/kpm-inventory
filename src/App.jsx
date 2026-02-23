@@ -19,6 +19,7 @@ import JourneyView from './JourneyView';
 import StockOpnameView from './StockOpnameView';
 import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
+import RestockVaultView from './RestockVaultView';
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -2273,6 +2274,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
         { id: 'inventory', label: 'Inventory' },
+        { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
         { id: 'consignment', label: 'Consignment' },
         { id: 'stock_opname', label: 'Stock Opname' },
@@ -5081,6 +5083,13 @@ const handleGitHubMirror = async () => {
       )}
 
           
+          {/* NEW: RESTOCK VAULT ENGINE */}
+          {activeTab === 'restock_vault' && (
+          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black">
+              <RestockVaultView inventory={inventory} />
+          </div>
+          )}
+
           {activeTab === 'sales' && (
       <div className="h-full w-full"> 
           <MerchantSalesView 
