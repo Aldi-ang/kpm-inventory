@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [] }) => {
     const [mobileTab, setMobileTab] = useState('products');
@@ -18,6 +18,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const dropdownRef = useRef(null);
+    const scrollContainerRef = useRef(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
@@ -130,6 +131,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 3000);
     };
 
+    const scroll = (direction) => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = 400;
+            scrollContainerRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
 
     const filteredItems = inventory.filter(i => 
@@ -140,69 +151,73 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
     const renderManifestUI = (isMobile) => (
-        <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-72 border-l-2'}`}>
+        <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-40 pointer-events-none"></div>
             <div className="p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
-            <div className="p-3 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc]" ref={dropdownRef}>
+            <div className="p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-4" ref={dropdownRef}>
                 <div className="relative">
+                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Customer Name</label>
                     <input 
                         value={customerName} 
                         onFocus={() => setShowCustomerDropdown(true)}
                         onChange={(e) => setCustomerName(e.target.value)} 
-                        placeholder="SEARCH OR TYPE NAME..." 
-                        className="w-full bg-transparent border-b border-[#8b7256] text-[#3e3226] p-1 text-xs font-bold uppercase outline-none mb-2 placeholder:text-[#8b7256]/70" 
+                        placeholder="TYPE OR SELECT..." 
+                        className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-sm font-bold uppercase outline-none rounded" 
                     />
-                    <ChevronDown size={14} className="absolute right-1 top-1 opacity-40" />
+                    {showCustomerDropdown && (
+                        <div className="absolute left-0 right-0 top-fullmt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
+                            {suggestedCustomers.map(c => (
+                                <div key={c.id} onClick={() => { setCustomerName(c.name); setShowCustomerDropdown(false); }} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
+                                    <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
+                                </div>
+                            ))}
+                            {customerName && !suggestedCustomers.find(c => c.name.toLowerCase() === customerName.toLowerCase()) && (
+                                <div onClick={() => setShowCustomerDropdown(false)} className="p-2 text-xs font-bold text-orange-700 bg-orange-100/50 hover:bg-orange-200 cursor-pointer italic uppercase">
+                                    Use "{customerName}" (One-time)
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {showCustomerDropdown && (
-                    <div className="absolute left-0 right-0 top-full bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded-b-lg z-[100] max-h-48 overflow-y-auto">
-                        {suggestedCustomers.map(c => (
-                            <div key={c.id} onClick={() => { setCustomerName(c.name); setShowCustomerDropdown(false); }} className="p-2 text-[10px] font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
-                                <span>{c.name}</span>
-                                <span className="opacity-50 text-[8px]">PROFILED</span>
-                            </div>
-                        ))}
-                        {customerName && !suggestedCustomers.find(c => c.name.toLowerCase() === customerName.toLowerCase()) && (
-                            <div onClick={() => setShowCustomerDropdown(false)} className="p-2 text-[10px] font-bold text-orange-700 bg-orange-100/50 hover:bg-orange-200 cursor-pointer italic uppercase">
-                                Use "{customerName}" (One-time/Individual)
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-transparent border-b border-[#8b7256] text-[#3e3226] p-1 text-xs font-bold uppercase outline-none">
-                    <option value="Cash">Cash</option><option value="QRIS">QRIS</option><option value="Transfer">Transfer</option><option value="Titip">Consignment</option>
-                </select>
+                <div>
+                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-sm font-bold uppercase outline-none rounded">
+                        <option value="Cash">Cash</option><option value="QRIS">QRIS</option><option value="Transfer">Transfer</option><option value="Titip">Consignment</option>
+                    </select>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 relative z-10 space-y-1 custom-scrollbar">
-                
-                {cart.map((item, idx) => (
-                    <div key={idx} className="flex flex-col border-b border-dashed border-[#a89070]/50 pb-2 mb-1">
-                        <div className="flex justify-between items-start">
-                            <span className="text-[11px] font-bold w-32 leading-tight uppercase break-words whitespace-normal">{item.name}</span>
-                            <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800"><X size={14}/></button>
-                        </div>
+            <div className="flex-1 overflow-y-auto p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
+                {cart.length === 0 ? (
+                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-sm">Manifest Empty</div>
+                ) : (
+                    cart.map((item, idx) => (
+                        <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
+                            </div>
 
-                       <div className="flex items-center gap-2 mt-1">
-                            <input 
-                                type="number" 
-                                value={item.qty} 
-                                onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} 
-                                onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }}
-                                className="w-10 bg-transparent border-b border-black text-center text-xs font-bold outline-none focus:border-[#ff9d00] transition-colors"
-                            />
-                            <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] font-bold uppercase outline-none"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                            <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} className="bg-transparent text-[9px] font-bold uppercase outline-none"><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
-                        </div>
+                           <div className="flex items-center gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
+                                <input 
+                                    type="number" 
+                                    value={item.qty} 
+                                    onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} 
+                                    onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }}
+                                    className="w-12 bg-white border border-[#a89070] text-center text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
+                                />
+                                <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} className="bg-transparent text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1"><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
+                            </div>
 
-                      <div className="text-right text-sm md:text-base font-black font-mono mt-2 text-[#5c4b3a]"> 
-                            {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)} 
+                          <div className="text-right text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
+                                Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)} 
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     );
@@ -211,130 +226,139 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         <div className="flex h-[850px] lg:h-[calc(100vh-120px)] bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
+            {/* MOBILE TABS */}
             <div className="lg:hidden absolute top-0 inset-x-0 h-12 flex border-b border-[#5c4b3a] bg-[#0f0e0d] z-50">
-                <button onClick={() => setMobileTab('products')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Wares</button>
-                <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}>Merchant ({cart.length})</button>
+                <button onClick={() => setMobileTab('products')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}><ShoppingBag size={14}/> Wares</button>
+                <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00]' : 'text-[#5c4b3a]'}`}><User size={14}/> Merchant ({cart.length})</button>
             </div>
 
-            <div className={`w-full lg:w-[400px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            {/* LEFT COLUMN (MERCHANT & MANIFEST) */}
+            <div className={`w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                
-                <div className="h-48 lg:flex-1 relative overflow-hidden bg-black shrink-0">
+                <div className="h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[250px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
-                    <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-110' : 'scale-100'}`}>
-                        <div className="w-48 h-48 lg:w-80 lg:h-80 relative">
+                    <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
+                        <div className="w-48 h-48 lg:w-72 lg:h-72 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
                     </div>
-                    <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
-                    <div className={`absolute inset-y-0 right-0 w-1/2 bg-[#1a1815] border-l-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ${doorsOpen ? 'translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
-                    <div className="absolute bottom-2 inset-x-4 z-30">
-                        <div className="bg-black/80 border-t border-b border-[#8b7256] p-2 text-center uppercase tracking-widest text-[10px] md:text-sm italic animate-pulse"> "{merchantMsg}" </div>
+                    <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
+                    <div className={`absolute inset-y-0 right-0 w-1/2 bg-[#1a1815] border-l-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? 'translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
+                    <div className="absolute bottom-4 inset-x-6 z-30">
+                        <div className="bg-black/90 border-2 border-[#8b7256] p-3 text-center uppercase tracking-widest text-sm lg:text-base italic animate-pulse shadow-lg rounded-lg text-[#ff9d00] font-bold"> "{merchantMsg}" </div>
                     </div>
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
                
-                <div className="p-4 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20">
-                    <div className="flex justify-between items-end mb-3 border-b border-[#5c4b3a] pb-2 font-mono">
-                        <span className="text-[10px] font-bold text-[#8b7256] uppercase">Total Value (Rp)</span>
-                        <span className="text-2xl md:text-4xl font-bold text-[#f5e6c8] leading-none"> {new Intl.NumberFormat('id-ID').format(cartTotal)} </span>
+                <div className="p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+                    <div className="flex justify-between items-end mb-4 border-b border-[#5c4b3a] pb-3 font-mono">
+                        <span className="text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
+                        <span className="text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
                     </div>
-                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-3 border-2 text-sm md:text-xl font-bold uppercase tracking-widest transition-all active:translate-y-1 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#5c4b3a] to-[#3e3226] border-[#8b7256] text-[#f5e6c8]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50'}`}> {customerName.trim() ? "DEAL" : "SIGN MANIFEST >"} </button>
+                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-4 border-2 text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-3 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}>
+                        {customerName.trim() ? <><Zap fill="black" size={24}/> MAKE DEAL</> : "SIGN MANIFEST >"}
+                    </button>
                 </div>
             </div>
 
-            <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                <div className="flex gap-1 p-2 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 text-[10px] font-bold uppercase whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-[#8b7256] text-black' : 'bg-[#26211c] text-[#6b5845]'}`}>{cat}</button> ))}
+            {/* RIGHT COLUMN (PRODUCTS SLIDER) */}
+            <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
+                <div className="flex gap-2 p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-5 py-2.5 text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
-                <div className="p-2 border-b border-[#3e3226] flex gap-2">
+                <div className="p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/40 border border-[#3e3226] p-2 pl-8 text-[#d4c5a3] font-mono text-xs outline-none focus:border-[#8b7256]"/>
-                        <Search size={14} className="absolute left-2 top-2.5 text-[#5c4b3a]"/>
+                        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-3 pl-10 text-[#ff9d00] font-mono text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
+                        <Search size={18} className="absolute left-3 top-3.5 text-[#8b7256]"/>
+                    </div>
+                    {/* PC Scroll Arrows */}
+                    <div className="hidden lg:flex gap-1">
+                        <button onClick={() => scroll('left')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
+                        <button onClick={() => scroll('right')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
                     </div>
                 </div>
 
-                {/* FIX 1: PC Expansion. Added `md:p-4 md:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6` to give massive breathing room on big monitors */}
-                <div className="flex-1 overflow-y-auto p-2 md:p-4 grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-4 custom-scrollbar content-start">
+                {/* FIX: PREMIUM HORIZONTAL SLIDER LAYOUT */}
+                <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 lg:p-8 flex flex-nowrap gap-6 scrollbar-hide items-start bg-[#1a1815] relative" ref={scrollContainerRef}>
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
                     {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="aspect-[4/5] bg-[#1a1815] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-95 shadow-xl">
-                            
-                            {/* Larger image area for PC */}
-                            <div className="flex-1 p-2 md:p-4 flex items-center justify-center relative overflow-hidden">
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full object-contain sepia-[.2] group-hover:sepia-0 transition-all drop-shadow-xl" alt="product"/> : <Box size={32} className="text-[#3e3226]"/>}
-                            </div>
-                            
-                            {/* FIX 2: Dynamic Footer. Uses h-auto and flex-wrap. The price drops to a new line safely if the card gets too squished, forever preventing overlap. */}
-                            <div className="h-auto min-h-[48px] md:min-h-[72px] bg-black/60 border-t border-[#3e3226] p-1.5 md:p-3 flex flex-col justify-between font-mono">
-                                <h4 className="text-[#d4c5a3] text-[9px] md:text-sm font-bold truncate uppercase mb-1 md:mb-2">{item.name}</h4>
-                                
-                                <div className="flex flex-wrap justify-between items-end gap-x-2 gap-y-1">
-                                    <span className="text-[#8b7256] text-[9px] md:text-xs font-black bg-black/80 px-1.5 md:px-2 py-0.5 rounded border border-[#3e3226]">STK:{item.stock}</span>
-                                    <span className="text-[#ff9d00] text-[10px] md:text-base font-black leading-none drop-shadow-md">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(item.priceEcer || 0)}</span>
+                        /* WIDE PC CARD (Fixed Width on large screens) */
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
+                            className="w-[200px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
+                        >
+                            {/* Tall Image Area */}
+                            <div className="h-40 md:h-56 lg:h-64 p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={64} className="text-[#3e3226] opacity-50"/>}
+                                <div className="absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] md:text-xs font-black px-3 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                    {item.type || 'MISC'}
                                 </div>
                             </div>
-
+                            
+                            {/* Spacious Footer */}
+                            <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-4 md:p-5 flex flex-col justify-between font-mono relative">
+                                <h4 className="text-[#d4c5a3] text-sm md:text-lg font-black uppercase mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
+                                
+                                <div className="flex justify-between items-end w-full">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
+                                        <span className={`text-xs md:text-sm font-black px-3 py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
+                                            {item.stock > 0 ? `${item.stock} Units` : 'OUT OF STOCK'}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[9px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-1">Ecer Price</span>
+                                        <span className="text-xl md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                            {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
             </div>
-            <div className="hidden lg:flex">{renderManifestUI(false)}</div>
+            <div className="hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
             
+            {/* RECEIPT MODAL (Unchanged) */}
             {receiptData && (
-                <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
-                    <style>{`
-                        @media print { 
-                            body * { visibility: hidden; } 
-                            .print-receipt, .print-receipt * { visibility: visible; } 
-                            .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } 
-                            .no-print { display: none !important; }
-                        }
-                    `}</style>
-
-                    <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-200">
-                        <button onClick={() => setReceiptData(null)} className="no-print absolute -top-12 right-0 text-white hover:text-red-500"><X size={32}/></button>
-                        
-                        <div className="p-6 pb-2">
-                            <div className="text-center mb-6">
-                                <h2 className="text-2xl font-black uppercase tracking-widest">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                <p className="text-[10px] text-gray-500 font-bold mt-1">OFFICIAL SALES RECEIPT</p>
+                <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4 animate-fade-in">
+                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } } `}</style>
+                    <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-800 rounded-lg overflow-hidden">
+                        <button onClick={() => setReceiptData(null)} className="no-print absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-gray-100 p-1 rounded-full transition-colors"><X size={20}/></button>
+                        <div className="p-8 pb-4 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-50 pointer-events-none"></div>
+                            <div className="text-center mb-6 relative z-10">
+                                <ShoppingBag size={32} className="mx-auto mb-2 text-gray-800"/>
+                                <h2 className="text-2xl font-black uppercase tracking-[0.2em]">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                <p className="text-[10px] text-gray-500 font-bold mt-2 uppercase tracking-widest">--- Official Sales Receipt ---</p>
                             </div>
-                            
-                            <div className="border-t-2 border-dashed border-gray-400 py-3 mb-3 text-xs">
-                                <div className="flex justify-between"><span>DATE:</span><span>{receiptData.date}</span></div>
-                                <div className="flex justify-between"><span>CUST:</span><span className="font-bold">{receiptData.customer}</span></div>
-                                <div className="flex justify-between"><span>TYPE:</span><span className="uppercase">{receiptData.method}</span></div>
+                            <div className="border-t-2 border-b-2 border-dashed border-gray-300 py-4 mb-4 text-xs relative z-10 bg-gray-50/80 p-4 rounded">
+                                <div className="flex justify-between mb-1"><span className="text-gray-500">DATE:</span><span className="font-bold">{receiptData.date}</span></div>
+                                <div className="flex justify-between mb-1"><span className="text-gray-500">CUSTOMER:</span><span className="font-bold uppercase">{receiptData.customer}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-500">PAYMENT:</span><span className="font-bold uppercase bg-gray-200 px-2 rounded-[4px] text-[10px]">{receiptData.method}</span></div>
                             </div>
-
-                            <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
-                                {receiptData.items.map((item, i) => (
-                                    <div key={i} className="mb-2">
-                                        <div className="font-bold uppercase text-xs break-words whitespace-normal">{item.name}</div>
-                                        <div className="flex justify-between text-xs text-gray-600 mt-0.5">
-                                            <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)}</span>
-                                            <span className="text-black font-bold">{new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="min-h-[150px] relative z-10">
+                                <table className="w-full text-left mb-4">
+                                    <thead><tr className="text-[10px] text-gray-500 border-b border-gray-200"><th className="pb-2 font-bold">ITEM</th><th className="pb-2 text-right font-bold">QTY</th><th className="pb-2 text-right font-bold">TOTAL</th></tr></thead>
+                                    <tbody className="divide-y divide-dashed divide-gray-200">
+                                        {receiptData.items.map((item, i) => (
+                                            <tr key={i}><td className="py-3 pr-2"><div className="font-bold uppercase text-xs break-words">{item.name}</div><div className="text-[10px] text-gray-500">@ {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / {item.unit}</div></td><td className="py-3 text-right font-bold align-top">{item.qty}</td><td className="py-3 text-right font-black align-top">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</td></tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-
-                            <div className="flex justify-between items-center text-lg font-black mb-6">
-                                <span>TOTAL</span>
-                                <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total)}</span>
-                            </div>
-                            
-                            <div className="text-center text-[10px] text-gray-500 mb-4 font-bold">
-                                <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
-                            </div>
+                            <div className="flex justify-between items-center text-xl font-black mb-6 border-t-2 border-gray-800 pt-4 relative z-10"><span>TOTAL PAID</span><span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total)}</span></div>
+                            <div className="text-center text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest relative z-10"><p>*** ALL SALES ARE FINAL ***</p><p className="mt-1">Thank you for your patronage.</p></div>
                         </div>
-
-                        <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
-                            <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-xs shadow-md"><Printer size={16}/> Print</button>
-                            <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-xs shadow-md"><MessageSquare size={16}/> WhatsApp</button>
+                        <div className="no-print bg-[#1a1815] p-4 flex gap-3 border-t-4 border-[#ff9d00]">
+                            <button onClick={() => window.print()} className="flex-1 bg-[#3e3226] text-[#ff9d00] py-3 rounded-lg uppercase font-black flex items-center justify-center gap-2 hover:bg-[#5c4b3a] hover:text-white transition-all tracking-widest text-xs shadow-lg border-2 border-[#5c4b3a] active:scale-95"><Printer size={18}/> Print</button>
+                            <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-black flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-all tracking-widest text-xs shadow-lg border-2 border-[#128C7E] active:scale-95"><MessageSquare size={18}/> WhatsApp</button>
                         </div>
                     </div>
                 </div>
             )}
-            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #3e3226; border-radius: 2px; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; }`}</style>
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
         </div>
     );
 };
