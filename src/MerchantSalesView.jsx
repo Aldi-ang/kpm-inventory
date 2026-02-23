@@ -131,13 +131,23 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 3000);
     };
 
+    // --- FIX: DYNAMIC DOM SCROLLING ---
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
-            const scrollAmount = 400;
-            scrollContainerRef.current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            });
+            // Find a card to mathematically determine its exact width
+            const cardNode = scrollContainerRef.current.querySelector('.product-card');
+            if (cardNode) {
+                const gap = 24; // Tailwind gap-6 is exactly 24 pixels
+                const scrollAmount = cardNode.offsetWidth + gap; 
+                
+                // Scroll 2 cards at a time on massive screens, 1 at a time on small ones
+                const multiplier = window.innerWidth >= 1024 ? 2 : 1; 
+                
+                scrollContainerRef.current.scrollBy({
+                    left: direction === 'left' ? -(scrollAmount * multiplier) : (scrollAmount * multiplier),
+                    behavior: 'smooth'
+                });
+            }
         }
     };
 
@@ -278,13 +288,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
 
-                {/* FIX: PREMIUM HORIZONTAL SLIDER LAYOUT */}
-                <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 lg:p-8 flex flex-nowrap gap-6 scrollbar-hide items-start bg-[#1a1815] relative" ref={scrollContainerRef}>
+                {/* FIX: CSS SCROLL SNAPPING ADDED HERE */}
+                <div 
+                    className="flex-1 overflow-x-auto overflow-y-hidden p-4 lg:p-8 flex flex-nowrap gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-4 lg:scroll-pl-8 scroll-smooth" 
+                    ref={scrollContainerRef}
+                >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
                     {filteredItems.map(item => (
-                        /* WIDE PC CARD (Fixed Width on large screens) */
+                        /* FIX: product-card and snap-start classes added to lock alignment perfectly */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
-                            className="w-[200px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
+                            className="product-card snap-start w-[200px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
                         >
                             {/* Tall Image Area */}
                             <div className="h-40 md:h-56 lg:h-64 p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
