@@ -131,20 +131,17 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 3000);
     };
 
-    // --- FIX: DYNAMIC DOM SCROLLING ---
+    // --- FIX: DYNAMIC DOM SCROLLING (ONE CARD AT A TIME) ---
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
-            // Find a card to mathematically determine its exact width
             const cardNode = scrollContainerRef.current.querySelector('.product-card');
             if (cardNode) {
                 const gap = 24; // Tailwind gap-6 is exactly 24 pixels
                 const scrollAmount = cardNode.offsetWidth + gap; 
                 
-                // Scroll 2 cards at a time on massive screens, 1 at a time on small ones
-                const multiplier = window.innerWidth >= 1024 ? 2 : 1; 
-                
+                // FIX: Removed the 2x multiplier. It now scrolls exactly 1 card per click.
                 scrollContainerRef.current.scrollBy({
-                    left: direction === 'left' ? -(scrollAmount * multiplier) : (scrollAmount * multiplier),
+                    left: direction === 'left' ? -scrollAmount : scrollAmount,
                     behavior: 'smooth'
                 });
             }
