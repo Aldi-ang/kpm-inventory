@@ -2425,20 +2425,23 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 }
                 .text-shadow-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
                 
-                /* FIX: INVISIBLE MAP POPUPS */
-                .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+                /* --- KILL THE WHITE MAP POPUPS --- */
+                .leaflet-container .leaflet-popup-content-wrapper {
                     background: transparent !important;
                     box-shadow: none !important;
+                    border: none !important;
+                    padding: 0 !important;
                 }
-                .leaflet-popup-content {
+                .leaflet-container .leaflet-popup-tip-container {
+                    display: none !important;
+                }
+                .leaflet-container .leaflet-popup-content {
                     margin: 0 !important;
+                    line-height: normal !important;
                     width: auto !important;
                 }
-                .leaflet-popup-tip-container {
-                    display: none !important; /* Hides the white triangle */
-                }
                 .leaflet-container a.leaflet-popup-close-button {
-                    display: none !important; /* Hides the ugly default X */
+                    display: none !important;
                 }
             `}</style>
         </div>
