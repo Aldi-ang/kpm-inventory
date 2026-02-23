@@ -23,6 +23,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const [poData, setPoData] = useState({
         supplierName: '',
         poNumber: `PO-${Date.now().toString().slice(-6)}`,
+        poDate: new Date().toISOString().split('T')[0], // <--- NEW: Editable PO Date (Defaults to today)
         shippingCost: 0,
         exciseTax: 0,
         laborCost: 0,
@@ -85,7 +86,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             // FIX: Force receiptUrl to be NULL instead of UNDEFINED to prevent database crashes
             const poRecord = { 
                 batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, 
-                timestamp: serverTimestamp(), date: new Date().toISOString().split('T')[0], 
+                timestamp: serverTimestamp(), 
+                date: poData.poDate, // <--- NEW: Uses your chosen date instead of forcing today silently
                 hasReceipt: !!receiptUrl, 
                 receiptUrl: receiptUrl || null 
             };
@@ -97,7 +99,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             if (triggerCapy) triggerCapy(`Shipment Secured! ${totalItemsReceived} units injected to stock.`);
             
             setCart([]);
-            setPoData({ supplierName: '', poNumber: `PO-${Date.now().toString().slice(-6)}`, shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
+            setPoData({ 
+                supplierName: '', 
+                poNumber: `PO-${Date.now().toString().slice(-6)}`, 
+                poDate: new Date().toISOString().split('T')[0], // <--- Resets back to today
+                shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' 
+            });
             setReceiptFile(null);
             setViewMode('ledger');
             
@@ -570,6 +577,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/10">
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Shipment Meta</h3>
+                                        {/* NEW: ARRIVAL DATE FIELD (Uses Phone's Native Calendar) */}
+                                        <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mb-1"><Calendar size={12}/> Arrival Date</label><input type="date" value={poData.poDate} onChange={e => setPoData({...poData, poDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" /></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase">PO / Invoice Number</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase">Supplier / Factory</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mt-2"><Calendar size={12}/> Global Expiry Date</label><input type="date" value={poData.expiryDate} onChange={e => setPoData({...poData, expiryDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono"/></div>
