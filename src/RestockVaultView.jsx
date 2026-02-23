@@ -58,11 +58,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                 try {
                     triggerCapy("Uploading Receipt Image... ⏳");
                     const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${batchId}_${receiptFile.name}`);
-                    await uploadBytes(fileRef, receiptFile);
+                    
+                    // FIX: 10 Second Timeout. If Firebase Storage is unconfigured, it won't spin infinitely.
+                    await Promise.race([
+                        uploadBytes(fileRef, receiptFile),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("Storage Timeout! Check Firebase Storage rules.")), 10000))
+                    ]);
                     receiptUrl = await getDownloadURL(fileRef);
                 } catch (uploadErr) {
                     console.error("Storage upload error:", uploadErr);
-                    alert("Warning: Receipt image upload failed (Storage issue). Data will be saved without the image.");
+                    alert(`Upload Failed: ${uploadErr.message}. Saving shipment data without image.`);
+                    receiptUrl = null;
                 }
             }
 
@@ -75,7 +81,14 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             }
 
             const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
-            const poRecord = { batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, timestamp: serverTimestamp(), date: new Date().toISOString().split('T')[0], hasReceipt: !!receiptUrl, receiptUrl };
+            
+            // FIX: Force receiptUrl to be NULL instead of UNDEFINED to prevent database crashes
+            const poRecord = { 
+                batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, 
+                timestamp: serverTimestamp(), date: new Date().toISOString().split('T')[0], 
+                hasReceipt: !!receiptUrl, 
+                receiptUrl: receiptUrl || null 
+            };
             
             batch.set(poRef, poRecord);
             await batch.commit();
@@ -141,19 +154,26 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         const newLanded = newTotalBase + (parseFloat(editingPO.shippingCost)||0) + (parseFloat(editingPO.laborCost)||0) + (parseFloat(editingPO.exciseTax)||0);
 
         try {
-            // Process New Image Upload if requested
-            let newReceiptUrl = editingPO.receiptUrl;
-            let newHasReceipt = editingPO.hasReceipt;
+            // FIX: Force fallback to NULL to stop the "Undefined field" crash seen in Image 2
+            let newReceiptUrl = editingPO.receiptUrl || null;
+            let newHasReceipt = editingPO.hasReceipt || false;
+            
             if (editReceiptFile && storage) {
                 try {
                     triggerCapy("Uploading New Receipt... ⏳");
                     const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${editingPO.batchId}_${editReceiptFile.name}`);
-                    await uploadBytes(fileRef, editReceiptFile);
+                    
+                    // FIX: Added 10 second timeout here too
+                    await Promise.race([
+                        uploadBytes(fileRef, editReceiptFile),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("Storage Timeout")), 10000))
+                    ]);
                     newReceiptUrl = await getDownloadURL(fileRef);
                     newHasReceipt = true;
                 } catch (err) {
                     console.error("Storage upload error:", err);
-                    alert("Warning: Receipt upload failed. Saving other edits...");
+                    alert(`Warning: Receipt upload failed (${err.message}). Saving other edits...`);
+                    newReceiptUrl = editingPO.receiptUrl || null;
                 }
             }
 
@@ -429,17 +449,25 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                             {/* NEW: RECEIPT EDITOR */}
                             <div className="pt-4 border-t border-white/10 mt-4">
                                 <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Update Digital Receipt</h3>
-                                <div className="flex flex-col md:flex-row md:items-center gap-4 bg-black p-3 border border-white/10 rounded">
+                                <div className="flex flex-col md:flex-row md:items-start gap-4 bg-black p-3 border border-white/10 rounded">
                                     {editingPO.receiptUrl && !editReceiptFile ? (
-                                        <a href={editingPO.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/50 px-3 py-2 rounded text-xs font-bold hover:bg-blue-900/50 transition-colors"><ExternalLink size={14}/> View Current Receipt</a>
+                                        <a href={editingPO.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/50 px-3 py-2 rounded text-xs font-bold hover:bg-blue-900/50 transition-colors shrink-0"><ExternalLink size={14}/> View Current Receipt</a>
                                     ) : (
-                                        <span className="text-xs text-slate-500 italic">No receipt saved on server.</span>
+                                        <span className="text-xs text-slate-500 italic shrink-0 mt-2">No previous receipt.</span>
                                     )}
-                                    <div className="flex-1">
-                                        <label className="text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 px-4 py-2 rounded cursor-pointer transition-colors border border-white/10 flex items-center justify-center gap-2">
-                                            <UploadCloud size={14}/> {editReceiptFile ? editReceiptFile.name : 'Upload Replacement'}
-                                            <input type="file" className="hidden" onChange={(e) => setEditReceiptFile(e.target.files[0])}/>
-                                        </label>
+                                    <div className="flex-1 w-full">
+                                        {/* FIX: Split Upload vs Remove into two distinct states */}
+                                        {editReceiptFile ? (
+                                            <div className="flex items-center justify-between bg-white/5 border border-white/10 px-3 py-2 rounded">
+                                                <span className="text-xs font-bold text-emerald-400 truncate mr-2">{editReceiptFile.name}</span>
+                                                <button type="button" onClick={() => setEditReceiptFile(null)} className="text-[10px] bg-red-900/50 text-red-400 px-2 py-1 rounded hover:bg-red-900 uppercase font-bold shrink-0">Remove</button>
+                                            </div>
+                                        ) : (
+                                            <label className="text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 px-4 py-2 rounded cursor-pointer transition-colors border border-white/10 flex items-center justify-center gap-2 w-full">
+                                                <UploadCloud size={14}/> Upload Replacement File
+                                                <input type="file" className="hidden" onChange={(e) => setEditReceiptFile(e.target.files[0])}/>
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -558,12 +586,20 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><Receipt size={14}/> 3. Digital Vault</h3>
-                                        <div className="border-2 border-dashed border-white/10 hover:border-orange-500/50 bg-black/50 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors relative h-[120px]">
-                                            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setReceiptFile(e.target.files[0])} />
+                                        {/* FIX: Rebuilt drag zone to include a working Remove File button */}
+                                        <div className="border-2 border-dashed border-white/10 bg-black/50 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors h-[120px]">
                                             {receiptFile ? (
-                                                <><FileText size={24} className="text-emerald-500 mb-1" /><p className="text-xs font-bold text-white truncate w-full px-4">{receiptFile.name}</p></>
+                                                <>
+                                                    <FileText size={24} className="text-emerald-500 mb-1" />
+                                                    <p className="text-xs font-bold text-white truncate w-full px-4 mb-2">{receiptFile.name}</p>
+                                                    <button onClick={() => setReceiptFile(null)} className="text-[10px] bg-red-900/50 text-red-400 px-3 py-1 rounded hover:bg-red-900 transition-colors uppercase font-bold">Remove File</button>
+                                                </>
                                             ) : (
-                                                <><UploadCloud size={24} className="text-slate-600 mb-1" /><p className="text-xs font-bold text-white">Upload Invoice Photo/PDF</p></>
+                                                <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full hover:text-orange-500 transition-colors text-slate-600">
+                                                    <UploadCloud size={24} className="mb-1" />
+                                                    <p className="text-xs font-bold text-white">Upload Invoice Photo/PDF</p>
+                                                    <input type="file" className="hidden" onChange={(e) => setReceiptFile(e.target.files[0])} />
+                                                </label>
                                             )}
                                         </div>
                                     </div>
