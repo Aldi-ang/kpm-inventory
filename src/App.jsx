@@ -3326,6 +3326,7 @@ const handleGitHubMirror = async () => {
   const [transactions, setTransactions] = useState([]);
   const [samplings, setSamplings] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [procurements, setProcurements] = useState([]); // <--- NEW STATE
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
@@ -3617,13 +3618,17 @@ const handleGitHubMirror = async () => {
     // 5. Audit Logs
     const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
     
-    // 6. Customers (THIS IS LIKELY THE MISSING PART)
+    // 6. Customers 
     const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+    // 7. Procurement Ledger
+    const unsubProc = onSnapshot(query(collection(db, basePath, 'procurement'), orderBy('timestamp', 'desc')), (snap) => setProcurements(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
     const savedTheme = localStorage.getItem('kpm_theme');
     if (savedTheme === 'light') setDarkMode(false);
     
-    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); };
+    // Make sure to add unsubProc() to the cleanup array!
+    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); };
   }, [user]);
 
   useEffect(() => {
@@ -5086,7 +5091,15 @@ const handleGitHubMirror = async () => {
           {/* NEW: RESTOCK VAULT ENGINE */}
           {activeTab === 'restock_vault' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black">
-              <RestockVaultView inventory={inventory} />
+              <RestockVaultView 
+                  inventory={inventory} 
+                  procurements={procurements} // <--- PASSING THE LEDGER DATA
+                  db={db} 
+                  appId={appId} 
+                  user={user} 
+                  logAudit={logAudit} 
+                  triggerCapy={triggerCapy} 
+              />
           </div>
           )}
 
