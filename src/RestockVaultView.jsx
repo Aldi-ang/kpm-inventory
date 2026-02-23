@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink } from 'lucide-react';
-import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy }) => {
@@ -17,6 +17,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     // Edit/Print States
     const [viewingAcceptance, setViewingAcceptance] = useState(null);
     const [editingPO, setEditingPO] = useState(null);
+    const [editReceiptFile, setEditReceiptFile] = useState(null);
 
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
@@ -42,7 +43,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const totalBasePrice = cart.reduce((sum, item) => sum + (parseFloat(item.qtyReceived || 0) * parseFloat(item.basePrice || 0)), 0);
     const totalItemsReceived = cart.reduce((sum, item) => sum + parseFloat(item.qtyReceived || 0), 0);
 
-    // --- PROCESS NEW RESTOCK ---
+    // --- FIXED: PROCESS RESTOCK WITH BATCH WRITES ---
     const handleProcessRestock = async () => {
         if (!user || !db) return alert("System disconnected. Cannot save.");
         if (cart.length === 0 || totalItemsReceived <= 0) return alert("Cart is empty or missing quantities.");
@@ -54,28 +55,30 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         try {
             let receiptUrl = null;
             if (receiptFile && storage) {
-                triggerCapy("Uploading Receipt Image... ⏳");
-                const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${batchId}_${receiptFile.name}`);
-                await uploadBytes(fileRef, receiptFile);
-                receiptUrl = await getDownloadURL(fileRef);
+                try {
+                    triggerCapy("Uploading Receipt Image... ⏳");
+                    const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${batchId}_${receiptFile.name}`);
+                    await uploadBytes(fileRef, receiptFile);
+                    receiptUrl = await getDownloadURL(fileRef);
+                } catch (uploadErr) {
+                    console.error("Storage upload error:", uploadErr);
+                    alert("Warning: Receipt image upload failed (Storage issue). Data will be saved without the image.");
+                }
             }
 
-            await runTransaction(db, async (transaction) => {
-                const stockUpdates = [];
-                for (const item of cart) {
-                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
-                    const prodDoc = await transaction.get(prodRef);
-                    if (!prodDoc.exists()) throw new Error(`Product missing: ${item.name}`);
-                    const currentStock = prodDoc.data().stock || 0;
-                    stockUpdates.push({ ref: prodRef, newStock: currentStock + (parseInt(item.qtyReceived) || 0) });
-                }
+            // REPLACED runTransaction with writeBatch to prevent infinite spinning bugs offline
+            const batch = writeBatch(db);
+            for (const item of cart) {
+                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
+                const currentStock = inventory.find(p => p.id === item.id)?.stock || 0;
+                batch.update(prodRef, { stock: currentStock + (parseInt(item.qtyReceived) || 0) });
+            }
 
-                const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
-                const poRecord = { batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, timestamp: serverTimestamp(), date: new Date().toISOString().split('T')[0], hasReceipt: !!receiptUrl, receiptUrl };
-                
-                transaction.set(poRef, poRecord);
-                for (const update of stockUpdates) transaction.update(update.ref, { stock: update.newStock });
-            });
+            const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
+            const poRecord = { batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, timestamp: serverTimestamp(), date: new Date().toISOString().split('T')[0], hasReceipt: !!receiptUrl, receiptUrl };
+            
+            batch.set(poRef, poRecord);
+            await batch.commit();
 
             if (logAudit) await logAudit("RESTOCK_VAULT", `Procured ${totalItemsReceived} units under ${poData.poNumber}`);
             if (triggerCapy) triggerCapy(`Shipment Secured! ${totalItemsReceived} units injected to stock.`);
@@ -85,8 +88,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             setReceiptFile(null);
             setViewMode('ledger');
             
-        } catch (error) { console.error(error); alert("Procurement Failed: " + error.message); }
-        setIsSubmitting(false);
+        } catch (error) { 
+            console.error(error); 
+            alert("Procurement Failed: " + error.message); 
+        } finally {
+            setIsSubmitting(false); // Guarantees the spinner stops
+        }
     };
 
     // --- LEDGER LOGIC: FOLDER STRUCTURE ---
@@ -106,61 +113,90 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         return structure;
     }, [procurements]);
 
-    // --- LEDGER LOGIC: EDIT & DELETE ---
+    // --- FIXED: LEDGER DELETE (USING BATCH) ---
     const handleDeletePO = async (po) => {
         if(!window.confirm(`Delete PO ${po.poNumber}? WARNING: This will DEDUCT the received items back out of your inventory!`)) return;
         try {
-            await runTransaction(db, async (t) => {
-                for (const item of po.items) {
-                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
-                    const prodDoc = await t.get(prodRef);
-                    if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock - parseInt(item.qtyReceived) });
-                }
-                t.delete(doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, po.id));
-            });
+            const batch = writeBatch(db);
+            for (const item of po.items) {
+                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
+                const currentStock = inventory.find(p => p.id === item.id)?.stock || 0;
+                batch.update(prodRef, { stock: currentStock - parseInt(item.qtyReceived) });
+            }
+            batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, po.id));
+            await batch.commit();
+
             if (logAudit) await logAudit("RESTOCK_DELETE", `Deleted PO ${po.poNumber} and reverted stock.`);
             triggerCapy("Record Deleted & Stock Reverted.");
         } catch(e) { alert("Failed to delete: " + e.message); }
     };
 
+    // --- FIXED: LEDGER EDIT (MUTATION PREVENTION + NEW RECEIPT UPLOAD) ---
     const handleSaveEditPO = async (e) => {
         e.preventDefault();
         if(!editingPO) return;
 
-        // Recalculate Totals
+        setIsSubmitting(true);
         const newTotalBase = editingPO.items.reduce((sum, item) => sum + (parseFloat(item.qtyReceived||0) * parseFloat(item.basePrice||0)), 0);
         const newLanded = newTotalBase + (parseFloat(editingPO.shippingCost)||0) + (parseFloat(editingPO.laborCost)||0) + (parseFloat(editingPO.exciseTax)||0);
 
         try {
-            await runTransaction(db, async (t) => {
-                // 1. Calculate Stock Deltas for items
-                const originalPO = procurements.find(p => p.id === editingPO.id);
-                for (const editedItem of editingPO.items) {
-                    const oldItem = originalPO.items.find(i => i.id === editedItem.id);
-                    const diff = (parseInt(editedItem.qtyReceived) || 0) - (parseInt(oldItem?.qtyReceived) || 0);
-                    
-                    if (diff !== 0) {
-                        const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editedItem.id);
-                        const prodDoc = await t.get(prodRef);
-                        if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + diff });
-                    }
+            // Process New Image Upload if requested
+            let newReceiptUrl = editingPO.receiptUrl;
+            let newHasReceipt = editingPO.hasReceipt;
+            if (editReceiptFile && storage) {
+                try {
+                    triggerCapy("Uploading New Receipt... ⏳");
+                    const fileRef = ref(storage, `artifacts/${appId}/users/${user.uid}/receipts/${editingPO.batchId}_${editReceiptFile.name}`);
+                    await uploadBytes(fileRef, editReceiptFile);
+                    newReceiptUrl = await getDownloadURL(fileRef);
+                    newHasReceipt = true;
+                } catch (err) {
+                    console.error("Storage upload error:", err);
+                    alert("Warning: Receipt upload failed. Saving other edits...");
                 }
+            }
 
-                // 2. Update PO Meta
-                const poRef = doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, editingPO.id);
-                t.update(poRef, { ...editingPO, totalBasePrice: newTotalBase, trueLandedTotal: newLanded, updatedAt: serverTimestamp() });
+            const batch = writeBatch(db);
+            const originalPO = procurements.find(p => p.id === editingPO.id);
+            
+            for (const editedItem of editingPO.items) {
+                const oldItem = originalPO.items.find(i => i.id === editedItem.id);
+                // Math is fixed because we deep-cloned the editing state!
+                const diff = (parseInt(editedItem.qtyReceived) || 0) - (parseInt(oldItem?.qtyReceived) || 0);
+                
+                if (diff !== 0) {
+                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editedItem.id);
+                    const currentStock = inventory.find(p => p.id === editedItem.id)?.stock || 0;
+                    batch.update(prodRef, { stock: currentStock + diff });
+                }
+            }
+
+            const poRef = doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, editingPO.id);
+            batch.update(poRef, { 
+                ...editingPO, 
+                totalBasePrice: newTotalBase, 
+                trueLandedTotal: newLanded, 
+                updatedAt: serverTimestamp(),
+                receiptUrl: newReceiptUrl,
+                hasReceipt: newHasReceipt
             });
 
+            await batch.commit();
             triggerCapy("PO Updated Successfully!");
             setEditingPO(null);
-        } catch(e) { alert("Edit Failed: " + e.message); }
+            setEditReceiptFile(null);
+        } catch(e) { 
+            alert("Edit Failed: " + e.message); 
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // ==========================================
     // RENDER: LEDGER FOLDERS & PO LIST
     // ==========================================
     const renderLedger = () => {
-        // LEVEL 4: PO LIST (Inside a Date)
         if (selectedYear && selectedMonth && selectedDate) {
             const pos = folderStructure[selectedYear][selectedMonth][selectedDate] || [];
             return (
@@ -233,7 +269,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
                                             {isAdmin && (
                                                 <div className="mt-4 flex gap-2 pt-4 border-t border-white/5">
-                                                    <button onClick={() => setEditingPO(po)} className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><Pencil size={12}/> Edit Data</button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            // DEEP CLONE prevents state mutation bugs
+                                                            const poClone = { ...po, items: po.items.map(i => ({...i})) };
+                                                            setEditingPO(poClone);
+                                                            setEditReceiptFile(null);
+                                                        }} 
+                                                        className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"
+                                                    >
+                                                        <Pencil size={12}/> Edit Data
+                                                    </button>
                                                     <button onClick={() => handleDeletePO(po)} className="flex-1 bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><Trash2 size={12}/> Revert & Delete</button>
                                                 </div>
                                             )}
@@ -247,7 +293,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             );
         }
         
-        // LEVEL 3: DATES
         if (selectedYear && selectedMonth) {
             const dates = Object.keys(folderStructure[selectedYear][selectedMonth] || {}).sort((a,b) => new Date(b) - new Date(a));
             return (
@@ -266,7 +311,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             );
         }
 
-        // LEVEL 2: MONTHS
         if (selectedYear) {
             const months = Object.keys(folderStructure[selectedYear] || {});
             const monthOrder = { "January":1, "February":2, "March":3, "April":4, "May":5, "June":6, "July":7, "August":8, "September":9, "October":10, "November":11, "December":12 };
@@ -286,7 +330,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             );
         }
 
-        // LEVEL 1: YEARS
         const years = Object.keys(folderStructure).sort((a, b) => b - a);
         return (
             <div className="animate-fade-in pr-2 custom-scrollbar overflow-y-auto">
@@ -382,6 +425,24 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                     <div><label className="text-xs text-slate-500">Tax (Rp)</label><input type="number" value={editingPO.exciseTax} onChange={e=>setEditingPO({...editingPO, exciseTax: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
                                 </div>
                             </div>
+
+                            {/* NEW: RECEIPT EDITOR */}
+                            <div className="pt-4 border-t border-white/10 mt-4">
+                                <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Update Digital Receipt</h3>
+                                <div className="flex flex-col md:flex-row md:items-center gap-4 bg-black p-3 border border-white/10 rounded">
+                                    {editingPO.receiptUrl && !editReceiptFile ? (
+                                        <a href={editingPO.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/50 px-3 py-2 rounded text-xs font-bold hover:bg-blue-900/50 transition-colors"><ExternalLink size={14}/> View Current Receipt</a>
+                                    ) : (
+                                        <span className="text-xs text-slate-500 italic">No receipt saved on server.</span>
+                                    )}
+                                    <div className="flex-1">
+                                        <label className="text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 px-4 py-2 rounded cursor-pointer transition-colors border border-white/10 flex items-center justify-center gap-2">
+                                            <UploadCloud size={14}/> {editReceiptFile ? editReceiptFile.name : 'Upload Replacement'}
+                                            <input type="file" className="hidden" onChange={(e) => setEditReceiptFile(e.target.files[0])}/>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                             
                             <div className="border-t border-white/10 pt-4">
                                 <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Adjust Items (Will modify live stock)</h3>
@@ -395,7 +456,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                     ))}
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-lg uppercase tracking-widest shadow-lg transition-colors">Save All Changes</button>
+                            <button type="submit" disabled={isSubmitting} className={`w-full text-white font-bold py-3 rounded-lg uppercase tracking-widest shadow-lg transition-colors flex justify-center items-center gap-2 ${isSubmitting ? 'bg-slate-500 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500'}`}>
+                                {isSubmitting ? <RefreshCcw size={16} className="animate-spin" /> : <Save size={16} />}
+                                {isSubmitting ? "Saving..." : "Save All Changes"}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -467,7 +531,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                 <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Ordered</label><input type="number" value={item.qtyOrdered || ''} onChange={e => updateCartItem(item.id, 'qtyOrdered', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-blue-500 outline-none font-mono" placeholder="0"/></div>
                                                 <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.id, 'qtyReceived', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
                                                 <div className="w-28"><label className="text-[8px] text-slate-500 uppercase block mb-1">Cost / Unit (Rp)</label><input type="number" value={item.basePrice || ''} onChange={e => updateCartItem(item.id, 'basePrice', e.target.value)} className="w-full bg-orange-900/20 border border-orange-500/30 rounded p-1.5 text-xs text-orange-400 focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
-                                                {/* REQUIRED REQ 7: Individual Item Value Calc */}
                                                 <div className="w-28 text-right bg-black border border-white/5 rounded p-1.5 h-[30px] flex items-center justify-end">
                                                     <span className="text-[10px] text-emerald-400 font-bold font-mono">= Rp {new Intl.NumberFormat('id-ID').format((item.qtyReceived || 0) * (item.basePrice || 0))}</span>
                                                 </div>
@@ -480,7 +543,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Shipment Meta</h3>
                                         <div><label className="text-[10px] text-slate-500 uppercase">PO / Invoice Number</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
-                                        {/* REQUIRED REQ 4: Changed Placeholder */}
                                         <div><label className="text-[10px] text-slate-500 uppercase">Supplier / Factory</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mt-2"><Calendar size={12}/> Global Expiry Date</label><input type="date" value={poData.expiryDate} onChange={e => setPoData({...poData, expiryDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono"/></div>
                                     </div>
