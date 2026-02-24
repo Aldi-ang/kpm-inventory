@@ -1,28 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2 } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(number);
-};
-
-const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; 
-    const p1 = lat1 * Math.PI/180;
-    const p2 = lat2 * Math.PI/180;
-    const dp = (lat2-lat1) * Math.PI/180;
-    const dl = (lon2-lon1) * Math.PI/180;
-    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; 
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
 const convertToBks = (qty, unit, product) => {
@@ -36,19 +21,11 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-// --- EXTRACTED COMPONENTS (PREVENTS FLICKERING & REMOUNTING) ---
-
+// --- EXTRACTED COMPONENTS TO PREVENT FLICKERING ---
 const getIcon = (store, activeTiers, isTemp = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
-
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
-    let content = '';
-    if (tierDef.iconType === 'image') {
-        content = `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
-    } else {
-        content = `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
-    }
-
+    let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-10px; right:-10px; background:gold; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:10;">👑</div>` : '';
     let glow = store.status === 'overdue' ? `box-shadow: 0 0 0 4px #ef4444; animation: pulse 1.5s infinite;` : '';
     let border = `border: 3px solid ${store.storeType === 'Wholesaler' ? '#f59e0b' : (tierDef.color || '#94a3b8')};`;
@@ -133,41 +110,45 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-const GameHUD = ({ conquestMode, mapPoints, isAdmin, coverageScale, setCoverageScale }) => {
+// --- HUD COMPONENTS ---
+const GameHUD = ({ conquestMode, mapPoints }) => {
+    const [isMinimized, setIsMinimized] = useState(false);
+    
     if (!conquestMode) return null;
     const totalStores = mapPoints.length;
     const conqueredCount = mapPoints.filter(s => s.isConquered).length;
     const percentage = totalStores > 0 ? Math.round((conqueredCount / totalStores) * 100) : 0;
+    
     let rank = "Street Peddler";
     if (percentage > 25) rank = "District Manager";
     if (percentage > 50) rank = "City Boss";
     if (percentage > 75) rank = "Kingpin";
     if (percentage === 100) rank = "Legend";
 
+    // MINIMIZED VIEW
+    if (isMinimized) {
+        return (
+            <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
+                <Shield size={14} className="text-orange-500"/>
+                <span className="text-xs font-bold font-mono">Control: {percentage}%</span>
+                <Maximize2 size={12} className="text-slate-400"/>
+            </div>
+        );
+    }
+
+    // EXPANDED VIEW
     return (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
+            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-4 mb-3 mt-1">
                 <div className="text-3xl font-black font-mono">{percentage}%</div>
                 <div className="h-8 w-[1px] bg-slate-600"></div>
                 <div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div>
             </div>
-            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mb-4">
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                 <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
             </div>
-            {isAdmin && (
-                <div className="w-full pt-4 mt-1 border-t border-slate-700 pointer-events-auto">
-                    <div className="flex justify-between items-center mb-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Network size={12} className="text-orange-500"/> Simulation Scale</label>
-                        <div className="flex items-center gap-1">
-                            <input type="number" step="0.1" min="0.1" max="5.0" value={coverageScale} onChange={(e) => setCoverageScale(Math.max(0.1, parseFloat(e.target.value) || 1))} className="w-14 text-right text-xs font-mono bg-slate-800 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
-                            <span className="text-[10px] text-slate-500 font-bold">x</span>
-                        </div>
-                    </div>
-                    <input type="range" min="0.1" max="5.0" step="0.1" value={coverageScale} onChange={(e) => setCoverageScale(parseFloat(e.target.value))} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
-                    <p className="text-[8px] text-slate-500 mt-3 text-center uppercase tracking-widest leading-tight">Cannibalization Heatmap Active<br/><span className="text-red-400">Red = Distribution Overlap</span></p>
-                </div>
-            )}
         </div>
     );
 };
@@ -187,6 +168,10 @@ const HudTooltip = ({ active, payload, label }) => {
 const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore }) => {
     const [showConsignDetails, setShowConsignDetails] = useState(false);
     const [isLinking, setIsLinking] = useState(false); 
+    
+    // INDIVIDUAL STORE SLIDER STATE
+    const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
+    
     const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
     const stats = useMemo(() => {
@@ -247,6 +232,14 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
         } catch (error) { console.error("Error mapping hub:", error); } finally { setIsLinking(false); }
     };
 
+    const handleSaveLocalScale = async () => {
+        if (!db || !appId) return;
+        try {
+            const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
+            await updateDoc(ref, { catchmentScale: localScale });
+        } catch (error) { console.error("Error saving scale:", error); }
+    };
+
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
     const getGpsLink = () => { if (store.latitude && store.longitude) return `http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`; return `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; };
 
@@ -260,8 +253,37 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <Building2 size={10} /> WHOLESALE HUB
                 </span>
             )}
-            
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
+
+            {/* --- INDIVIDUAL STORE RADIUS SLIDER --- */}
+            {isAdmin && (
+                <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1">
+                            <Network size={12} className="text-orange-500"/> Individual Reach
+                        </label>
+                        <div className="flex items-center gap-1">
+                            <input 
+                                type="number" step="0.1" min="0.1" max="5.0"
+                                value={localScale} 
+                                onChange={(e) => setLocalScale(Math.max(0.1, parseFloat(e.target.value) || 1))}
+                                onBlur={handleSaveLocalScale}
+                                className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-500 font-bold">x</span>
+                        </div>
+                    </div>
+                    <input 
+                        type="range" min="0.1" max="5.0" step="0.1" 
+                        value={localScale} 
+                        onChange={(e) => setLocalScale(parseFloat(e.target.value))} 
+                        onMouseUp={handleSaveLocalScale}
+                        onTouchEnd={handleSaveLocalScale}
+                        className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
+                    />
+                    <p className="text-[9px] text-slate-500 mt-2 italic">Adjusting this only affects {store.name}'s footprint.</p>
+                </div>
+            )}
 
             {isAdmin && store.phone && (
                 <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center"><span className="text-sm font-mono">{store.phone}</span><a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="p-2 bg-green-600 rounded-lg hover:bg-green-500 transition-colors flex items-center gap-2 text-xs font-bold"><Phone size={14}/> Chat</a></div>
@@ -283,7 +305,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                         <option value="none">-- Select Wholesale Hub --</option>
                         {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
                     </select>
-                    <p className="text-[9px] text-slate-500 mt-2 italic">Connect this retailer to a designated hub to draw supply lines on the map.</p>
                 </div>
             )}
             
@@ -313,10 +334,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                         </div>
                     )}
                     <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
-                    <div className="h-32 bg-slate-800 rounded-xl p-2 border border-slate-700">
-                        <p className="text-[10px] text-slate-500 mb-1">Sales Trend</p>
-                        <ResponsiveContainer width="100%" height="90%"><BarChart data={stats.graphData}><Tooltip content={<HudTooltip />} cursor={{fill: 'rgba(255,255,255,0.1)'}}/><Bar dataKey="total" fill="#10b981" radius={[2,2,0,0]} /></BarChart></ResponsiveContainer>
-                    </div>
                 </div>
             )}
             <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm"><MapPin size={16}/> GPS Navigation</a>
@@ -334,7 +351,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
-    const [coverageScale, setCoverageScale] = useState(1.0); 
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
@@ -371,11 +387,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 const daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
                 const isConquered = daysSinceVisit <= 30;
 
-                let status = 'ok';
-                if (diffDays <= 0) status = 'overdue';
-                else if (diffDays <= 2) status = 'soon';
-
-                return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered };
+                return { ...c, city: cit, latitude: lat, longitude: lng, status: diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'), diffDays, daysSinceVisit, isConquered };
             })
             .filter(c => c !== null);
 
@@ -418,13 +430,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     const handlePinClick = (store, map) => { setSelectedStore(store); map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 }); };
 
-    // --- FIX: DERIVE THE ACTIVE STORE DIRECTLY FROM MAP POINTS ---
-    // This ensures StoreHUD instantly gets the latest data when Firebase updates, without remounting.
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
         <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
-            <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} isAdmin={isAdmin} coverageScale={coverageScale} setCoverageScale={setCoverageScale} /> 
+            <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
                 <button onClick={() => setShowControls(!showControls)} className="lg:hidden pointer-events-auto bg-slate-900/90 text-white p-2.5 rounded-xl border border-slate-600 shadow-xl mb-2 hover:bg-slate-800 transition-colors backdrop-blur-md">{showControls ? <X size={20}/> : <Menu size={20}/>}</button>
@@ -444,7 +454,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         ))}
                     </div>
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Network size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
-                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Territory Heatmap: ON" : "Analyze Catchment Areas"}</button>
+                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
@@ -467,6 +477,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
                 ))}
 
+                {/* --- TRUE VENN DIAGRAM INTERSECTION HEATMAP --- */}
                 {conquestMode && mapPoints.map(store => {
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
@@ -474,40 +485,27 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     else if (store.tier === 'Gold') baseRadius = 800;
                     else if (store.tier === 'Silver') baseRadius = 500;
 
-                    const finalRadius = baseRadius * coverageScale;
-                    let overlapCount = 0;
-                    
-                    mapPoints.forEach(otherStore => {
-                        if (store.id === otherStore.id) return;
-                        let otherBase = 300;
-                        if (otherStore.storeType === 'Wholesaler') otherBase = 2500;
-                        else if (otherStore.tier === 'Platinum') otherBase = 1500;
-                        else if (otherStore.tier === 'Gold') otherBase = 800;
-                        else if (otherStore.tier === 'Silver') otherBase = 500;
-                        
-                        const otherRadius = otherBase * coverageScale;
-                        const dist = getDistance(store.latitude, store.longitude, otherStore.latitude, otherStore.longitude);
-                        
-                        if (dist < (finalRadius + otherRadius)) overlapCount++;
-                    });
-
-                    let heatmapColor = '#10b981'; 
-                    if (overlapCount === 1) heatmapColor = '#eab308'; 
-                    if (overlapCount === 2) heatmapColor = '#f97316'; 
-                    if (overlapCount >= 3) heatmapColor = '#ef4444'; 
+                    const storeScale = store.catchmentScale || 1.0;
+                    const finalRadius = baseRadius * storeScale;
 
                     return (
-                        <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className={`heatmap-circle ${store.isConquered ? "pulsing-circle" : ""}`} pathOptions={{ color: heatmapColor, fillColor: heatmapColor, fillOpacity: 0.3, weight: store.isConquered ? 2 : 1, dashArray: store.isConquered ? null : '5, 10' }}>
-                            <LeafletTooltip direction="center" sticky className="custom-leaflet-tooltip font-bold font-mono">
-                                <span className="bg-black/80 text-white px-2 py-1 rounded border border-white/20">{overlapCount === 0 ? "100% Monopoly" : `${overlapCount} Competing Stores`}</span>
-                            </LeafletTooltip>
-                        </Circle>
+                        <Circle 
+                            key={`circle-${store.id}`} 
+                            center={[store.latitude, store.longitude]} 
+                            radius={finalRadius} 
+                            // By using a uniform bright color and "mix-blend-mode: multiply", the overlaps naturally turn red.
+                            className="venn-heatmap-circle" 
+                            pathOptions={{ 
+                                color: 'transparent', // Remove border to make it look like a smooth heatmap
+                                fillColor: '#f97316', // Orange
+                                fillOpacity: 0.35, 
+                            }}
+                        />
                     );
                 })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
             </MapContainer>
 
-            {/* HUD Uses Active Store so it updates instantly without remounting! */}
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} />}
             
             <style>{`
@@ -523,9 +521,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
-                .heatmap-circle { mix-blend-mode: screen; transition: all 0.3s ease-in-out; }
-                @keyframes pulse-territory { 0% { fill-opacity: 0.2; stroke-width: 1; } 50% { fill-opacity: 0.4; stroke-width: 3; } 100% { fill-opacity: 0.2; stroke-width: 1; } }
-                .pulsing-circle { animation: pulse-territory 3s infinite ease-in-out; }
+                
+                /* THE VENN DIAGRAM CSS TRICK */
+                /* Removed transitions to fix zoom flicker, added multiply for true intersection colors */
+                .venn-heatmap-circle { mix-blend-mode: multiply; }
+                
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
                 .animate-slide-down { animation: slide-down 0.5s ease-out forwards; }
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
