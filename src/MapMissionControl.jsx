@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
 import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
@@ -53,6 +53,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     // GAMIFICATION & MINDMAP STATE
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
+    
+    // --- NEW: STRATEGIC COVERAGE SLIDER ---
+    const [coverageScale, setCoverageScale] = useState(1.0);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
@@ -118,12 +121,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
 
-    // --- UPGRADED SUPPLY CHAIN LOGIC (Uses EXPLICIT storeType === 'Wholesaler') ---
     const networkLinks = useMemo(() => {
         if (!networkMode) return [];
         const links = [];
         
-        // Scan specifically for stores explicitly tagged as Wholesalers
         const wholesalers = mapPoints.filter(c => c.storeType === 'Wholesaler');
 
         mapPoints.forEach(store => {
@@ -136,7 +137,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             [ws.latitude, ws.longitude],
                             [store.latitude, store.longitude]
                         ],
-                        color: '#f59e0b', // Uniform connection color
+                        color: '#f59e0b', 
                     });
                 }
             }
@@ -184,7 +185,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             content = `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
         }
 
-        // Add a gold crown to the marker if it is a Wholesaler Hub
         const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-10px; right:-10px; background:gold; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:10;">👑</div>` : '';
 
         let glow = store.status === 'overdue' ? `box-shadow: 0 0 0 4px #ef4444; animation: pulse 1.5s infinite;` : '';
@@ -260,6 +260,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         );
     };
 
+    // --- UPGRADED: GAME HUD WITH DYNAMIC SLIDER ---
     const GameHUD = () => {
         if (!conquestMode) return null;
 
@@ -274,9 +275,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         if (percentage === 100) rank = "Legend";
 
         return (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/90 text-white px-6 py-3 rounded-xl border-2 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)] backdrop-blur-md flex flex-col items-center animate-slide-down pointer-events-none select-none">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/90 text-white px-6 py-3 rounded-xl border-2 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)] backdrop-blur-md flex flex-col items-center animate-slide-down select-none min-w-[250px]">
                 <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-2">
                     <div className="text-3xl font-black font-mono">{percentage}%</div>
                     <div className="h-8 w-[1px] bg-slate-600"></div>
                     <div>
@@ -284,8 +285,26 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <div className="text-sm font-bold text-emerald-400">{rank}</div>
                     </div>
                 </div>
-                <div className="w-48 h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-700">
+                
+                <div className="w-full h-1.5 bg-slate-800 rounded-full mb-4 overflow-hidden border border-slate-700">
                     <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
+                </div>
+
+                {/* THE CATCHMENT SLIDER */}
+                <div className="w-full pt-2 border-t border-slate-700">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><Network size={10}/> Catchment Scale</span>
+                        <span className="text-[10px] font-mono font-bold text-orange-400">{coverageScale.toFixed(1)}x</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        min="0.2" 
+                        max="3.0" 
+                        step="0.1" 
+                        value={coverageScale} 
+                        onChange={(e) => setCoverageScale(parseFloat(e.target.value))} 
+                        className="w-full h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
+                    />
                 </div>
             </div>
         );
@@ -295,7 +314,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const [showConsignDetails, setShowConsignDetails] = useState(false);
         const [isLinking, setIsLinking] = useState(false); 
         
-        // Dynamically locate ONLY stores designated explicitly as Wholesalers
         const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
         const stats = useMemo(() => {
@@ -336,17 +354,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
         }, [store, transactions, inventory]);
 
-        // --- EXPLICIT STORE TYPE TOGGLE ---
         const handleToggleStoreType = async () => {
             if (!db || !appId) return;
             setIsLinking(true);
             try {
                 const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
                 const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
-                // If switching to wholesaler, clear out suppliedBy so they don't act as a spoke
                 const updates = { storeType: newType };
                 if (newType === 'Wholesaler') updates.suppliedBy = null; 
-                
                 await updateDoc(ref, updates);
             } catch (error) {
                 console.error("Error updating store type:", error);
@@ -418,7 +433,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
-                {/* --- STORE TYPE TOGGLE (ADMIN ONLY) --- */}
                 {isAdmin && (
                     <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
@@ -432,7 +446,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
-                {/* --- RETAILER HUB SELECTOR --- */}
                 {isAdmin && store.storeType !== 'Wholesaler' && (
                     <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                         <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
@@ -564,7 +577,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}
                     >
                         {conquestMode ? <Swords size={16}/> : <Shield size={16}/>} 
-                        {conquestMode ? "Conquest Mode: ON" : "Territory View"}
+                        {conquestMode ? "Territory Catchment: ON" : "Analyze Catchment Areas"}
                     </button>
                 </div>
             </div>
@@ -598,15 +611,40 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     />
                 ))}
 
-                {conquestMode && mapPoints.map(store => (
-                    <Circle 
-                        key={`circle-${store.id}`}
-                        center={[store.latitude, store.longitude]}
-                        radius={500} 
-                        className={store.isConquered ? "pulsing-circle" : ""}
-                        pathOptions={{ color: store.isConquered ? '#f97316' : '#334155', fillColor: store.isConquered ? '#f97316' : '#000000', fillOpacity: store.isConquered ? 0.3 : 0.5, weight: store.isConquered ? 2 : 1, dashArray: store.isConquered ? null : '5, 10' }}
-                    />
-                ))}
+                {/* --- UPGRADED CONQUEST CIRCLES (DYNAMIC RADII) --- */}
+                {conquestMode && mapPoints.map(store => {
+                    // Mathematically scale the reach based on store importance
+                    let baseRadius = 300; // Default small store (300 meters)
+                    
+                    if (store.storeType === 'Wholesaler') {
+                        baseRadius = 2500; // Wholesalers have massive reach (2.5 km)
+                    } else if (store.tier === 'Platinum') {
+                        baseRadius = 1500;
+                    } else if (store.tier === 'Gold') {
+                        baseRadius = 800;
+                    } else if (store.tier === 'Silver') {
+                        baseRadius = 500;
+                    }
+
+                    // Apply the slider multiplier
+                    const finalRadius = baseRadius * coverageScale;
+
+                    return (
+                        <Circle 
+                            key={`circle-${store.id}`}
+                            center={[store.latitude, store.longitude]}
+                            radius={finalRadius} 
+                            className={store.isConquered ? "pulsing-circle" : ""}
+                            pathOptions={{ 
+                                color: store.isConquered ? '#f97316' : '#334155', 
+                                fillColor: store.isConquered ? '#f97316' : '#000000', 
+                                fillOpacity: store.isConquered ? 0.3 : 0.5, 
+                                weight: store.isConquered ? 2 : 1, 
+                                dashArray: store.isConquered ? null : '5, 10' 
+                            }}
+                        />
+                    );
+                })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} />)}
             </MapContainer>
 
