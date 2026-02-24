@@ -287,7 +287,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                 {/* FIX: DYNAMIC SLIDER CONTAINER (Tight gaps on mobile, wide gaps on PC) */}
                 <div 
-                    className="flex-1 overflow-x-auto overflow-y-hidden p-3 lg:p-8 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-8 scroll-smooth" 
+                    className="flex-1 overflow-x-auto overflow-y-auto p-3 lg:p-8 lg:pb-16 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-8 scroll-smooth" 
                     ref={scrollContainerRef}
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
