@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -118,15 +118,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
 
-    // --- REAL SUPPLY CHAIN LOGIC ---
+    // --- UPGRADED SUPPLY CHAIN LOGIC (Uses EXPLICIT storeType === 'Wholesaler') ---
     const networkLinks = useMemo(() => {
         if (!networkMode) return [];
         const links = [];
         
-        const wholesalers = mapPoints.filter(c => c.tier === 'Platinum' || c.tier === 'Gold');
+        // Scan specifically for stores explicitly tagged as Wholesalers
+        const wholesalers = mapPoints.filter(c => c.storeType === 'Wholesaler');
 
         mapPoints.forEach(store => {
-            // ONLY draw a line if the user explicitly mapped the suppliedBy field in the database
             if (store.suppliedBy) {
                 const ws = wholesalers.find(w => w.id === store.suppliedBy);
                 if (ws) {
@@ -136,7 +136,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             [ws.latitude, ws.longitude],
                             [store.latitude, store.longitude]
                         ],
-                        color: ws.tier === 'Platinum' ? '#f59e0b' : '#fbbf24',
+                        color: '#f59e0b', // Uniform connection color
                     });
                 }
             }
@@ -184,12 +184,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             content = `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
         }
 
+        // Add a gold crown to the marker if it is a Wholesaler Hub
+        const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-10px; right:-10px; background:gold; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:10;">👑</div>` : '';
+
         let glow = store.status === 'overdue' ? `box-shadow: 0 0 0 4px #ef4444; animation: pulse 1.5s infinite;` : '';
-        let border = `border: 3px solid ${tierDef.color || '#94a3b8'};`;
+        let border = `border: 3px solid ${store.storeType === 'Wholesaler' ? '#f59e0b' : (tierDef.color || '#94a3b8')};`;
 
         return L.divIcon({
             className: 'custom-icon', 
-            html: `<div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} overflow: hidden;">${content}</div>`,
+            html: `<div style="position:relative;">${hubBadge}<div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} overflow: hidden;">${content}</div></div>`,
             iconSize: [34, 34],
             iconAnchor: [17, 17]
         });
@@ -245,7 +248,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 <div className="flex justify-between items-center text-[10px] text-slate-400">
                                     <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600 flex items-center gap-1 font-bold">
                                         {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : <span>{tierDef.value}</span>}
-                                        <span>{tierDef.label}</span>
+                                        <span>{store.storeType === 'Wholesaler' ? 'HUB' : tierDef.label}</span>
                                     </span>
                                     <span className={store.status === 'overdue' ? 'text-red-400 font-bold bg-red-900/20 px-1.5 py-0.5 rounded' : 'text-emerald-400 font-bold'}>{store.diffDays <= 0 ? 'LATE' : `${store.diffDays}d left`}</span>
                                 </div>
@@ -292,9 +295,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const [showConsignDetails, setShowConsignDetails] = useState(false);
         const [isLinking, setIsLinking] = useState(false); 
         
-        const availableHubs = mapPoints.filter(c => (c.tier === 'Platinum' || c.tier === 'Gold') && c.id !== store.id);
+        // Dynamically locate ONLY stores designated explicitly as Wholesalers
+        const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
-        // --- RESTORED: STATS ENGINE FOR CONSIGNMENTS AND CHARTS ---
         const stats = useMemo(() => {
             const storeTrans = transactions.filter(t => t.customerName === store.name);
             const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
@@ -333,7 +336,25 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
         }, [store, transactions, inventory]);
 
-        // --- NEW: HANDLE ASSIGN HUB ---
+        // --- EXPLICIT STORE TYPE TOGGLE ---
+        const handleToggleStoreType = async () => {
+            if (!db || !appId) return;
+            setIsLinking(true);
+            try {
+                const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
+                const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
+                // If switching to wholesaler, clear out suppliedBy so they don't act as a spoke
+                const updates = { storeType: newType };
+                if (newType === 'Wholesaler') updates.suppliedBy = null; 
+                
+                await updateDoc(ref, updates);
+            } catch (error) {
+                console.error("Error updating store type:", error);
+            } finally {
+                setIsLinking(false);
+            }
+        };
+
         const handleAssignHub = async (hubId) => {
             if (!db || !appId) return;
             setIsLinking(true);
@@ -376,8 +397,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return (
             <div className="absolute left-4 top-20 bottom-4 w-80 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-slate-700 p-6 overflow-y-auto z-[1000] animate-slide-in-left custom-scrollbar">
                 <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
-                <h2 className="text-2xl font-bold mb-1 pr-8">{store.name}</h2>
-                <p className="text-slate-400 text-xs mb-4 flex items-center gap-1"><MapPin size={12}/> {store.city}</p>
+                <div className="flex items-start justify-between mb-1 pr-8">
+                    <h2 className="text-2xl font-bold leading-tight">{store.name}</h2>
+                </div>
+                
+                {store.storeType === 'Wholesaler' && (
+                    <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                        <Building2 size={10} /> WHOLESALE HUB
+                    </span>
+                )}
+                
+                <p className={`text-slate-400 text-xs flex items-center gap-1 ${store.storeType === 'Wholesaler' ? 'mb-4' : 'mb-4'}`}>
+                    <MapPin size={12}/> {store.city}
+                </p>
 
                 {isAdmin && store.phone && (
                     <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center">
@@ -386,8 +418,22 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
-                {/* --- EXPLICIT MAPPING TOOL --- */}
-                {isAdmin && (store.tier === 'Silver' || store.tier === 'Bronze') && (
+                {/* --- STORE TYPE TOGGLE (ADMIN ONLY) --- */}
+                {isAdmin && (
+                    <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
+                        <button 
+                            onClick={handleToggleStoreType}
+                            disabled={isLinking}
+                            className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}
+                        >
+                            <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span>
+                        </button>
+                    </div>
+                )}
+
+                {/* --- RETAILER HUB SELECTOR --- */}
+                {isAdmin && store.storeType !== 'Wholesaler' && (
                     <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                         <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
                             <LinkIcon size={12}/> Map to Wholesaler
@@ -405,7 +451,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 </option>
                             ))}
                         </select>
-                        <p className="text-[9px] text-slate-500 mt-2 italic">Connect this retailer to a Platinum/Gold hub to draw supply lines on the map.</p>
+                        <p className="text-[9px] text-slate-500 mt-2 italic">Connect this retailer to a designated hub to draw supply lines on the map.</p>
                     </div>
                 )}
 
@@ -417,7 +463,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 </div>
 
-                {/* --- RESTORED: STATS, CONSIGNMENT, AND GPS BUTTON --- */}
                 {isAdmin && (
                     <div className="space-y-4 mb-6">
                         {stats.currentConsignment > 0 && (
