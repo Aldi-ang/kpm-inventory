@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare } from 'lucide-react';
 
 const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [] }) => {
     const [mobileTab, setMobileTab] = useState('products');
@@ -18,7 +18,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const dropdownRef = useRef(null);
-    const scrollContainerRef = useRef(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
@@ -128,22 +127,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setMerchantMood("deal"); 
         setMerchantMsg("Heh heh heh... Thank you, stranger!");
         setTimeout(() => setMerchantMood("idle"), 3000);
-    };
-
-    const scroll = (direction) => {
-        if (scrollContainerRef.current) {
-            const cardNode = scrollContainerRef.current.querySelector('.product-card');
-            if (cardNode) {
-                // Determine exact gap based on screen size (Tailwind gap-3 on mobile, gap-6 on large screens)
-                const gap = window.innerWidth >= 1024 ? 24 : 12; 
-                const scrollAmount = cardNode.offsetWidth + gap; 
-                
-                scrollContainerRef.current.scrollBy({
-                    left: direction === 'left' ? -scrollAmount : scrollAmount,
-                    behavior: 'smooth'
-                });
-            }
-        }
     };
 
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
@@ -266,62 +249,49 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             </div>
 
-            {/* RIGHT COLUMN (PRODUCTS SLIDER) */}
+            {/* RIGHT COLUMN (PRODUCTS GRID) */}
             <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                {/* FIX: Tighter category padding on mobile */}
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
-                {/* FIX: Tighter search bar padding on mobile */}
                 <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
                         <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
                     </div>
-                    {/* PC Scroll Arrows */}
-                    <div className="hidden lg:flex gap-1">
-                        <button onClick={() => scroll('left')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
-                        <button onClick={() => scroll('right')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
-                    </div>
                 </div>
 
-                {/* FIX: DYNAMIC SLIDER CONTAINER (Tight gaps on mobile, wide gaps on PC) */}
-                <div 
-                    className="flex-1 overflow-x-auto overflow-y-auto p-3 lg:p-8 lg:pb-16 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-8 scroll-smooth" 
-                    ref={scrollContainerRef}
-                >
+                {/* FIX: REVERTED TO VERTICAL GRID WITH STRICT ASPECT RATIO AND UNIFORM SIZES */}
+                <div className="flex-1 overflow-y-auto p-3 lg:p-6 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 md:gap-4 custom-scrollbar content-start bg-[#1a1815] relative">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+                    
                     {filteredItems.map(item => (
-                        /* FIX 1: Removed 'self-stretch' and added 'h-max'. Cards will now compact themselves to fit exactly what is inside them. */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
-                            className="product-card snap-start w-[160px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max"
+                            /* EXACT UNIFORMITY: aspect-[3/4] forces a perfect rectangle regardless of content */
+                            className="bg-[#0f0e0d] border border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.95] shadow-lg rounded-lg overflow-hidden relative z-10 aspect-[3/4]"
                         >
-                            <div className="h-32 md:h-56 lg:h-64 p-3 md:p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
+                            <div className="flex-1 p-2 md:p-4 flex items-center justify-center relative overflow-hidden bg-black/50">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
-                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[8px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-xl group-hover:scale-110" alt="product"/> : <Box size={24} className="text-[#3e3226] opacity-50"/>}
+                                <div className="absolute top-1 right-1 md:top-2 md:right-2 bg-black/80 text-[#8b7256] text-[7px] md:text-[9px] font-black px-1.5 py-0.5 md:px-2 md:py-1 rounded border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                             </div>
                             
-                            {/* FIX 2: Removed 'flex-1' so the footer doesn't expand into the empty space */}
-                            <div className="bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-5 flex flex-col justify-between font-mono relative">
-                                <h4 className="text-[#d4c5a3] text-xs md:text-lg font-black uppercase mb-3 md:mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
+                            {/* FIXED FOOTER HEIGHT: Strictly h-14 on mobile, h-20 on PC */}
+                            <div className="h-14 md:h-20 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t border-[#3e3226] p-2 md:p-3 flex flex-col justify-between font-mono shrink-0 relative">
                                 
-                                {/* FIX 3: Changed flex layout to stack vertically on mobile (flex-col) to stop collisions, side-by-side on PC (md:flex-row) */}
-                                <div className="flex flex-col items-start md:flex-row md:justify-between md:items-end w-full gap-2 md:gap-0">
-                                    <div className="flex flex-col gap-0.5 md:gap-1">
-                                        <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
-                                        <span className={`text-[10px] md:text-sm font-black px-1.5 py-0.5 md:px-3 md:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
-                                            {item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}
-                                        </span>
-                                    </div>
-                                    <div className="text-left md:text-right w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-[#3e3226] md:border-none">
-                                        <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
-                                        <span className="text-xl md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                                            {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
-                                        </span>
-                                    </div>
+                                {/* TRUNCATE FIX: Text stays on 1 line. If too long, it turns into "CELLO CARA..." */}
+                                <h4 className="text-[#d4c5a3] text-[9px] md:text-xs font-black uppercase truncate group-hover:text-white transition-colors">{item.name}</h4>
+                                
+                                <div className="flex justify-between items-end w-full">
+                                    <span className={`text-[8px] md:text-[10px] font-black px-1 md:px-1.5 py-0.5 rounded border ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
+                                        {item.stock > 0 ? `STK:${item.stock}` : 'EMPTY'}
+                                    </span>
+                                    {/* SMALLER FONT to completely avoid overlap */}
+                                    <span className="text-[10px] md:text-sm font-black text-[#ff9d00] leading-none drop-shadow-md">
+                                        {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
+                                    </span>
                                 </div>
                             </div>
                         </div>
