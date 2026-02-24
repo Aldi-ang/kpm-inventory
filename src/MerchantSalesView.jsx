@@ -292,11 +292,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
                     {filteredItems.map(item => (
-                        /* FIX: CARD WIDTH (w-[160px] on mobile, leaving room to see the next card) */
+                        /* FIX 1: Removed 'self-stretch' and added 'h-max'. Cards will now compact themselves to fit exactly what is inside them. */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
-                            className="product-card snap-start w-[160px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
+                            className="product-card snap-start w-[160px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max"
                         >
-                            {/* FIX: Tighter Image Area on Mobile */}
                             <div className="h-32 md:h-56 lg:h-64 p-3 md:p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
@@ -305,20 +304,21 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 </div>
                             </div>
                             
-                            {/* FIX: Tighter Footer Padding on Mobile */}
-                            <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-5 flex flex-col justify-between font-mono relative">
-                                <h4 className="text-[#d4c5a3] text-xs md:text-lg font-black uppercase mb-2 md:mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
+                            {/* FIX 2: Removed 'flex-1' so the footer doesn't expand into the empty space */}
+                            <div className="bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-5 flex flex-col justify-between font-mono relative">
+                                <h4 className="text-[#d4c5a3] text-xs md:text-lg font-black uppercase mb-3 md:mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
                                 
-                                <div className="flex justify-between items-end w-full">
+                                {/* FIX 3: Changed flex layout to stack vertically on mobile (flex-col) to stop collisions, side-by-side on PC (md:flex-row) */}
+                                <div className="flex flex-col items-start md:flex-row md:justify-between md:items-end w-full gap-2 md:gap-0">
                                     <div className="flex flex-col gap-0.5 md:gap-1">
                                         <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
                                         <span className={`text-[10px] md:text-sm font-black px-1.5 py-0.5 md:px-3 md:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
                                             {item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}
                                         </span>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left md:text-right w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-[#3e3226] md:border-none">
                                         <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
-                                        <span className="text-lg md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                        <span className="text-xl md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                                             {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
                                         </span>
                                     </div>
