@@ -519,6 +519,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
+                
+                /* --- fix: kill the white tooltip background & arrow --- */
+                .leaflet-tooltip.custom-leaflet-tooltip {
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                }
+                .leaflet-tooltip.custom-leaflet-tooltip::before,
+                .leaflet-tooltip.custom-leaflet-tooltip::after {
+                    display: none !important;
+                }
+                
                 .leaflet-control-zoom a { background-color: white !important; color: black !important; border: 2px solid #ccc !important; width: 36px !important; height: 36px !important; line-height: 36px !important; font-size: 18px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important; }
                 .leaflet-control-zoom a:hover { background-color: #f1f5f9 !important; }
                 
