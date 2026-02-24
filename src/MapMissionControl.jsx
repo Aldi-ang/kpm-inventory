@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as Le
 import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-import { doc, updateDoc } from 'firebase/firestore'; // MUST ADD THIS IMPORT
+import { doc, updateDoc } from 'firebase/firestore';
 
 // Utility Helper
 const formatRupiah = (number) => {
@@ -50,7 +50,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [newPinCoords, setNewPinCoords] = useState(null);
     const [showControls, setShowControls] = useState(false);
 
-    // GAMIFICATION & NETWORK STATE
+    // GAMIFICATION & MINDMAP STATE
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
 
@@ -208,6 +208,17 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 });
     };
 
+    const convertToBks = (qty, unit, product) => {
+        if (!product) return qty;
+        const packsPerSlop = product.packsPerSlop || 10;
+        const slopsPerBal = product.slopsPerBal || 20;
+        const balsPerCarton = product.balsPerCarton || 4;
+        if (unit === 'Slop') return qty * packsPerSlop;
+        if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
+        if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
+        return qty; 
+    };
+
     const MarkerWithZoom = ({ store }) => {
         const map = useMap();
         const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
@@ -248,6 +259,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const GameHUD = () => {
         if (!conquestMode) return null;
+
         const totalStores = mapPoints.length;
         const conqueredCount = mapPoints.filter(s => s.isConquered).length;
         const percentage = totalStores > 0 ? Math.round((conqueredCount / totalStores) * 100) : 0;
@@ -277,17 +289,57 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     };
 
     const StoreHUD = ({ store }) => {
-        const [isLinking, setIsLinking] = useState(false);
+        const [showConsignDetails, setShowConsignDetails] = useState(false);
+        const [isLinking, setIsLinking] = useState(false); 
+        
         const availableHubs = mapPoints.filter(c => (c.tier === 'Platinum' || c.tier === 'Gold') && c.id !== store.id);
 
+        // --- RESTORED: STATS ENGINE FOR CONSIGNMENTS AND CHARTS ---
+        const stats = useMemo(() => {
+            const storeTrans = transactions.filter(t => t.customerName === store.name);
+            const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
+            const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
+            const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
+            const currentConsignment = Math.max(0, totalTitip - totalPaid);
+            
+            const itemMap = {}; 
+            storeTrans.forEach(t => {
+                if (t.type === 'SALE' && t.paymentType === 'Titip') {
+                    t.items.forEach(i => {
+                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
+                        const bks = convertToBks(i.qty, i.unit, prod);
+                        if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 };
+                        itemMap[i.productId].qty += bks;
+                    });
+                }
+                else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+                    const list = t.items || t.itemsPaid || [];
+                    list.forEach(i => {
+                        const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
+                        const bks = convertToBks(i.qty, i.unit, prod);
+                        if (itemMap[i.productId]) itemMap[i.productId].qty -= bks;
+                    });
+                }
+            });
+            const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
+
+            const graphData = storeTrans.filter(t => t.type === 'SALE').reduce((acc, t) => {
+                const date = t.date.substring(5);
+                const found = acc.find(i => i.date === date);
+                if (found) found.total += t.total; else acc.push({ date, total: t.total });
+                return acc;
+            }, []).sort((a,b) => a.date.localeCompare(b.date)).slice(-5);
+            
+            return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
+        }, [store, transactions, inventory]);
+
+        // --- NEW: HANDLE ASSIGN HUB ---
         const handleAssignHub = async (hubId) => {
             if (!db || !appId) return;
             setIsLinking(true);
             try {
-                const ref = doc(db, 'users', appId, 'customers', store.id);
+                const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
                 await updateDoc(ref, { suppliedBy: hubId === "none" ? null : hubId });
-                // Note: The UI will technically need a refresh to pull the new data to the mapPoints array immediately, 
-                // but this ensures the DB is updated instantly.
             } catch (error) {
                 console.error("Error mapping hub:", error);
             } finally {
@@ -299,6 +351,26 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             if (!store.phone) return "#";
             const cleanNumber = store.phone.replace(/\D/g, '').replace(/^0/, '62');
             return `https://wa.me/${cleanNumber}`;
+        };
+
+        const getGpsLink = () => {
+            if (store.latitude && store.longitude) {
+                return `http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`;
+            }
+            const query = encodeURIComponent(`${store.address || ''}, ${store.city || ''}`);
+            return `http://googleusercontent.com/maps.google.com/?q=${query}`;
+        };
+
+        const HudTooltip = ({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+                return (
+                    <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl">
+                        <p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p>
+                        <p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p>
+                    </div>
+                );
+            }
+            return null;
         };
 
         return (
@@ -314,7 +386,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
-                {/* --- THE EXPLICIT MAPPING TOOL --- */}
+                {/* --- EXPLICIT MAPPING TOOL --- */}
                 {isAdmin && (store.tier === 'Silver' || store.tier === 'Bronze') && (
                     <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                         <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
@@ -344,6 +416,58 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <p className="font-bold text-sm">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p>
                     </div>
                 </div>
+
+                {/* --- RESTORED: STATS, CONSIGNMENT, AND GPS BUTTON --- */}
+                {isAdmin && (
+                    <div className="space-y-4 mb-6">
+                        {stats.currentConsignment > 0 && (
+                            <div className="p-3 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
+                                <div 
+                                    className="flex justify-between items-center cursor-pointer"
+                                    onClick={() => setShowConsignDetails(!showConsignDetails)}
+                                >
+                                    <div>
+                                        <p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p>
+                                        <p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p>
+                                    </div>
+                                    <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}>
+                                        <ChevronRight size={16} className="text-orange-500 rotate-90"/>
+                                    </div>
+                                </div>
+
+                                {showConsignDetails && (
+                                    <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
+                                        {stats.activeItems.length > 0 ? (
+                                            stats.activeItems.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between text-xs items-center">
+                                                    <span className="text-slate-300 font-medium">{item.name}</span>
+                                                    <span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-xs text-slate-400 italic text-center">No item details found.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
+                        <div className="h-32 bg-slate-800 rounded-xl p-2 border border-slate-700">
+                            <p className="text-[10px] text-slate-500 mb-1">Sales Trend</p>
+                            <ResponsiveContainer width="100%" height="90%">
+                                <BarChart data={stats.graphData}>
+                                    <Tooltip content={<HudTooltip />} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
+                                    <Bar dataKey="total" fill="#10b981" radius={[2,2,0,0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                )}
+                
+                <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm">
+                    <MapPin size={16}/> GPS Navigation
+                </a>
             </div>
         );
     };
