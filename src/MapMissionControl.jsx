@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
 import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
@@ -12,6 +12,19 @@ const formatRupiah = (number) => {
     currency: 'IDR',
     minimumFractionDigits: 0,
   }).format(number);
+};
+
+// --- MATH HELPER: HAVERSINE DISTANCE CALCULATOR ---
+// Calculates the exact distance in meters between two GPS coordinates
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Earth radius in meters
+    const p1 = lat1 * Math.PI/180;
+    const p2 = lat2 * Math.PI/180;
+    const dp = (lat2-lat1) * Math.PI/180;
+    const dl = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
 };
 
 // --- HELPER: MAP CONTROLLER ---
@@ -50,12 +63,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [newPinCoords, setNewPinCoords] = useState(null);
     const [showControls, setShowControls] = useState(false);
 
-    // GAMIFICATION & MINDMAP STATE
+    // GAMIFICATION, MINDMAP & HEATMAP STATE
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
-    
-    // --- NEW: STRATEGIC COVERAGE SLIDER ---
-    const [coverageScale, setCoverageScale] = useState(1.0);
+    const [coverageScale, setCoverageScale] = useState(1.0); // <--- NEW UI SLIDER STATE
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
@@ -121,15 +132,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
 
+    // --- UPGRADED SUPPLY CHAIN LOGIC ---
     const networkLinks = useMemo(() => {
         if (!networkMode) return [];
         const links = [];
         
+        // Find stores explicitly set as Wholesalers
         const wholesalers = mapPoints.filter(c => c.storeType === 'Wholesaler');
 
         mapPoints.forEach(store => {
             if (store.suppliedBy) {
-                const ws = wholesalers.find(w => w.id === store.suppliedBy);
+                // FIXED: Used String() to ensure IDs match even if Firebase saved one as a number
+                const ws = wholesalers.find(w => String(w.id) === String(store.suppliedBy));
                 if (ws) {
                     links.push({
                         id: `link-${ws.id}-${store.id}`,
@@ -137,7 +151,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             [ws.latitude, ws.longitude],
                             [store.latitude, store.longitude]
                         ],
-                        color: '#f59e0b', 
+                        // Line color inherits the Wholesaler's tier color for visual consistency
+                        color: ws.tier === 'Platinum' ? '#f59e0b' : '#fbbf24', 
                     });
                 }
             }
@@ -260,7 +275,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         );
     };
 
-    // --- UPGRADED: GAME HUD WITH DYNAMIC SLIDER ---
+    // --- UPGRADED: GAME HUD WITH DYNAMIC CROP-STYLE SLIDER ---
     const GameHUD = () => {
         if (!conquestMode) return null;
 
@@ -275,9 +290,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         if (percentage === 100) rank = "Legend";
 
         return (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/90 text-white px-6 py-3 rounded-xl border-2 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)] backdrop-blur-md flex flex-col items-center animate-slide-down select-none min-w-[250px]">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
                 <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
-                <div className="flex items-center gap-4 mb-2">
+                <div className="flex items-center gap-4 mb-3">
                     <div className="text-3xl font-black font-mono">{percentage}%</div>
                     <div className="h-8 w-[1px] bg-slate-600"></div>
                     <div>
@@ -290,22 +305,42 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
                 </div>
 
-                {/* THE CATCHMENT SLIDER */}
-                <div className="w-full pt-2 border-t border-slate-700">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><Network size={10}/> Catchment Scale</span>
-                        <span className="text-[10px] font-mono font-bold text-orange-400">{coverageScale.toFixed(1)}x</span>
+                {/* --- THE ADMIN HEATMAP CONTROLS --- */}
+                {isAdmin && (
+                    <div className="w-full pt-4 mt-1 border-t border-slate-700 pointer-events-auto">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1">
+                                <Network size={12} className="text-orange-500"/> Simulation Scale
+                            </label>
+                            
+                            {/* Smooth Number Input Box */}
+                            <div className="flex items-center gap-1">
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    min="0.1" 
+                                    max="5.0"
+                                    value={coverageScale} 
+                                    onChange={(e) => setCoverageScale(Math.max(0.1, parseFloat(e.target.value) || 1))} 
+                                    className="w-14 text-right text-xs font-mono bg-slate-800 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"
+                                />
+                                <span className="text-[10px] text-slate-500 font-bold">x</span>
+                            </div>
+                        </div>
+                        
+                        {/* Smooth Slider Bar */}
+                        <input 
+                            type="range" min="0.1" max="5.0" step="0.1" 
+                            value={coverageScale} 
+                            onChange={(e) => setCoverageScale(parseFloat(e.target.value))} 
+                            className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
+                        />
+                        <p className="text-[8px] text-slate-500 mt-3 text-center uppercase tracking-widest leading-tight">
+                            Cannibalization Heatmap Active<br/>
+                            <span className="text-red-400">Red = Distribution Overlap</span>
+                        </p>
                     </div>
-                    <input 
-                        type="range" 
-                        min="0.2" 
-                        max="3.0" 
-                        step="0.1" 
-                        value={coverageScale} 
-                        onChange={(e) => setCoverageScale(parseFloat(e.target.value))} 
-                        className="w-full h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
-                    />
-                </div>
+                )}
             </div>
         );
     };
@@ -314,6 +349,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const [showConsignDetails, setShowConsignDetails] = useState(false);
         const [isLinking, setIsLinking] = useState(false); 
         
+        // Dynamically locate ONLY stores designated explicitly as Wholesalers
         const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
         const stats = useMemo(() => {
@@ -360,8 +396,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             try {
                 const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
                 const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
+                // If switching to wholesaler, clear out suppliedBy so they don't act as a spoke
                 const updates = { storeType: newType };
                 if (newType === 'Wholesaler') updates.suppliedBy = null; 
+                
                 await updateDoc(ref, updates);
             } catch (error) {
                 console.error("Error updating store type:", error);
@@ -433,6 +471,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
+                {/* --- STORE TYPE TOGGLE (ADMIN ONLY) --- */}
                 {isAdmin && (
                     <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
@@ -446,6 +485,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 )}
 
+                {/* --- RETAILER HUB SELECTOR --- */}
                 {isAdmin && store.storeType !== 'Wholesaler' && (
                     <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                         <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
@@ -577,7 +617,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}
                     >
                         {conquestMode ? <Swords size={16}/> : <Shield size={16}/>} 
-                        {conquestMode ? "Territory Catchment: ON" : "Analyze Catchment Areas"}
+                        {conquestMode ? "Territory Heatmap: ON" : "Analyze Catchment Areas"}
                     </button>
                 </div>
             </div>
@@ -598,6 +638,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls />
                 <MapClicker />
                 
+                {/* --- RESTORED: THE SUPPLY LINES --- */}
                 {networkMode && networkLinks.map(link => (
                     <Polyline 
                         key={link.id}
@@ -605,44 +646,73 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         pathOptions={{ 
                             color: link.color, 
                             weight: 3, 
-                            opacity: 0.6,
+                            opacity: 0.8,
                             className: 'animated-supply-line'
                         }}
                     />
                 ))}
 
-                {/* --- UPGRADED CONQUEST CIRCLES (DYNAMIC RADII) --- */}
+                {/* --- UPGRADED: MATHEMATICAL CANNIBALIZATION HEATMAP --- */}
                 {conquestMode && mapPoints.map(store => {
-                    // Mathematically scale the reach based on store importance
-                    let baseRadius = 300; // Default small store (300 meters)
-                    
-                    if (store.storeType === 'Wholesaler') {
-                        baseRadius = 2500; // Wholesalers have massive reach (2.5 km)
-                    } else if (store.tier === 'Platinum') {
-                        baseRadius = 1500;
-                    } else if (store.tier === 'Gold') {
-                        baseRadius = 800;
-                    } else if (store.tier === 'Silver') {
-                        baseRadius = 500;
-                    }
+                    // 1. Establish base radius based on real-world reach
+                    let baseRadius = 300; 
+                    if (store.storeType === 'Wholesaler') baseRadius = 2500; 
+                    else if (store.tier === 'Platinum') baseRadius = 1500;
+                    else if (store.tier === 'Gold') baseRadius = 800;
+                    else if (store.tier === 'Silver') baseRadius = 500;
 
-                    // Apply the slider multiplier
+                    // 2. Apply Admin slider multiplier
                     const finalRadius = baseRadius * coverageScale;
+
+                    // 3. Scan the territory to count how many other stores are invading this circle
+                    let overlapCount = 0;
+                    mapPoints.forEach(otherStore => {
+                        if (store.id === otherStore.id) return;
+                        
+                        let otherBase = 300;
+                        if (otherStore.storeType === 'Wholesaler') otherBase = 2500;
+                        else if (otherStore.tier === 'Platinum') otherBase = 1500;
+                        else if (otherStore.tier === 'Gold') otherBase = 800;
+                        else if (otherStore.tier === 'Silver') otherBase = 500;
+                        
+                        const otherRadius = otherBase * coverageScale;
+                        
+                        // Execute Haversine exact distance formula
+                        const dist = getDistance(store.latitude, store.longitude, otherStore.latitude, otherStore.longitude);
+                        
+                        // If distance is less than combined radii, they overlap!
+                        if (dist < (finalRadius + otherRadius)) {
+                            overlapCount++;
+                        }
+                    });
+
+                    // 4. Color logic based strictly on the mathematical overlap density
+                    let heatmapColor = '#10b981'; // 0 Overlaps = Emerald (Safe Monopoly)
+                    if (overlapCount === 1) heatmapColor = '#eab308'; // 1 Overlap = Yellow (Contested)
+                    if (overlapCount === 2) heatmapColor = '#f97316'; // 2 Overlaps = Orange (Crowded)
+                    if (overlapCount >= 3) heatmapColor = '#ef4444'; // 3+ Overlaps = Red (Cannibalization / Price War Risk)
 
                     return (
                         <Circle 
                             key={`circle-${store.id}`}
                             center={[store.latitude, store.longitude]}
                             radius={finalRadius} 
-                            className={store.isConquered ? "pulsing-circle" : ""}
+                            className={`heatmap-circle ${store.isConquered ? "pulsing-circle" : ""}`}
                             pathOptions={{ 
-                                color: store.isConquered ? '#f97316' : '#334155', 
-                                fillColor: store.isConquered ? '#f97316' : '#000000', 
-                                fillOpacity: store.isConquered ? 0.3 : 0.5, 
+                                color: heatmapColor, 
+                                fillColor: heatmapColor, 
+                                fillOpacity: 0.3, 
                                 weight: store.isConquered ? 2 : 1, 
                                 dashArray: store.isConquered ? null : '5, 10' 
                             }}
-                        />
+                        >
+                            {/* Hover Tooltip reveals the data */}
+                            <LeafletTooltip direction="center" sticky className="custom-leaflet-tooltip font-bold font-mono">
+                                <span className="bg-black/80 text-white px-2 py-1 rounded border border-white/20">
+                                    {overlapCount === 0 ? "100% Monopoly" : `${overlapCount} Competing Stores`}
+                                </span>
+                            </LeafletTooltip>
+                        </Circle>
                     );
                 })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} />)}
@@ -661,8 +731,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .custom-leaflet-tooltip .store-3d-card { animation: popIn 0.3s forwards; }
                 @keyframes popIn { 0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; } 100% { transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); opacity: 1; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8); } }
                 .balanced-dark-tile { filter: brightness(1.2); }
+                
+                /* THE FLOWING LINES ARE BACK */
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
+                
+                /* THE HEATMAP MULTIPLY BLEND */
+                .heatmap-circle { mix-blend-mode: screen; transition: all 0.3s ease-in-out; }
+                
                 @keyframes pulse-territory { 0% { fill-opacity: 0.2; stroke-width: 1; } 50% { fill-opacity: 0.4; stroke-width: 3; } 100% { fill-opacity: 0.2; stroke-width: 1; } }
                 .pulsing-circle { animation: pulse-territory 3s infinite ease-in-out; }
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
