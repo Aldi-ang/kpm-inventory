@@ -32,7 +32,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         };
     }, []);
 
-    // Filtered customer list for the dropdown
     const suggestedCustomers = customers.filter(c => 
         c.name.toLowerCase().includes(customerName.toLowerCase())
     ).slice(0, 5);
@@ -131,15 +130,14 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 3000);
     };
 
-    // --- FIX: DYNAMIC DOM SCROLLING (ONE CARD AT A TIME) ---
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
             const cardNode = scrollContainerRef.current.querySelector('.product-card');
             if (cardNode) {
-                const gap = 24; // Tailwind gap-6 is exactly 24 pixels
+                // Determine exact gap based on screen size (Tailwind gap-3 on mobile, gap-6 on large screens)
+                const gap = window.innerWidth >= 1024 ? 24 : 12; 
                 const scrollAmount = cardNode.offsetWidth + gap; 
                 
-                // FIX: Removed the 2x multiplier. It now scrolls exactly 1 card per click.
                 scrollContainerRef.current.scrollBy({
                     left: direction === 'left' ? -scrollAmount : scrollAmount,
                     behavior: 'smooth'
@@ -160,9 +158,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-40 pointer-events-none"></div>
-            <div className="p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
+            <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
-            <div className="p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-4" ref={dropdownRef}>
+            <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4" ref={dropdownRef}>
                 <div className="relative">
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Customer Name</label>
                     <input 
@@ -170,10 +168,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         onFocus={() => setShowCustomerDropdown(true)}
                         onChange={(e) => setCustomerName(e.target.value)} 
                         placeholder="TYPE OR SELECT..." 
-                        className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-sm font-bold uppercase outline-none rounded" 
+                        className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded" 
                     />
                     {showCustomerDropdown && (
-                        <div className="absolute left-0 right-0 top-fullmt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
+                        <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
                             {suggestedCustomers.map(c => (
                                 <div key={c.id} onClick={() => { setCustomerName(c.name); setShowCustomerDropdown(false); }} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
                                     <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
@@ -190,36 +188,36 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-sm font-bold uppercase outline-none rounded">
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded">
                         <option value="Cash">Cash</option><option value="QRIS">QRIS</option><option value="Transfer">Transfer</option><option value="Titip">Consignment</option>
                     </select>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
+            <div className="flex-1 overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
                 {cart.length === 0 ? (
-                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-sm">Manifest Empty</div>
+                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
                     cart.map((item, idx) => (
                         <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
                             <div className="flex justify-between items-start mb-2">
-                                <span className="text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
+                                <span className="text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
                                 <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
                             </div>
 
-                           <div className="flex items-center gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
+                           <div className="flex items-center gap-1 md:gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
                                 <input 
                                     type="number" 
                                     value={item.qty} 
                                     onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} 
                                     onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }}
-                                    className="w-12 bg-white border border-[#a89070] text-center text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
+                                    className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
                                 />
-                                <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} className="bg-transparent text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1"><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
+                                <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1"><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
                             </div>
 
-                          <div className="text-right text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
+                          <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
                                 Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)} 
                             </div>
                         </div>
@@ -242,41 +240,43 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             {/* LEFT COLUMN (MERCHANT & MANIFEST) */}
             <div className={`w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                
-                <div className="h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[250px]">
+                <div className="h-40 md:h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[200px] lg:min-h-[250px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
-                        <div className="w-48 h-48 lg:w-72 lg:h-72 relative">
+                        <div className="w-40 h-40 md:w-48 md:h-48 lg:w-72 lg:h-72 relative">
                             <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
                         </div>
                     </div>
                     <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
                     <div className={`absolute inset-y-0 right-0 w-1/2 bg-[#1a1815] border-l-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? 'translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
-                    <div className="absolute bottom-4 inset-x-6 z-30">
-                        <div className="bg-black/90 border-2 border-[#8b7256] p-3 text-center uppercase tracking-widest text-sm lg:text-base italic animate-pulse shadow-lg rounded-lg text-[#ff9d00] font-bold"> "{merchantMsg}" </div>
+                    <div className="absolute bottom-3 md:bottom-4 inset-x-4 md:inset-x-6 z-30">
+                        <div className="bg-black/90 border-2 border-[#8b7256] p-2 md:p-3 text-center uppercase tracking-widest text-[10px] md:text-sm lg:text-base italic animate-pulse shadow-lg rounded-lg text-[#ff9d00] font-bold"> "{merchantMsg}" </div>
                     </div>
                 </div>
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
                
-                <div className="p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
-                    <div className="flex justify-between items-end mb-4 border-b border-[#5c4b3a] pb-3 font-mono">
-                        <span className="text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
-                        <span className="text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
+                <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#5c4b3a] pb-2 md:pb-3 font-mono">
+                        <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
+                        <span className="text-2xl md:text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
                     </div>
-                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-4 border-2 text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-3 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}>
-                        {customerName.trim() ? <><Zap fill="black" size={24}/> MAKE DEAL</> : "SIGN MANIFEST >"}
+                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}>
+                        {customerName.trim() ? <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</> : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
 
             {/* RIGHT COLUMN (PRODUCTS SLIDER) */}
             <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                <div className="flex gap-2 p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-5 py-2.5 text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
+                {/* FIX: Tighter category padding on mobile */}
+                <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
-                <div className="p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
+                {/* FIX: Tighter search bar padding on mobile */}
+                <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-3 pl-10 text-[#ff9d00] font-mono text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
-                        <Search size={18} className="absolute left-3 top-3.5 text-[#8b7256]"/>
+                        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
+                        <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
                     </div>
                     {/* PC Scroll Arrows */}
                     <div className="hidden lg:flex gap-1">
@@ -285,40 +285,40 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 </div>
 
-                {/* FIX: CSS SCROLL SNAPPING ADDED HERE */}
+                {/* FIX: DYNAMIC SLIDER CONTAINER (Tight gaps on mobile, wide gaps on PC) */}
                 <div 
-                    className="flex-1 overflow-x-auto overflow-y-hidden p-4 lg:p-8 flex flex-nowrap gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-4 lg:scroll-pl-8 scroll-smooth" 
+                    className="flex-1 overflow-x-auto overflow-y-hidden p-3 lg:p-8 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-8 scroll-smooth" 
                     ref={scrollContainerRef}
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
                     {filteredItems.map(item => (
-                        /* FIX: product-card and snap-start classes added to lock alignment perfectly */
+                        /* FIX: CARD WIDTH (w-[160px] on mobile, leaving room to see the next card) */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
-                            className="product-card snap-start w-[200px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
+                            className="product-card snap-start w-[160px] md:w-[280px] lg:w-[320px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-auto self-stretch"
                         >
-                            {/* Tall Image Area */}
-                            <div className="h-40 md:h-56 lg:h-64 p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
+                            {/* FIX: Tighter Image Area on Mobile */}
+                            <div className="h-32 md:h-56 lg:h-64 p-3 md:p-6 flex items-center justify-center relative overflow-hidden bg-black/50">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={64} className="text-[#3e3226] opacity-50"/>}
-                                <div className="absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] md:text-xs font-black px-3 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
+                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[8px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                             </div>
                             
-                            {/* Spacious Footer */}
-                            <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-4 md:p-5 flex flex-col justify-between font-mono relative">
-                                <h4 className="text-[#d4c5a3] text-sm md:text-lg font-black uppercase mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
+                            {/* FIX: Tighter Footer Padding on Mobile */}
+                            <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-5 flex flex-col justify-between font-mono relative">
+                                <h4 className="text-[#d4c5a3] text-xs md:text-lg font-black uppercase mb-2 md:mb-4 leading-tight line-clamp-2 group-hover:text-white transition-colors">{item.name}</h4>
                                 
                                 <div className="flex justify-between items-end w-full">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[9px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
-                                        <span className={`text-xs md:text-sm font-black px-3 py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
-                                            {item.stock > 0 ? `${item.stock} Units` : 'OUT OF STOCK'}
+                                    <div className="flex flex-col gap-0.5 md:gap-1">
+                                        <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
+                                        <span className={`text-[10px] md:text-sm font-black px-1.5 py-0.5 md:px-3 md:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>
+                                            {item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}
                                         </span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[9px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-1">Ecer Price</span>
-                                        <span className="text-xl md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                        <span className="text-[8px] md:text-[10px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
+                                        <span className="text-lg md:text-3xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                                             {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
                                         </span>
                                     </div>
