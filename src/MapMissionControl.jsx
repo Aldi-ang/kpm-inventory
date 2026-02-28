@@ -10,6 +10,17 @@ const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; 
+    const p1 = lat1 * Math.PI/180;
+    const p2 = lat2 * Math.PI/180;
+    const dp = (lat2-lat1) * Math.PI/180;
+    const dl = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+};
+
 const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
     const packsPerSlop = product.packsPerSlop || 10;
@@ -125,7 +136,6 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     if (percentage > 75) rank = "Kingpin";
     if (percentage === 100) rank = "Legend";
 
-    // MINIMIZED VIEW
     if (isMinimized) {
         return (
             <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
@@ -136,7 +146,6 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
         );
     }
 
-    // EXPANDED VIEW
     return (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
             <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
@@ -165,13 +174,17 @@ const HudTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore }) => {
+const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const [showConsignDetails, setShowConsignDetails] = useState(false);
     const [isLinking, setIsLinking] = useState(false); 
     
-    // INDIVIDUAL STORE SLIDER STATE
+    // Kept in sync with database, but allows smooth temporary overrides
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     
+    useEffect(() => {
+        setLocalScale(store.catchmentScale || 1.0);
+    }, [store.id, store.catchmentScale]);
+
     const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
     const stats = useMemo(() => {
@@ -255,7 +268,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             )}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
-            {/* --- INDIVIDUAL STORE RADIUS SLIDER --- */}
+            {/* --- FIX: REALTIME SMOOTH RADIUS SLIDER --- */}
             {isAdmin && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
                     <div className="flex justify-between items-center mb-2">
@@ -266,7 +279,11 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                             <input 
                                 type="number" step="0.1" min="0.1" max="5.0"
                                 value={localScale} 
-                                onChange={(e) => setLocalScale(Math.max(0.1, parseFloat(e.target.value) || 1))}
+                                onChange={(e) => {
+                                    const val = Math.max(0.1, parseFloat(e.target.value) || 1);
+                                    setLocalScale(val);
+                                    setLiveScaleOverride(val);
+                                }}
                                 onBlur={handleSaveLocalScale}
                                 className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"
                             />
@@ -276,7 +293,11 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <input 
                         type="range" min="0.1" max="5.0" step="0.1" 
                         value={localScale} 
-                        onChange={(e) => setLocalScale(parseFloat(e.target.value))} 
+                        onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            setLocalScale(val);
+                            setLiveScaleOverride(val); // This instantly pushes visual change to the Map
+                        }} 
                         onMouseUp={handleSaveLocalScale}
                         onTouchEnd={handleSaveLocalScale}
                         className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
@@ -336,7 +357,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
                 </div>
             )}
-            <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm"><MapPin size={16}/> GPS Navigation</a>
         </div>
     );
 };
@@ -354,6 +374,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
+
+    // NEW: Realtime visual override for the slider
+    const [liveScaleOverride, setLiveScaleOverride] = useState(null);
 
     const activeTiers = tierSettings || [
         { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
@@ -428,7 +451,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
-    const handlePinClick = (store, map) => { setSelectedStore(store); map.flyTo([store.latitude, store.longitude], 18, { duration: 1.2 }); };
+    
+    // --- FIX: ZOOM DISTANCE CHANGED FROM 18 TO 14 ---
+    const handlePinClick = (store, map) => { 
+        setSelectedStore(store); 
+        setLiveScaleOverride(null); // Reset visual overrides
+        map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); 
+    };
 
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
@@ -477,7 +506,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
                 ))}
 
-                {/* --- TRUE VENN DIAGRAM INTERSECTION HEATMAP --- */}
                 {conquestMode && mapPoints.map(store => {
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
@@ -485,7 +513,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     else if (store.tier === 'Gold') baseRadius = 800;
                     else if (store.tier === 'Silver') baseRadius = 500;
 
-                    const storeScale = store.catchmentScale || 1.0;
+                    // --- FIX: USE LIVE OVERRIDE IF WE ARE EDITING THIS STORE ---
+                    const isEditingThisStore = activeStore && activeStore.id === store.id && liveScaleOverride !== null;
+                    const storeScale = isEditingThisStore ? liveScaleOverride : (store.catchmentScale || 1.0);
                     const finalRadius = baseRadius * storeScale;
 
                     return (
@@ -493,20 +523,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             key={`circle-${store.id}`} 
                             center={[store.latitude, store.longitude]} 
                             radius={finalRadius} 
-                            // By using a uniform bright color and "mix-blend-mode: multiply", the overlaps naturally turn red.
                             className="venn-heatmap-circle" 
-                            pathOptions={{ 
-                                color: 'transparent', // Remove border to make it look like a smooth heatmap
-                                fillColor: '#f97316', // Orange
-                                fillOpacity: 0.35, 
-                            }}
+                            pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}
                         />
                     );
                 })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
             </MapContainer>
 
-            {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} />}
+            {/* Added liveScale props so the slider can talk directly to the map rendering engine */}
+            {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
@@ -522,8 +548,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 
-                /* THE VENN DIAGRAM CSS TRICK */
-                /* Removed transitions to fix zoom flicker, added multiply for true intersection colors */
                 .venn-heatmap-circle { mix-blend-mode: multiply; }
                 
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
