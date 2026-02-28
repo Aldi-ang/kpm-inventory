@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Polyline, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, ShieldAlert, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map } from 'lucide-react';
+import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc } from 'firebase/firestore';
 
@@ -21,6 +21,19 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 };
 
+// MATHEMATICAL POINT-IN-POLYGON ENGINE (Ray-Casting Algorithm)
+const isPointInPolygon = (point, vs) => {
+    let x = point[0], y = point[1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0], yi = vs[i][1];
+        let xj = vs[j][0], yj = vs[j][1];
+        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
 const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
     const packsPerSlop = product.packsPerSlop || 10;
@@ -30,6 +43,34 @@ const convertToBks = (qty, unit, product) => {
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
     return qty; 
+};
+
+// --- MOCK GEOJSON DATA (Replace with official Government GeoJSON later) ---
+const regionBoundaries = {
+    type: "FeatureCollection",
+    features: [
+        {
+            type: "Feature",
+            properties: { id: "Z1", name: "Kecamatan Muntilan (Zone A)", type: "Kecamatan", color: "#3b82f6" },
+            geometry: {
+                type: "Polygon",
+                // A rough polygon coordinate array [longitude, latitude] to demonstrate geofencing
+                coordinates: [[
+                    [110.250, -7.560], [110.310, -7.560], [110.330, -7.600], [110.280, -7.630], [110.240, -7.610], [110.250, -7.560]
+                ]]
+            }
+        },
+        {
+            type: "Feature",
+            properties: { id: "Z2", name: "Kecamatan Dukun (Zone B)", type: "Kecamatan", color: "#8b5cf6" },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [110.310, -7.560], [110.360, -7.540], [110.390, -7.580], [110.330, -7.600], [110.310, -7.560]
+                ]]
+            }
+        }
+    ]
 };
 
 // --- EXTRACTED COMPONENTS TO PREVENT FLICKERING ---
@@ -81,7 +122,7 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     );
 };
 
-const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelectedStore }) => {
+const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
             if (isAddingMode) {
@@ -91,6 +132,7 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
                 if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
                 setSelectedStore(null);
+                setSelectedZone(null); // Clear zone when clicking empty map space
             }
         },
     });
@@ -122,9 +164,56 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 };
 
 // --- HUD COMPONENTS ---
+
+// 1. THE ZONE HUD (NEW)
+const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
+    if (!zone) return null;
+
+    // Execute Point-In-Polygon math to find all stores trapped inside this boundary
+    const storesInZone = mapPoints.filter(store => {
+        const point = [store.longitude, store.latitude]; // GeoJSON expects [lng, lat]
+        const polygonCoords = zone.geometry.coordinates[0]; // Assuming simple polygon
+        return isPointInPolygon(point, polygonCoords);
+    });
+
+    const wholesalers = storesInZone.filter(s => s.storeType === 'Wholesaler').length;
+    const retailers = storesInZone.length - wholesalers;
+
+    return (
+        <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
+            <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
+            <div className="flex items-center gap-2 mb-1">
+                <Map className="text-blue-500" size={20}/>
+                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.properties.name}</h2>
+            </div>
+            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Regional Boundary</p>
+            
+            <div className="space-y-3">
+                <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Total Stores Inside</span>
+                    <span className="text-2xl font-black text-white">{storesInZone.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-amber-500/30 text-center">
+                        <span className="text-[10px] font-bold text-amber-500 uppercase block mb-1">Hubs</span>
+                        <span className="text-xl font-black text-amber-400">{wholesalers}</span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-600 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Retailers</span>
+                        <span className="text-xl font-black text-white">{retailers}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold transition-colors uppercase tracking-widest">
+                Assign Rep to Zone
+            </button>
+        </div>
+    );
+};
+
 const GameHUD = ({ conquestMode, mapPoints }) => {
     const [isMinimized, setIsMinimized] = useState(false);
-    
     if (!conquestMode) return null;
     const totalStores = mapPoints.length;
     const conqueredCount = mapPoints.filter(s => s.isConquered).length;
@@ -177,13 +266,9 @@ const HudTooltip = ({ active, payload, label }) => {
 const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const [showConsignDetails, setShowConsignDetails] = useState(false);
     const [isLinking, setIsLinking] = useState(false); 
-    
-    // Kept in sync with database, but allows smooth temporary overrides
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     
-    useEffect(() => {
-        setLocalScale(store.catchmentScale || 1.0);
-    }, [store.id, store.catchmentScale]);
+    useEffect(() => { setLocalScale(store.catchmentScale || 1.0); }, [store.id, store.catchmentScale]);
 
     const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
@@ -268,40 +353,16 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             )}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
-            {/* --- FIX: REALTIME SMOOTH RADIUS SLIDER --- */}
             {isAdmin && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1">
-                            <Network size={12} className="text-orange-500"/> Individual Reach
-                        </label>
+                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Network size={12} className="text-orange-500"/> Individual Reach</label>
                         <div className="flex items-center gap-1">
-                            <input 
-                                type="number" step="0.1" min="0.1" max="5.0"
-                                value={localScale} 
-                                onChange={(e) => {
-                                    const val = Math.max(0.1, parseFloat(e.target.value) || 1);
-                                    setLocalScale(val);
-                                    setLiveScaleOverride(val);
-                                }}
-                                onBlur={handleSaveLocalScale}
-                                className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"
-                            />
+                            <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
                             <span className="text-[10px] text-slate-500 font-bold">x</span>
                         </div>
                     </div>
-                    <input 
-                        type="range" min="0.1" max="5.0" step="0.1" 
-                        value={localScale} 
-                        onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            setLocalScale(val);
-                            setLiveScaleOverride(val); // This instantly pushes visual change to the Map
-                        }} 
-                        onMouseUp={handleSaveLocalScale}
-                        onTouchEnd={handleSaveLocalScale}
-                        className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
-                    />
+                    <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
                     <p className="text-[9px] text-slate-500 mt-2 italic">Adjusting this only affects {store.name}'s footprint.</p>
                 </div>
             )}
@@ -331,10 +392,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             
             <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                 <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
-                <div>
-                    <p className="text-[10px] uppercase font-bold opacity-70">Next Visit</p>
-                    <p className="font-bold text-sm">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p>
-                </div>
+                <div><p className="text-[10px] uppercase font-bold opacity-70">Next Visit</p><p className="font-bold text-sm">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p></div>
             </div>
 
             {isAdmin && (
@@ -357,6 +415,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
                 </div>
             )}
+            <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm"><MapPin size={16}/> GPS Navigation</a>
         </div>
     );
 };
@@ -364,6 +423,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
 // --- MAIN WRAPPER ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
     const [selectedStore, setSelectedStore] = useState(null);
+    const [selectedZone, setSelectedZone] = useState(null); // NEW: Track selected boundary
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [newPinCoords, setNewPinCoords] = useState(null);
@@ -371,11 +431,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
+    const [showBorders, setShowBorders] = useState(false); // NEW: Toggle GeoJSON borders
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
-
-    // NEW: Realtime visual override for the slider
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
 
     const activeTiers = tierSettings || [
@@ -399,7 +458,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 const addr = (c.address || "").toLowerCase();
 
                 if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
-
                 if (!tree[reg]) tree[reg] = new Set();
                 tree[reg].add(cit);
 
@@ -437,13 +495,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         mapPoints.forEach(store => {
             if (store.suppliedBy) {
                 const ws = wholesalers.find(w => String(w.id) === String(store.suppliedBy));
-                if (ws) {
-                    links.push({
-                        id: `link-${ws.id}-${store.id}`,
-                        positions: [ [ws.latitude, ws.longitude], [store.latitude, store.longitude] ],
-                        color: ws.tier === 'Platinum' ? '#f59e0b' : '#fbbf24', 
-                    });
-                }
+                if (ws) links.push({ id: `link-${ws.id}-${store.id}`, positions: [ [ws.latitude, ws.longitude], [store.latitude, store.longitude] ], color: ws.tier === 'Platinum' ? '#f59e0b' : '#fbbf24' });
             }
         });
         return links;
@@ -451,11 +503,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
-    
-    // --- FIX: ZOOM DISTANCE CHANGED FROM 18 TO 14 ---
     const handlePinClick = (store, map) => { 
         setSelectedStore(store); 
-        setLiveScaleOverride(null); // Reset visual overrides
+        setSelectedZone(null); // Hide zone HUD if opening a store HUD
+        setLiveScaleOverride(null); 
         map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); 
     };
 
@@ -482,6 +533,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             </button>
                         ))}
                     </div>
+                    
+                    {/* --- NEW MENU TOGGLES --- */}
+                    <div className="flex gap-2 w-full justify-end">
+                        <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Map size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
+                    </div>
+
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Network size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
                     <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
@@ -500,8 +557,41 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </LayersControl>
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
-                <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore}/>
+                <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
+                {/* --- PHASE 1: GEOJSON REGIONAL BOUNDARIES --- */}
+                {showBorders && (
+                    <GeoJSON 
+                        data={regionBoundaries} 
+                        style={(feature) => ({
+                            color: feature.properties.color,
+                            weight: 2,
+                            opacity: 0.8,
+                            fillOpacity: 0.1,
+                            dashArray: '5, 5'
+                        })}
+                        onEachFeature={(feature, layer) => {
+                            layer.on({
+                                click: (e) => {
+                                    // Make sure map clicks don't close this instantly
+                                    L.DomEvent.stopPropagation(e);
+                                    setSelectedStore(null); 
+                                    setSelectedZone(feature);
+                                },
+                                mouseover: (e) => {
+                                    const l = e.target;
+                                    l.setStyle({ fillOpacity: 0.2, weight: 3 });
+                                },
+                                mouseout: (e) => {
+                                    const l = e.target;
+                                    l.setStyle({ fillOpacity: 0.1, weight: 2 });
+                                }
+                            });
+                            layer.bindTooltip(feature.properties.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
+                        }}
+                    />
+                )}
+
                 {networkMode && networkLinks.map(link => (
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
                 ))}
@@ -513,26 +603,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     else if (store.tier === 'Gold') baseRadius = 800;
                     else if (store.tier === 'Silver') baseRadius = 500;
 
-                    // --- FIX: USE LIVE OVERRIDE IF WE ARE EDITING THIS STORE ---
                     const isEditingThisStore = activeStore && activeStore.id === store.id && liveScaleOverride !== null;
                     const storeScale = isEditingThisStore ? liveScaleOverride : (store.catchmentScale || 1.0);
                     const finalRadius = baseRadius * storeScale;
 
                     return (
-                        <Circle 
-                            key={`circle-${store.id}`} 
-                            center={[store.latitude, store.longitude]} 
-                            radius={finalRadius} 
-                            className="venn-heatmap-circle" 
-                            pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}
-                        />
+                        <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>
                     );
                 })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
             </MapContainer>
 
-            {/* Added liveScale props so the slider can talk directly to the map rendering engine */}
+            {/* --- ACTIVE HUBS --- */}
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
+            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
@@ -547,9 +631,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
-                
                 .venn-heatmap-circle { mix-blend-mode: multiply; }
-                
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
                 .animate-slide-down { animation: slide-down 0.5s ease-out forwards; }
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
