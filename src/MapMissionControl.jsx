@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud, Zap } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, setDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => {
@@ -21,7 +21,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 };
 
-// --- UPGRADED: POINT-IN-POLYGON (Handles complex multi-village geometry) ---
+// --- ROBUST POINT-IN-POLYGON ENGINE ---
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -57,7 +57,7 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-// --- EXTRACTED COMPONENTS ---
+// --- EXTRACTED MAP COMPONENTS ---
 const getIcon = (store, activeTiers, isTemp = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
@@ -147,85 +147,120 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- THE NEW SATELLITE BORDER IMPORT ENGINE ---
+// --- UPGRADED: SATELLITE BORDER IMPORTER ---
 const BorderImporter = ({ db, appId, boundaries, setBoundaries, setIsOpen }) => {
     const [searchQuery, setSearchQuery] = useState("");
+    const [adminLevel, setAdminLevel] = useState("Kecamatan");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [progress, setProgress] = useState("");
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
-        setIsLoading(true);
-        setError(null);
+        setIsLoading(true); setError(null);
+        setProgress(`Scanning satellite for ${adminLevel} ${searchQuery}...`);
         try {
-            // Ping official OpenStreetMap satellite GIS DB
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&polygon_geojson=1&format=json&limit=1`);
+            const q = encodeURIComponent(`${adminLevel} ${searchQuery}`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&polygon_geojson=1&format=json&limit=1`);
             const data = await res.json();
             
-            if (!data || data.length === 0) {
-                setError("Area not found. Try adding city name (e.g. 'Keji, Muntilan')");
-                return;
-            }
-
-            const area = data[0];
-            if (!area.geojson || (area.geojson.type !== 'Polygon' && area.geojson.type !== 'MultiPolygon')) {
-                setError("Found location, but no official boundary polygon exists in the public GIS database.");
+            if (!data || data.length === 0 || !data[0].geojson) {
+                setError(`Failed to find polygon for ${adminLevel} ${searchQuery}.`);
                 return;
             }
 
             const newBoundary = {
                 id: `BND_${Date.now()}`,
-                name: area.display_name.split(',')[0],
-                fullName: area.display_name,
-                geometry: area.geojson,
-                color: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'][Math.floor(Math.random() * 5)]
+                name: `${adminLevel} ${searchQuery}`,
+                fullName: data[0].display_name,
+                geometry: data[0].geojson,
+                color: adminLevel === 'Kabupaten' ? '#ef4444' : '#3b82f6',
+                level: adminLevel
             };
 
             const updatedList = [...boundaries, newBoundary];
             setBoundaries(updatedList);
+            if (db && appId) { try { await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updatedList }); } catch(e) {} }
             
-            // Try saving to Firebase if setup
-            if (db && appId) {
-                try {
-                    await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updatedList });
-                } catch(e) { console.warn("Firebase save skipped (rules). Saved to local state."); }
-            }
-            setSearchQuery("");
-            setIsOpen(false);
-        } catch (err) {
-            setError("Network error fetching satellite data.");
-        } finally {
-            setIsLoading(false);
+            setSearchQuery(""); setIsOpen(false);
+        } catch (err) { setError("Satellite API network error."); } 
+        finally { setIsLoading(false); setProgress(""); }
+    };
+
+    // MACRO: Automatically builds the primary Cello trading zones in Central Java
+    const handleAutoBuildMagelang = async () => {
+        setIsLoading(true); setError(null);
+        const zones = [
+            { query: "Kabupaten Magelang", level: "Kabupaten", color: "#ef4444" },
+            { query: "Kecamatan Muntilan", level: "Kecamatan", color: "#3b82f6" },
+            { query: "Kecamatan Dukun", level: "Kecamatan", color: "#8b5cf6" },
+            { query: "Kecamatan Srumbung", level: "Kecamatan", color: "#10b981" },
+            { query: "Kecamatan Salam", level: "Kecamatan", color: "#f59e0b" },
+            { query: "Kecamatan Mungkid", level: "Kecamatan", color: "#06b6d4" }
+        ];
+
+        let newBoundaries = [...boundaries];
+
+        for (let i = 0; i < zones.length; i++) {
+            const z = zones[i];
+            setProgress(`Downloading ${z.query} (${i+1}/${zones.length})...`);
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(z.query)}&polygon_geojson=1&format=json&limit=1`);
+                const data = await res.json();
+                if (data && data[0] && data[0].geojson) {
+                    newBoundaries.push({
+                        id: `BND_MAG_${Date.now()}_${i}`,
+                        name: z.query,
+                        fullName: data[0].display_name,
+                        geometry: data[0].geojson,
+                        color: z.color,
+                        level: z.level
+                    });
+                }
+                // Rate limit protection for OSM API
+                await new Promise(r => setTimeout(r, 1200));
+            } catch(e) { console.error("Skip:", z.query); }
         }
+
+        setBoundaries(newBoundaries);
+        if (db && appId) { try { await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: newBoundaries }); } catch(e) {} }
+        setIsLoading(false); setProgress(""); setIsOpen(false);
     };
 
     return (
         <div className="absolute top-24 right-4 w-80 bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><DownloadCloud size={16} className="text-blue-500"/> Import Geographic Zone</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight">Fetch official Desa/Kelurahan borders directly from OpenStreetMap satellites.</p>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><DownloadCloud size={16} className="text-blue-500"/> GeoJSON Importer</h3>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Fetch official government boundaries directly from OpenStreetMap satellites.</p>
             
-            <input 
-                type="text" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                placeholder="e.g., Pucungrejo, Muntilan" 
-                className="w-full bg-slate-800 border border-slate-600 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 mb-2 font-mono"
-            />
-            {error && <p className="text-[10px] text-red-400 mb-2">{error}</p>}
+            <div className="flex gap-2 mb-2">
+                <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} className="bg-slate-800 text-white text-xs p-2 rounded border border-slate-600 outline-none font-bold">
+                    <option value="Kecamatan">Kecamatan</option>
+                    <option value="Kabupaten">Kabupaten/Kota</option>
+                    <option value="Provinsi">Provinsi</option>
+                </select>
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="e.g. Muntilan" className="flex-1 bg-slate-800 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
+            </div>
+
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse">{progress}</p>}
             
-            <button 
-                onClick={handleSearch} 
-                disabled={isLoading} 
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50"
-            >
-                {isLoading ? <span className="animate-pulse">Accessing Satellite...</span> : <><Search size={14}/> Fetch Border</>}
+            <button onClick={handleSearch} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50 mb-4">
+                <Search size={14}/> Fetch Single Border
             </button>
+
+            <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <p className="text-[9px] text-slate-400 mb-2 uppercase tracking-widest text-center font-bold">--- Macro Actions ---</p>
+                <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
+                    <Zap size={14}/> Auto-Build Magelang Hub
+                </button>
+                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Fetches Kabupaten Magelang + 5 core Muntilan-area Kecamatans automatically.</p>
+            </div>
         </div>
     );
 };
 
-// --- ZONE HUD ---
+// --- THE ZONE HUD ---
 const ZoneHUD = ({ zone, mapPoints, setSelectedZone, boundaries, setBoundaries, db, appId }) => {
     if (!zone) return null;
 
@@ -237,9 +272,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone, boundaries, setBoundaries, 
         if(window.confirm(`Remove ${zone.name} border from map?`)) {
             const updated = boundaries.filter(b => b.id !== zone.id);
             setBoundaries(updated);
-            if (db && appId) {
-                try { await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updated }); } catch(e){}
-            }
+            if (db && appId) { try { await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updated }); } catch(e){} }
             setSelectedZone(null);
         }
     };
@@ -271,12 +304,8 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone, boundaries, setBoundaries, 
             </div>
             
             <div className="flex gap-2 mt-4">
-                <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">
-                    Assign Rep
-                </button>
-                <button onClick={handleDelete} className="px-3 py-2 bg-slate-800 hover:bg-red-900 border border-slate-600 hover:border-red-500 rounded-lg text-white transition-colors">
-                    <Trash2 size={14}/>
-                </button>
+                <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">Assign Rep</button>
+                <button onClick={handleDelete} className="px-3 py-2 bg-slate-800 hover:bg-red-900 border border-slate-600 hover:border-red-500 rounded-lg text-white transition-colors"><Trash2 size={14}/></button>
             </div>
         </div>
     );
@@ -288,48 +317,26 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     const totalStores = mapPoints.length;
     const conqueredCount = mapPoints.filter(s => s.isConquered).length;
     const percentage = totalStores > 0 ? Math.round((conqueredCount / totalStores) * 100) : 0;
-    
-    let rank = "Street Peddler";
-    if (percentage > 25) rank = "District Manager";
-    if (percentage > 50) rank = "City Boss";
-    if (percentage > 75) rank = "Kingpin";
-    if (percentage === 100) rank = "Legend";
+    let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
 
-    if (isMinimized) {
-        return (
-            <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-                <Shield size={14} className="text-orange-500"/>
-                <span className="text-xs font-bold font-mono">Control: {percentage}%</span>
-                <Maximize2 size={12} className="text-slate-400"/>
-            </div>
-        );
-    }
+    if (isMinimized) return (
+        <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
+            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+        </div>
+    );
 
     return (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
             <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
-            <div className="flex items-center gap-4 mb-3 mt-1">
-                <div className="text-3xl font-black font-mono">{percentage}%</div>
-                <div className="h-8 w-[1px] bg-slate-600"></div>
-                <div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div>
-            </div>
-            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
-            </div>
+            <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700"><div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div></div>
         </div>
     );
 };
 
 const HudTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl">
-                <p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p>
-                <p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p>
-            </div>
-        );
-    }
+    if (active && payload && payload.length) return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
     return null;
 };
 
@@ -348,32 +355,18 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
         const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
         const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
         const currentConsignment = Math.max(0, totalTitip - totalPaid);
-        
         const itemMap = {}; 
         storeTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                t.items.forEach(i => {
-                    const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
-                    const bks = convertToBks(i.qty, i.unit, prod);
-                    if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 };
-                    itemMap[i.productId].qty += bks;
-                });
-            }
-            else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                const list = t.items || t.itemsPaid || [];
-                list.forEach(i => {
-                    const prod = inventory ? inventory.find(p => p.id === i.productId) : null;
-                    const bks = convertToBks(i.qty, i.unit, prod);
-                    if (itemMap[i.productId]) itemMap[i.productId].qty -= bks;
-                });
+                t.items.forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 }; itemMap[i.productId].qty += bks; });
+            } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+                (t.items || t.itemsPaid || []).forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (itemMap[i.productId]) itemMap[i.productId].qty -= bks; });
             }
         });
         const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
         const graphData = storeTrans.filter(t => t.type === 'SALE').reduce((acc, t) => {
-            const date = t.date.substring(5);
-            const found = acc.find(i => i.date === date);
-            if (found) found.total += t.total; else acc.push({ date, total: t.total });
-            return acc;
+            const date = t.date.substring(5); const found = acc.find(i => i.date === date);
+            if (found) found.total += t.total; else acc.push({ date, total: t.total }); return acc;
         }, []).sort((a,b) => a.date.localeCompare(b.date)).slice(-5);
         
         return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length, graphData };
@@ -388,24 +381,18 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             const updates = { storeType: newType };
             if (newType === 'Wholesaler') updates.suppliedBy = null; 
             await updateDoc(ref, updates);
-        } catch (error) { console.error("Error updating store type:", error); } finally { setIsLinking(false); }
+        } catch (error) {} finally { setIsLinking(false); }
     };
 
     const handleAssignHub = async (hubId) => {
         if (!db || !appId) return;
         setIsLinking(true);
-        try {
-            const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
-            await updateDoc(ref, { suppliedBy: hubId === "none" ? null : hubId });
-        } catch (error) { console.error("Error mapping hub:", error); } finally { setIsLinking(false); }
+        try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), { suppliedBy: hubId === "none" ? null : hubId }); } catch (error) {} finally { setIsLinking(false); }
     };
 
     const handleSaveLocalScale = async () => {
         if (!db || !appId) return;
-        try {
-            const ref = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id);
-            await updateDoc(ref, { catchmentScale: localScale });
-        } catch (error) { console.error("Error saving scale:", error); }
+        try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), { catchmentScale: localScale }); } catch (error) {}
     };
 
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
@@ -416,11 +403,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
             <div className="flex items-start justify-between mb-1 pr-8"><h2 className="text-2xl font-bold leading-tight">{store.name}</h2></div>
             
-            {store.storeType === 'Wholesaler' && (
-                <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]">
-                    <Building2 size={10} /> WHOLESALE HUB
-                </span>
-            )}
+            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Building2 size={10} /> WHOLESALE HUB</span>}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
             {isAdmin && (
@@ -437,19 +420,13 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                 </div>
             )}
 
-            {isAdmin && store.phone && (
-                <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center"><span className="text-sm font-mono">{store.phone}</span><a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="p-2 bg-green-600 rounded-lg hover:bg-green-500 transition-colors flex items-center gap-2 text-xs font-bold"><Phone size={14}/> Chat</a></div>
-            )}
-
+            {isAdmin && store.phone && <div className="mb-4 bg-slate-800 p-3 rounded-xl flex justify-between items-center"><span className="text-sm font-mono">{store.phone}</span><a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="p-2 bg-green-600 rounded-lg hover:bg-green-500 transition-colors flex items-center gap-2 text-xs font-bold"><Phone size={14}/> Chat</a></div>}
             {isAdmin && (
                 <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
-                    <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}>
-                        <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span>
-                    </button>
+                    <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
                 </div>
             )}
-
             {isAdmin && store.storeType !== 'Wholesaler' && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                     <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><LinkIcon size={12}/> Map to Wholesaler</label>
@@ -510,16 +487,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
 
-    // Try loading boundaries from Firebase on mount
     useEffect(() => {
         const loadBorders = async () => {
             if (db && appId) {
                 try {
                     const docSnap = await getDocs(collection(db, `artifacts/${appId}/settings`));
-                    docSnap.forEach(d => {
-                        if (d.id === 'mapBoundaries') setBoundaries(d.data().list || []);
-                    });
-                } catch(e) { console.warn("Could not load borders from DB"); }
+                    docSnap.forEach(d => { if (d.id === 'mapBoundaries') setBoundaries(d.data().list || []); });
+                } catch(e) {}
             }
         };
         loadBorders();
@@ -537,21 +511,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const validStores = customers
             .filter(c => c.latitude && c.longitude)
             .map(c => {
-                const lat = parseFloat(c.latitude);
-                const lng = parseFloat(c.longitude);
+                const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
                 if (isNaN(lat) || isNaN(lng)) return null;
 
-                let reg = c.region || "Uncategorized";
-                let cit = c.city || "Uncategorized";
+                let reg = c.region || "Uncategorized"; let cit = c.city || "Uncategorized";
                 const addr = (c.address || "").toLowerCase();
-
                 if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
-                if (!tree[reg]) tree[reg] = new Set();
-                tree[reg].add(cit);
+                if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
 
                 const last = c.lastVisit ? new Date(c.lastVisit) : new Date(0);
-                const next = new Date(last);
-                next.setDate(last.getDate() + (parseInt(c.visitFreq) || 7));
+                const next = new Date(last); next.setDate(last.getDate() + (parseInt(c.visitFreq) || 7));
                 const diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
                 const daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
                 const isConquered = daysSinceVisit <= 30;
@@ -567,11 +536,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             return true;
         });
 
-        const treeArray = Object.keys(tree).reduce((acc, reg) => {
-            acc[reg] = Array.from(tree[reg]).sort();
-            return acc;
-        }, {});
-
+        const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
 
@@ -591,14 +556,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
-    
-    const handlePinClick = (store, map) => { 
-        setSelectedStore(store); 
-        setSelectedZone(null); 
-        setLiveScaleOverride(null); 
-        map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); 
-    };
-
+    const handlePinClick = (store, map) => { setSelectedStore(store); setSelectedZone(null); setLiveScaleOverride(null); map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); };
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
@@ -659,16 +617,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <GeoJSON 
                         key={`bnd-${boundary.id}`}
                         data={boundary.geometry} 
-                        style={{ color: boundary.color, weight: 2, opacity: 0.8, fillOpacity: 0.1, dashArray: '5, 5' }}
+                        style={{ 
+                            color: boundary.color, 
+                            weight: boundary.level === 'Kabupaten' ? 4 : 2, 
+                            opacity: boundary.level === 'Kabupaten' ? 1 : 0.8, 
+                            fillOpacity: boundary.level === 'Kabupaten' ? 0.05 : 0.15, 
+                            dashArray: boundary.level === 'Kabupaten' ? '10, 10' : '5, 5' 
+                        }}
                         onEachFeature={(f, layer) => {
                             layer.on({
-                                click: (e) => {
-                                    L.DomEvent.stopPropagation(e);
-                                    setSelectedStore(null); 
-                                    setSelectedZone(boundary);
-                                },
-                                mouseover: (e) => e.target.setStyle({ fillOpacity: 0.2, weight: 3 }),
-                                mouseout: (e) => e.target.setStyle({ fillOpacity: 0.1, weight: 2 })
+                                click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
+                                mouseover: (e) => e.target.setStyle({ fillOpacity: 0.3 }),
+                                mouseout: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' ? 0.05 : 0.15 })
                             });
                             layer.bindTooltip(boundary.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
                         }}
