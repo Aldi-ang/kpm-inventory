@@ -134,9 +134,8 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- UPGRADED: GUIDED SATELLITE BORDER IMPORTER ---
+// --- UPGRADED: STRICT BOUNDARY SATELLITE IMPORTER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen }) => {
-    // Guided UI States
     const [selProvince, setSelProvince] = useState("Jawa Tengah");
     const [selKabupaten, setSelKabupaten] = useState("Magelang");
     const [selKecamatan, setSelKecamatan] = useState("");
@@ -175,27 +174,38 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         }
     };
 
+    // --- FIX: EXACT ADMINISTRATIVE BOUNDARY EXTRACTION ---
+    const extractExactBoundary = (data) => {
+        if (!data || data.length === 0) return null;
+        // Priority 1: Specifically tagged as an administrative boundary polygon
+        const exactBorder = data.find(d => d.class === 'boundary' && d.type === 'administrative' && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
+        if (exactBorder) return exactBorder;
+        // Priority 2: Any valid polygon (filters out bad point markers)
+        return data.find(d => d.geojson && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
+    };
+
     const handleSearch = async () => {
         if (!selKecamatan) { setError("Please select a Kecamatan first."); return; }
         setIsLoading(true); setError(null);
-        setProgress(`Fetching border for ${selKecamatan}...`);
+        setProgress(`Fetching exact BAPPEDA border for ${selKecamatan}...`);
         try {
-            // Highly specific query prevents point glitches
+            // Asking for multiple results to ensure we find the polygon, not just a town point
             const queryName = `${selKecamatan}, ${selKabupaten}, ${selProvince}`;
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=1`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=5`);
             const data = await res.json();
             
-            // STRICT POLYGON ENFORCEMENT: Rejects blue pin glitches
-            if (!data || data.length === 0 || !data[0].geojson || (data[0].geojson.type !== 'Polygon' && data[0].geojson.type !== 'MultiPolygon')) {
-                setError(`GIS Data not found as a valid polygon for ${selKecamatan}. Try the Auto-Builder.`);
+            const targetData = extractExactBoundary(data);
+
+            if (!targetData) {
+                setError(`Official polygon not found for ${selKecamatan}. Satellite only returned points.`);
                 setIsLoading(false); setProgress(""); return;
             }
 
             const newBoundary = {
                 id: `BND_${Date.now()}`,
                 name: `Kecamatan ${selKecamatan}`,
-                fullName: data[0].display_name,
-                geometry: data[0].geojson,
+                fullName: targetData.display_name,
+                geometry: targetData.geojson,
                 color: palette[Math.floor(Math.random() * palette.length)],
                 level: "Kecamatan"
             };
@@ -213,34 +223,35 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         setIsLoading(true); setError(null);
         let newBoundaries = [...boundaries];
 
-        // 1. Fetch Master Kabupaten Border
         setProgress(`Building Kabupaten Magelang Master Border...`);
         try {
-            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Kabupaten+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=1`);
+            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Kabupaten+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=3`);
             const dataKab = await resKab.json();
-            if (dataKab && dataKab[0] && dataKab[0].geojson && (dataKab[0].geojson.type === 'Polygon' || dataKab[0].geojson.type === 'MultiPolygon')) {
+            const exactKab = extractExactBoundary(dataKab);
+            if (exactKab) {
                 newBoundaries.push({
-                    id: `BND_KAB_MAG_${Date.now()}`, name: "Kabupaten Magelang", fullName: dataKab[0].display_name,
-                    geometry: dataKab[0].geojson, color: "#ef4444", level: "Kabupaten"
+                    id: `BND_KAB_MAG_${Date.now()}`, name: "Kabupaten Magelang", fullName: exactKab.display_name,
+                    geometry: exactKab.geojson, color: "#ef4444", level: "Kabupaten"
                 });
             }
-            await new Promise(r => setTimeout(r, 1000)); // Rate limit
+            await new Promise(r => setTimeout(r, 1000));
         } catch(e) {}
 
-        // 2. Fetch all 21 Kecamatans
         for (let i = 0; i < magelangKecamatans.length; i++) {
             const kec = magelangKecamatans[i];
             setProgress(`Downloading ${kec} (${i+1}/${magelangKecamatans.length})...`);
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${kec},+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=1`);
+                const queryName = `${kec}, Magelang, Jawa Tengah`;
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=5`);
                 const data = await res.json();
-                // STRICT POLYGON ENFORCEMENT
-                if (data && data[0] && data[0].geojson && (data[0].geojson.type === 'Polygon' || data[0].geojson.type === 'MultiPolygon')) {
-                    // Check if already exists to prevent dupes
+                
+                const exactBorder = extractExactBoundary(data);
+
+                if (exactBorder) {
                     if (!newBoundaries.find(b => b.name === `Kecamatan ${kec}`)) {
                         newBoundaries.push({
-                            id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: data[0].display_name,
-                            geometry: data[0].geojson, color: palette[i % palette.length], level: "Kecamatan"
+                            id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: exactBorder.display_name,
+                            geometry: exactBorder.geojson, color: palette[i % palette.length], level: "Kecamatan"
                         });
                     }
                 }
@@ -257,18 +268,18 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         <div className="absolute top-24 right-4 w-80 bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[80vh] overflow-y-auto custom-scrollbar flex flex-col">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Map size={16} className="text-blue-500"/> Territory Setup</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Download official regional polygons to build your strategy map.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Download exact BAPPEDA interlocking polygons from OSM satellites.</p>
             
             <div className="space-y-2 mb-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
                 <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">Guided Search</p>
                 <input type="text" value={selProvince} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
                 <input type="text" value={selKabupaten} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
-                <select value={selKecamatan} onChange={(e) => setSelKecamatan(e.target.value)} className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white font-bold outline-none">
+                <select value={selKecamatan} onChange={(e) => setSelKecamatan(e.target.value)} className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white font-bold outline-none cursor-pointer">
                     <option value="">-- Select Kecamatan --</option>
                     {magelangKecamatans.map(k => <option key={k} value={k}>{k}</option>)}
                 </select>
                 <button onClick={handleSearch} disabled={isLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Search size={14}/> Fetch Region
+                    <Search size={14}/> Fetch Exact Region
                 </button>
             </div>
 
@@ -280,10 +291,9 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
                 <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
                     <Zap size={14}/> Build Entire Magelang City Map
                 </button>
-                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Automatically downloads all 21 Kecamatans into interlocking polygons.</p>
+                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Automatically downloads all 21 interlocking BAPPEDA polygons.</p>
             </div>
 
-            {/* SAVED BORDERS MANAGER */}
             <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col min-h-[150px]">
                 <div className="flex justify-between items-center mb-2">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-1"><Save size={12}/> Active Borders ({boundaries.length})</h4>
@@ -297,9 +307,9 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
                             <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600">
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: b.color }}></div>
-                                    <span className="text-[10px] text-white font-bold truncate">{b.name}</span>
+                                    <span className="text-[10px] text-white font-bold truncate" title={b.name}>{b.name}</span>
                                 </div>
-                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash2 size={12}/></button>
+                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors shrink-0"><Trash2 size={12}/></button>
                             </div>
                         ))}
                     </div>
@@ -309,7 +319,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     );
 };
 
-// --- ZONE HUD ---
 const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     if (!zone) return null;
 
@@ -645,7 +654,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <ZoomControl position="topleft" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} />
                 
-                {/* --- NEW HIGH-CONTRAST BASEMAPS ADDED --- */}
                 <LayersControl position="bottomright">
                     <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
                         <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
