@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => {
@@ -21,17 +21,29 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 };
 
-// MATHEMATICAL POINT-IN-POLYGON ENGINE (Ray-Casting Algorithm)
-const isPointInPolygon = (point, vs) => {
-    let x = point[0], y = point[1];
+// --- UPGRADED: POINT-IN-POLYGON (Handles complex multi-village geometry) ---
+const isPointInPolygon = (point, polygon) => {
     let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i][0], yi = vs[i][1];
-        let xj = vs[j][0], yj = vs[j][1];
-        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        let xi = polygon[i][0], yi = polygon[i][1];
+        let xj = polygon[j][0], yj = polygon[j][1];
+        let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
     }
     return inside;
+};
+
+const checkPointInGeoJSON = (lng, lat, geometry) => {
+    if (!geometry || !geometry.coordinates) return false;
+    const point = [lng, lat];
+    if (geometry.type === 'Polygon') {
+        return isPointInPolygon(point, geometry.coordinates[0]);
+    } else if (geometry.type === 'MultiPolygon') {
+        for (let poly of geometry.coordinates) {
+            if (isPointInPolygon(point, poly[0])) return true;
+        }
+    }
+    return false;
 };
 
 const convertToBks = (qty, unit, product) => {
@@ -45,35 +57,7 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-// --- MOCK GEOJSON DATA (Replace with official Government GeoJSON later) ---
-const regionBoundaries = {
-    type: "FeatureCollection",
-    features: [
-        {
-            type: "Feature",
-            properties: { id: "Z1", name: "Kecamatan Muntilan (Zone A)", type: "Kecamatan", color: "#3b82f6" },
-            geometry: {
-                type: "Polygon",
-                // A rough polygon coordinate array [longitude, latitude] to demonstrate geofencing
-                coordinates: [[
-                    [110.250, -7.560], [110.310, -7.560], [110.330, -7.600], [110.280, -7.630], [110.240, -7.610], [110.250, -7.560]
-                ]]
-            }
-        },
-        {
-            type: "Feature",
-            properties: { id: "Z2", name: "Kecamatan Dukun (Zone B)", type: "Kecamatan", color: "#8b5cf6" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [[
-                    [110.310, -7.560], [110.360, -7.540], [110.390, -7.580], [110.330, -7.600], [110.310, -7.560]
-                ]]
-            }
-        }
-    ]
-};
-
-// --- EXTRACTED COMPONENTS TO PREVENT FLICKERING ---
+// --- EXTRACTED COMPONENTS ---
 const getIcon = (store, activeTiers, isTemp = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
@@ -132,7 +116,7 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
                 if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
                 setSelectedStore(null);
-                setSelectedZone(null); // Clear zone when clicking empty map space
+                setSelectedZone(null); 
             }
         },
     });
@@ -163,30 +147,111 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- HUD COMPONENTS ---
+// --- THE NEW SATELLITE BORDER IMPORT ENGINE ---
+const BorderImporter = ({ db, appId, boundaries, setBoundaries, setIsOpen }) => {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-// 1. THE ZONE HUD (NEW)
-const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            // Ping official OpenStreetMap satellite GIS DB
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&polygon_geojson=1&format=json&limit=1`);
+            const data = await res.json();
+            
+            if (!data || data.length === 0) {
+                setError("Area not found. Try adding city name (e.g. 'Keji, Muntilan')");
+                return;
+            }
+
+            const area = data[0];
+            if (!area.geojson || (area.geojson.type !== 'Polygon' && area.geojson.type !== 'MultiPolygon')) {
+                setError("Found location, but no official boundary polygon exists in the public GIS database.");
+                return;
+            }
+
+            const newBoundary = {
+                id: `BND_${Date.now()}`,
+                name: area.display_name.split(',')[0],
+                fullName: area.display_name,
+                geometry: area.geojson,
+                color: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'][Math.floor(Math.random() * 5)]
+            };
+
+            const updatedList = [...boundaries, newBoundary];
+            setBoundaries(updatedList);
+            
+            // Try saving to Firebase if setup
+            if (db && appId) {
+                try {
+                    await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updatedList });
+                } catch(e) { console.warn("Firebase save skipped (rules). Saved to local state."); }
+            }
+            setSearchQuery("");
+            setIsOpen(false);
+        } catch (err) {
+            setError("Network error fetching satellite data.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="absolute top-24 right-4 w-80 bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left">
+            <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><DownloadCloud size={16} className="text-blue-500"/> Import Geographic Zone</h3>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight">Fetch official Desa/Kelurahan borders directly from OpenStreetMap satellites.</p>
+            
+            <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                placeholder="e.g., Pucungrejo, Muntilan" 
+                className="w-full bg-slate-800 border border-slate-600 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 mb-2 font-mono"
+            />
+            {error && <p className="text-[10px] text-red-400 mb-2">{error}</p>}
+            
+            <button 
+                onClick={handleSearch} 
+                disabled={isLoading} 
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50"
+            >
+                {isLoading ? <span className="animate-pulse">Accessing Satellite...</span> : <><Search size={14}/> Fetch Border</>}
+            </button>
+        </div>
+    );
+};
+
+// --- ZONE HUD ---
+const ZoneHUD = ({ zone, mapPoints, setSelectedZone, boundaries, setBoundaries, db, appId }) => {
     if (!zone) return null;
 
-    // Execute Point-In-Polygon math to find all stores trapped inside this boundary
-    const storesInZone = mapPoints.filter(store => {
-        const point = [store.longitude, store.latitude]; // GeoJSON expects [lng, lat]
-        const polygonCoords = zone.geometry.coordinates[0]; // Assuming simple polygon
-        return isPointInPolygon(point, polygonCoords);
-    });
-
+    const storesInZone = mapPoints.filter(store => checkPointInGeoJSON(store.longitude, store.latitude, zone.geometry));
     const wholesalers = storesInZone.filter(s => s.storeType === 'Wholesaler').length;
     const retailers = storesInZone.length - wholesalers;
+
+    const handleDelete = async () => {
+        if(window.confirm(`Remove ${zone.name} border from map?`)) {
+            const updated = boundaries.filter(b => b.id !== zone.id);
+            setBoundaries(updated);
+            if (db && appId) {
+                try { await setDoc(doc(db, `artifacts/${appId}/settings`, 'mapBoundaries'), { list: updated }); } catch(e){}
+            }
+            setSelectedZone(null);
+        }
+    };
 
     return (
         <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
                 <Map className="text-blue-500" size={20}/>
-                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.properties.name}</h2>
+                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
-            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Regional Boundary</p>
+            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName}</p>
             
             <div className="space-y-3">
                 <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
@@ -205,9 +270,14 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 </div>
             </div>
             
-            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold transition-colors uppercase tracking-widest">
-                Assign Rep to Zone
-            </button>
+            <div className="flex gap-2 mt-4">
+                <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">
+                    Assign Rep
+                </button>
+                <button onClick={handleDelete} className="px-3 py-2 bg-slate-800 hover:bg-red-900 border border-slate-600 hover:border-red-500 rounded-lg text-white transition-colors">
+                    <Trash2 size={14}/>
+                </button>
+            </div>
         </div>
     );
 };
@@ -423,7 +493,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
 // --- MAIN WRAPPER ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
     const [selectedStore, setSelectedStore] = useState(null);
-    const [selectedZone, setSelectedZone] = useState(null); // NEW: Track selected boundary
+    const [selectedZone, setSelectedZone] = useState(null); 
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [newPinCoords, setNewPinCoords] = useState(null);
@@ -431,11 +501,29 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
-    const [showBorders, setShowBorders] = useState(false); // NEW: Toggle GeoJSON borders
+    const [showBorders, setShowBorders] = useState(false); 
+    const [showImporter, setShowImporter] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
+    
+    const [boundaries, setBoundaries] = useState([]);
+
+    // Try loading boundaries from Firebase on mount
+    useEffect(() => {
+        const loadBorders = async () => {
+            if (db && appId) {
+                try {
+                    const docSnap = await getDocs(collection(db, `artifacts/${appId}/settings`));
+                    docSnap.forEach(d => {
+                        if (d.id === 'mapBoundaries') setBoundaries(d.data().list || []);
+                    });
+                } catch(e) { console.warn("Could not load borders from DB"); }
+            }
+        };
+        loadBorders();
+    }, [db, appId]);
 
     const activeTiers = tierSettings || [
         { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
@@ -503,9 +591,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
+    
     const handlePinClick = (store, map) => { 
         setSelectedStore(store); 
-        setSelectedZone(null); // Hide zone HUD if opening a store HUD
+        setSelectedZone(null); 
         setLiveScaleOverride(null); 
         map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); 
     };
@@ -533,9 +622,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             </button>
                         ))}
                     </div>
-                    
-                    {/* --- NEW MENU TOGGLES --- */}
+
                     <div className="flex gap-2 w-full justify-end">
+                        {isAdmin && (
+                            <button onClick={() => setShowImporter(!showImporter)} className="pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border bg-slate-800 text-slate-300 border-slate-600 hover:text-white hover:border-blue-500 transition-all">
+                                <DownloadCloud size={16}/> Import Border
+                            </button>
+                        )}
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Map size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
 
@@ -543,6 +636,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
+
+            {showImporter && <BorderImporter db={db} appId={appId} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
@@ -559,38 +654,26 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {/* --- PHASE 1: GEOJSON REGIONAL BOUNDARIES --- */}
-                {showBorders && (
+                {/* --- RENDER IMPORTED BOUNDARIES --- */}
+                {showBorders && boundaries.map((boundary) => (
                     <GeoJSON 
-                        data={regionBoundaries} 
-                        style={(feature) => ({
-                            color: feature.properties.color,
-                            weight: 2,
-                            opacity: 0.8,
-                            fillOpacity: 0.1,
-                            dashArray: '5, 5'
-                        })}
-                        onEachFeature={(feature, layer) => {
+                        key={`bnd-${boundary.id}`}
+                        data={boundary.geometry} 
+                        style={{ color: boundary.color, weight: 2, opacity: 0.8, fillOpacity: 0.1, dashArray: '5, 5' }}
+                        onEachFeature={(f, layer) => {
                             layer.on({
                                 click: (e) => {
-                                    // Make sure map clicks don't close this instantly
                                     L.DomEvent.stopPropagation(e);
                                     setSelectedStore(null); 
-                                    setSelectedZone(feature);
+                                    setSelectedZone(boundary);
                                 },
-                                mouseover: (e) => {
-                                    const l = e.target;
-                                    l.setStyle({ fillOpacity: 0.2, weight: 3 });
-                                },
-                                mouseout: (e) => {
-                                    const l = e.target;
-                                    l.setStyle({ fillOpacity: 0.1, weight: 2 });
-                                }
+                                mouseover: (e) => e.target.setStyle({ fillOpacity: 0.2, weight: 3 }),
+                                mouseout: (e) => e.target.setStyle({ fillOpacity: 0.1, weight: 2 })
                             });
-                            layer.bindTooltip(feature.properties.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
+                            layer.bindTooltip(boundary.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
                         }}
                     />
-                )}
+                ))}
 
                 {networkMode && networkLinks.map(link => (
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
@@ -614,9 +697,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
             </MapContainer>
 
-            {/* --- ACTIVE HUBS --- */}
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
-            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
+            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} boundaries={boundaries} setBoundaries={setBoundaries} db={db} appId={appId} />
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
