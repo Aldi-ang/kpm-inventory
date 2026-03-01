@@ -1,32 +1,26 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud, Zap, Save } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
-const formatRupiah = (number) => {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
-};
+const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 const getDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3; 
-    const p1 = lat1 * Math.PI/180;
-    const p2 = lat2 * Math.PI/180;
-    const dp = (lat2-lat1) * Math.PI/180;
-    const dl = (lon2-lon1) * Math.PI/180;
+    const p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180;
+    const dp = (lat2-lat1) * Math.PI/180, dl = (lon2-lon1) * Math.PI/180;
     const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; 
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
 };
 
 // --- ROBUST POINT-IN-POLYGON ENGINE ---
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        let xi = polygon[i][0], yi = polygon[i][1];
-        let xj = polygon[j][0], yj = polygon[j][1];
+        let xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
         let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
     }
@@ -36,28 +30,23 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
-    if (geometry.type === 'Polygon') {
-        return isPointInPolygon(point, geometry.coordinates[0]);
-    } else if (geometry.type === 'MultiPolygon') {
-        for (let poly of geometry.coordinates) {
-            if (isPointInPolygon(point, poly[0])) return true;
-        }
+    if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
+    if (geometry.type === 'MultiPolygon') {
+        for (let poly of geometry.coordinates) { if (isPointInPolygon(point, poly[0])) return true; }
     }
     return false;
 };
 
 const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
-    const packsPerSlop = product.packsPerSlop || 10;
-    const slopsPerBal = product.slopsPerBal || 20;
-    const balsPerCarton = product.balsPerCarton || 4;
+    const packsPerSlop = product.packsPerSlop || 10, slopsPerBal = product.slopsPerBal || 20, balsPerCarton = product.balsPerCarton || 4;
     if (unit === 'Slop') return qty * packsPerSlop;
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
     return qty; 
 };
 
-// --- EXTRACTED MAP COMPONENTS ---
+// --- MAP ICONS ---
 const getIcon = (store, activeTiers, isTemp = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
@@ -69,8 +58,7 @@ const getIcon = (store, activeTiers, isTemp = false) => {
     return L.divIcon({
         className: 'custom-icon', 
         html: `<div style="position:relative;">${hubBadge}<div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} overflow: hidden;">${content}</div></div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        iconSize: [34, 34], iconAnchor: [17, 17]
     });
 };
 
@@ -115,10 +103,9 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
                 navigator.clipboard.writeText(coordString);
                 if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
-                setSelectedStore(null);
-                setSelectedZone(null); 
+                setSelectedStore(null); setSelectedZone(null); 
             }
-        },
+        }
     });
     return null;
 };
@@ -147,26 +134,41 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- UPGRADED: SATELLITE BORDER IMPORTER WITH SAVE/DELETE ---
+// --- UPGRADED: GUIDED SATELLITE BORDER IMPORTER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen }) => {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [adminLevel, setAdminLevel] = useState("Kecamatan");
+    // Guided UI States
+    const [selProvince, setSelProvince] = useState("Jawa Tengah");
+    const [selKabupaten, setSelKabupaten] = useState("Magelang");
+    const [selKecamatan, setSelKecamatan] = useState("");
+    
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
 
+    const magelangKecamatans = [
+        "Bandongan", "Borobudur", "Candimulyo", "Dukun", "Grabag",
+        "Kajoran", "Kaliangkrik", "Mertoyudan", "Mungkid", "Muntilan",
+        "Ngablak", "Ngluwar", "Pakis", "Salam", "Salaman",
+        "Sawangan", "Secang", "Srumbung", "Tegalrejo", "Tempuran", "Windusari"
+    ];
+    const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
+
     const saveToFirebase = async (newList) => {
         if (db && appId && user) {
-            try {
-                // FIXED: Saving directly to the User's profile to guarantee permissions
-                const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
-                await setDoc(ref, { list: newList }, { merge: true });
-            } catch(e) { console.error("Firebase save failed:", e); }
+            try { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries'), { list: newList }, { merge: true }); } 
+            catch(e) { console.error("Firebase save failed:", e); }
+        }
+    };
+
+    const handleWipeAll = async () => {
+        if(window.confirm("WARNING: This will delete ALL borders to clean up glitches. Continue?")) {
+            setBoundaries([]);
+            await saveToFirebase([]);
         }
     };
 
     const handleDeleteBorder = async (idToRemove) => {
-        if(window.confirm("Remove this border from your map?")) {
+        if(window.confirm("Remove this border?")) {
             const updated = boundaries.filter(b => b.id !== idToRemove);
             setBoundaries(updated);
             await saveToFirebase(updated);
@@ -174,73 +176,76 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     };
 
     const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+        if (!selKecamatan) { setError("Please select a Kecamatan first."); return; }
         setIsLoading(true); setError(null);
-        setProgress(`Scanning satellite for ${adminLevel} ${searchQuery}...`);
+        setProgress(`Fetching border for ${selKecamatan}...`);
         try {
-            const q = encodeURIComponent(`${adminLevel} ${searchQuery}`);
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&polygon_geojson=1&format=json&limit=1`);
+            // Highly specific query prevents point glitches
+            const queryName = `${selKecamatan}, ${selKabupaten}, ${selProvince}`;
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=1`);
             const data = await res.json();
             
-            if (!data || data.length === 0 || !data[0].geojson) {
-                setError(`Failed to find polygon for ${adminLevel} ${searchQuery}.`);
-                return;
+            // STRICT POLYGON ENFORCEMENT: Rejects blue pin glitches
+            if (!data || data.length === 0 || !data[0].geojson || (data[0].geojson.type !== 'Polygon' && data[0].geojson.type !== 'MultiPolygon')) {
+                setError(`GIS Data not found as a valid polygon for ${selKecamatan}. Try the Auto-Builder.`);
+                setIsLoading(false); setProgress(""); return;
             }
 
             const newBoundary = {
                 id: `BND_${Date.now()}`,
-                name: `${adminLevel} ${searchQuery}`,
+                name: `Kecamatan ${selKecamatan}`,
                 fullName: data[0].display_name,
                 geometry: data[0].geojson,
-                color: adminLevel === 'Kabupaten' ? '#ef4444' : '#3b82f6',
-                level: adminLevel
+                color: palette[Math.floor(Math.random() * palette.length)],
+                level: "Kecamatan"
             };
 
             const updatedList = [...boundaries, newBoundary];
             setBoundaries(updatedList);
             await saveToFirebase(updatedList);
             
-            setSearchQuery(""); 
+            setSelKecamatan(""); 
         } catch (err) { setError("Satellite API network error."); } 
         finally { setIsLoading(false); setProgress(""); }
     };
 
-    // MACRO: Automatically builds ALL 21 Kecamatans in Magelang
     const handleAutoBuildMagelang = async () => {
         setIsLoading(true); setError(null);
-        
-        // List of all 21 Kecamatans in Kabupaten Magelang
-        const magelangKecamatans = [
-            "Bandongan", "Borobudur", "Candimulyo", "Dukun", "Grabag",
-            "Kajoran", "Kaliangkrik", "Mertoyudan", "Mungkid", "Muntilan",
-            "Ngablak", "Ngluwar", "Pakis", "Salam", "Salaman",
-            "Sawangan", "Secang", "Srumbung", "Tegalrejo", "Tempuran", "Windusari"
-        ];
-
-        // Color palette mimicking BAPPEDA official maps
-        const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
-
         let newBoundaries = [...boundaries];
 
+        // 1. Fetch Master Kabupaten Border
+        setProgress(`Building Kabupaten Magelang Master Border...`);
+        try {
+            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Kabupaten+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=1`);
+            const dataKab = await resKab.json();
+            if (dataKab && dataKab[0] && dataKab[0].geojson && (dataKab[0].geojson.type === 'Polygon' || dataKab[0].geojson.type === 'MultiPolygon')) {
+                newBoundaries.push({
+                    id: `BND_KAB_MAG_${Date.now()}`, name: "Kabupaten Magelang", fullName: dataKab[0].display_name,
+                    geometry: dataKab[0].geojson, color: "#ef4444", level: "Kabupaten"
+                });
+            }
+            await new Promise(r => setTimeout(r, 1000)); // Rate limit
+        } catch(e) {}
+
+        // 2. Fetch all 21 Kecamatans
         for (let i = 0; i < magelangKecamatans.length; i++) {
-            const queryName = `Kecamatan ${magelangKecamatans[i]}, Kabupaten Magelang`;
-            setProgress(`Downloading ${magelangKecamatans[i]} (${i+1}/${magelangKecamatans.length})...`);
+            const kec = magelangKecamatans[i];
+            setProgress(`Downloading ${kec} (${i+1}/${magelangKecamatans.length})...`);
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=1`);
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${kec},+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=1`);
                 const data = await res.json();
-                if (data && data[0] && data[0].geojson) {
-                    newBoundaries.push({
-                        id: `BND_MAG_${magelangKecamatans[i]}_${Date.now()}`,
-                        name: `Kecamatan ${magelangKecamatans[i]}`,
-                        fullName: data[0].display_name,
-                        geometry: data[0].geojson,
-                        color: palette[i % palette.length],
-                        level: "Kecamatan"
-                    });
+                // STRICT POLYGON ENFORCEMENT
+                if (data && data[0] && data[0].geojson && (data[0].geojson.type === 'Polygon' || data[0].geojson.type === 'MultiPolygon')) {
+                    // Check if already exists to prevent dupes
+                    if (!newBoundaries.find(b => b.name === `Kecamatan ${kec}`)) {
+                        newBoundaries.push({
+                            id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: data[0].display_name,
+                            geometry: data[0].geojson, color: palette[i % palette.length], level: "Kecamatan"
+                        });
+                    }
                 }
-                // 1 second delay prevents OSM Satellite API from IP-banning us
-                await new Promise(r => setTimeout(r, 1000));
-            } catch(e) { console.error("Skip:", queryName); }
+                await new Promise(r => setTimeout(r, 1200));
+            } catch(e) { console.error("Skip:", kec); }
         }
 
         setBoundaries(newBoundaries);
@@ -249,42 +254,45 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     };
 
     return (
-        <div className="absolute top-24 right-4 w-80 bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div className="absolute top-24 right-4 w-80 bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[80vh] overflow-y-auto custom-scrollbar flex flex-col">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><DownloadCloud size={16} className="text-blue-500"/> GeoJSON Importer</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Fetch official government boundaries directly from OpenStreetMap satellites.</p>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Map size={16} className="text-blue-500"/> Territory Setup</h3>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Download official regional polygons to build your strategy map.</p>
             
-            <div className="flex gap-2 mb-2">
-                <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} className="bg-slate-800 text-white text-[10px] p-2 rounded border border-slate-600 outline-none font-bold">
-                    <option value="Kecamatan">Kecamatan</option>
-                    <option value="Kabupaten">Kabupaten/Kota</option>
-                    <option value="Provinsi">Provinsi</option>
+            <div className="space-y-2 mb-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">Guided Search</p>
+                <input type="text" value={selProvince} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
+                <input type="text" value={selKabupaten} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
+                <select value={selKecamatan} onChange={(e) => setSelKecamatan(e.target.value)} className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white font-bold outline-none">
+                    <option value="">-- Select Kecamatan --</option>
+                    {magelangKecamatans.map(k => <option key={k} value={k}>{k}</option>)}
                 </select>
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="e.g. Muntilan" className="flex-1 bg-slate-800 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
-            </div>
-
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse">{progress}</p>}
-            
-            <button onClick={handleSearch} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50 mb-4">
-                <Search size={14}/> Fetch Single Border
-            </button>
-
-            <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 mb-4">
-                <p className="text-[9px] text-slate-400 mb-2 uppercase tracking-widest text-center font-bold">--- Macro Actions ---</p>
-                <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
-                    <Zap size={14}/> Auto-Build Full Magelang Region
+                <button onClick={handleSearch} disabled={isLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                    <Search size={14}/> Fetch Region
                 </button>
-                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Fetches all 21 Kecamatans inside Kabupaten Magelang automatically.</p>
             </div>
 
-            {/* --- SAVED BORDERS MANAGER --- */}
-            <div className="mt-4 border-t border-slate-700 pt-4">
-                <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2 flex items-center gap-1"><Save size={12}/> Saved Territories</h4>
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center">{progress}</p>}
+            
+            <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 mb-4">
+                <p className="text-[9px] text-amber-500 mb-2 uppercase tracking-widest text-center font-bold flex items-center justify-center gap-1"><AlertTriangle size={10}/> Recommended</p>
+                <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
+                    <Zap size={14}/> Build Entire Magelang City Map
+                </button>
+                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Automatically downloads all 21 Kecamatans into interlocking polygons.</p>
+            </div>
+
+            {/* SAVED BORDERS MANAGER */}
+            <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col min-h-[150px]">
+                <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-1"><Save size={12}/> Active Borders ({boundaries.length})</h4>
+                    <button onClick={handleWipeAll} className="text-[9px] text-red-500 hover:text-red-400 font-bold uppercase underline">Clear All</button>
+                </div>
                 {boundaries.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic text-center py-4">No borders saved.</p>
+                    <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic">No borders saved.</p></div>
                 ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 overflow-y-auto max-h-40 custom-scrollbar pr-1">
                         {boundaries.map(b => (
                             <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600">
                                 <div className="flex items-center gap-2 overflow-hidden">
@@ -301,7 +309,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     );
 };
 
-// --- THE ZONE HUD ---
+// --- ZONE HUD ---
 const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     if (!zone) return null;
 
@@ -335,9 +343,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 </div>
             </div>
             
-            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">
-                Assign Rep
-            </button>
+            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">Assign Rep to Territory</button>
         </div>
     );
 };
@@ -520,17 +526,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
 
-    // --- FIX: LOAD BORDERS DIRECTLY FROM USER PROFILE ---
     useEffect(() => {
         const loadBorders = async () => {
             if (db && appId && user) {
                 try {
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
+                    // Filter out any corrupted Point data from previous bugs
                     if (snap.exists()) {
-                        setBoundaries(snap.data().list || []);
+                        const validPolygons = (snap.data().list || []).filter(b => b.geometry && b.geometry.type !== 'Point');
+                        setBoundaries(validPolygons);
                     }
-                } catch(e) { console.warn("Could not load borders from DB"); }
+                } catch(e) {}
             }
         };
         loadBorders();
@@ -638,21 +645,21 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <ZoomControl position="topleft" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} />
                 
-                {/* --- FIX: ADDED MORE BASEMAP TYPES --- */}
+                {/* --- NEW HIGH-CONTRAST BASEMAPS ADDED --- */}
                 <LayersControl position="bottomright">
-                    <LayersControl.BaseLayer checked name="Game Mode (Dark)">
+                    <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
                         <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Street View (Light)">
+                    <LayersControl.BaseLayer name="Midnight Canvas (Esri)">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Light Canvas (Carto)">
                         <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="OpenStreetMap (Standard)">
+                    <LayersControl.BaseLayer name="Standard (OSM)">
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OSM' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Topographic (Esri)">
-                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satellite">
+                    <LayersControl.BaseLayer name="Satellite (Esri)">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
@@ -666,16 +673,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         data={boundary.geometry} 
                         style={{ 
                             color: boundary.color, 
-                            weight: 2, 
-                            opacity: 0.9, 
-                            fillOpacity: 0.15, 
-                            dashArray: '5, 5' 
+                            weight: boundary.level === 'Kabupaten' ? 4 : 2, 
+                            opacity: boundary.level === 'Kabupaten' ? 1 : 0.8, 
+                            fillOpacity: boundary.level === 'Kabupaten' ? 0.05 : 0.15, 
+                            dashArray: boundary.level === 'Kabupaten' ? '10, 10' : '5, 5' 
                         }}
                         onEachFeature={(f, layer) => {
                             layer.on({
                                 click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
                                 mouseover: (e) => e.target.setStyle({ fillOpacity: 0.3, weight: 3 }),
-                                mouseout: (e) => e.target.setStyle({ fillOpacity: 0.15, weight: 2 })
+                                mouseout: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' ? 0.05 : 0.15, weight: boundary.level === 'Kabupaten' ? 4 : 2 })
                             });
                             layer.bindTooltip(boundary.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
                         }}
@@ -705,7 +712,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
-            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
+            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} boundaries={boundaries} setBoundaries={setBoundaries} db={db} appId={appId} />
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
