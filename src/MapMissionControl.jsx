@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle } from 'lucide-react';
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3 } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -134,22 +134,18 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- UPGRADED: STRICT BOUNDARY SATELLITE IMPORTER ---
+// --- UPGRADED: DYNAMIC SATELLITE BORDER IMPORTER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen }) => {
-    const [selProvince, setSelProvince] = useState("Jawa Tengah");
-    const [selKabupaten, setSelKabupaten] = useState("Magelang");
-    const [selKecamatan, setSelKecamatan] = useState("");
+    // UNLOCKED INPUTS: You can now type any region in Indonesia
+    const [targetProvince, setTargetProvince] = useState("Jawa Tengah");
+    const [targetKabupaten, setTargetKabupaten] = useState("Kabupaten Magelang");
+    const [targetKecamatan, setTargetKecamatan] = useState("Muntilan");
+    const [adminLevel, setAdminLevel] = useState("Kecamatan");
     
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
 
-    const magelangKecamatans = [
-        "Bandongan", "Borobudur", "Candimulyo", "Dukun", "Grabag",
-        "Kajoran", "Kaliangkrik", "Mertoyudan", "Mungkid", "Muntilan",
-        "Ngablak", "Ngluwar", "Pakis", "Salam", "Salaman",
-        "Sawangan", "Secang", "Srumbung", "Tegalrejo", "Tempuran", "Windusari"
-    ];
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
     const saveToFirebase = async (newList) => {
@@ -174,58 +170,63 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         }
     };
 
-    // --- FIX: EXACT ADMINISTRATIVE BOUNDARY EXTRACTION ---
+    // --- CRITICAL UX FIX: ENFORCING OSM RELATIONS (BAPPEDA POLYGONS ONLY) ---
     const extractExactBoundary = (data) => {
         if (!data || data.length === 0) return null;
-        // Priority 1: Specifically tagged as an administrative boundary polygon
-        const exactBorder = data.find(d => d.class === 'boundary' && d.type === 'administrative' && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
+        // The magic bullet: osm_type === 'relation' guarantees it is an official interlocking administrative border, NOT a messy town point.
+        const exactBorder = data.find(d => d.osm_type === 'relation' && d.class === 'boundary' && d.type === 'administrative' && d.geojson);
         if (exactBorder) return exactBorder;
-        // Priority 2: Any valid polygon (filters out bad point markers)
-        return data.find(d => d.geojson && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
+        return data.find(d => d.osm_type === 'relation' && d.geojson && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
     };
 
     const handleSearch = async () => {
-        if (!selKecamatan) { setError("Please select a Kecamatan first."); return; }
         setIsLoading(true); setError(null);
-        setProgress(`Fetching exact BAPPEDA border for ${selKecamatan}...`);
+        
+        let queryName = "";
+        if (adminLevel === "Kecamatan") queryName = `Kecamatan ${targetKecamatan}, ${targetKabupaten}, ${targetProvince}`;
+        else if (adminLevel === "Kabupaten") queryName = `${targetKabupaten}, ${targetProvince}`;
+        else if (adminLevel === "Provinsi") queryName = `${targetProvince}, Indonesia`;
+
+        setProgress(`Fetching exact BAPPEDA border for ${queryName}...`);
+
         try {
-            // Asking for multiple results to ensure we find the polygon, not just a town point
-            const queryName = `${selKecamatan}, ${selKabupaten}, ${selProvince}`;
             const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=5`);
             const data = await res.json();
             
             const targetData = extractExactBoundary(data);
 
             if (!targetData) {
-                setError(`Official polygon not found for ${selKecamatan}. Satellite only returned points.`);
+                setError(`Official interlocking polygon not found. Satellite only returned town points. Check spelling.`);
                 setIsLoading(false); setProgress(""); return;
             }
 
+            const displayName = adminLevel === "Kecamatan" ? `Kecamatan ${targetKecamatan}` : (adminLevel === "Kabupaten" ? targetKabupaten : targetProvince);
+
             const newBoundary = {
                 id: `BND_${Date.now()}`,
-                name: `Kecamatan ${selKecamatan}`,
+                name: displayName,
                 fullName: targetData.display_name,
                 geometry: targetData.geojson,
                 color: palette[Math.floor(Math.random() * palette.length)],
-                level: "Kecamatan"
+                level: adminLevel
             };
 
             const updatedList = [...boundaries, newBoundary];
             setBoundaries(updatedList);
             await saveToFirebase(updatedList);
             
-            setSelKecamatan(""); 
         } catch (err) { setError("Satellite API network error."); } 
         finally { setIsLoading(false); setProgress(""); }
     };
 
+    // THE FULL MAGELANG MACRO (WITH EXTENDED RATE LIMITING TO PREVENT API DROPS)
     const handleAutoBuildMagelang = async () => {
         setIsLoading(true); setError(null);
         let newBoundaries = [...boundaries];
 
         setProgress(`Building Kabupaten Magelang Master Border...`);
         try {
-            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Kabupaten+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=3`);
+            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Kabupaten+Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=5`);
             const dataKab = await resKab.json();
             const exactKab = extractExactBoundary(dataKab);
             if (exactKab) {
@@ -234,28 +235,34 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
                     geometry: exactKab.geojson, color: "#ef4444", level: "Kabupaten"
                 });
             }
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 1500)); // Crucial pause for OSM API
         } catch(e) {}
+
+        const magelangKecamatans = [
+            "Bandongan", "Borobudur", "Candimulyo", "Dukun", "Grabag",
+            "Kajoran", "Kaliangkrik", "Mertoyudan", "Mungkid", "Muntilan",
+            "Ngablak", "Ngluwar", "Pakis", "Salam", "Salaman",
+            "Sawangan", "Secang", "Srumbung", "Tegalrejo", "Tempuran", "Windusari"
+        ];
 
         for (let i = 0; i < magelangKecamatans.length; i++) {
             const kec = magelangKecamatans[i];
-            setProgress(`Downloading ${kec} (${i+1}/${magelangKecamatans.length})...`);
+            setProgress(`Downloading ${kec} (${i+1}/${magelangKecamatans.length})... Please wait.`);
             try {
-                const queryName = `${kec}, Magelang, Jawa Tengah`;
+                const queryName = `Kecamatan ${kec}, Kabupaten Magelang, Jawa Tengah`;
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=5`);
                 const data = await res.json();
                 
                 const exactBorder = extractExactBoundary(data);
 
-                if (exactBorder) {
-                    if (!newBoundaries.find(b => b.name === `Kecamatan ${kec}`)) {
-                        newBoundaries.push({
-                            id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: exactBorder.display_name,
-                            geometry: exactBorder.geojson, color: palette[i % palette.length], level: "Kecamatan"
-                        });
-                    }
+                if (exactBorder && !newBoundaries.find(b => b.name === `Kecamatan ${kec}`)) {
+                    newBoundaries.push({
+                        id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: exactBorder.display_name,
+                        geometry: exactBorder.geojson, color: palette[i % palette.length], level: "Kecamatan"
+                    });
                 }
-                await new Promise(r => setTimeout(r, 1200));
+                // 1.5 second delay explicitly stops the "Too Many Requests" dropped borders issue
+                await new Promise(r => setTimeout(r, 1500)); 
             } catch(e) { console.error("Skip:", kec); }
         }
 
@@ -270,14 +277,39 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Map size={16} className="text-blue-500"/> Territory Setup</h3>
             <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Download exact BAPPEDA interlocking polygons from OSM satellites.</p>
             
-            <div className="space-y-2 mb-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
-                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">Guided Search</p>
-                <input type="text" value={selProvince} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
-                <input type="text" value={selKabupaten} disabled className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-slate-400 font-bold"/>
-                <select value={selKecamatan} onChange={(e) => setSelKecamatan(e.target.value)} className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white font-bold outline-none cursor-pointer">
-                    <option value="">-- Select Kecamatan --</option>
-                    {magelangKecamatans.map(k => <option key={k} value={k}>{k}</option>)}
-                </select>
+            <div className="space-y-3 mb-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <div className="flex justify-between items-center">
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Dynamic Importer</p>
+                    <Edit3 size={12} className="text-blue-500"/>
+                </div>
+                
+                <div>
+                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Province</label>
+                    <input type="text" value={targetProvince} onChange={(e) => setTargetProvince(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                </div>
+                
+                <div>
+                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kabupaten/Kota</label>
+                    <input type="text" value={targetKabupaten} onChange={(e) => setTargetKabupaten(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                </div>
+
+                <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                        <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Filter Level</label>
+                        <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} className="w-full bg-slate-900 text-white text-[10px] p-2 rounded border border-slate-600 outline-none font-bold">
+                            <option value="Kecamatan">Kecamatan</option>
+                            <option value="Kabupaten">Kabupaten/Kota</option>
+                            <option value="Provinsi">Provinsi</option>
+                        </select>
+                    </div>
+                    {adminLevel === "Kecamatan" && (
+                        <div className="flex-[2]">
+                            <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kecamatan</label>
+                            <input type="text" value={targetKecamatan} onChange={(e) => setTargetKecamatan(e.target.value)} placeholder="e.g. Muntilan" className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
+                        </div>
+                    )}
+                </div>
+
                 <button onClick={handleSearch} disabled={isLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
                     <Search size={14}/> Fetch Exact Region
                 </button>
@@ -287,11 +319,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center">{progress}</p>}
             
             <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 mb-4">
-                <p className="text-[9px] text-amber-500 mb-2 uppercase tracking-widest text-center font-bold flex items-center justify-center gap-1"><AlertTriangle size={10}/> Recommended</p>
+                <p className="text-[9px] text-amber-500 mb-2 uppercase tracking-widest text-center font-bold flex items-center justify-center gap-1"><AlertTriangle size={10}/> Safe Macro</p>
                 <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
                     <Zap size={14}/> Build Entire Magelang City Map
                 </button>
-                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Automatically downloads all 21 interlocking BAPPEDA polygons.</p>
+                <p className="text-[9px] text-slate-500 mt-2 text-center leading-tight italic">Takes ~30 seconds. Do not close while running.</p>
             </div>
 
             <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col min-h-[150px]">
