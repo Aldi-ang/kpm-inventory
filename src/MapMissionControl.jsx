@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-// FIX: Added 'Check' and 'ChevronDown' to the imports to prevent the ReferenceError crash!
+
+// FIXED: Every single icon is explicitly imported here to prevent white-screen crashes
 import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload, Check, ChevronDown } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
@@ -139,7 +140,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- UPGRADED: ENTERPRISE IMPORTER WITH RENAME CAPABILITY & RESIZABLE UI ---
+// --- BULLETPROOF BORDER IMPORTER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [targetProvince, setTargetProvince] = useState("Jawa Tengah");
     const [targetKabupaten, setTargetKabupaten] = useState("Kabupaten Magelang");
@@ -151,20 +152,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [progress, setProgress] = useState("");
     
     const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
-    
-    // RENAME STATE
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
 
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
+    // SAFE FILTERING: Protects against corrupted Firebase elements
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
-    // Defensive grouping in case of corrupted array items
-    boundaries.forEach(b => {
-        if (!b) return;
-        if (groupedBoundaries[b.level]) groupedBoundaries[b.level].push(b);
+    safeBoundaries.forEach(b => {
+        const lvl = b.level || 'Kecamatan';
+        if (groupedBoundaries[lvl]) groupedBoundaries[lvl].push(b);
         else groupedBoundaries.Kecamatan.push(b);
     });
 
@@ -178,21 +178,21 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const handleWipeAll = async () => {
-        if(window.confirm("WARNING: This will delete ALL borders. Continue?")) {
+        if(window.confirm("WARNING: This will delete ALL borders to clean up glitches. Continue?")) {
             setBoundaries([]); await saveToFirebase([]);
         }
     };
 
     const handleDeleteBorder = async (idToRemove) => {
         if(window.confirm("Remove this border?")) {
-            const updated = boundaries.filter(b => b && b.id !== idToRemove);
+            const updated = safeBoundaries.filter(b => b.id !== idToRemove);
             setBoundaries(updated); await saveToFirebase(updated);
         }
     };
 
     const handleSaveName = async (id) => {
         if (!editName.trim()) { setEditingId(null); return; }
-        const updated = boundaries.map(b => b.id === id ? { ...b, name: editName } : b);
+        const updated = safeBoundaries.map(b => b.id === id ? { ...b, name: editName } : b);
         setBoundaries(updated);
         await saveToFirebase(updated);
         setEditingId(null);
@@ -209,14 +209,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             try {
                 const geojson = JSON.parse(event.target.result);
                 let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
-                let newBoundaries = [...boundaries];
+                let newBoundaries = [...safeBoundaries];
                 let firstCoord = null;
 
                 features.forEach((feature, idx) => {
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
                         
                         feature.geometry.coordinates = compressCoords(feature.geometry.coordinates);
-
                         const props = feature.properties || {};
                         
                         const provName = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi;
@@ -242,7 +241,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             } catch(err) {}
                         }
 
-                        if (!newBoundaries.find(b => b && b.name === finalName && b.level === finalLevel)) {
+                        if (!newBoundaries.find(b => b.name === finalName && b.level === finalLevel)) {
                             newBoundaries.push({
                                 id: `BND_CUSTOM_${Date.now()}_${idx}`,
                                 name: finalName,
@@ -303,7 +302,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 id: `BND_${Date.now()}`, name: displayName, fullName: targetData.display_name,
                 geometry: targetData.geojson, color: adminLevel === 'Provinsi' ? '#10b981' : (adminLevel === 'Kabupaten' ? '#ef4444' : palette[Math.floor(Math.random() * palette.length)]), level: adminLevel
             };
-            const updatedList = [...boundaries, newBoundary];
+            const updatedList = [...safeBoundaries, newBoundary];
             setBoundaries(updatedList); await saveToFirebase(updatedList);
             setShowBorders(true);
         } catch (err) { setError("Satellite API network error."); } 
@@ -316,16 +315,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Setup</h3>
             <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Drag the bottom right corner to expand panel height.</p>
             
-            {/* METHOD 1: FILE UPLOAD */}
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
                 <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Compressing File..." : "Upload Shapefile"}
+                    <Upload size={14}/> {isLoading ? "Processing..." : "Upload Shapefile"}
                 </button>
             </div>
 
-            {/* METHOD 2: API SEARCH */}
             <div className="space-y-3 mb-3 bg-slate-800 p-4 rounded-lg border border-slate-700 shrink-0">
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Public API Search</p>
                 <div className="flex gap-2 items-end">
@@ -348,14 +345,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
-            {/* --- HIERARCHICAL SAVED BORDERS MANAGER (FLEX-1 EXPANDS TO FILL HEIGHT) --- */}
             <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-3 shrink-0">
-                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({boundaries.length})</h4>
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({safeBoundaries.length})</h4>
                     <button onClick={handleWipeAll} className="text-[9px] text-red-500 hover:text-red-400 font-bold uppercase underline">Clear All</button>
                 </div>
                 
-                {boundaries.length === 0 ? (
+                {safeBoundaries.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic text-center">No borders saved.</p></div>
                 ) : (
                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
@@ -369,8 +365,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1 group">
-                                            
-                                            {/* RENAME INPUT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -403,8 +397,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                     </div>
                 )}
             </div>
-            
-            {/* Grab Handle for Resizing */}
             <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-1 opacity-50 hover:opacity-100">
                 <div className="w-2 h-2 border-b-2 border-r-2 border-slate-500 rounded-br-sm"></div>
             </div>
@@ -644,8 +636,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         loadBorders();
     }, [db, appId, user]);
 
+    // Z-INDEX FIX: Sort boundaries so Kabupaten (largest) renders behind Kecamatan and Desa
     const sortedBoundaries = useMemo(() => {
-        return [...boundaries].sort((a, b) => {
+        return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
             const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
             return (lMap[a.level] || 4) - (lMap[b.level] || 4);
         });
