@@ -62,9 +62,17 @@ const getIcon = (store, activeTiers, isTemp = false) => {
     });
 };
 
-const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome }) => {
+const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus }) => {
     const map = useMap();
     const isFirstRun = useRef(true);
+
+    // Auto-fly to newly uploaded GeoJSON areas
+    useEffect(() => {
+        if (uploadedFocus) {
+            map.flyTo(uploadedFocus, 11, { duration: 1.5 });
+        }
+    }, [uploadedFocus, map]);
+
     useEffect(() => {
         if (isFirstRun.current) {
             if (savedHome && savedHome.lat && savedHome.lng) map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
@@ -72,13 +80,14 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
             isFirstRun.current = false;
         }
     }, [map, savedHome]);
+    
     useEffect(() => {
-        if (selectedRegion !== "All" && mapPoints.length > 0) {
+        if (!uploadedFocus && selectedRegion !== "All" && mapPoints.length > 0) {
             let latSum = 0, lngSum = 0;
             mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
             map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
         }
-    }, [selectedRegion, selectedCity, map]); 
+    }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints]); 
     return null;
 };
 
@@ -135,7 +144,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 };
 
 // --- UPGRADED: ENTERPRISE SATELLITE & GEOJSON IMPORTER ---
-const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen }) => {
+const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [targetProvince, setTargetProvince] = useState("Jawa Tengah");
     const [targetKabupaten, setTargetKabupaten] = useState("Kabupaten Magelang");
     const [targetKecamatan, setTargetKecamatan] = useState("Muntilan");
@@ -145,9 +154,18 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
     
+    const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
     const fileInputRef = useRef(null);
 
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
+
+    const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
+    boundaries.forEach(b => {
+        if (groupedBoundaries[b.level]) groupedBoundaries[b.level].push(b);
+        else groupedBoundaries.Kecamatan.push(b);
+    });
+
+    const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
     const saveToFirebase = async (newList) => {
         if (db && appId && user) {
@@ -169,7 +187,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         }
     };
 
-    // METHOD 1: LOCAL GEOJSON FILE UPLOAD (100% ACCURATE FAILSAFE)
+    // --- FIX: ROBUST LOCAL GEOJSON PARSER WITH INDONESIAN BPS METADATA SUPPORT ---
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -179,25 +197,67 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
                 const geojson = JSON.parse(event.target.result);
                 let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
                 let newBoundaries = [...boundaries];
+                let firstCoord = null;
 
                 features.forEach((feature, idx) => {
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                        // Attempt to extract name from standard Indonesian BAPPEDA shapefile properties
-                        const name = feature.properties?.KECAMATAN || feature.properties?.NAMOBJ || feature.properties?.NAME_3 || feature.properties?.name || `Custom Upload ${idx+1}`;
-                        const isKab = feature.properties?.KABUPATEN || feature.properties?.NAME_2;
                         
-                        newBoundaries.push({
-                            id: `BND_CUSTOM_${Date.now()}_${idx}`,
-                            name: isKab && !feature.properties?.KECAMATAN ? isKab : name,
-                            fullName: "Imported GeoJSON Data",
-                            geometry: feature.geometry,
-                            color: isKab && !feature.properties?.KECAMATAN ? '#ef4444' : palette[Math.floor(Math.random() * palette.length)],
-                            level: isKab && !feature.properties?.KECAMATAN ? "Kabupaten" : "Kecamatan"
-                        });
+                        const props = feature.properties || {};
+                        // BAPPEDA / BPS standard metadata fields
+                        const provName = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR;
+                        const kabName = props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK;
+                        const kecName = props.KECAMATAN || props.NAME_3 || props.nm_kec || props.WADMKC;
+                        const desaName = props.DESA || props.NAME_4 || props.nm_desa || props.WADMDES;
+
+                        let finalName = props.name || `Imported Region ${idx+1}`;
+                        let finalLevel = "Kecamatan";
+                        let color = palette[Math.floor(Math.random() * palette.length)];
+
+                        if (desaName) {
+                            finalName = `Desa ${desaName}`;
+                            finalLevel = "Desa";
+                        } else if (kecName) {
+                            finalName = `Kecamatan ${kecName}`;
+                            finalLevel = "Kecamatan";
+                        } else if (kabName) {
+                            finalName = `Kabupaten ${kabName}`;
+                            finalLevel = "Kabupaten";
+                            color = "#ef4444"; 
+                        } else if (provName) {
+                            finalName = `Provinsi ${provName}`;
+                            finalLevel = "Provinsi";
+                            color = "#10b981"; 
+                        }
+
+                        // Extract a coordinate to auto-fly the map camera to
+                        if (!firstCoord) {
+                            try {
+                                if (feature.geometry.type === 'Polygon') firstCoord = [feature.geometry.coordinates[0][0][1], feature.geometry.coordinates[0][0][0]];
+                                else if (feature.geometry.type === 'MultiPolygon') firstCoord = [feature.geometry.coordinates[0][0][0][1], feature.geometry.coordinates[0][0][0][0]];
+                            } catch(e) {}
+                        }
+
+                        if (!newBoundaries.find(b => b.name === finalName && b.level === finalLevel)) {
+                            newBoundaries.push({
+                                id: `BND_CUSTOM_${Date.now()}_${idx}`,
+                                name: finalName,
+                                fullName: `Imported Shapefile: ${file.name}`,
+                                geometry: feature.geometry,
+                                feature: feature, 
+                                color: color,
+                                level: finalLevel
+                            });
+                        }
                     }
                 });
+                
                 setBoundaries(newBoundaries);
                 await saveToFirebase(newBoundaries);
+                
+                // UX FIX: Auto-toggle borders ON and fly map to the new upload
+                setShowBorders(true); 
+                if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
+
                 setProgress("Local GeoJSON successfully imported!");
                 setTimeout(() => setProgress(""), 3000);
             } catch (err) {
@@ -207,7 +267,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
         reader.readAsText(file);
     };
 
-    // METHOD 2: PUBLIC SATELLITE SEARCH
     const extractExactBoundary = (data) => {
         if (!data || data.length === 0) return null;
         const exactBorder = data.find(d => d.osm_type === 'relation' && d.class === 'boundary' && d.geojson);
@@ -216,32 +275,86 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
     };
 
     const handleSearch = async () => {
+        if (!targetName) { setError("Please enter a name."); return; }
         setIsLoading(true); setError(null);
-        let queryName = "";
-        if (adminLevel === "Kecamatan") queryName = `Kecamatan ${targetKecamatan}, ${targetKabupaten}, ${targetProvince}`;
-        else if (adminLevel === "Kabupaten") queryName = `${targetKabupaten}, ${targetProvince}`;
-        else if (adminLevel === "Provinsi") queryName = `${targetProvince}, Indonesia`;
+        
+        let queryName = targetParent ? `${targetName}, ${targetParent}` : targetName;
+        setProgress(`Fetching exact border for ${queryName}...`);
 
-        setProgress(`Fetching border for ${queryName}...`);
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=5`);
             const data = await res.json();
             const targetData = extractExactBoundary(data);
 
             if (!targetData) {
-                setError(`Official polygon not found. Try uploading a Custom GeoJSON file instead.`);
+                setError(`Official interlocking polygon not found for ${queryName}. Satellite returned a point. Try uploading a GeoJSON file instead.`);
                 setIsLoading(false); setProgress(""); return;
             }
 
-            const displayName = adminLevel === "Kecamatan" ? `Kecamatan ${targetKecamatan}` : (adminLevel === "Kabupaten" ? targetKabupaten : targetProvince);
             const newBoundary = {
-                id: `BND_${Date.now()}`, name: displayName, fullName: targetData.display_name,
-                geometry: targetData.geojson, color: adminLevel === 'Provinsi' ? '#10b981' : (adminLevel === 'Kabupaten' ? '#ef4444' : palette[Math.floor(Math.random() * palette.length)]), level: adminLevel
+                id: `BND_${Date.now()}`,
+                name: `${adminLevel === 'Kecamatan' ? 'Kecamatan ' : ''}${targetName}`,
+                fullName: targetData.display_name,
+                geometry: targetData.geojson,
+                color: adminLevel === 'Provinsi' ? '#10b981' : (adminLevel === 'Kabupaten' ? '#ef4444' : palette[Math.floor(Math.random() * palette.length)]),
+                level: adminLevel
             };
+
             const updatedList = [...boundaries, newBoundary];
-            setBoundaries(updatedList); await saveToFirebase(updatedList);
+            setBoundaries(updatedList);
+            await saveToFirebase(updatedList);
+            setShowBorders(true);
         } catch (err) { setError("Satellite API network error."); } 
         finally { setIsLoading(false); setProgress(""); }
+    };
+
+    const handleAutoBuildMagelang = async () => {
+        setIsLoading(true); setError(null);
+        let newBoundaries = [...boundaries];
+
+        setProgress(`Building Kabupaten Magelang Master Border...`);
+        try {
+            const resKab = await fetch(`https://nominatim.openstreetmap.org/search?q=Magelang,+Jawa+Tengah&polygon_geojson=1&format=json&limit=5`);
+            const dataKab = await resKab.json();
+            const exactKab = extractExactBoundary(dataKab);
+            if (exactKab) {
+                newBoundaries.push({
+                    id: `BND_KAB_MAG_${Date.now()}`, name: "Kabupaten Magelang", fullName: exactKab.display_name,
+                    geometry: exactKab.geojson, color: "#ef4444", level: "Kabupaten"
+                });
+            }
+            await new Promise(r => setTimeout(r, 1200)); 
+        } catch(e) {}
+
+        const magelangKecamatans = [
+            "Bandongan", "Borobudur", "Candimulyo", "Dukun", "Grabag",
+            "Kajoran", "Kaliangkrik", "Mertoyudan", "Mungkid", "Muntilan",
+            "Ngablak", "Ngluwar", "Pakis", "Salam", "Salaman",
+            "Sawangan", "Secang", "Srumbung", "Tegalrejo", "Tempuran", "Windusari"
+        ];
+
+        for (let i = 0; i < magelangKecamatans.length; i++) {
+            const kec = magelangKecamatans[i];
+            setProgress(`Downloading ${kec} (${i+1}/${magelangKecamatans.length})...`);
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(kec)},+Magelang&polygon_geojson=1&format=json&limit=5`);
+                const data = await res.json();
+                const exactBorder = extractExactBoundary(data);
+
+                if (exactBorder && !newBoundaries.find(b => b.name === `Kecamatan ${kec}`)) {
+                    newBoundaries.push({
+                        id: `BND_KEC_${kec}_${Date.now()}`, name: `Kecamatan ${kec}`, fullName: exactBorder.display_name,
+                        geometry: exactBorder.geojson, color: palette[i % palette.length], level: "Kecamatan"
+                    });
+                }
+                await new Promise(r => setTimeout(r, 1200)); 
+            } catch(e) { console.error("Skip:", kec); }
+        }
+
+        setBoundaries(newBoundaries);
+        await saveToFirebase(newBoundaries);
+        setShowBorders(true);
+        setIsLoading(false); setProgress(""); setIsOpen(false);
     };
 
     return (
@@ -263,28 +376,27 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
             {/* METHOD 2: API SEARCH */}
             <div className="space-y-3 mb-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
                 <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Public API Search</p>
-                <div>
-                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Province</label>
-                    <input type="text" value={targetProvince} onChange={(e) => setTargetProvince(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
-                </div>
-                <div>
-                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kabupaten/Kota</label>
-                    <input type="text" value={targetKabupaten} onChange={(e) => setTargetKabupaten(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
-                </div>
-                <div className="flex gap-2 items-end">
+                
+                <div className="flex gap-2">
                     <div className="flex-1">
                         <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Level</label>
-                        <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} className="w-full bg-slate-900 text-white text-[10px] p-2 rounded border border-slate-600 outline-none font-bold">
-                            <option value="Kecamatan">Kecamatan</option><option value="Kabupaten">Kabupaten/Kota</option><option value="Provinsi">Provinsi</option>
+                        <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} className="w-full bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 outline-none font-bold">
+                            <option value="Kecamatan">Kecamatan</option>
+                            <option value="Kabupaten">Kabupaten/Kota</option>
+                            <option value="Provinsi">Provinsi</option>
                         </select>
                     </div>
-                    {adminLevel === "Kecamatan" && (
-                        <div className="flex-[2]">
-                            <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kecamatan</label>
-                            <input type="text" value={targetKecamatan} onChange={(e) => setTargetKecamatan(e.target.value)} placeholder="e.g. Muntilan" className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
-                        </div>
-                    )}
+                    <div className="flex-1">
+                        <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Name</label>
+                        <input type="text" value={targetName} onChange={(e) => setTargetName(e.target.value)} placeholder="e.g. Semarang" className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                    </div>
                 </div>
+
+                <div>
+                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Inside Parent (Optional)</label>
+                    <input type="text" value={targetParent} onChange={(e) => setTargetParent(e.target.value)} placeholder="e.g. Jawa Tengah" className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                </div>
+
                 <button onClick={handleSearch} disabled={isLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
                     <Search size={14}/> Fetch via Satellite API
                 </button>
@@ -292,26 +404,84 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen 
 
             {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50">{error}</p>}
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded">{progress}</p>}
+            
+            <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 mb-4">
+                <p className="text-[9px] text-amber-500 mb-2 uppercase tracking-widest text-center font-bold flex items-center justify-center gap-1"><AlertTriangle size={10}/> Safe Macro</p>
+                <button onClick={handleAutoBuildMagelang} disabled={isLoading} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 shadow-lg">
+                    <Zap size={14}/> Build Full Magelang City
+                </button>
+            </div>
 
+            {/* --- HIERARCHICAL SAVED BORDERS MANAGER --- */}
             <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col min-h-[150px]">
                 <div className="flex justify-between items-center mb-2">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-1"><Save size={12}/> Active Borders ({boundaries.length})</h4>
                     <button onClick={handleWipeAll} className="text-[9px] text-red-500 hover:text-red-400 font-bold uppercase underline">Clear All</button>
                 </div>
+                
                 {boundaries.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic text-center">No borders saved.<br/>Use Upload or Search above.</p></div>
+                    <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic">No borders saved.</p></div>
                 ) : (
-                    <div className="space-y-1.5 overflow-y-auto max-h-40 custom-scrollbar pr-1">
-                        {boundaries.map(b => (
-                            <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
-                                    <span className="text-[10px] text-white font-bold truncate" title={b.name}>{b.name}</span>
-                                    <span className="text-[8px] text-slate-500 px-1 bg-slate-900 rounded">{b.level.substring(0,3)}</span>
+                    <div className="space-y-2 overflow-y-auto max-h-48 custom-scrollbar pr-1">
+                        {groupedBoundaries.Provinsi.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-1.5 rounded cursor-pointer mb-1" onClick={() => toggleGroup('Provinsi')}>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Provinsi ({groupedBoundaries.Provinsi.length})</span>
+                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups.Provinsi ? 'rotate-180' : ''}`}/>
                                 </div>
-                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors shrink-0"><Trash2 size={12}/></button>
+                                {openGroups.Provinsi && groupedBoundaries.Provinsi.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-2 overflow-hidden"><div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: b.color }}></div><span className="text-[10px] text-emerald-400 font-bold truncate">{b.name}</span></div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={12}/></button>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
+
+                        {groupedBoundaries.Kabupaten.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-1.5 rounded cursor-pointer mb-1" onClick={() => toggleGroup('Kabupaten')}>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Kabupaten ({groupedBoundaries.Kabupaten.length})</span>
+                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups.Kabupaten ? 'rotate-180' : ''}`}/>
+                                </div>
+                                {openGroups.Kabupaten && groupedBoundaries.Kabupaten.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-2 overflow-hidden"><div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: b.color }}></div><span className="text-[10px] text-blue-400 font-bold truncate">{b.name}</span></div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={12}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {groupedBoundaries.Kecamatan.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-1.5 rounded cursor-pointer mb-1" onClick={() => toggleGroup('Kecamatan')}>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Kecamatan ({groupedBoundaries.Kecamatan.length})</span>
+                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups.Kecamatan ? 'rotate-180' : ''}`}/>
+                                </div>
+                                {openGroups.Kecamatan && groupedBoundaries.Kecamatan.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-2 overflow-hidden"><div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: b.color }}></div><span className="text-[10px] text-white font-bold truncate">{b.name}</span></div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={12}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {groupedBoundaries.Desa && groupedBoundaries.Desa.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-1.5 rounded cursor-pointer mb-1" onClick={() => toggleGroup('Desa')}>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Desa/Kelurahan ({groupedBoundaries.Desa.length})</span>
+                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups.Desa ? 'rotate-180' : ''}`}/>
+                                </div>
+                                {openGroups.Desa && groupedBoundaries.Desa.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-2 overflow-hidden"><div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: b.color }}></div><span className="text-[10px] text-white font-bold truncate">{b.name}</span></div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={12}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -381,7 +551,9 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 };
 
 const HudTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
+    if (active && payload && payload.length) {
+        return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
+    }
     return null;
 };
 
@@ -529,6 +701,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
+    const [uploadedFocus, setUploadedFocus] = useState(null);
     
     const [boundaries, setBoundaries] = useState([]);
 
@@ -551,8 +724,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     // Z-INDEX FIX: Sort boundaries so Kabupaten (largest) renders first and sits behind Kecamatan
     const sortedBoundaries = useMemo(() => {
         return [...boundaries].sort((a, b) => {
-            const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3 };
-            return (lMap[a.level] || 3) - (lMap[b.level] || 3);
+            const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
+            return (lMap[a.level] || 4) - (lMap[b.level] || 4);
         });
     }, [boundaries]);
 
@@ -652,11 +825,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} />}
+            {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
-                <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} />
+                <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} />
                 
                 <LayersControl position="bottomright">
                     <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
@@ -683,12 +856,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 {showBorders && sortedBoundaries.map((boundary) => (
                     <GeoJSON 
                         key={`bnd-${boundary.id}`}
-                        data={boundary.geometry} 
+                        data={boundary.feature || boundary.geometry} 
                         style={{ 
                             color: boundary.color, 
                             weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 1, 
                             opacity: 1, 
-                            // Kabupaten/Provinsi have ZERO fill so you can see Kecamatans inside them perfectly
                             fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0 : 0.15, 
                             dashArray: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? '8, 8' : null 
                         }}
@@ -719,7 +891,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const finalRadius = baseRadius * storeScale;
 
                     return (
-                        <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.4 }}/>
+                        <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>
                     );
                 })}
                 {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
