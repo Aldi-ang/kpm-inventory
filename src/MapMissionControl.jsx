@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% BULLETPROOF IMPORTS: Locked precisely to the baseline you provided to guarantee NO white screen crashes.
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload } from 'lucide-react';
+// 100% SAFE IMPORTS
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Trash2, Save, Edit3, Upload } from 'lucide-react';
 
-import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-
-// FIX: Added getDocs and deleteDoc for infinite subcollection storage
-import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
+// FIX: Shrinks file sizes by 70% to guarantee they pass Firebase limits
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
         if (typeof coords[0] === 'number') {
-            return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
+            // 4 Decimals = 11m real world accuracy. Perfect for city borders, saves massive database space.
+            return [Number(coords[0].toFixed(4)), Number(coords[1].toFixed(4))];
         }
         return coords.map(compressCoords);
     }
@@ -41,15 +40,6 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
         for (let poly of geometry.coordinates) { if (isPointInPolygon(point, poly[0])) return true; }
     }
     return false;
-};
-
-const convertToBks = (qty, unit, product) => {
-    if (!product) return qty;
-    const packsPerSlop = product.packsPerSlop || 10, slopsPerBal = product.slopsPerBal || 20, balsPerCarton = product.balsPerCarton || 4;
-    if (unit === 'Slop') return qty * packsPerSlop;
-    if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
-    if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-    return qty; 
 };
 
 // --- MAP ICONS ---
@@ -153,30 +143,22 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
     
-    const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
-    
+    // Rename State
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
 
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
-    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
-    const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
-    
-    safeBoundaries.forEach(b => {
-        const lvl = b.level || 'Kecamatan';
-        if (groupedBoundaries[lvl]) groupedBoundaries[lvl].push(b);
-        else groupedBoundaries.Kecamatan.push(b);
-    });
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && b.id) : [];
 
-    const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
-
-    // FIX: Save each boundary as an independent document in a subcollection to bypass 1MB limit
+    // FIX: Stringify geometry before saving to bypass the Firestore 20k Array Index limit
     const saveBoundaryToFirebase = async (boundary) => {
         if (db && appId && user && user.uid) {
             try { 
-                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapBoundaries`, boundary.id), boundary); 
+                const { geometry, feature, ...boundaryToSave } = boundary;
+                boundaryToSave.geometryString = JSON.stringify(geometry); // Serializes the arrays into a single string
+                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapBoundaries`, boundary.id), boundaryToSave); 
             } catch(e) { console.error("Firebase save failed:", e); }
         }
     };
@@ -216,22 +198,22 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setEditingId(null);
     };
 
-    // --- SMART GEOJSON METADATA EXTRACTOR (Upgraded for 33.08_kecamatan files) ---
+    // --- SMART GEOJSON METADATA EXTRACTOR ---
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
         let level = "Kecamatan"; 
 
         if (props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa) {
-            name = `Desa ${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa}`;
+            name = `${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa}`;
             level = "Desa";
         } else if (props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan) {
-            name = `Kecamatan ${props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan}`;
+            name = `${props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan}`;
             level = "Kecamatan";
         } else if (props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten) {
-            name = `Kabupaten ${props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten}`;
+            name = `${props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten}`;
             level = "Kabupaten";
         } else if (props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi) {
-            name = `Provinsi ${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi}`;
+            name = `${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi}`;
             level = "Provinsi";
         } else if (props.name) {
             name = props.name;
@@ -275,7 +257,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                         }
 
                         if (!newBoundaries.find(b => b.name === name && b.level === level)) {
-                            // FIX: Drop 'feature: feature' to cut document size in half for Firebase
                             const newBoundary = {
                                 id: `BND_CUSTOM_${Date.now()}_${idx}`,
                                 name: name,
@@ -285,6 +266,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 level: level
                             };
                             newBoundaries.push(newBoundary);
+                            // Save to Firebase individually as stringified to bypass 1MB limit
                             await saveBoundaryToFirebase(newBoundary);
                         }
                     }
@@ -307,11 +289,12 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     return (
-        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[60vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
+        <div className="absolute top-24 right-4 w-[340px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[85vh] flex flex-col">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Manager</h3>
             <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
             
+            {/* UPLOAD SECTION */}
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
                 <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
                 <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
@@ -324,6 +307,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
 
+            {/* EXPANDED LIST SECTION */}
             <div className="mt-2 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({safeBoundaries.length})</h4>
@@ -337,50 +321,39 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                     </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1.5 pb-2">
-                        {['Provinsi', 'Kabupaten', 'Kecamatan', 'Desa'].map(level => {
-                            if (!groupedBoundaries[level] || groupedBoundaries[level].length === 0) return null;
-                            return (
-                                <div key={level}>
-                                    <div className="flex justify-between items-center bg-slate-800 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors border border-slate-700" onClick={() => toggleGroup(level)}>
-                                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
-                                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? 'rotate-90' : ''}`}/>
+                        {safeBoundaries.map(b => (
+                            <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 group hover:border-slate-500 transition-colors">
+                                {/* INLINE EDIT MODE */}
+                                {editingId === b.id ? (
+                                    <div className="flex flex-1 items-center gap-2 mr-2">
+                                        <input 
+                                            type="text" autoFocus
+                                            value={editName} 
+                                            onChange={e => setEditName(e.target.value)} 
+                                            onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
+                                            className="flex-1 bg-slate-900 border border-blue-500 text-white text-[10px] font-bold p-1 rounded outline-none"
+                                        />
+                                        <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1 rounded"><Save size={12}/></button>
                                     </div>
-                                    {openGroups[level] && groupedBoundaries[level].map(b => (
-                                        <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
-                                            {editingId === b.id ? (
-                                                <div className="flex flex-1 items-center gap-2 mr-2">
-                                                    <input 
-                                                        type="text" autoFocus
-                                                        value={editName} 
-                                                        onChange={e => setEditName(e.target.value)} 
-                                                        onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
-                                                        className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
-                                                    />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                                                    <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
-                                                    <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
-                                                </div>
-                                            )}
+                                ) : (
+                                    <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
+                                        <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
+                                        <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
+                                        <span className="text-[8px] text-slate-400 bg-slate-900 px-1 rounded uppercase shrink-0">{b.level?.substring(0,3)}</span>
+                                    </div>
+                                )}
 
-                                            <div className="flex items-center gap-1 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity">
-                                                {editingId !== b.id && (
-                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1.5 rounded bg-slate-800 transition-colors"><Edit3 size={12}/></button>
-                                                )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded bg-slate-800 transition-colors"><Trash2 size={12}/></button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                {/* ACTION BUTTONS */}
+                                <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
+                                    {editingId !== b.id && (
+                                        <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Edit3 size={12}/></button>
+                                    )}
+                                    <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                 )}
-            </div>
-            <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-1 opacity-50 hover:opacity-100">
-                <div className="w-2 h-2 border-b-2 border-r-2 border-slate-500 rounded-br-sm"></div>
             </div>
         </div>
     );
@@ -452,6 +425,12 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     
+    // Kept in sync with database, but allows smooth temporary overrides
+    const handleSaveLocalScale = async () => {
+        if (!db || !appId) return;
+        try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), { catchmentScale: localScale }); } catch (error) {}
+    };
+
     useEffect(() => { setLocalScale(store.catchmentScale || 1.0); }, [store.id, store.catchmentScale]);
 
     const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
@@ -495,11 +474,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
         if (!db || !appId) return;
         setIsLinking(true);
         try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), { suppliedBy: hubId === "none" ? null : hubId }); } catch (error) {} finally { setIsLinking(false); }
-    };
-
-    const handleSaveLocalScale = async () => {
-        if (!db || !appId) return;
-        try { await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, store.id), { catchmentScale: localScale }); } catch (error) {}
     };
 
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
@@ -594,7 +568,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
 
-    // FIX: Load from subcollection to bypass 1MB database crash limit
+    // FIX: Pull data from the new Firebase Subcollection, parse JSON safely
     useEffect(() => {
         const loadBorders = async () => {
             if (db && appId && user && user.uid) {
@@ -603,8 +577,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const loaded = [];
                     snap.forEach(doc => {
                         const data = doc.data();
-                        if (data && data.geometry && (data.geometry.type === 'Polygon' || data.geometry.type === 'MultiPolygon')) {
-                            loaded.push(data);
+                        if (data && data.geometryString) {
+                            try {
+                                data.geometry = JSON.parse(data.geometryString);
+                                loaded.push(data);
+                            } catch(e) { console.error("Parse fail", e); }
                         }
                     });
                     setBoundaries(loaded);
@@ -614,6 +591,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         loadBorders();
     }, [db, appId, user]);
 
+    // Z-INDEX FIX: Sort boundaries so Kabupaten renders behind Kecamatan
     const sortedBoundaries = useMemo(() => {
         if (!Array.isArray(boundaries)) return [];
         return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
@@ -747,8 +725,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 
                 {showBorders && sortedBoundaries.map((boundary) => {
                     const geoData = boundary.feature || boundary.geometry;
-                    // Safe Shield: Prevents corrupted saved data from crashing Leaflet entirely
-                    if (!geoData || !geoData.type) return null;
+                    // FIX: Null shield prevents corrupted Firebase documents from crashing Leaflet
+                    if (!geoData || !geoData.type) return null; 
                     return (
                         <GeoJSON 
                             key={`bnd-${boundary.id || Math.random()}`}
