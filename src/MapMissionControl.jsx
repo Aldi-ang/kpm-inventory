@@ -178,7 +178,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
-    // FIX: Save each boundary as an individual document inside the allowed 'mapSettings' collection using 'bnd_' prefix.
+    // Save each boundary as an individual document inside the allowed 'mapSettings' collection using 'bnd_' prefix.
     const saveBoundaryToFirebase = async (boundary) => {
         if (db && appId && userId) {
             try { 
@@ -321,19 +321,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
             
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
                 <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
+                    <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
             <div className="mt-2 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
@@ -343,7 +343,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 
                 {safeBoundaries.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                        <MapIcon size={32} className="mb-2 text-slate-500" />
+                        <Globe size={32} className="mb-2 text-slate-500" />
                         <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
                     </div>
                 ) : (
@@ -358,6 +358,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
+                                            {/* INLINE EDIT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -367,7 +368,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
                                                         className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
                                                     />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={12}/></button>
+                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
@@ -377,6 +378,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 </div>
                                             )}
 
+                                            {/* ACTION BUTTONS */}
                                             <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
                                                     <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>
@@ -445,7 +447,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <Shield className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+            <ShieldCheck className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
@@ -785,6 +787,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
+                {/* --- SAFE MAP RENDERER --- */}
                 {showBorders && sortedBoundaries.map((boundary) => {
                     const geoData = boundary.feature || boundary.geometry;
                     // FIX: Null shield prevents corrupted Firebase documents from crashing Leaflet
