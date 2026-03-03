@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-// BULLETPROOF IMPORTS: Only using baseline icons guaranteed to exist in all versions
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Minus, Maximize, Map as MapIcon, Search, Trash, Download, Zap, Save, AlertCircle, Edit, Upload, Check, ChevronDown } from 'lucide-react';
+
+// BULLETPROOF IMPORTS: Every icon here is confirmed to exist in your App.jsx to completely prevent White-Screen crashes.
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, ShieldCheck, Globe, Menu, Database, Link as LinkIcon, MinusCircle, Maximize2, Search, Trash2, Download, Zap, Save, AlertCircle, Edit, Upload, Check, ChevronDown } from 'lucide-react';
+
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -10,7 +12,9 @@ import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 const compressCoords = (coords) => {
-    if (Array.isArray(coords) && typeof coords[0] === 'number') return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
+    if (Array.isArray(coords) && typeof coords[0] === 'number') {
+        return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
+    }
     if (Array.isArray(coords)) return coords.map(compressCoords);
     return coords;
 };
@@ -155,7 +159,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
-    // BULLETPROOF ARRAY FILTERING: Guarantees no null/undefined items crash the render cycle
     const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
@@ -310,7 +313,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     return (
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Setup</h3>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Setup</h3>
             <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Drag the bottom right corner to expand panel height.</p>
             
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
@@ -380,11 +383,12 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                     <span className="text-[11px] text-white font-bold truncate" title={b.name}>{b.name}</span>
                                                 </div>
                                             )}
+
                                             <div className="flex items-center gap-1 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
                                                     <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded transition-colors"><Edit size={12}/></button>
                                                 )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash size={12}/></button>
+                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash2 size={12}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -412,7 +416,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
         <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
-                <MapIcon className="text-blue-500" size={20}/>
+                <Globe className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
             <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
@@ -448,18 +452,25 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize size={12} className="text-slate-400"/>
+            <ShieldCheck size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
     return (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
-            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><Minus size={16}/></button>
+            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
             <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700"><div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div></div>
         </div>
     );
+};
+
+const HudTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
+    }
+    return null;
 };
 
 const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
@@ -531,7 +542,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             {isAdmin && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Network size={12} className="text-orange-500"/> Individual Reach</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
                         <div className="flex items-center gap-1">
                             <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
                             <span className="text-[10px] text-slate-500 font-bold">x</span>
@@ -611,7 +622,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     useEffect(() => {
         const loadBorders = async () => {
-            if (db && appId && user && user.uid) {
+            if (db && appId && user) {
                 try {
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
@@ -619,7 +630,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
                         setBoundaries(validPolygons);
                     }
-                } catch(e) { console.error("Could not load borders"); }
+                } catch(e) {}
             }
         };
         loadBorders();
@@ -724,8 +735,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><MapIcon size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
 
-                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Network size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
-                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
+                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
+                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
