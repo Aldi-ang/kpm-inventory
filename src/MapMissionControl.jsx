@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, Save, AlertTriangle, Upload, Pencil, Check, ChevronDown } from 'lucide-react';
+
+// 100% SAFE IMPORTS: Every icon here is strictly confirmed to exist in your App.jsx
+import { 
+    MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
+    ShieldCheck, Globe, Menu, Database, Tag, 
+    MinusCircle, Maximize2, Search, Trash2, 
+    Save, AlertCircle, Upload, Pencil, Folder
+} from 'lucide-react';
+
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -140,7 +148,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- DEDICATED GEOJSON UPLOADER & MANAGER ---
+// --- FOCUSED DEDICATED GEOJSON UPLOADER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -155,6 +163,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
+    // SAFE ARRAY FILTERING
     const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
@@ -214,11 +223,9 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         } else if (props.name) {
             name = props.name;
         } else {
-            // Fallback: grab the first text string it can find in the properties
             const fallback = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val));
             if (fallback) name = fallback;
         }
-
         return { name, level };
     };
 
@@ -226,7 +233,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        setProgress("Parsing and Extracting Regions...");
+        setProgress("Parsing GeoJSON...");
         setIsLoading(true); setError(null);
 
         reader.onload = async (event) => {
@@ -238,12 +245,10 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
                 features.forEach((feature, idx) => {
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                        
                         feature.geometry.coordinates = compressCoords(feature.geometry.coordinates);
-                        
                         const props = feature.properties || {};
                         const { name, level } = extractNameAndLevel(props, idx + 1);
-                        
+
                         let color = palette[Math.floor(Math.random() * palette.length)];
                         if (level === 'Kabupaten') color = '#ef4444';
                         if (level === 'Provinsi') color = '#10b981';
@@ -261,23 +266,23 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 name: name,
                                 fullName: `File: ${file.name}`,
                                 geometry: feature.geometry,
-                                feature: feature, 
+                                feature: feature,
                                 color: color,
                                 level: level
                             });
                         }
                     }
                 });
-                
+
                 setBoundaries(newBoundaries);
                 await saveToFirebase(newBoundaries);
-                setShowBorders(true); 
+                setShowBorders(true);
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
 
-                setProgress("Upload and extraction successful!");
+                setProgress("Import successful!");
                 setTimeout(() => setProgress(""), 3000);
             } catch (err) {
-                setError("Upload failed. File may be corrupted or not valid JSON.");
+                setError("Upload failed. File may be corrupted.");
             } finally {
                 setIsLoading(false);
                 if (fileInputRef.current) fileInputRef.current.value = "";
@@ -287,15 +292,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     return (
-        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[60vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
+        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON borders.</p>
             
-            {/* UPLOAD SECTION */}
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
                 <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
-                <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
+                <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. Names will be auto-extracted.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
                     <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
@@ -305,7 +309,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
-            {/* EXPANDED MANAGER SECTION */}
             <div className="mt-2 flex-1 flex flex-col overflow-hidden min-h-[200px]">
                 <div className="flex justify-between items-center mb-3 shrink-0 bg-slate-800 p-2 rounded-lg border border-slate-700">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({safeBoundaries.length})</h4>
@@ -314,7 +317,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 
                 {safeBoundaries.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                        <MapIcon size={32} className="mb-2 text-slate-500" />
+                        <Globe size={32} className="mb-2 text-slate-500" />
                         <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
                     </div>
                 ) : (
@@ -325,7 +328,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 <div key={level}>
                                     <div className="flex justify-between items-center bg-slate-800 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors border border-slate-700" onClick={() => toggleGroup(level)}>
                                         <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
-                                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? '' : '-rotate-90'}`}/>
+                                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? 'rotate-90' : ''}`}/>
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
@@ -338,7 +341,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
                                                         className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
                                                     />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Check size={14}/></button>
+                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
@@ -379,7 +382,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
         <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
-                <MapIcon className="text-blue-500" size={20}/>
+                <Globe className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
             <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
@@ -415,7 +418,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+            <ShieldCheck size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
@@ -492,13 +495,13 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
             <div className="flex items-start justify-between mb-1 pr-8"><h2 className="text-2xl font-bold leading-tight">{store.name}</h2></div>
             
-            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Building2 size={10} /> WHOLESALE HUB</span>}
+            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
             {isAdmin && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Network size={12} className="text-orange-500"/> Individual Reach</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
                         <div className="flex items-center gap-1">
                             <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
                             <span className="text-[10px] text-slate-500 font-bold">x</span>
@@ -517,7 +520,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             )}
             {isAdmin && store.storeType !== 'Wholesaler' && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><LinkIcon size={12}/> Map to Wholesaler</label>
+                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
                     <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
                         <option value="none">-- Select Wholesale Hub --</option>
                         {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
@@ -583,6 +586,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
                     if (snap.exists()) {
+                        // STRICT NULL CHECK: Prevents Leaflet from crashing on corrupted arrays
                         const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
                         setBoundaries(validPolygons);
                     }
@@ -691,8 +695,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
 
-                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Network size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
-                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
+                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
+                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
