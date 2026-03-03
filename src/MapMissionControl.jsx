@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-
-// 100% BULLETPROOF IMPORTS: Every single icon here is confirmed to exist in your App.jsx. No more missing ReferenceErrors.
-import { 
-    MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
-    ShieldCheck, Globe, Menu, Database, Tag, 
-    MinusCircle, Maximize2, Search, Trash2, Download, TrendingUp, 
-    Save, AlertCircle, Pencil, Upload, Folder
-} from 'lucide-react';
-
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -16,14 +8,24 @@ import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
+// --- GEOJSON COMPRESSION ENGINE (Shrinks massive BAPPEDA files to bypass Firebase 1MB limit) ---
 const compressCoords = (coords) => {
+    // If it's a coordinate pair/triplet: [lng, lat, alt?]
     if (Array.isArray(coords) && typeof coords[0] === 'number') {
-        return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
+        // Strip altitude (Z) and round to 5 decimal places (~1.1 meter real-world accuracy)
+        return [
+            Math.round(coords[0] * 100000) / 100000, 
+            Math.round(coords[1] * 100000) / 100000
+        ];
     }
-    if (Array.isArray(coords)) return coords.map(compressCoords);
+    // Recursively process nested arrays (Polygons, MultiPolygons)
+    if (Array.isArray(coords)) {
+        return coords.map(compressCoords);
+    }
     return coords;
 };
 
+// --- ROBUST POINT-IN-POLYGON ENGINE ---
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -74,8 +76,9 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     const isFirstRun = useRef(true);
 
     useEffect(() => {
-        if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
-            map.flyTo(uploadedFocus, 10, { duration: 1.5 }); 
+        if (uploadedFocus) {
+            // Zoom out slightly to frame large Kabupaten uploads
+            map.flyTo(uploadedFocus, 10, { duration: 1.5 });
         }
     }, [uploadedFocus, map]);
 
@@ -114,8 +117,9 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
         click(e) {
             if (isAddingMode) {
                 setNewPinCoords(e.latlng);
-                navigator.clipboard.writeText(`${e.latlng.lat}, ${e.latlng.lng}`);
-                if(window.confirm(`Pin Dropped!\nCoords: ${e.latlng.lat}, ${e.latlng.lng}\n\nCreate new store here?`)) setIsAddingMode(false);
+                const coordString = `${e.latlng.lat}, ${e.latlng.lng}`;
+                navigator.clipboard.writeText(coordString);
+                if(window.confirm(`Pin Dropped!\nCoords: ${coordString}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
                 setSelectedStore(null); setSelectedZone(null); 
             }
@@ -148,7 +152,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- CRASH-PROOF BORDER IMPORTER ---
+// --- UPGRADED: ENTERPRISE SATELLITE & GEOJSON IMPORTER (RESIZABLE) ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [targetProvince, setTargetProvince] = useState("Jawa Tengah");
     const [targetKabupaten, setTargetKabupaten] = useState("Kabupaten Magelang");
@@ -160,26 +164,20 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [progress, setProgress] = useState("");
     
     const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
-    const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState("");
-
     const fileInputRef = useRef(null);
+
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
-    // EXTREME SAFE FILTERING: Protects against corrupted Firebase arrays
-    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
-    
-    safeBoundaries.forEach(b => {
-        const lvl = b.level || 'Kecamatan';
-        if (groupedBoundaries[lvl]) groupedBoundaries[lvl].push(b);
+    boundaries.forEach(b => {
+        if (groupedBoundaries[b.level]) groupedBoundaries[b.level].push(b);
         else groupedBoundaries.Kecamatan.push(b);
     });
 
     const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
     const saveToFirebase = async (newList) => {
-        if (db && appId && user && user.uid) {
+        if (db && appId && user) {
             try { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries'), { list: newList }, { merge: true }); } 
             catch(e) { console.error("Firebase save failed:", e); }
         }
@@ -193,47 +191,39 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const handleDeleteBorder = async (idToRemove) => {
         if(window.confirm("Remove this border?")) {
-            const updated = safeBoundaries.filter(b => b.id !== idToRemove);
+            const updated = boundaries.filter(b => b.id !== idToRemove);
             setBoundaries(updated); await saveToFirebase(updated);
         }
     };
 
-    const handleSaveName = async (id) => {
-        if (!editName || !editName.trim()) { setEditingId(null); return; }
-        const updated = safeBoundaries.map(b => b.id === id ? { ...b, name: editName.trim() } : b);
-        setBoundaries(updated);
-        await saveToFirebase(updated);
-        setEditingId(null);
-    };
-
+    // METHOD 1: COMPRESSED GEOJSON FILE UPLOAD
     const handleFileUpload = (e) => {
-        const file = e.target.files && e.target.files[0];
+        const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         setProgress("Compressing and parsing official GeoJSON...");
-        setIsLoading(true); setError(null);
+        setIsLoading(true);
 
         reader.onload = async (event) => {
             try {
                 const geojson = JSON.parse(event.target.result);
                 let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
-                let newBoundaries = [...safeBoundaries];
+                let newBoundaries = [...boundaries];
                 let firstCoord = null;
 
                 features.forEach((feature, idx) => {
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
                         
+                        // COMPRESSION: Strip 3D coordinates and round precision to fix Firebase crash
                         feature.geometry.coordinates = compressCoords(feature.geometry.coordinates);
+
                         const props = feature.properties || {};
-                        
-                        const provName = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi;
-                        const kabName = props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten;
-                        const kecName = props.KECAMATAN || props.NAME_3 || props.nm_kec || props.WADMKC || props.kecamatan;
-                        const desaName = props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa;
+                        const provName = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR;
+                        const kabName = props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK;
+                        const kecName = props.KECAMATAN || props.NAME_3 || props.nm_kec || props.WADMKC;
+                        const desaName = props.DESA || props.NAME_4 || props.nm_desa || props.WADMDES;
 
-                        const fallbackName = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val)) || `Imported Region ${idx+1}`;
-
-                        let finalName = props.name || fallbackName;
+                        let finalName = props.name || `Imported Region ${idx+1}`;
                         let finalLevel = "Kecamatan";
                         let color = palette[Math.floor(Math.random() * palette.length)];
 
@@ -265,6 +255,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 
                 setBoundaries(newBoundaries);
                 await saveToFirebase(newBoundaries);
+                
                 setShowBorders(true); 
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
 
@@ -274,21 +265,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 setError("Upload failed. File may be corrupted.");
             } finally {
                 setIsLoading(false);
-                if (fileInputRef.current) fileInputRef.current.value = "";
             }
         };
         reader.readAsText(file);
     };
 
     const extractExactBoundary = (data) => {
-        if (!data || !Array.isArray(data) || data.length === 0) return null;
+        if (!data || data.length === 0) return null;
         const exactBorder = data.find(d => d.osm_type === 'relation' && d.class === 'boundary' && d.geojson);
         if (exactBorder) return exactBorder;
         return data.find(d => d.osm_type === 'relation' && d.geojson && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
     };
 
     const handleSearch = async () => {
-        if (!targetName) { setError("Please enter a name."); return; }
         setIsLoading(true); setError(null);
         let queryName = "";
         if (adminLevel === "Kecamatan") queryName = `Kecamatan ${targetKecamatan}, ${targetKabupaten}, ${targetProvince}`;
@@ -311,29 +300,41 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 id: `BND_${Date.now()}`, name: displayName, fullName: targetData.display_name,
                 geometry: targetData.geojson, color: adminLevel === 'Provinsi' ? '#10b981' : (adminLevel === 'Kabupaten' ? '#ef4444' : palette[Math.floor(Math.random() * palette.length)]), level: adminLevel
             };
-            const updatedList = [...safeBoundaries, newBoundary];
+            const updatedList = [...boundaries, newBoundary];
             setBoundaries(updatedList); await saveToFirebase(updatedList);
             setShowBorders(true);
         } catch (err) { setError("Satellite API network error."); } 
         finally { setIsLoading(false); setProgress(""); }
     };
 
+    // SLIDEABLE / RESIZEABLE PANEL CSS APPLIED
     return (
-        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
+        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[85vh] overflow-y-auto overflow-x-hidden resize-x custom-scrollbar flex flex-col">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Setup</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Drag the bottom right corner to expand panel height.</p>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Setup</h3>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Drag the bottom right corner to resize panel.</p>
             
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
+            {/* METHOD 1: FILE UPLOAD */}
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> 100% Accurate Upload</p>
+                <p className="text-[10px] text-slate-400 mb-3 leading-tight">Public APIs drop rural borders. Drop an official BAPPEDA <b>.geojson</b> file here for exact interlocking boundaries.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Compressing File..." : "Upload Shapefile"}
+                <button onClick={() => fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                    <Upload size={14}/> {isLoading ? "Compressing File..." : "Upload GeoJSON Shapefile"}
                 </button>
             </div>
 
-            <div className="space-y-3 mb-3 bg-slate-800 p-4 rounded-lg border border-slate-700 shrink-0">
+            {/* METHOD 2: API SEARCH */}
+            <div className="space-y-3 mb-3 bg-slate-800 p-4 rounded-lg border border-slate-700">
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Public API Search</p>
+                <div>
+                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Province</label>
+                    <input type="text" value={targetProvince} onChange={(e) => setTargetProvince(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                </div>
+                <div>
+                    <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kabupaten/Kota</label>
+                    <input type="text" value={targetKabupaten} onChange={(e) => setTargetKabupaten(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs text-white outline-none focus:border-blue-500"/>
+                </div>
                 <div className="flex gap-2 items-end">
                     <div className="flex-1">
                         <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Level</label>
@@ -341,73 +342,101 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             <option value="Kecamatan">Kecamatan</option><option value="Kabupaten">Kabupaten/Kota</option><option value="Provinsi">Provinsi</option>
                         </select>
                     </div>
-                    <div className="flex-[2]">
-                        <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Name</label>
-                        <input type="text" value={targetName} onChange={(e) => setTargetName(e.target.value)} placeholder="e.g. Semarang" className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
-                    </div>
+                    {adminLevel === "Kecamatan" && (
+                        <div className="flex-[2]">
+                            <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Target Kecamatan</label>
+                            <input type="text" value={targetKecamatan} onChange={(e) => setTargetKecamatan(e.target.value)} placeholder="e.g. Muntilan" className="w-full bg-slate-900 border border-blue-500 rounded p-2 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
+                        </div>
+                    )}
                 </div>
                 <button onClick={handleSearch} disabled={isLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
                     <Search size={14}/> Fetch via Satellite API
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded">{progress}</p>}
 
-            <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col overflow-hidden min-h-[200px]">
-                <div className="flex justify-between items-center mb-3 shrink-0">
-                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({safeBoundaries.length})</h4>
+            {/* --- HIERARCHICAL SAVED BORDERS MANAGER --- */}
+            <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col min-h-[200px]">
+                <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({boundaries.length})</h4>
                     <button onClick={handleWipeAll} className="text-[9px] text-red-500 hover:text-red-400 font-bold uppercase underline">Clear All</button>
                 </div>
                 
-                {safeBoundaries.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic text-center">No borders saved.</p></div>
+                {boundaries.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center"><p className="text-xs text-slate-600 italic text-center">No borders saved.<br/>Use Upload or Search above.</p></div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                        {['Provinsi', 'Kabupaten', 'Kecamatan', 'Desa'].map(level => {
-                            if (!groupedBoundaries[level] || groupedBoundaries[level].length === 0) return null;
-                            return (
-                                <div key={level}>
-                                    <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup(level)}>
-                                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
-                                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? 'rotate-90' : ''}`}/>
-                                    </div>
-                                    {openGroups[level] && groupedBoundaries[level].map(b => (
-                                        <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1 group">
-                                            {editingId === b.id ? (
-                                                <div className="flex flex-1 items-center gap-2 mr-2">
-                                                    <input 
-                                                        type="text" autoFocus
-                                                        value={editName} 
-                                                        onChange={e => setEditName(e.target.value)} 
-                                                        onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
-                                                        className="flex-1 bg-slate-900 border border-blue-500 text-white text-[10px] font-bold p-1 rounded outline-none"
-                                                    />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300"><Save size={14}/></button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
-                                                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
-                                                    <span className="text-[11px] text-white font-bold truncate" title={b.name}>{b.name}</span>
-                                                </div>
-                                            )}
-
-                                            <div className="flex items-center gap-1 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity">
-                                                {editingId !== b.id && (
-                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded transition-colors"><Pencil size={12}/></button>
-                                                )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash2 size={12}/></button>
-                                            </div>
-                                        </div>
-                                    ))}
+                    <div className="space-y-2 overflow-y-auto max-h-64 custom-scrollbar pr-2">
+                        {groupedBoundaries.Provinsi.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup('Provinsi')}>
+                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Provinsi ({groupedBoundaries.Provinsi.length})</span>
                                 </div>
-                            );
-                        })}
+                                {openGroups.Provinsi && groupedBoundaries.Provinsi.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: b.color }}></div>
+                                            <span className="text-[11px] text-emerald-400 font-bold truncate">{b.name}</span>
+                                        </div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 p-1 rounded transition-colors shrink-0"><Trash2 size={14}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {groupedBoundaries.Kabupaten.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup('Kabupaten')}>
+                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Kabupaten ({groupedBoundaries.Kabupaten.length})</span>
+                                </div>
+                                {openGroups.Kabupaten && groupedBoundaries.Kabupaten.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                            <div className="w-3 h-3 rounded-sm shrink-0" style={{ border: `2px solid ${b.color}` }}></div>
+                                            <span className="text-[11px] text-blue-400 font-bold truncate">{b.name}</span>
+                                        </div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={14}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {groupedBoundaries.Kecamatan.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup('Kecamatan')}>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Kecamatan ({groupedBoundaries.Kecamatan.length})</span>
+                                </div>
+                                {openGroups.Kecamatan && groupedBoundaries.Kecamatan.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: b.color }}></div>
+                                            <span className="text-[11px] text-white font-bold truncate">{b.name}</span>
+                                        </div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={14}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {groupedBoundaries.Desa && groupedBoundaries.Desa.length > 0 && (
+                            <div>
+                                <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup('Desa')}>
+                                    <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">Desa / Kelurahan ({groupedBoundaries.Desa.length})</span>
+                                </div>
+                                {openGroups.Desa && groupedBoundaries.Desa.map(b => (
+                                    <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2.5 rounded border border-slate-600 ml-2 mb-1">
+                                        <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: b.color }}></div>
+                                            <span className="text-[11px] text-slate-300 font-bold truncate">{b.name}</span>
+                                        </div>
+                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-500 hover:text-red-500 transition-colors shrink-0"><Trash2 size={14}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
-            <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-1 opacity-50 hover:opacity-100">
-                <div className="w-2 h-2 border-b-2 border-r-2 border-slate-500 rounded-br-sm"></div>
             </div>
         </div>
     );
@@ -424,10 +453,10 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
         <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
-                <Globe className="text-blue-500" size={20}/>
+                <MapIcon className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
-            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
+            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName}</p>
             
             <div className="space-y-3">
                 <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
@@ -460,7 +489,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <ShieldCheck size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
@@ -472,6 +501,13 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700"><div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div></div>
         </div>
     );
+};
+
+const HudTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
+    }
+    return null;
 };
 
 const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
@@ -537,19 +573,20 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
             <div className="flex items-start justify-between mb-1 pr-8"><h2 className="text-2xl font-bold leading-tight">{store.name}</h2></div>
             
-            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
+            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Building2 size={10} /> WHOLESALE HUB</span>}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
             {isAdmin && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600">
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
+                        <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Network size={12} className="text-orange-500"/> Individual Reach</label>
                         <div className="flex items-center gap-1">
                             <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
                             <span className="text-[10px] text-slate-500 font-bold">x</span>
                         </div>
                     </div>
                     <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
+                    <p className="text-[9px] text-slate-500 mt-2 italic">Adjusting this only affects {store.name}'s footprint.</p>
                 </div>
             )}
 
@@ -562,7 +599,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             )}
             {isAdmin && store.storeType !== 'Wholesaler' && (
                 <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
+                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><LinkIcon size={12}/> Map to Wholesaler</label>
                     <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
                         <option value="none">-- Select Wholesale Hub --</option>
                         {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
@@ -623,12 +660,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     useEffect(() => {
         const loadBorders = async () => {
-            if (db && appId && user && user.uid) {
+            if (db && appId && user) {
                 try {
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
                     if (snap.exists()) {
-                        const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
+                        const validPolygons = (snap.data().list || []).filter(b => b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
                         setBoundaries(validPolygons);
                     }
                 } catch(e) {}
@@ -637,9 +674,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         loadBorders();
     }, [db, appId, user]);
 
+    // Z-INDEX FIX: Sort boundaries so Kabupaten (largest) renders behind Kecamatan and Desa
     const sortedBoundaries = useMemo(() => {
-        if (!Array.isArray(boundaries)) return [];
-        return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
+        return [...boundaries].sort((a, b) => {
             const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
             return (lMap[a.level] || 4) - (lMap[b.level] || 4);
         });
@@ -655,7 +692,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = customers
-            .filter(c => c && c.latitude && c.longitude)
+            .filter(c => c.latitude && c.longitude)
             .map(c => {
                 const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
                 if (isNaN(lat) || isNaN(lng)) return null;
@@ -730,14 +767,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <div className="flex gap-2 w-full justify-end">
                         {isAdmin && (
                             <button onClick={() => setShowImporter(!showImporter)} className="pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border bg-slate-800 text-slate-300 border-slate-600 hover:text-white hover:border-blue-500 transition-all">
-                                <Download size={16}/> Map Setup
+                                <DownloadCloud size={16}/> Map Setup
                             </button>
                         )}
-                        <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
+                        <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><MapIcon size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
 
-                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
-                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
+                    <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Network size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
+                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Swords size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
@@ -768,31 +805,28 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {showBorders && sortedBoundaries.map((boundary) => {
-                    const geoData = boundary.feature || boundary.geometry;
-                    if (!geoData || !geoData.type) return null;
-                    return (
-                        <GeoJSON 
-                            key={`bnd-${boundary.id || Math.random()}`}
-                            data={geoData} 
-                            style={{ 
-                                color: boundary.color, 
-                                weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2, 
-                                opacity: 1, 
-                                fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, 
-                                dashArray: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? null : '5, 5' 
-                            }}
-                            onEachFeature={(f, layer) => {
-                                layer.on({
-                                    click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
-                                    mouseover: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.05 : 0.3, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 4 : 3 }),
-                                    mouseout: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2 })
-                                });
-                                layer.bindTooltip(boundary.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
-                            }}
-                        />
-                    );
-                })}
+                {showBorders && sortedBoundaries.map((boundary) => (
+                    <GeoJSON 
+                        key={`bnd-${boundary.id}`}
+                        data={boundary.feature || boundary.geometry} 
+                        style={{ 
+                            color: boundary.color, 
+                            weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2, 
+                            opacity: 1, 
+                            // Hollow out Kabupaten so you can clearly see Kecamatans underneath
+                            fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, 
+                            dashArray: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? null : '5, 5' 
+                        }}
+                        onEachFeature={(f, layer) => {
+                            layer.on({
+                                click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
+                                mouseover: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.05 : 0.3, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 4 : 3 }),
+                                mouseout: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2 })
+                            });
+                            layer.bindTooltip(boundary.name, { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
+                        }}
+                    />
+                ))}
 
                 {networkMode && networkLinks.map(link => (
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
