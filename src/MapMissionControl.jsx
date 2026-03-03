@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload, Check } from 'lucide-react';
+// FIX: Added 'Check' and 'ChevronDown' to the imports to prevent the ReferenceError crash!
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload, Check, ChevronDown } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -159,7 +160,10 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
+    
+    // Defensive grouping in case of corrupted array items
     boundaries.forEach(b => {
+        if (!b) return;
         if (groupedBoundaries[b.level]) groupedBoundaries[b.level].push(b);
         else groupedBoundaries.Kecamatan.push(b);
     });
@@ -181,7 +185,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const handleDeleteBorder = async (idToRemove) => {
         if(window.confirm("Remove this border?")) {
-            const updated = boundaries.filter(b => b.id !== idToRemove);
+            const updated = boundaries.filter(b => b && b.id !== idToRemove);
             setBoundaries(updated); await saveToFirebase(updated);
         }
     };
@@ -194,7 +198,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setEditingId(null);
     };
 
-    // --- FIX: AGGRESSIVE METADATA SCRAPER ---
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -216,13 +219,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
                         const props = feature.properties || {};
                         
-                        // 1. Check for standard BAPPEDA tags
                         const provName = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi;
                         const kabName = props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten;
                         const kecName = props.KECAMATAN || props.NAME_3 || props.nm_kec || props.WADMKC || props.kecamatan;
                         const desaName = props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa;
 
-                        // 2. Aggressive Fallback: Find the first valid text string in properties
                         const fallbackName = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val)) || `Imported Region ${idx+1}`;
 
                         let finalName = props.name || fallbackName;
@@ -241,8 +242,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             } catch(err) {}
                         }
 
-                        // Prevent perfect duplicates
-                        if (!newBoundaries.find(b => b.name === finalName && b.level === finalLevel)) {
+                        if (!newBoundaries.find(b => b && b.name === finalName && b.level === finalLevel)) {
                             newBoundaries.push({
                                 id: `BND_CUSTOM_${Date.now()}_${idx}`,
                                 name: finalName,
@@ -267,7 +267,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 setError("Upload failed. File may be corrupted.");
             } finally {
                 setIsLoading(false);
-                // Clear input so same file can be uploaded again if deleted
                 if (fileInputRef.current) fileInputRef.current.value = "";
             }
         };
@@ -311,7 +310,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         finally { setIsLoading(false); setProgress(""); }
     };
 
-    // --- FULLY RESIZABLE CSS ADDED TO WRAPPER ---
     return (
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
@@ -637,7 +635,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
                     if (snap.exists()) {
-                        const validPolygons = (snap.data().list || []).filter(b => b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
+                        const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
                         setBoundaries(validPolygons);
                     }
                 } catch(e) {}
