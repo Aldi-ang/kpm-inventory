@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
-
-// FIXED: Every single icon is explicitly imported here to prevent white-screen crashes
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Search, Trash2, DownloadCloud, Zap, Save, AlertTriangle, Edit3, Upload, Check, ChevronDown } from 'lucide-react';
+// BULLETPROOF IMPORTS: Only using baseline icons guaranteed to exist in all versions
+import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Minus, Maximize, Map as MapIcon, Search, Trash, Download, Zap, Save, AlertCircle, Edit, Upload, Check, ChevronDown } from 'lucide-react';
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
@@ -11,9 +10,7 @@ import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 const compressCoords = (coords) => {
-    if (Array.isArray(coords) && typeof coords[0] === 'number') {
-        return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
-    }
+    if (Array.isArray(coords) && typeof coords[0] === 'number') return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
     if (Array.isArray(coords)) return coords.map(compressCoords);
     return coords;
 };
@@ -158,8 +155,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
-    // SAFE FILTERING: Protects against corrupted Firebase elements
-    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && b.id) : [];
+    // BULLETPROOF ARRAY FILTERING: Guarantees no null/undefined items crash the render cycle
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
     safeBoundaries.forEach(b => {
@@ -171,7 +168,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
     const saveToFirebase = async (newList) => {
-        if (db && appId && user) {
+        if (db && appId && user && user.uid) {
             try { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries'), { list: newList }, { merge: true }); } 
             catch(e) { console.error("Firebase save failed:", e); }
         }
@@ -191,19 +188,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const handleSaveName = async (id) => {
-        if (!editName.trim()) { setEditingId(null); return; }
-        const updated = safeBoundaries.map(b => b.id === id ? { ...b, name: editName } : b);
+        if (!editName || !editName.trim()) { setEditingId(null); return; }
+        const updated = safeBoundaries.map(b => b.id === id ? { ...b, name: editName.trim() } : b);
         setBoundaries(updated);
         await saveToFirebase(updated);
         setEditingId(null);
     };
 
     const handleFileUpload = (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files && e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         setProgress("Compressing and parsing official GeoJSON...");
-        setIsLoading(true);
+        setIsLoading(true); setError(null);
 
         reader.onload = async (event) => {
             try {
@@ -273,13 +270,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const extractExactBoundary = (data) => {
-        if (!data || data.length === 0) return null;
+        if (!data || !Array.isArray(data) || data.length === 0) return null;
         const exactBorder = data.find(d => d.osm_type === 'relation' && d.class === 'boundary' && d.geojson);
         if (exactBorder) return exactBorder;
         return data.find(d => d.osm_type === 'relation' && d.geojson && (d.geojson.type === 'Polygon' || d.geojson.type === 'MultiPolygon'));
     };
 
     const handleSearch = async () => {
+        if (!targetName) { setError("Please enter a name."); return; }
         setIsLoading(true); setError(null);
         let queryName = "";
         if (adminLevel === "Kecamatan") queryName = `Kecamatan ${targetKecamatan}, ${targetKabupaten}, ${targetProvince}`;
@@ -318,8 +316,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
                 <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                <button onClick={() => fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing..." : "Upload Shapefile"}
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                    <Upload size={14}/> {isLoading ? "Compressing File..." : "Upload Shapefile"}
                 </button>
             </div>
 
@@ -345,7 +343,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
             {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
-            <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col overflow-hidden">
+            <div className="mt-auto pt-4 border-t border-slate-700 flex-1 flex flex-col overflow-hidden min-h-[200px]">
                 <div className="flex justify-between items-center mb-3 shrink-0">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-400 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({safeBoundaries.length})</h4>
                     <button onClick={handleWipeAll} className="text-[9px] text-red-500 hover:text-red-400 font-bold uppercase underline">Clear All</button>
@@ -356,7 +354,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 ) : (
                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
                         {['Provinsi', 'Kabupaten', 'Kecamatan', 'Desa'].map(level => {
-                            if (groupedBoundaries[level].length === 0) return null;
+                            if (!groupedBoundaries[level] || groupedBoundaries[level].length === 0) return null;
                             return (
                                 <div key={level}>
                                     <div className="flex justify-between items-center bg-slate-800/80 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors" onClick={() => toggleGroup(level)}>
@@ -382,12 +380,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                     <span className="text-[11px] text-white font-bold truncate" title={b.name}>{b.name}</span>
                                                 </div>
                                             )}
-
                                             <div className="flex items-center gap-1 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
-                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name); }} className="text-slate-400 hover:text-blue-400 p-1 rounded transition-colors"><Edit3 size={12}/></button>
+                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded transition-colors"><Edit size={12}/></button>
                                                 )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash2 size={12}/></button>
+                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors"><Trash size={12}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -418,7 +415,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 <MapIcon className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
-            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName}</p>
+            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
             
             <div className="space-y-3">
                 <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
@@ -451,25 +448,18 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize size={12} className="text-slate-400"/>
         </div>
     );
 
     return (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
-            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
+            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><Minus size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
             <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700"><div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div></div>
         </div>
     );
-};
-
-const HudTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return ( <div className="bg-slate-800 p-3 border border-slate-600 rounded text-xs text-white shadow-xl"><p className="font-bold border-b border-slate-600 mb-2 pb-1 text-slate-400">Date: {label}</p><p className="text-emerald-400 font-mono text-sm font-bold">Rp {new Intl.NumberFormat('id-ID').format(payload[0].value)}</p></div> );
-    }
-    return null;
 };
 
 const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
@@ -535,7 +525,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
             <button onClick={() => setSelectedStore(null)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={16}/></button>
             <div className="flex items-start justify-between mb-1 pr-8"><h2 className="text-2xl font-bold leading-tight">{store.name}</h2></div>
             
-            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Building2 size={10} /> WHOLESALE HUB</span>}
+            {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
             <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
             {isAdmin && (
@@ -548,7 +538,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                         </div>
                     </div>
                     <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
-                    <p className="text-[9px] text-slate-500 mt-2 italic">Adjusting this only affects {store.name}'s footprint.</p>
                 </div>
             )}
 
@@ -622,7 +611,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     useEffect(() => {
         const loadBorders = async () => {
-            if (db && appId && user) {
+            if (db && appId && user && user.uid) {
                 try {
                     const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
                     const snap = await getDoc(ref);
@@ -630,14 +619,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
                         setBoundaries(validPolygons);
                     }
-                } catch(e) {}
+                } catch(e) { console.error("Could not load borders"); }
             }
         };
         loadBorders();
     }, [db, appId, user]);
 
-    // Z-INDEX FIX: Sort boundaries so Kabupaten (largest) renders behind Kecamatan and Desa
     const sortedBoundaries = useMemo(() => {
+        if (!Array.isArray(boundaries)) return [];
         return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
             const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
             return (lMap[a.level] || 4) - (lMap[b.level] || 4);
@@ -654,7 +643,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = customers
-            .filter(c => c.latitude && c.longitude)
+            .filter(c => c && c.latitude && c.longitude)
             .map(c => {
                 const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
                 if (isNaN(lat) || isNaN(lng)) return null;
@@ -729,7 +718,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <div className="flex gap-2 w-full justify-end">
                         {isAdmin && (
                             <button onClick={() => setShowImporter(!showImporter)} className="pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border bg-slate-800 text-slate-300 border-slate-600 hover:text-white hover:border-blue-500 transition-all">
-                                <DownloadCloud size={16}/> Map Setup
+                                <Download size={16}/> Map Setup
                             </button>
                         )}
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><MapIcon size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
