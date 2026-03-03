@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS: Locked exactly to the baseline you provided to prevent ReferenceErrors
-import { MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, Shield, Swords, Menu, Network, Link as LinkIcon, Building2, MinusCircle, Maximize2, Map as MapIcon, Trash2, DownloadCloud, Save, Edit3, Upload } from 'lucide-react';
+import { 
+    MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
+    Shield, Globe, Menu, Database, Tag, 
+    MinusCircle, Maximize2, Search, Trash2, 
+    Save, AlertCircle, Upload, Pencil, Folder, Check, ChevronDown
+} from 'lucide-react';
 
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-import { doc, updateDoc, collection, getDoc, setDoc } from 'firebase/firestore';
+// FIX: Imported getDocs and deleteDoc for infinite subcollection storage
+import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -149,47 +154,73 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
     
-    // Rename State
+    const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
+    
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState("");
 
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
 
-    const saveToFirebase = async (newList) => {
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
+    const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
+    
+    safeBoundaries.forEach(b => {
+        const lvl = b.level || 'Kecamatan';
+        if (groupedBoundaries[lvl]) groupedBoundaries[lvl].push(b);
+        else groupedBoundaries.Kecamatan.push(b);
+    });
+
+    const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
+
+    // FIX: Save individual boundary as a document to bypass Firebase 1MB limit
+    const saveBoundaryToFirebase = async (boundary) => {
         if (db && appId && user && user.uid) {
-            try { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries'), { list: newList }, { merge: true }); } 
-            catch(e) { console.error("Firebase save failed:", e); }
+            try { 
+                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapBoundaries`, boundary.id), boundary); 
+            } catch(e) { console.error("Firebase save failed:", e); }
+        }
+    };
+
+    const deleteBoundaryFromFirebase = async (id) => {
+        if (db && appId && user && user.uid) {
+            try { 
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/mapBoundaries`, id)); 
+            } catch(e) { console.error("Firebase delete failed:", e); }
         }
     };
 
     const handleWipeAll = async () => {
         if(window.confirm("WARNING: This will delete ALL active borders. Continue?")) {
-            setBoundaries([]); await saveToFirebase([]);
+            for (let b of safeBoundaries) { await deleteBoundaryFromFirebase(b.id); }
+            setBoundaries([]); 
         }
     };
 
     const handleDeleteBorder = async (idToRemove) => {
         if(window.confirm("Remove this specific border?")) {
-            const updated = boundaries.filter(b => b.id !== idToRemove);
-            setBoundaries(updated); await saveToFirebase(updated);
+            const updated = safeBoundaries.filter(b => b.id !== idToRemove);
+            setBoundaries(updated); 
+            await deleteBoundaryFromFirebase(idToRemove);
         }
     };
 
     const handleSaveName = async (id) => {
         if (!editName || !editName.trim()) { setEditingId(null); return; }
-        const updated = boundaries.map(b => b.id === id ? { ...b, name: editName.trim() } : b);
-        setBoundaries(updated);
-        await saveToFirebase(updated);
+        const targetBoundary = safeBoundaries.find(b => b.id === id);
+        if (targetBoundary) {
+            const updatedBoundary = { ...targetBoundary, name: editName.trim() };
+            const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
+            setBoundaries(updatedList);
+            await saveBoundaryToFirebase(updatedBoundary);
+        }
         setEditingId(null);
     };
 
-    // --- SMART GEOJSON METADATA EXTRACTOR ---
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
-        let level = "Kecamatan"; // Default assumption
+        let level = "Kecamatan"; 
 
-        // Search for Indonesian Government Shapefile Tags
         if (props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa) {
             name = `${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa}`;
             level = "Desa";
@@ -205,7 +236,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         } else if (props.name) {
             name = props.name;
         } else {
-            // Aggressive Fallback: Find the first text string in the properties
             const fallback = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val));
             if (fallback) name = fallback;
         }
@@ -216,29 +246,27 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        setProgress("Parsing, Compressing, and Extracting Names...");
+        setProgress("Parsing and Extracting Regions...");
         setIsLoading(true); setError(null);
 
         reader.onload = async (event) => {
             try {
                 const geojson = JSON.parse(event.target.result);
                 let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
-                let newBoundaries = [...(boundaries || [])];
+                let newBoundaries = [...safeBoundaries];
                 let firstCoord = null;
 
-                features.forEach((feature, idx) => {
+                for (let idx = 0; idx < features.length; idx++) {
+                    let feature = features[idx];
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                        // Compress Coordinates to bypass 1MB Firebase limits
                         feature.geometry.coordinates = compressCoords(feature.geometry.coordinates);
-                        
                         const props = feature.properties || {};
                         const { name, level } = extractNameAndLevel(props, idx + 1);
                         
                         let color = palette[Math.floor(Math.random() * palette.length)];
-                        if (level === 'Kabupaten') color = '#ef4444'; // Red for City
-                        if (level === 'Provinsi') color = '#10b981'; // Green for Province
+                        if (level === 'Kabupaten') color = '#ef4444';
+                        if (level === 'Provinsi') color = '#10b981';
 
-                        // Snag a coordinate to auto-fly the camera to
                         if (!firstCoord) {
                             try {
                                 if (feature.geometry.type === 'Polygon') firstCoord = [feature.geometry.coordinates[0][0][1], feature.geometry.coordinates[0][0][0]];
@@ -246,9 +274,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             } catch(err) {}
                         }
 
-                        // Prevent perfect duplicates
                         if (!newBoundaries.find(b => b.name === name && b.level === level)) {
-                            newBoundaries.push({
+                            const newBoundary = {
                                 id: `BND_CUSTOM_${Date.now()}_${idx}`,
                                 name: name,
                                 fullName: `File: ${file.name}`,
@@ -256,14 +283,15 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 feature: feature, 
                                 color: color,
                                 level: level
-                            });
+                            };
+                            newBoundaries.push(newBoundary);
+                            // Save to Firebase immediately per item
+                            await saveBoundaryToFirebase(newBoundary);
                         }
                     }
-                });
+                }
                 
                 setBoundaries(newBoundaries);
-                await saveToFirebase(newBoundaries);
-                
                 setShowBorders(true); 
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
 
@@ -280,70 +308,80 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     return (
-        <div className="absolute top-24 right-4 w-[340px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left max-h-[85vh] flex flex-col">
+        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[60vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><MapIcon size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
             
-            {/* UPLOAD SECTION */}
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
+                <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                    <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
-            {/* EXPANDED LIST SECTION - Takes up all remaining space */}
-            <div className="mt-2 flex-1 flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
-                    <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({boundaries?.length || 0})</h4>
+            <div className="mt-2 flex-1 flex flex-col overflow-hidden min-h-[200px]">
+                <div className="flex justify-between items-center mb-3 shrink-0 bg-slate-800 p-2 rounded-lg border border-slate-700">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold flex items-center gap-2"><Save size={12}/> Active Borders ({safeBoundaries.length})</h4>
                     <button onClick={handleWipeAll} className="text-[9px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
                 </div>
                 
-                {(!boundaries || boundaries.length === 0) ? (
+                {safeBoundaries.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
                         <MapIcon size={32} className="mb-2 text-slate-500" />
                         <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1.5 pb-2">
-                        {boundaries.map(b => (
-                            <div key={b.id} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 group hover:border-slate-500 transition-colors">
-                                {/* INLINE EDIT MODE */}
-                                {editingId === b.id ? (
-                                    <div className="flex flex-1 items-center gap-2 mr-2">
-                                        <input 
-                                            type="text" autoFocus
-                                            value={editName} 
-                                            onChange={e => setEditName(e.target.value)} 
-                                            onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
-                                            className="flex-1 bg-slate-900 border border-blue-500 text-white text-[10px] font-bold p-1 rounded outline-none"
-                                        />
-                                        <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1 rounded"><Save size={12}/></button>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2 pb-4">
+                        {['Provinsi', 'Kabupaten', 'Kecamatan', 'Desa'].map(level => {
+                            if (!groupedBoundaries[level] || groupedBoundaries[level].length === 0) return null;
+                            return (
+                                <div key={level}>
+                                    <div className="flex justify-between items-center bg-slate-800 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors border border-slate-700" onClick={() => toggleGroup(level)}>
+                                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
+                                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? '' : '-rotate-90'}`}/>
                                     </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                                        <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
-                                        <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
-                                        <span className="text-[8px] text-slate-400 bg-slate-900 px-1 rounded uppercase shrink-0">{b.level?.substring(0,3)}</span>
-                                    </div>
-                                )}
+                                    {openGroups[level] && groupedBoundaries[level].map(b => (
+                                        <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
+                                            {editingId === b.id ? (
+                                                <div className="flex flex-1 items-center gap-2 mr-2">
+                                                    <input 
+                                                        type="text" autoFocus
+                                                        value={editName} 
+                                                        onChange={e => setEditName(e.target.value)} 
+                                                        onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
+                                                        className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
+                                                    />
+                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Check size={14}/></button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                                                    <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
+                                                    <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
+                                                </div>
+                                            )}
 
-                                {/* ACTION BUTTONS */}
-                                <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
-                                    {editingId !== b.id && (
-                                        <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Edit3 size={12}/></button>
-                                    )}
-                                    <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
+                                            <div className="flex items-center gap-1 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                {editingId !== b.id && (
+                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1.5 rounded bg-slate-800 transition-colors"><Pencil size={12}/></button>
+                                                )}
+                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded bg-slate-800 transition-colors"><Trash2 size={12}/></button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
+            </div>
+            <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-1 opacity-50 hover:opacity-100">
+                <div className="w-2 h-2 border-b-2 border-r-2 border-slate-500 rounded-br-sm"></div>
             </div>
         </div>
     );
@@ -363,7 +401,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 <MapIcon className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
-            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Shapefile"}</p>
+            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
             
             <div className="space-y-3">
                 <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
@@ -396,7 +434,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
 
     if (isMinimized) return (
         <div onClick={() => setIsMinimized(false)} className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <Shield size={14} className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
+            <Shield className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
@@ -557,22 +595,33 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
 
+    // FIX: Download borders individually from subcollection to bypass 1MB limit
     useEffect(() => {
         const loadBorders = async () => {
             if (db && appId && user && user.uid) {
                 try {
-                    const ref = doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, 'boundaries');
-                    const snap = await getDoc(ref);
-                    if (snap.exists()) {
-                        // SAFE FILTERING: Ignores null items in array to prevent crashes
-                        const validPolygons = (snap.data().list || []).filter(b => b && b.geometry && (b.geometry.type === 'Polygon' || b.geometry.type === 'MultiPolygon'));
-                        setBoundaries(validPolygons);
-                    }
+                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/mapBoundaries`));
+                    const loaded = [];
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        if (data && data.geometry && (data.geometry.type === 'Polygon' || data.geometry.type === 'MultiPolygon')) {
+                            loaded.push(data);
+                        }
+                    });
+                    setBoundaries(loaded);
                 } catch(e) {}
             }
         };
         loadBorders();
     }, [db, appId, user]);
+
+    const sortedBoundaries = useMemo(() => {
+        if (!Array.isArray(boundaries)) return [];
+        return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
+            const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
+            return (lMap[a.level] || 4) - (lMap[b.level] || 4);
+        });
+    }, [boundaries]);
 
     const activeTiers = tierSettings || [
         { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
@@ -677,10 +726,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} />
                 
                 <LayersControl position="bottomright">
-                    <LayersControl.BaseLayer checked name="Game Mode (Dark)">
+                    <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
                         <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satellite">
+                    <LayersControl.BaseLayer name="Midnight Canvas (Esri)">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Light Canvas (Carto)">
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Standard (OSM)">
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OSM' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Satellite (Esri)">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
@@ -688,11 +746,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {/* --- SAFE MAP RENDERER --- */}
-                {showBorders && boundaries.map((boundary) => {
+                {/* --- SAFE GEOJSON RENDERER: Prevents fatal Leaflet crash on bad data --- */}
+                {showBorders && sortedBoundaries.map((boundary) => {
                     const geoData = boundary.feature || boundary.geometry;
-                    // Strict null check blocks broken data from crashing Leaflet
-                    if (!geoData || !geoData.type) return null;
+                    if (!geoData || !geoData.type) return null; // Hard stop safety
                     return (
                         <GeoJSON 
                             key={`bnd-${boundary.id || Math.random()}`}
