@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS: Strictly cross-referenced with your App.jsx. Guaranteed no missing ReferenceErrors.
+// 100% SAFE IMPORTS
 import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
@@ -80,16 +80,17 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
         }
     }, [uploadedFocus, map]);
 
-    // FIX: SMART CAMERA OFFSET. 
-    // Calculates HUD width and shifts the map perfectly to the right to avoid overlapping.
+    // FIX: Smart Camera Math Engine prevents Leaflet from crashing on small screens
     useEffect(() => {
         if (selectedZone && selectedZone.geometry) {
             try {
                 const layer = L.geoJSON(selectedZone.geometry);
                 const bounds = layer.getBounds();
-                // 400px left padding forces the target to frame perfectly beside the HUD
+                const mapWidth = map.getSize().x;
+                // If screen is wide, shift map 400px right. If mobile/small, center it.
+                const leftPad = mapWidth > 650 ? 400 : 20; 
                 map.fitBounds(bounds, { 
-                    paddingTopLeft: [400, 20], 
+                    paddingTopLeft: [leftPad, 20], 
                     paddingBottomRight: [20, 20], 
                     maxZoom: 13, 
                     duration: 1.2 
@@ -169,7 +170,6 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 
 // --- TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode }) => {
-    // FIX: Added local minimize state
     const [isMinimized, setIsMinimized] = useState(false);
 
     const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
@@ -184,7 +184,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
     const activeZoneStores = selectedZone ? mapPoints.filter(s => checkPointInGeoJSON(s.longitude, s.latitude, selectedZone.geometry)) : [];
     const activeOverdue = activeZoneStores.filter(s => s.status === 'overdue').length;
 
-    // FIX: Minimized Bubble UI
     if (isMinimized) {
         return (
             <div className="absolute top-4 left-4 z-[2000] animate-slide-in-left">
@@ -198,8 +197,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
     }
 
     return (
-        // FIX: Added hover-opacity fade so you can see through it when not interacting, plus the new minimize button
-        <div className="absolute top-4 left-4 w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono relative">
+        // FIX: Removed the trailing 'relative' bug that pushed the map out of the window. Made mobile responsive.
+        <div className="absolute top-4 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
 
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
@@ -311,7 +310,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const userId = user?.uid || user?.id || 'default';
     const CACHE_KEY = `cello_map_bnd_${appId}`;
 
-    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && b.id) : [];
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
     safeBoundaries.forEach(b => {
@@ -941,7 +940,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
                     
-                    <button onClick={() => { setShowTacticalDash(!showTacticalDash); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
+                    <button onClick={() => { 
+                        const nextState = !showTacticalDash;
+                        setShowTacticalDash(nextState); 
+                        if (nextState) {
+                            setSalesHeatmapMode(true);
+                            setShowBorders(true);
+                        }
+                    }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
                         <TrendingUp size={16}/> {showTacticalDash ? "Tactical HUD: ON" : "Tactical Dashboard"}
                     </button>
 
