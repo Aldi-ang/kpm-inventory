@@ -232,7 +232,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     }
 
     return (
-        <div className="absolute top-4 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100vh-32px)] overflow-hidden font-mono">
+        // FIX: max-h adjusted to 100% of the MAP container, preventing the bottom from getting sliced off
+        <div className="absolute top-4 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-32px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
 
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
@@ -317,33 +318,41 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                 )}
             </div>
 
-            {selectedZone && (
-                <div className="p-3 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 animate-slide-down">
-                    <div className="flex justify-between items-center mb-2.5">
-                        <div className="min-w-0 pr-2">
-                            <p className="text-[8px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
-                            <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
+            {/* FIX: Always visible footer panel so it never vanishes off-screen */}
+            <div className="p-3 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 min-h-[85px] flex flex-col justify-center">
+                {selectedZone ? (
+                    <>
+                        <div className="flex justify-between items-center mb-2.5">
+                            <div className="min-w-0 pr-2">
+                                <p className="text-[8px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
+                                <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p>
+                            </div>
                         </div>
-                        <div className="text-right shrink-0">
-                            <p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p>
-                        </div>
-                    </div>
 
-                    {/* FIX: ULTRA COMPACT HORIZONTAL DEEP DIVE */}
-                    <div className="flex gap-2">
-                        <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center">
-                            <span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span>
-                            <span className="text-xs font-bold text-white">{activeZoneStores.length}</span>
+                        <div className="flex gap-2">
+                            <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center">
+                                <span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span>
+                                <span className="text-xs font-bold text-white">{activeZoneStores.length}</span>
+                            </div>
+                            <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
+                                <span className={`text-[8px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat</span>
+                                <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
+                                    {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
+                                </span>
+                            </div>
                         </div>
-                        <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
-                            <span className={`text-[8px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat</span>
-                            <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
-                                {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
-                            </span>
-                        </div>
+                    </>
+                ) : (
+                    /* EMPTY STATE WHEN NO TARGET IS CLICKED */
+                    <div className="text-center opacity-50 flex flex-col items-center justify-center py-1">
+                        <ShieldAlert size={20} className="mb-1 text-slate-400"/>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Select Sector for Analysis</p>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
