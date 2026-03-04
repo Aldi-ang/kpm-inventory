@@ -80,13 +80,20 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
         }
     }, [uploadedFocus, map]);
 
+    // FIX: SMART CAMERA OFFSET. 
+    // Calculates HUD width and shifts the map perfectly to the right to avoid overlapping.
     useEffect(() => {
-        if (selectedZone && selectedZone.geometry && selectedZone.geometry.coordinates) {
+        if (selectedZone && selectedZone.geometry) {
             try {
-                let coords = selectedZone.geometry.type === 'Polygon' 
-                    ? selectedZone.geometry.coordinates[0][0] 
-                    : selectedZone.geometry.coordinates[0][0][0];
-                map.flyTo([coords[1], coords[0]], 13, { duration: 1.2 });
+                const layer = L.geoJSON(selectedZone.geometry);
+                const bounds = layer.getBounds();
+                // 400px left padding forces the target to frame perfectly beside the HUD
+                map.fitBounds(bounds, { 
+                    paddingTopLeft: [400, 20], 
+                    paddingBottomRight: [20, 20], 
+                    maxZoom: 13, 
+                    duration: 1.2 
+                });
             } catch(e) {}
         }
     }, [selectedZone, map]);
@@ -162,7 +169,9 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 
 // --- TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode }) => {
-    
+    // FIX: Added local minimize state
+    const [isMinimized, setIsMinimized] = useState(false);
+
     const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
     
     const rankedSectors = useMemo(() => {
@@ -175,12 +184,29 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
     const activeZoneStores = selectedZone ? mapPoints.filter(s => checkPointInGeoJSON(s.longitude, s.latitude, selectedZone.geometry)) : [];
     const activeOverdue = activeZoneStores.filter(s => s.status === 'overdue').length;
 
+    // FIX: Minimized Bubble UI
+    if (isMinimized) {
+        return (
+            <div className="absolute top-4 left-4 z-[2000] animate-slide-in-left">
+                <button onClick={() => setIsMinimized(false)} className="bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3 hover:bg-slate-800 transition-colors font-mono font-bold text-xs uppercase tracking-widest">
+                    <ShieldAlert size={18} className="animate-pulse" />
+                    Sector Command
+                    <Maximize2 size={14} className="text-slate-400 ml-2"/>
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div className="absolute top-4 left-4 w-[380px] bg-slate-900/95 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono relative">
+        // FIX: Added hover-opacity fade so you can see through it when not interacting, plus the new minimize button
+        <div className="absolute top-4 left-4 w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono relative">
             <div className="crt-overlay"></div>
 
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-red-500 transition-colors"><X size={18}/></button>
+                <div className="absolute top-4 right-4 flex gap-3">
+                    <button onClick={() => setIsMinimized(true)} className="text-slate-500 hover:text-white transition-colors"><MinusCircle size={18}/></button>
+                    <button onClick={onClose} className="text-slate-500 hover:text-red-500 transition-colors"><X size={18}/></button>
+                </div>
                 <div className="flex items-center gap-3 mb-3">
                     <ShieldAlert size={24} className="text-emerald-500 animate-pulse"/>
                     <h2 className="text-lg font-black text-white uppercase tracking-[0.2em]">Sector Command</h2>
