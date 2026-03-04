@@ -169,7 +169,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 };
 
 // --- TACTICAL SECTOR DASHBOARD ---
-const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType }) => {
+const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType, timeFilter, setTimeFilter }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
     // FIX: Perfect Global Revenue sync. Directly sums the exact values shown on the leaderboard for the selected tier.
@@ -243,7 +243,20 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
                 <div className="flex justify-between items-end">
                     <div>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Global Region Revenue</p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Global Revenue</p>
+                            <select 
+                                value={timeFilter} 
+                                onChange={(e) => setTimeFilter(e.target.value)}
+                                className="bg-slate-800 text-[9px] text-emerald-400 font-bold px-1.5 py-0.5 rounded outline-none cursor-pointer border border-emerald-500/30 hover:border-emerald-500 transition-colors"
+                            >
+                                <option value="Today">Today</option>
+                                <option value="7 Days">7 Days</option>
+                                <option value="This Month">This Month</option>
+                                <option value="This Year">This Year</option>
+                                <option value="All-Time">All-Time</option>
+                            </select>
+                        </div>
                         <p className="text-2xl font-black text-emerald-400">{formatRupiah(globalRevenue)}</p>
                     </div>
                     <div className="text-right">
@@ -802,6 +815,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     // NEW STATE FOR AREA TYPE FILTER
     const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
+    
+    // NEW: TIME FILTER STATE
+    const [timeFilter, setTimeFilter] = useState("All-Time");
 
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
     const [uploadedFocus, setUploadedFocus] = useState(null);
@@ -910,9 +926,38 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         if ((!salesHeatmapMode && !showTacticalDash) || !sortedBoundaries.length) return {};
         const revMap = {};
         const storeRevs = {};
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         mapPoints.forEach(store => {
             storeRevs[store.name] = (transactions || [])
-                .filter(t => t.customerName === store.name && t.type === 'SALE')
+                .filter(t => {
+                    // 1. Must be a valid sale for this store
+                    if (t.customerName !== store.name || t.type !== 'SALE') return false;
+                    // 2. If All-Time, pass immediately
+                    if (timeFilter === 'All-Time') return true;
+                    // 3. Date Math
+                    if (!t.date) return false;
+                    const txDate = new Date(t.date);
+                    if (isNaN(txDate)) return false;
+
+                    if (timeFilter === 'Today') {
+                        return txDate.toDateString() === today.toDateString();
+                    }
+                    if (timeFilter === '7 Days') {
+                        const sevenDaysAgo = new Date(today);
+                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        return txDate >= sevenDaysAgo;
+                    }
+                    if (timeFilter === 'This Month') {
+                        return txDate.getMonth() === today.getMonth() && txDate.getFullYear() === today.getFullYear();
+                    }
+                    if (timeFilter === 'This Year') {
+                        return txDate.getFullYear() === today.getFullYear();
+                    }
+                    return true;
+                })
                 .reduce((sum, t) => sum + (t.total || 0), 0);
         });
 
@@ -1008,11 +1053,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {showTacticalDash && (
+           {showTacticalDash && (
                 <TacticalDashboard 
                     boundaries={sortedBoundaries} 
                     zoneRevenues={zoneRevenues} 
                     mapPoints={mapPoints} 
+                    transactions={transactions}
                     selectedZone={selectedZone} 
                     setSelectedZone={setSelectedZone} 
                     onClose={() => setShowTacticalDash(false)}
@@ -1020,9 +1066,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     setSalesHeatmapMode={setSalesHeatmapMode}
                     selectedAreaType={selectedAreaType}
                     setSelectedAreaType={setSelectedAreaType}
+                    timeFilter={timeFilter}
+                    setTimeFilter={setTimeFilter}
                 />
             )}
-
+            
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
