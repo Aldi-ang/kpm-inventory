@@ -973,8 +973,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             });
             revMap[boundary.id] = totalRev;
         });
+        // FIX: Added timeFilter to the dependency array so the math engine instantly recalculates
         return revMap;
-    }, [salesHeatmapMode, showTacticalDash, sortedBoundaries, mapPoints, transactions]);
+    }, [salesHeatmapMode, showTacticalDash, sortedBoundaries, mapPoints, transactions, timeFilter]);
 
     const getZoneColor = (boundaryId) => {
         if (!salesHeatmapMode) return null;
@@ -1070,7 +1071,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     setTimeFilter={setTimeFilter}
                 />
             )}
-            
+
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
@@ -1112,7 +1113,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                     return (
                         <GeoJSON 
-                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}-${isSelected}`} 
+                            // FIX: Adding timeFilter to the key forces Leaflet to instantly redraw the map layer and tooltips on change
+                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}-${isSelected}-${timeFilter}`} 
                             data={geoData} 
                             style={{ 
                                 color: isSelected ? '#38bdf8' : bndColor, 
