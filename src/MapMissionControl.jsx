@@ -172,38 +172,18 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
-    // FIX: Accurate Mathematical Global Revenue (Prevents Double-Counting)
+    // FIX: Perfect Global Revenue sync. Directly sums the exact values shown on the leaderboard for the selected tier.
     const globalRevenue = useMemo(() => {
         let total = 0;
-        const countedStores = new Set();
-        
-        const storeRevs = {};
-        (mapPoints || []).forEach(store => {
-            storeRevs[store.id] = (transactions || [])
-                .filter(t => t.customerName === store.name && t.type === 'SALE')
-                .reduce((sum, t) => sum + (t.total || 0), 0);
+        const visibleBoundaries = selectedAreaType !== "All" 
+            ? boundaries.filter(b => b.level === selectedAreaType)
+            : boundaries;
+            
+        visibleBoundaries.forEach(b => {
+            total += (zoneRevenues[b.id] || 0);
         });
-
-        let visibleBoundaries = boundaries;
-        if (selectedAreaType !== "All") {
-            visibleBoundaries = boundaries.filter(b => b.level === selectedAreaType);
-        }
-
-        visibleBoundaries.forEach(boundary => {
-            const geoData = boundary.feature || boundary.geometry;
-            if (!geoData || !geoData.type) return;
-
-            (mapPoints || []).forEach(store => {
-                // If the store is inside the boundary AND we haven't counted it yet, add it
-                if (!countedStores.has(store.id) && checkPointInGeoJSON(store.longitude, store.latitude, geoData)) {
-                    countedStores.add(store.id);
-                    total += (storeRevs[store.id] || 0);
-                }
-            });
-        });
-
         return total;
-    }, [boundaries, mapPoints, transactions, selectedAreaType]);
+    }, [boundaries, zoneRevenues, selectedAreaType]);
     
     const rankedSectors = useMemo(() => {
         let filtered = [...boundaries];
