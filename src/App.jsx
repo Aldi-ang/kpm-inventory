@@ -1628,18 +1628,30 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                     return (
                         <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
                             <div>
-                                <div className="flex justify-between items-start">
-                                    <h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
-                                    {c.latitude ? <MapPin size={16} className="text-emerald-500"/> : <MapPin size={16} className="text-slate-300"/>}
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-3">
+                                        {/* NEW: Store Photo Thumbnail Preview */}
+                                        {c.storeImage ? (
+                                            <img src={c.storeImage} className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm" alt={c.name} />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
+                                                <Store size={20} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
+                                            {(c.city || c.region) && <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{c.city} {c.region}</p>}
+                                        </div>
+                                    </div>
+                                    {c.latitude ? <MapPin size={16} className="text-emerald-500 shrink-0"/> : <MapPin size={16} className="text-slate-500 shrink-0"/>}
                                 </div>
-                                <div className="flex gap-2 mb-2">
+                                <div className="flex gap-2">
                                     {tierDef ? (
                                         <span className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                         </span>
                                     ) : ( <span className="text-[10px] px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
                                 </div>
-                                {(c.city || c.region) && <p className="text-xs font-bold text-slate-400 uppercase">{c.city} {c.region}</p>}
                             </div>
                             {isAdmin && (
                                 <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">

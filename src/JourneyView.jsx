@@ -144,7 +144,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                             {/* IMAGE & BADGE HEADER */}
                             <div className="h-32 bg-slate-200 dark:bg-slate-700 relative">
                                 {customer.storeImage ? (
-                                    <img src={customer.storeImage} className={`w-full h-full object-cover ${isVisited ? 'grayscale' : ''}`}/>
+                                    <img 
+                                        key={customer.storeImage} 
+                                        src={customer.storeImage} 
+                                        className={`w-full h-full object-cover ${isVisited ? 'grayscale' : ''}`}
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+                                        }}
+                                    />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-400">
                                         <Store size={32} opacity={0.5}/>
