@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS: Strictly cross-referenced with your App.jsx. Guaranteed no missing ReferenceErrors.
+// 100% SAFE IMPORTS: Added DollarSign for the new Sales Heatmap toggle
 import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
-    ShieldCheck, Globe, Menu, Database, Tag, 
+    ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder
 } from 'lucide-react';
@@ -16,11 +16,10 @@ import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
-// COMPRESSION ENGINE: Shrinks map sizes by 70% to bypass Firebase limits easily
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
         if (typeof coords[0] === 'number') {
-            return [Number(coords[0].toFixed(4)), Number(coords[1].toFixed(4))];
+            return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
         }
         return coords.map(compressCoords);
     }
@@ -151,7 +150,6 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- DEDICATED GEOJSON UPLOADER & INFINITE MANAGER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -178,12 +176,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
-    // Save each boundary as an individual document inside the allowed 'mapSettings' collection using 'bnd_' prefix.
     const saveBoundaryToFirebase = async (boundary) => {
         if (db && appId && userId) {
             try { 
                 const { geometry, feature, ...boundaryToSave } = boundary;
-                boundaryToSave.geometryString = JSON.stringify(geometry); // Serializes arrays to bypass 20k index limit
+                boundaryToSave.geometryString = JSON.stringify(geometry); 
                 await setDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave); 
             } catch(e) { console.error("Firebase save failed:", e); }
         }
@@ -192,7 +189,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const deleteBoundaryFromFirebase = async (id) => {
         if (db && appId && userId) {
             try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`)); } 
-            catch(e) { console.error("Firebase delete failed:", e); }
+            catch(e) {}
         }
     };
 
@@ -298,7 +295,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                     }
                 }
                 
-                // Save to local state and LocalStorage Cache
                 setBoundaries(newBoundaries);
                 localStorage.setItem(CACHE_KEY, JSON.stringify(newBoundaries));
                 setShowBorders(true); 
@@ -321,19 +317,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
             
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
                 <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
+                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
 
             <div className="mt-2 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
@@ -358,7 +354,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
-                                            {/* INLINE EDIT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -368,7 +363,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
                                                         className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
                                                     />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
+                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={12}/></button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
@@ -378,7 +373,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 </div>
                                             )}
 
-                                            {/* ACTION BUTTONS */}
                                             <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
                                                     <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>
@@ -608,6 +602,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showBorders, setShowBorders] = useState(false); 
     const [showImporter, setShowImporter] = useState(false);
 
+    // NEW HEATMAP STATE
+    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
@@ -615,34 +612,28 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
 
-    // SAFE USER ID EXTRACTION
     const userId = user?.uid || user?.id || "default";
 
-    // FIX: Robust LocalStorage Cache + Security Rule Compliant Firebase Loading
     useEffect(() => {
         const loadBorders = async () => {
             const CACHE_KEY = `cello_map_bnd_${appId}`;
-            
-            // 1. Instant Load from Cache (Survives Refresh!)
             const cachedData = localStorage.getItem(CACHE_KEY);
             if (cachedData) {
                 try { setBoundaries(JSON.parse(cachedData)); } catch(e) {}
             }
 
-            // 2. Background Sync with Firebase (Using allowed mapSettings collection)
             if (db && appId && userId) {
                 try {
                     const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
                     const loaded = [];
                     snap.forEach(doc => {
-                        // Filter out only the map borders from the generic settings folder
                         if (doc.id.startsWith('bnd_')) {
                             const data = doc.data();
                             if (data && data.geometryString) {
                                 try {
                                     data.geometry = JSON.parse(data.geometryString);
                                     loaded.push(data);
-                                } catch(e) { console.error("Parse fail", e); }
+                                } catch(e) {}
                             }
                         }
                     });
@@ -719,6 +710,49 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return links;
     }, [networkMode, mapPoints]);
 
+    // --- REVENUE CALCULATION ENGINE ---
+    const zoneRevenues = useMemo(() => {
+        if (!salesHeatmapMode || !sortedBoundaries.length) return {};
+        const revMap = {};
+
+        // Pre-calculate each store's total revenue for speed
+        const storeRevs = {};
+        mapPoints.forEach(store => {
+            storeRevs[store.name] = transactions
+                .filter(t => t.customerName === store.name && t.type === 'SALE')
+                .reduce((sum, t) => sum + (t.total || 0), 0);
+        });
+
+        // Sum store revenues if they are inside a boundary
+        sortedBoundaries.forEach(boundary => {
+            const geoData = boundary.feature || boundary.geometry;
+            if (!geoData || !geoData.type) return;
+
+            let totalRev = 0;
+            mapPoints.forEach(store => {
+                if (checkPointInGeoJSON(store.longitude, store.latitude, geoData)) {
+                    totalRev += (storeRevs[store.name] || 0);
+                }
+            });
+            revMap[boundary.id] = totalRev;
+        });
+        return revMap;
+    }, [salesHeatmapMode, sortedBoundaries, mapPoints, transactions]);
+
+    const getZoneColor = (boundaryId) => {
+        if (!salesHeatmapMode) return null;
+        const rev = zoneRevenues[boundaryId] || 0;
+        if (rev === 0) return '#ef4444'; // Red (Zero Revenue)
+        
+        // Find highest revenue to scale against
+        const maxRev = Math.max(...Object.values(zoneRevenues), 1);
+        const ratio = rev / maxRev;
+
+        if (ratio > 0.6) return '#10b981'; // Green (High)
+        if (ratio > 0.2) return '#f59e0b'; // Yellow (Med)
+        return '#f97316'; // Orange (Low)
+    };
+
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     const handlePinClick = (store, map) => { setSelectedStore(store); setSelectedZone(null); setLiveScaleOverride(null); map.flyTo([store.latitude, store.longitude], 14, { duration: 1.2 }); };
@@ -728,6 +762,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
+            {/* FLOATING HEATMAP LEGEND */}
+            {salesHeatmapMode && (
+                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Sales Heatmap</span>
+                    <div className="h-5 w-[1px] bg-slate-700"></div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#10b981] border border-white"></div> High</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f59e0b] border border-white"></div> Med</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f97316] border border-white"></div> Low</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white"></div> Zero</div>
+                </div>
+            )}
+
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 items-end pointer-events-none">
                 <button onClick={() => setShowControls(!showControls)} className="lg:hidden pointer-events-auto bg-slate-900/90 text-white p-2.5 rounded-xl border border-slate-600 shadow-xl mb-2 hover:bg-slate-800 transition-colors backdrop-blur-md">{showControls ? <X size={20}/> : <Menu size={20}/>}</button>
                 <div className={`flex flex-col gap-2 items-end transition-all duration-300 origin-top-right ${showControls ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none h-0'} lg:opacity-100 lg:scale-100 lg:pointer-events-auto lg:h-auto`}>
@@ -754,9 +800,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         )}
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
-
+                    
+                    {/* NEW HEATMAP TOGGLE */}
+                    <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><DollarSign size={16}/> {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"}</button>
+                    
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
-                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Heatmap: ON" : "Analyze Catchment Areas"}</button>
+                    <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Footprints: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
@@ -787,29 +836,47 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {/* --- SAFE MAP RENDERER --- */}
                 {showBorders && sortedBoundaries.map((boundary) => {
                     const geoData = boundary.feature || boundary.geometry;
-                    // FIX: Null shield prevents corrupted Firebase documents from crashing Leaflet
                     if (!geoData || !geoData.type) return null; 
+                    
+                    const isHeatmap = salesHeatmapMode;
+                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : boundary.color;
+                    const bndRev = zoneRevenues[boundary.id] || 0;
+                    const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
+
                     return (
                         <GeoJSON 
-                            key={`bnd-${boundary.id || Math.random()}`}
+                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}`} // Key forces re-render when mode changes
                             data={geoData} 
                             style={{ 
-                                color: boundary.color, 
-                                weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2, 
+                                color: bndColor, 
+                                weight: isKab ? 3 : 2, 
                                 opacity: 1, 
-                                fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, 
-                                dashArray: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? null : '5, 5' 
+                                fillOpacity: isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15), 
+                                fillColor: bndColor,
+                                dashArray: isKab ? null : '5, 5' 
                             }}
                             onEachFeature={(f, layer) => {
                                 layer.on({
                                     click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
-                                    mouseover: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.05 : 0.3, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 4 : 3 }),
-                                    mouseout: (e) => e.target.setStyle({ fillOpacity: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 0.02 : 0.15, weight: boundary.level === 'Kabupaten' || boundary.level === 'Provinsi' ? 3 : 2 })
+                                    mouseover: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.6 : (isKab ? 0.05 : 0.3), weight: isKab ? 4 : 3 }),
+                                    mouseout: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15), weight: isKab ? 3 : 2 })
                                 });
-                                layer.bindTooltip(boundary.name || "Region", { permanent: false, direction: "center", className: "font-bold font-mono text-xs bg-slate-900 text-white border-none" });
+
+                                // Create dynamic tooltip showing names and revenue
+                                const ttContent = `
+                                    <div class="text-center font-bold font-mono text-xs">
+                                        <div class="text-white">${boundary.name || "Region"}</div>
+                                        ${isHeatmap ? `<div class="text-emerald-400 mt-1 bg-emerald-900/30 px-2 py-0.5 rounded">${formatRupiah(bndRev)}</div>` : ''}
+                                    </div>
+                                `;
+
+                                layer.bindTooltip(ttContent, { 
+                                    permanent: isHeatmap, // Show permanent labels when Heatmap is ON
+                                    direction: "center", 
+                                    className: "bg-slate-900/90 backdrop-blur border border-slate-700 shadow-xl rounded-lg p-2" 
+                                });
                             }}
                         />
                     );
