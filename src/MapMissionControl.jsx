@@ -168,11 +168,42 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
-const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType }) => {
+// --- TACTICAL SECTOR DASHBOARD ---
+const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
-    const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
+    // FIX: Accurate Mathematical Global Revenue (Prevents Double-Counting)
+    const globalRevenue = useMemo(() => {
+        let total = 0;
+        const countedStores = new Set();
+        
+        const storeRevs = {};
+        (mapPoints || []).forEach(store => {
+            storeRevs[store.id] = (transactions || [])
+                .filter(t => t.customerName === store.name && t.type === 'SALE')
+                .reduce((sum, t) => sum + (t.total || 0), 0);
+        });
+
+        let visibleBoundaries = boundaries;
+        if (selectedAreaType !== "All") {
+            visibleBoundaries = boundaries.filter(b => b.level === selectedAreaType);
+        }
+
+        visibleBoundaries.forEach(boundary => {
+            const geoData = boundary.feature || boundary.geometry;
+            if (!geoData || !geoData.type) return;
+
+            (mapPoints || []).forEach(store => {
+                // If the store is inside the boundary AND we haven't counted it yet, add it
+                if (!countedStores.has(store.id) && checkPointInGeoJSON(store.longitude, store.latitude, geoData)) {
+                    countedStores.add(store.id);
+                    total += (storeRevs[store.id] || 0);
+                }
+            });
+        });
+
+        return total;
+    }, [boundaries, mapPoints, transactions, selectedAreaType]);
     
     const rankedSectors = useMemo(() => {
         let filtered = [...boundaries];
@@ -201,8 +232,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
     }
 
     return (
-        // FIX: Removed the trailing 'relative' bug that pushed the map out of the window. Made mobile responsive.
-        <div className="absolute top-4 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono">
+        <div className="absolute top-4 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100vh-32px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
 
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
@@ -215,7 +245,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                     <h2 className="text-lg font-black text-white uppercase tracking-[0.2em]">Sector Command</h2>
                 </div>
 
-                {/* NEW: Area Type Filter Dropdown */}
                 <div className="flex items-center gap-2 mb-3 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700">
                     <Tag size={14} className="text-slate-400 ml-1"/>
                     <select
@@ -223,11 +252,11 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                         onChange={(e) => setSelectedAreaType(e.target.value)}
                         className="bg-transparent text-xs font-bold text-white outline-none w-full cursor-pointer"
                     >
-                        <option value="All" className="bg-slate-900">All Area Types</option>
-                        <option value="Provinsi" className="bg-slate-900">Provinsi</option>
-                        <option value="Kabupaten" className="bg-slate-900">Kabupaten</option>
-                        <option value="Kecamatan" className="bg-slate-900">Kecamatan</option>
-                        <option value="Desa" className="bg-slate-900">Desa/Kelurahan</option>
+                        {/* FIX: Removed 'All' to mathematically isolate territory tiers */}
+                        <option value="Provinsi" className="bg-slate-900">Provinsi Dashboard</option>
+                        <option value="Kabupaten" className="bg-slate-900">Kabupaten Dashboard</option>
+                        <option value="Kecamatan" className="bg-slate-900">Kecamatan Dashboard</option>
+                        <option value="Desa" className="bg-slate-900">Desa/Kelurahan Dashboard</option>
                     </select>
                 </div>
 
@@ -250,7 +279,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 z-10 custom-scrollbar relative">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 z-10 custom-scrollbar relative">
                 {rankedSectors.map((sector, index) => {
                     const rev = zoneRevenues[sector.id] || 0;
                     const ratio = rev / maxRev;
@@ -283,35 +312,34 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 {rankedSectors.length === 0 && (
                     <div className="text-center py-10 text-slate-500 opacity-50 flex flex-col items-center">
                         <TrendingUp size={32} className="mb-2"/>
-                        <p className="text-xs uppercase tracking-widest">No Sector Data found for {selectedAreaType}</p>
+                        <p className="text-xs uppercase tracking-widest">No Sector Data found</p>
                     </div>
                 )}
             </div>
 
             {selectedZone && (
-                <div className="p-5 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 animate-slide-down">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <p className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse">Target Locked</p>
-                            <h3 className="text-lg font-black text-white uppercase tracking-wider truncate max-w-[200px]">{selectedZone.name}</h3>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-wider">{selectedZone.level}</p>
+                <div className="p-3 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 animate-slide-down">
+                    <div className="flex justify-between items-center mb-2.5">
+                        <div className="min-w-0 pr-2">
+                            <p className="text-[8px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
+                            <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xl font-black text-emerald-400">{formatRupiah(activeZoneRev)}</p>
+                        <div className="text-right shrink-0">
+                            <p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-black/50 p-3 rounded-lg border border-slate-700">
-                            <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Deployed Assets</p>
-                            <p className="text-lg font-bold text-white">{activeZoneStores.length} <span className="text-xs text-slate-400">Stores</span></p>
+                    {/* FIX: ULTRA COMPACT HORIZONTAL DEEP DIVE */}
+                    <div className="flex gap-2">
+                        <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center">
+                            <span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span>
+                            <span className="text-xs font-bold text-white">{activeZoneStores.length}</span>
                         </div>
-                        <div className={`p-3 rounded-lg border ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
-                            <p className={`text-[9px] uppercase tracking-widest mb-1 ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat Level</p>
-                            {/* FIX: Adjusted font size and line height to prevent truncation */}
-                            <p className={`font-bold leading-tight ${activeOverdue > 0 ? 'text-red-500 animate-pulse text-sm' : 'text-emerald-500 text-lg'}`}>
-                                {activeOverdue > 0 ? `${activeOverdue} ASSETS OVERDUE` : 'CLEAR'}
-                            </p>
+                        <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
+                            <span className={`text-[8px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat</span>
+                            <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
+                                {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
+                            </span>
                         </div>
                     </div>
                 </div>
