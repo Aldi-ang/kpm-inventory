@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS: Added DollarSign for the new Sales Heatmap toggle
+// 100% SAFE IMPORTS
 import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
@@ -11,7 +11,7 @@ import {
 
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
-import { doc, updateDoc, collection, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -19,7 +19,7 @@ const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'curren
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
         if (typeof coords[0] === 'number') {
-            return [Math.round(coords[0] * 100000) / 100000, Math.round(coords[1] * 100000) / 100000];
+            return [Number(coords[0].toFixed(4)), Number(coords[1].toFixed(4))];
         }
         return coords.map(compressCoords);
     }
@@ -317,19 +317,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
             
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
                 <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
+                    <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
 
             <div className="mt-2 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
@@ -363,7 +363,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)}
                                                         className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"
                                                     />
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={12}/></button>
+                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
@@ -373,11 +373,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
-                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>
+                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1.5 rounded bg-slate-800 transition-colors"><Pencil size={12}/></button>
                                                 )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
+                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded bg-slate-800 transition-colors"><Trash2 size={12}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -715,7 +715,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         if (!salesHeatmapMode || !sortedBoundaries.length) return {};
         const revMap = {};
 
-        // Pre-calculate each store's total revenue for speed
         const storeRevs = {};
         mapPoints.forEach(store => {
             storeRevs[store.name] = transactions
@@ -723,7 +722,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .reduce((sum, t) => sum + (t.total || 0), 0);
         });
 
-        // Sum store revenues if they are inside a boundary
         sortedBoundaries.forEach(boundary => {
             const geoData = boundary.feature || boundary.geometry;
             if (!geoData || !geoData.type) return;
@@ -744,7 +742,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const rev = zoneRevenues[boundaryId] || 0;
         if (rev === 0) return '#ef4444'; // Red (Zero Revenue)
         
-        // Find highest revenue to scale against
         const maxRev = Math.max(...Object.values(zoneRevenues), 1);
         const ratio = rev / maxRev;
 
@@ -801,7 +798,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
                     
-                    {/* NEW HEATMAP TOGGLE */}
                     <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><DollarSign size={16}/> {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"}</button>
                     
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
@@ -847,7 +843,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                     return (
                         <GeoJSON 
-                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}`} // Key forces re-render when mode changes
+                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}`} 
                             data={geoData} 
                             style={{ 
                                 color: bndColor, 
@@ -864,18 +860,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     mouseout: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15), weight: isKab ? 3 : 2 })
                                 });
 
-                                // Create dynamic tooltip showing names and revenue
+                                // FIX: Bulletproof inline styling to override Leaflet's default white box
                                 const ttContent = `
-                                    <div class="text-center font-bold font-mono text-xs">
-                                        <div class="text-white">${boundary.name || "Region"}</div>
-                                        ${isHeatmap ? `<div class="text-emerald-400 mt-1 bg-emerald-900/30 px-2 py-0.5 rounded">${formatRupiah(bndRev)}</div>` : ''}
+                                    <div style="background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
+                                        <div style="color: #cbd5e1; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                                            ${boundary.name || "Region"}
+                                        </div>
+                                        ${isHeatmap ? `<div style="color: #fbbf24; font-size: 15px; font-weight: 900; font-family: monospace;">${formatRupiah(bndRev)}</div>` : ''}
                                     </div>
                                 `;
 
                                 layer.bindTooltip(ttContent, { 
                                     permanent: isHeatmap, // Show permanent labels when Heatmap is ON
                                     direction: "center", 
-                                    className: "bg-slate-900/90 backdrop-blur border border-slate-700 shadow-xl rounded-lg p-2" 
+                                    className: "custom-leaflet-tooltip" // CRITICAL: This class strips the white background
                                 });
                             }}
                         />
