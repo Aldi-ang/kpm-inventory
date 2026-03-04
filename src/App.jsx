@@ -3011,28 +3011,40 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     }
   };
 
+  // --- COMPLETE SYSTEM PAYLOAD GENERATOR (INCLUDES ALL MODULES + MAPS) ---
+  const generateFullSystemPayload = async (type) => {
+      let mapSettings = [];
+      try {
+          // Explicitly fetch map borders/regions
+          const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/mapSettings`));
+          mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { console.warn("Could not fetch map settings"); }
+
+      return {
+          meta: { type, ts: getCurrentTimestamp(), user: user.email },
+          inventory, transactions, customers, samplings, auditLogs, procurements, appSettings, tierSettings, mapSettings
+      };
+  };
+
   // --- UPDATED: MASTER PROTOCOL (Forces Green Indicators) ---
   const handleMasterProtocol = async () => {
     if (!user || !isAdmin) return;
-    const ts = getCurrentTimestamp();
     
-    const recovery = { meta: { type: "RECOVERY", ts }, inventory, customers, appSettings };
-    const usb = { meta: { type: "USB_SAFE", ts }, inventory, transactions, customers, samplings, appSettings };
-    const mirror = { meta: { type: "CLOUD_MIRROR", ts }, inventory, transactions, customers, samplings, appSettings, auditLogs };
+    triggerCapy("Compiling all database sectors including Map Geodata... 🛡️");
 
-    triggerCapy("Initiating Triple-Layer Backup... 🛡️");
+    const payload = await generateFullSystemPayload("MASTER_REDUNDANCY");
 
-    // Sequential Downloads
-    setTimeout(() => triggerDownload(`FOLDER_RECOVERY--POINT_${ts}.json`, recovery), 0);
-    setTimeout(() => triggerDownload(`FOLDER_USB--SAFE_OFFSITE_${ts}.json`, usb), 1500);
-    setTimeout(() => triggerDownload(`FOLDER_CLOUD--MIRROR_SYNC_${ts}.json`, mirror), 3000);
+    // Sequential Downloads (All 3 now contain 100% of the data, including maps)
+    setTimeout(() => triggerDownload(`FOLDER_RECOVERY--POINT_${payload.meta.ts}.json`, payload), 0);
+    setTimeout(() => triggerDownload(`FOLDER_USB--SAFE_OFFSITE_${payload.meta.ts}.json`, payload), 1500);
+    setTimeout(() => triggerDownload(`FOLDER_CLOUD--MIRROR_SYNC_${payload.meta.ts}.json`, payload), 3000);
 
     localStorage.setItem('last_usb_backup', new Date().getTime().toString());
     
     // --- FORCE GREEN LIGHTS IMMEDIATELY ---
     setSessionStatus({ recovery: true, usb: true, cloud: true }); 
 
-    await logAudit("MASTER_BACKUP", `Triple Redundancy executed at ${ts}`, true);
+    await logAudit("MASTER_BACKUP", `Triple Redundancy executed at ${payload.meta.ts}`, true);
     triggerCapy("Protocol Complete! Files sent to sorting. 💾");
   };
 
@@ -4297,12 +4309,10 @@ const handleGitHubMirror = async () => {
   const handleBackupData = async () => {
     if(!user || !isAdmin) return; 
     
-    const backupData = {
-        meta: { date: new Date().toISOString(), user: user.email },
-        inventory, transactions, customers, samplings, appSettings, auditLogs
-    };
+    triggerCapy("Compiling physical safe backup (Including Maps)...");
+    const payload = await generateFullSystemPayload("USB_SAFE");
     
-    const jsonString = JSON.stringify(backupData, null, 2);
+    const jsonString = JSON.stringify(payload, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -4324,18 +4334,44 @@ const handleGitHubMirror = async () => {
   const handleRestoreData = async (e) => {
     const file = e.target.files[0];
     if (!file || !user) return;
-    if(!window.confirm("WARNING: This will attempt to restore data from the file. Existing records with the same IDs will be overwritten. Continue?")) return;
+    if(!window.confirm("CRITICAL WARNING: Restoring from a backup will overwrite your live database with the file's contents. Proceed?")) return;
+    
+    triggerCapy("Initiating Full System Restore... Do not close the window. ⏳");
     const reader = new FileReader();
     reader.onload = async (event) => {
         try {
             const data = JSON.parse(event.target.result);
-            if(!data.inventory || !data.transactions) throw new Error("Invalid backup file format");
-            for(const item of data.inventory) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item); }
-            if(data.customers) { for(const cust of data.customers) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, cust.id), cust); } }
-            if(data.transactions) { for(const t of data.transactions) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id), t); } }
-            if(data.appSettings) { await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings); }
-            triggerCapy("Data restoration complete! Please refresh the page.");
-        } catch (err) { alert("Failed to restore: " + err.message); console.error(err); }
+            const batch = writeBatch(db);
+            
+            const queueToBatch = (collectionName, items) => {
+                if (items && Array.isArray(items)) {
+                    items.forEach(item => {
+                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/${collectionName}`, item.id || Date.now().toString()), item);
+                    });
+                }
+            };
+
+            // Restore all collections
+            queueToBatch('products', data.inventory);
+            queueToBatch('customers', data.customers);
+            queueToBatch('transactions', data.transactions);
+            queueToBatch('samplings', data.samplings);
+            queueToBatch('procurement', data.procurements);
+            queueToBatch('audit_logs', data.auditLogs);
+            queueToBatch('mapSettings', data.mapSettings); // <--- Restores Map Borders!
+
+            // Restore core settings
+            if (data.appSettings) batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
+            if (data.tierSettings) batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: data.tierSettings });
+
+            await batch.commit();
+            triggerCapy("System Restore Complete! Refreshing matrix... ✨");
+            setTimeout(() => window.location.reload(), 2500);
+        } catch (err) { 
+            alert("Failed to restore: " + err.message); 
+            console.error(err); 
+            triggerCapy("Restore Failed. File corrupted.");
+        }
     };
     reader.readAsText(file);
     e.target.value = null; 
@@ -4439,25 +4475,16 @@ const handleGitHubMirror = async () => {
 // --- UPDATED: SINGLE BACKUP (Forces Specific Green Light) ---
   const handleSingleBackup = async (type) => {
       if (!user) return;
-      const ts = getCurrentTimestamp();
-      let data = {};
-      let filename = "";
+      triggerCapy(`Compiling ${type} sectors (Including Maps)...`);
+      
+      const payload = await generateFullSystemPayload(type);
+      const filename = `FOLDER_${type}--SAFE_${payload.meta.ts}.json`;
 
-      if (type === "RECOVERY") {
-          data = { meta: { type: "RECOVERY", ts }, inventory, customers, appSettings };
-          filename = `FOLDER_RECOVERY--POINT_${ts}.json`;
-          setSessionStatus(prev => ({ ...prev, recovery: true })); // <--- Force Green
-      } else if (type === "USB") {
-          data = { meta: { type: "USB_SAFE", ts }, inventory, transactions, customers, samplings, appSettings };
-          filename = `FOLDER_USB--SAFE_OFFSITE_${ts}.json`;
-          setSessionStatus(prev => ({ ...prev, usb: true })); // <--- Force Green
-      } else if (type === "CLOUD") {
-          data = { meta: { type: "CLOUD_MIRROR", ts }, inventory, transactions, customers, samplings, appSettings, auditLogs };
-          filename = `FOLDER_CLOUD--MIRROR_SYNC_${ts}.json`;
-          setSessionStatus(prev => ({ ...prev, cloud: true })); // <--- Force Green
-      }
+      if (type === "RECOVERY") setSessionStatus(prev => ({ ...prev, recovery: true }));
+      else if (type === "USB") setSessionStatus(prev => ({ ...prev, usb: true }));
+      else if (type === "CLOUD") setSessionStatus(prev => ({ ...prev, cloud: true }));
 
-      triggerDownload(filename, data);
+      triggerDownload(filename, payload);
       await logAudit("BACKUP_SINGLE", `Manual download: ${type}`, true);
       triggerCapy(`${type} Backup Saved! Status Secure.`);
   };
@@ -4581,10 +4608,20 @@ const handleGitHubMirror = async () => {
                     </div>
 
                     {/* INDIVIDUAL DOWNLOADS */}
-                    <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 1</button>
-                        <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 2</button>
-                        <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500">DOWNLOAD FILE 3</button>
+                    <div className="grid grid-cols-3 gap-2 mb-6">
+                        <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Recovery</button>
+                        <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download USB</button>
+                        <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Cloud</button>
+                    </div>
+
+                    {/* NEW: SYSTEM RESTORE UPLOAD */}
+                    <div className="border-t border-orange-500/30 pt-6">
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3">System Recovery Terminal</p>
+                        <label className="w-full flex items-center justify-center gap-3 py-4 border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-xl text-slate-400 hover:text-emerald-500 cursor-pointer transition-all bg-black/30 hover:bg-emerald-900/20 group">
+                            <UploadCloud size={24} className="group-hover:-translate-y-1 transition-transform" />
+                            <span className="font-bold uppercase tracking-widest text-xs">Load Backup File & Restore Data (.json)</span>
+                            <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
+                        </label>
                     </div>
                 </div>
             </div>
