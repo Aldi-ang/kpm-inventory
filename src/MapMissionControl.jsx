@@ -169,14 +169,18 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
 };
 
 // --- TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
-const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode }) => {
+const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
     const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
     
     const rankedSectors = useMemo(() => {
-        return [...boundaries].sort((a,b) => (zoneRevenues[b.id]||0) - (zoneRevenues[a.id]||0));
-    }, [boundaries, zoneRevenues]);
+        let filtered = [...boundaries];
+        if (selectedAreaType !== "All") {
+            filtered = filtered.filter(b => b.level === selectedAreaType);
+        }
+        return filtered.sort((a,b) => (zoneRevenues[b.id]||0) - (zoneRevenues[a.id]||0));
+    }, [boundaries, zoneRevenues, selectedAreaType]);
 
     const maxRev = rankedSectors.length > 0 ? (zoneRevenues[rankedSectors[0].id] || 1) : 1;
 
@@ -210,6 +214,23 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                     <ShieldAlert size={24} className="text-emerald-500 animate-pulse"/>
                     <h2 className="text-lg font-black text-white uppercase tracking-[0.2em]">Sector Command</h2>
                 </div>
+
+                {/* NEW: Area Type Filter Dropdown */}
+                <div className="flex items-center gap-2 mb-3 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700">
+                    <Tag size={14} className="text-slate-400 ml-1"/>
+                    <select
+                        value={selectedAreaType}
+                        onChange={(e) => setSelectedAreaType(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-white outline-none w-full cursor-pointer"
+                    >
+                        <option value="All" className="bg-slate-900">All Area Types</option>
+                        <option value="Provinsi" className="bg-slate-900">Provinsi</option>
+                        <option value="Kabupaten" className="bg-slate-900">Kabupaten</option>
+                        <option value="Kecamatan" className="bg-slate-900">Kecamatan</option>
+                        <option value="Desa" className="bg-slate-900">Desa/Kelurahan</option>
+                    </select>
+                </div>
+
                 <div className="flex justify-between items-end">
                     <div>
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Global Region Revenue</p>
@@ -217,7 +238,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                     </div>
                     <div className="text-right">
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Active Sectors</p>
-                        <p className="text-xl font-bold text-white">{boundaries.length}</p>
+                        <p className="text-xl font-bold text-white">{rankedSectors.length}</p>
                     </div>
                 </div>
             </div>
@@ -246,7 +267,10 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                             <div className="flex justify-between items-center mb-2">
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span className="text-[10px] font-bold text-slate-500 w-4">{index + 1}.</span>
-                                    <span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span>
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span>
+                                        <span className="text-[8px] text-slate-500 uppercase">{sector.level}</span>
+                                    </div>
                                 </div>
                                 <span className={`text-xs font-black ${textColor}`}>{formatRupiah(rev)}</span>
                             </div>
@@ -259,7 +283,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 {rankedSectors.length === 0 && (
                     <div className="text-center py-10 text-slate-500 opacity-50 flex flex-col items-center">
                         <TrendingUp size={32} className="mb-2"/>
-                        <p className="text-xs uppercase tracking-widest">No Sector Data</p>
+                        <p className="text-xs uppercase tracking-widest">No Sector Data found for {selectedAreaType}</p>
                     </div>
                 )}
             </div>
@@ -270,6 +294,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                         <div>
                             <p className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse">Target Locked</p>
                             <h3 className="text-lg font-black text-white uppercase tracking-wider truncate max-w-[200px]">{selectedZone.name}</h3>
+                            <p className="text-[9px] text-slate-400 uppercase tracking-wider">{selectedZone.level}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-xl font-black text-emerald-400">{formatRupiah(activeZoneRev)}</p>
@@ -283,8 +308,9 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                         </div>
                         <div className={`p-3 rounded-lg border ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
                             <p className={`text-[9px] uppercase tracking-widest mb-1 ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat Level</p>
-                            <p className={`text-lg font-bold ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
-                                {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
+                            {/* FIX: Adjusted font size and line height to prevent truncation */}
+                            <p className={`font-bold leading-tight ${activeOverdue > 0 ? 'text-red-500 animate-pulse text-sm' : 'text-emerald-500 text-lg'}`}>
+                                {activeOverdue > 0 ? `${activeOverdue} ASSETS OVERDUE` : 'CLEAR'}
                             </p>
                         </div>
                     </div>
@@ -554,6 +580,10 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
             <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
+            <div className="mb-3 flex items-center gap-2">
+                <Tag size={12} className="text-slate-500" />
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">{zone.level}</span>
+            </div>
             
             <div className="space-y-3">
                 <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
@@ -751,7 +781,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showTacticalDash, setShowTacticalDash] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
-    const [selectedCity, setSelectedCity] = useState("All");     
+    const [selectedCity, setSelectedCity] = useState("All");
+    
+    // NEW STATE FOR AREA TYPE FILTER
+    const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
+
     const [liveScaleOverride, setLiveScaleOverride] = useState(null);
     const [uploadedFocus, setUploadedFocus] = useState(null);
     
@@ -967,6 +1001,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     onClose={() => setShowTacticalDash(false)}
                     salesHeatmapMode={salesHeatmapMode}
                     setSalesHeatmapMode={setSalesHeatmapMode}
+                    selectedAreaType={selectedAreaType}
+                    setSelectedAreaType={setSelectedAreaType}
                 />
             )}
 
@@ -1006,6 +1042,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const bndRev = zoneRevenues[boundary.id] || 0;
                     const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
 
+                    // Visual Targeting if selected in Tactical HUD
                     const isSelected = selectedZone?.id === boundary.id;
 
                     return (
