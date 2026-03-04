@@ -3798,7 +3798,7 @@ const handleGitHubMirror = async () => {
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
  
  
-// --- UPDATED: TARGETED MERCHANT SAVING ---
+// --- UPDATED: TARGETED MERCHANT SAVING & CUSTOMER PHOTOS ---
   const handleCropConfirm = (base64) => { 
       if (!activeCropContext) return; 
       
@@ -3839,6 +3839,10 @@ const handleGitHubMirror = async () => {
               logAudit("SETTINGS_UPDATE", `Updated Merchant ${moodKey} visual`);
           }
           triggerCapy(`Merchant ${moodKey} visual updated!`);
+          
+      // --- FIXED: CATCH AND APPLY CUSTOMER STORE PHOTO ---
+      } else if (activeCropContext.type === 'customer_staging') {
+          setTempCustomerImage(base64);
       }
       
       setCropImageSrc(null); 
