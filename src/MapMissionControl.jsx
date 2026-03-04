@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS
+// 100% SAFE IMPORTS: Cross-referenced with App.jsx
 import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
-    Save, AlertCircle, Upload, Pencil, Folder
+    Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert
 } from 'lucide-react';
 
-import { BarChart, Bar, Tooltip, ResponsiveContainer } from 'recharts';
 import L from 'leaflet';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
@@ -71,15 +70,28 @@ const getIcon = (store, activeTiers, isTemp = false) => {
     });
 };
 
-const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus }) => {
+const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus, selectedZone }) => {
     const map = useMap();
     const isFirstRun = useRef(true);
 
+    // Fly to uploaded region
     useEffect(() => {
         if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
             map.flyTo(uploadedFocus, 10, { duration: 1.5 }); 
         }
     }, [uploadedFocus, map]);
+
+    // Fly to Selected Zone from Tactical Dashboard
+    useEffect(() => {
+        if (selectedZone && selectedZone.geometry && selectedZone.geometry.coordinates) {
+            try {
+                let coords = selectedZone.geometry.type === 'Polygon' 
+                    ? selectedZone.geometry.coordinates[0][0] 
+                    : selectedZone.geometry.coordinates[0][0][0];
+                map.flyTo([coords[1], coords[0]], 13, { duration: 1.2 });
+            } catch(e) {}
+        }
+    }, [selectedZone, map]);
 
     useEffect(() => {
         if (isFirstRun.current) {
@@ -90,12 +102,12 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     }, [map, savedHome]);
     
     useEffect(() => {
-        if (!uploadedFocus && selectedRegion !== "All" && mapPoints.length > 0) {
+        if (!uploadedFocus && !selectedZone && selectedRegion !== "All" && mapPoints.length > 0) {
             let latSum = 0, lngSum = 0;
             mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
             map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
         }
-    }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints]); 
+    }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints, selectedZone]); 
     return null;
 };
 
@@ -150,6 +162,123 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
+// --- NEW: TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
+const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode }) => {
+    
+    const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
+    
+    const rankedSectors = useMemo(() => {
+        return [...boundaries].sort((a,b) => (zoneRevenues[b.id]||0) - (zoneRevenues[a.id]||0));
+    }, [boundaries, zoneRevenues]);
+
+    const maxRev = rankedSectors.length > 0 ? (zoneRevenues[rankedSectors[0].id] || 1) : 1;
+
+    // Get selected zone data
+    const activeZoneRev = selectedZone ? (zoneRevenues[selectedZone.id] || 0) : 0;
+    const activeZoneStores = selectedZone ? mapPoints.filter(s => checkPointInGeoJSON(s.longitude, s.latitude, selectedZone.geometry)) : [];
+    const activeOverdue = activeZoneStores.filter(s => s.status === 'overdue').length;
+
+    return (
+        <div className="absolute top-4 left-4 w-[380px] bg-slate-900/95 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono relative">
+            {/* CRT OVERLAY */}
+            <div className="crt-overlay"></div>
+
+            {/* HEADER */}
+            <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-red-500 transition-colors"><X size={18}/></button>
+                <div className="flex items-center gap-3 mb-3">
+                    <ShieldAlert size={24} className="text-emerald-500 animate-pulse"/>
+                    <h2 className="text-lg font-black text-white uppercase tracking-[0.2em]">Sector Command</h2>
+                </div>
+                <div className="flex justify-between items-end">
+                    <div>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Global Region Revenue</p>
+                        <p className="text-2xl font-black text-emerald-400">{formatRupiah(globalRevenue)}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Active Sectors</p>
+                        <p className="text-xl font-bold text-white">{boundaries.length}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* QUICK TOGGLE */}
+            <div className="p-3 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center z-10 shrink-0">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Heatmap Engine</span>
+                <button onClick={() => setSalesHeatmapMode(!salesHeatmapMode)} className={`w-12 h-6 rounded-full transition-colors relative ${salesHeatmapMode ? 'bg-emerald-500' : 'bg-slate-600'}`}>
+                    <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${salesHeatmapMode ? 'translate-x-6' : 'translate-x-0'}`}></span>
+                </button>
+            </div>
+
+            {/* LEADERBOARD LIST */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 z-10 custom-scrollbar relative">
+                {rankedSectors.map((sector, index) => {
+                    const rev = zoneRevenues[sector.id] || 0;
+                    const ratio = rev / maxRev;
+                    const barColor = ratio > 0.6 ? 'bg-emerald-500' : ratio > 0.2 ? 'bg-orange-500' : 'bg-red-500';
+                    const textColor = ratio > 0.6 ? 'text-emerald-400' : ratio > 0.2 ? 'text-orange-400' : 'text-red-400';
+                    const isSelected = selectedZone?.id === sector.id;
+
+                    return (
+                        <div 
+                            key={sector.id} 
+                            onClick={() => setSelectedZone(sector)}
+                            className={`p-3 rounded-xl border transition-all cursor-pointer group ${isSelected ? 'bg-white/10 border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-black/40 border-slate-700 hover:border-slate-500'}`}
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <span className="text-[10px] font-bold text-slate-500 w-4">{index + 1}.</span>
+                                    <span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span>
+                                </div>
+                                <span className={`text-xs font-black ${textColor}`}>{formatRupiah(rev)}</span>
+                            </div>
+                            {/* DATA BAR */}
+                            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+                                <div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div>
+                            </div>
+                        </div>
+                    );
+                })}
+                {rankedSectors.length === 0 && (
+                    <div className="text-center py-10 text-slate-500 opacity-50 flex flex-col items-center">
+                        <TrendingUp size={32} className="mb-2"/>
+                        <p className="text-xs uppercase tracking-widest">No Sector Data</p>
+                    </div>
+                )}
+            </div>
+
+            {/* ACTIVE SECTOR DEEP DIVE */}
+            {selectedZone && (
+                <div className="p-5 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 animate-slide-down">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse">Target Locked</p>
+                            <h3 className="text-lg font-black text-white uppercase tracking-wider truncate max-w-[200px]">{selectedZone.name}</h3>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xl font-black text-emerald-400">{formatRupiah(activeZoneRev)}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-black/50 p-3 rounded-lg border border-slate-700">
+                            <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Deployed Assets</p>
+                            <p className="text-lg font-bold text-white">{activeZoneStores.length} <span className="text-xs text-slate-400">Stores</span></p>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
+                            <p className={`text-[9px] uppercase tracking-widest mb-1 ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat Level</p>
+                            <p className={`text-lg font-bold ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
+                                {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- DATA IMPORTER (UNCHANGED) ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -317,19 +446,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
-            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official GeoJSON map borders.</p>
+            <p className="text-[10px] text-slate-400 mb-4 leading-tight border-b border-slate-700 pb-3">Upload and manage official BAPPEDA/BPS GeoJSON files.</p>
             
-            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-4 transition-all hover:bg-slate-800/80 shrink-0">
-                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline GeoJSON Upload</p>
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 transition-all hover:bg-slate-800/80 shrink-0">
+                <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"><Upload size={12}/> Offline Upload</p>
                 <p className="text-[10px] text-slate-400 mb-3 leading-tight">Drop official BAPPEDA/BPS <b>.geojson</b> files here. The system will auto-extract regions.</p>
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
-                    <Upload size={14}/> {isLoading ? "Processing File..." : "Upload Shapefile"}
+                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
                 </button>
             </div>
 
-            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-3 rounded border border-red-500/50 shrink-0">{error}</p>}
-            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-3 rounded shrink-0">{progress}</p>}
+            {error && <p className="text-[10px] text-red-400 mb-2 font-bold bg-red-900/30 p-2 rounded border border-red-500/50 shrink-0">{error}</p>}
+            {progress && <p className="text-[10px] text-blue-400 mb-2 font-bold animate-pulse text-center bg-blue-900/20 p-2 rounded shrink-0">{progress}</p>}
 
             <div className="mt-2 flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
@@ -354,6 +483,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
+                                            {/* INLINE EDIT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -373,11 +503,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center gap-1 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
                                                 {editingId !== b.id && (
-                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1.5 rounded bg-slate-800 transition-colors"><Pencil size={12}/></button>
+                                                    <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>
                                                 )}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded bg-slate-800 transition-colors"><Trash2 size={12}/></button>
+                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -390,43 +520,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <div className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-1 opacity-50 hover:opacity-100">
                 <div className="w-2 h-2 border-b-2 border-r-2 border-slate-500 rounded-br-sm"></div>
             </div>
-        </div>
-    );
-};
-
-const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
-    if (!zone) return null;
-
-    const storesInZone = mapPoints.filter(store => checkPointInGeoJSON(store.longitude, store.latitude, zone.geometry));
-    const wholesalers = storesInZone.filter(s => s.storeType === 'Wholesaler').length;
-    const retailers = storesInZone.length - wholesalers;
-
-    return (
-        <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
-            <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
-            <div className="flex items-center gap-2 mb-1">
-                <Globe className="text-blue-500" size={20}/>
-                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
-            </div>
-            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
-            
-            <div className="space-y-3">
-                <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Total Stores Inside</span>
-                    <span className="text-2xl font-black text-white">{storesInZone.length}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-slate-800/50 p-3 rounded-xl border border-amber-500/30 text-center">
-                        <span className="text-[10px] font-bold text-amber-500 uppercase block mb-1">Hubs</span>
-                        <span className="text-xl font-black text-amber-400">{wholesalers}</span>
-                    </div>
-                    <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-600 text-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Retailers</span>
-                        <span className="text-xl font-black text-white">{retailers}</span>
-                    </div>
-                </div>
-            </div>
-            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">Assign Rep to Territory</button>
         </div>
     );
 };
@@ -548,15 +641,6 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
                 </div>
             )}
-            {isAdmin && store.storeType !== 'Wholesaler' && (
-                <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
-                    <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
-                        <option value="none">-- Select Wholesale Hub --</option>
-                        {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
-                    </select>
-                </div>
-            )}
             
             <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                 <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -602,8 +686,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showBorders, setShowBorders] = useState(false); 
     const [showImporter, setShowImporter] = useState(false);
 
-    // NEW HEATMAP STATE
     const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+    
+    // NEW: TACTICAL HUD TOGGLE
+    const [showTacticalDash, setShowTacticalDash] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");     
@@ -710,11 +796,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         return links;
     }, [networkMode, mapPoints]);
 
-    // --- REVENUE CALCULATION ENGINE ---
     const zoneRevenues = useMemo(() => {
-        if (!salesHeatmapMode || !sortedBoundaries.length) return {};
+        if ((!salesHeatmapMode && !showTacticalDash) || !sortedBoundaries.length) return {};
         const revMap = {};
-
         const storeRevs = {};
         mapPoints.forEach(store => {
             storeRevs[store.name] = transactions
@@ -735,19 +819,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             revMap[boundary.id] = totalRev;
         });
         return revMap;
-    }, [salesHeatmapMode, sortedBoundaries, mapPoints, transactions]);
+    }, [salesHeatmapMode, showTacticalDash, sortedBoundaries, mapPoints, transactions]);
 
     const getZoneColor = (boundaryId) => {
         if (!salesHeatmapMode) return null;
         const rev = zoneRevenues[boundaryId] || 0;
-        if (rev === 0) return '#ef4444'; // Red (Zero Revenue)
+        if (rev === 0) return '#ef4444'; 
         
         const maxRev = Math.max(...Object.values(zoneRevenues), 1);
         const ratio = rev / maxRev;
 
-        if (ratio > 0.6) return '#10b981'; // Green (High)
-        if (ratio > 0.2) return '#f59e0b'; // Yellow (Med)
-        return '#f97316'; // Orange (Low)
+        if (ratio > 0.6) return '#10b981'; 
+        if (ratio > 0.2) return '#f59e0b'; 
+        return '#f97316'; 
     };
 
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
@@ -798,18 +882,36 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
                     
+                    {/* NEW: TACTICAL HUD TOGGLE */}
+                    <button onClick={() => { setShowTacticalDash(!showTacticalDash); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
+                        <TrendingUp size={16}/> {showTacticalDash ? "Tactical HUD: ON" : "Tactical Dashboard"}
+                    </button>
+
                     <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><DollarSign size={16}/> {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"}</button>
-                    
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
                     <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Footprints: ON" : "Analyze Catchment Areas"}</button>
                 </div>
             </div>
 
+            {/* --- NEW: THE TACTICAL HUD --- */}
+            {showTacticalDash && (
+                <TacticalDashboard 
+                    boundaries={sortedBoundaries} 
+                    zoneRevenues={zoneRevenues} 
+                    mapPoints={mapPoints} 
+                    selectedZone={selectedZone} 
+                    setSelectedZone={setSelectedZone} 
+                    onClose={() => setShowTacticalDash(false)}
+                    salesHeatmapMode={salesHeatmapMode}
+                    setSalesHeatmapMode={setSalesHeatmapMode}
+                />
+            )}
+
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
-                <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} />
+                <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
                 <LayersControl position="bottomright">
                     <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
@@ -841,15 +943,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const bndRev = zoneRevenues[boundary.id] || 0;
                     const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
 
+                    // Visual Targeting if selected in Tactical HUD
+                    const isSelected = selectedZone?.id === boundary.id;
+
                     return (
                         <GeoJSON 
-                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}`} 
+                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}-${isSelected}`} 
                             data={geoData} 
                             style={{ 
-                                color: bndColor, 
-                                weight: isKab ? 3 : 2, 
+                                color: isSelected ? '#38bdf8' : bndColor, 
+                                weight: isSelected ? 4 : (isKab ? 3 : 2), 
                                 opacity: 1, 
-                                fillOpacity: isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15), 
+                                fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), 
                                 fillColor: bndColor,
                                 dashArray: isKab ? null : '5, 5' 
                             }}
@@ -857,10 +962,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 layer.on({
                                     click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
                                     mouseover: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.6 : (isKab ? 0.05 : 0.3), weight: isKab ? 4 : 3 }),
-                                    mouseout: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15), weight: isKab ? 3 : 2 })
+                                    mouseout: (e) => e.target.setStyle({ fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), weight: isSelected ? 4 : (isKab ? 3 : 2) })
                                 });
 
-                                // FIX: Bulletproof inline styling to override Leaflet's default white box
                                 const ttContent = `
                                     <div style="background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
                                         <div style="color: #cbd5e1; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
@@ -871,9 +975,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 `;
 
                                 layer.bindTooltip(ttContent, { 
-                                    permanent: isHeatmap, // Show permanent labels when Heatmap is ON
+                                    permanent: isHeatmap || isSelected, 
                                     direction: "center", 
-                                    className: "custom-leaflet-tooltip" // CRITICAL: This class strips the white background
+                                    className: "custom-leaflet-tooltip" 
                                 });
                             }}
                         />
@@ -903,7 +1007,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
-            <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
+            
+            {/* ONLY show generic ZoneHUD if Tactical Dashboard is OFF */}
+            {!showTacticalDash && <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />}
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
@@ -914,6 +1020,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .custom-icon:hover { z-index: 10000 !important; }
                 .store-3d-card { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; transform-origin: bottom center; }
                 .custom-leaflet-tooltip .store-3d-card { animation: popIn 0.3s forwards; }
+                
+                /* CRT SCANLINE EFFECT FOR TACTICAL HUD */
+                .crt-overlay {
+                    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+                    background-size: 100% 4px;
+                    pointer-events: none;
+                    position: absolute;
+                    inset: 0;
+                    z-index: 50;
+                    opacity: 0.3;
+                }
+
                 @keyframes popIn { 0% { transform: perspective(1000px) rotateX(20deg) scale(0.5) translateY(20px); opacity: 0; } 100% { transform: perspective(1000px) rotateX(-5deg) scale(1.0) translateY(-10px); opacity: 1; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8); } }
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
