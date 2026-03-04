@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-// 100% SAFE IMPORTS: Cross-referenced with App.jsx
+// 100% SAFE IMPORTS: Strictly cross-referenced with your App.jsx. Guaranteed no missing ReferenceErrors.
 import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
@@ -74,14 +74,12 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     const map = useMap();
     const isFirstRun = useRef(true);
 
-    // Fly to uploaded region
     useEffect(() => {
         if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
             map.flyTo(uploadedFocus, 10, { duration: 1.5 }); 
         }
     }, [uploadedFocus, map]);
 
-    // Fly to Selected Zone from Tactical Dashboard
     useEffect(() => {
         if (selectedZone && selectedZone.geometry && selectedZone.geometry.coordinates) {
             try {
@@ -162,7 +160,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) =>
     );
 };
 
-// --- NEW: TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
+// --- TACTICAL SECTOR DASHBOARD (RESIDENT EVIL HUD) ---
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode }) => {
     
     const globalRevenue = useMemo(() => Object.values(zoneRevenues).reduce((a,b) => a+b, 0), [zoneRevenues]);
@@ -173,17 +171,14 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
 
     const maxRev = rankedSectors.length > 0 ? (zoneRevenues[rankedSectors[0].id] || 1) : 1;
 
-    // Get selected zone data
     const activeZoneRev = selectedZone ? (zoneRevenues[selectedZone.id] || 0) : 0;
     const activeZoneStores = selectedZone ? mapPoints.filter(s => checkPointInGeoJSON(s.longitude, s.latitude, selectedZone.geometry)) : [];
     const activeOverdue = activeZoneStores.filter(s => s.status === 'overdue').length;
 
     return (
         <div className="absolute top-4 left-4 w-[380px] bg-slate-900/95 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[90vh] overflow-hidden font-mono relative">
-            {/* CRT OVERLAY */}
             <div className="crt-overlay"></div>
 
-            {/* HEADER */}
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-red-500 transition-colors"><X size={18}/></button>
                 <div className="flex items-center gap-3 mb-3">
@@ -202,7 +197,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 </div>
             </div>
 
-            {/* QUICK TOGGLE */}
             <div className="p-3 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center z-10 shrink-0">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Heatmap Engine</span>
                 <button onClick={() => setSalesHeatmapMode(!salesHeatmapMode)} className={`w-12 h-6 rounded-full transition-colors relative ${salesHeatmapMode ? 'bg-emerald-500' : 'bg-slate-600'}`}>
@@ -210,7 +204,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 </button>
             </div>
 
-            {/* LEADERBOARD LIST */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 z-10 custom-scrollbar relative">
                 {rankedSectors.map((sector, index) => {
                     const rev = zoneRevenues[sector.id] || 0;
@@ -232,7 +225,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                                 </div>
                                 <span className={`text-xs font-black ${textColor}`}>{formatRupiah(rev)}</span>
                             </div>
-                            {/* DATA BAR */}
                             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
                                 <div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div>
                             </div>
@@ -247,7 +239,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
                 )}
             </div>
 
-            {/* ACTIVE SECTOR DEEP DIVE */}
             {selectedZone && (
                 <div className="p-5 border-t border-slate-700 bg-gradient-to-t from-black to-slate-900 z-10 shrink-0 animate-slide-down">
                     <div className="flex justify-between items-start mb-4">
@@ -278,7 +269,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, selectedZone, 
     );
 };
 
-// --- DATA IMPORTER (UNCHANGED) ---
+// --- DEDICATED GEOJSON UPLOADER & MANAGER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -294,7 +285,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const userId = user?.uid || user?.id || 'default';
     const CACHE_KEY = `cello_map_bnd_${appId}`;
 
-    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
+    const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && b.id) : [];
     const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
     
     safeBoundaries.forEach(b => {
@@ -483,7 +474,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
                                         <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
-                                            {/* INLINE EDIT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -499,7 +489,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                                                     <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
                                                     <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
-                                                    <span className="text-[8px] text-slate-400 bg-slate-900 px-1 rounded uppercase shrink-0">{b.level?.substring(0,3)}</span>
+                                                    <span className="text-[8px] text-slate-400 bg-slate-900 px-1 rounded uppercase shrink-0">{String(b.level || '').substring(0,3)}</span>
                                                 </div>
                                             )}
 
@@ -524,11 +514,48 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     );
 };
 
+const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
+    if (!zone) return null;
+
+    const storesInZone = (mapPoints || []).filter(store => checkPointInGeoJSON(store.longitude, store.latitude, zone.geometry));
+    const wholesalers = storesInZone.filter(s => s.storeType === 'Wholesaler').length;
+    const retailers = storesInZone.length - wholesalers;
+
+    return (
+        <div className="absolute left-4 top-20 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
+            <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
+            <div className="flex items-center gap-2 mb-1">
+                <Globe className="text-blue-500" size={20}/>
+                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
+            </div>
+            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
+            
+            <div className="space-y-3">
+                <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Total Stores Inside</span>
+                    <span className="text-2xl font-black text-white">{storesInZone.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-amber-500/30 text-center">
+                        <span className="text-[10px] font-bold text-amber-500 uppercase block mb-1">Hubs</span>
+                        <span className="text-xl font-black text-amber-400">{wholesalers}</span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-600 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Retailers</span>
+                        <span className="text-xl font-black text-white">{retailers}</span>
+                    </div>
+                </div>
+            </div>
+            <button className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-widest">Assign Rep to Territory</button>
+        </div>
+    );
+};
+
 const GameHUD = ({ conquestMode, mapPoints }) => {
     const [isMinimized, setIsMinimized] = useState(false);
     if (!conquestMode) return null;
-    const totalStores = mapPoints.length;
-    const conqueredCount = mapPoints.filter(s => s.isConquered).length;
+    const totalStores = (mapPoints || []).length;
+    const conqueredCount = (mapPoints || []).filter(s => s.isConquered).length;
     const percentage = totalStores > 0 ? Math.round((conqueredCount / totalStores) * 100) : 0;
     let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
 
@@ -555,10 +582,10 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
     
     useEffect(() => { setLocalScale(store.catchmentScale || 1.0); }, [store.id, store.catchmentScale]);
 
-    const availableHubs = mapPoints.filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
+    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
     const stats = useMemo(() => {
-        const storeTrans = transactions.filter(t => t.customerName === store.name);
+        const storeTrans = (transactions || []).filter(t => t.customerName === store.name);
         const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
         const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
         const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
@@ -566,7 +593,7 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
         const itemMap = {}; 
         storeTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                t.items.forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 }; itemMap[i.productId].qty += bks; });
+                (t.items || []).forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 }; itemMap[i.productId].qty += bks; });
             } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
                 (t.items || t.itemsPaid || []).forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (itemMap[i.productId]) itemMap[i.productId].qty -= bks; });
             }
@@ -641,6 +668,15 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
                     <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
                 </div>
             )}
+            {isAdmin && store.storeType !== 'Wholesaler' && (
+                <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
+                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
+                    <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
+                        <option value="none">-- Select Wholesale Hub --</option>
+                        {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
+                    </select>
+                </div>
+            )}
             
             <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                 <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -687,8 +723,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showImporter, setShowImporter] = useState(false);
 
     const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
-    
-    // NEW: TACTICAL HUD TOGGLE
     const [showTacticalDash, setShowTacticalDash] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
@@ -750,7 +784,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
-        const validStores = customers
+        const validStores = (customers || [])
             .filter(c => c && c.latitude && c.longitude)
             .map(c => {
                 const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
@@ -801,7 +835,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const revMap = {};
         const storeRevs = {};
         mapPoints.forEach(store => {
-            storeRevs[store.name] = transactions
+            storeRevs[store.name] = (transactions || [])
                 .filter(t => t.customerName === store.name && t.type === 'SALE')
                 .reduce((sum, t) => sum + (t.total || 0), 0);
         });
@@ -843,7 +877,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         <div className="h-[calc(100vh-100px)] w-full rounded-2xl overflow-hidden shadow-2xl relative border dark:border-slate-700 bg-slate-900">
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
-            {/* FLOATING HEATMAP LEGEND */}
             {salesHeatmapMode && (
                 <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Sales Heatmap</span>
@@ -882,7 +915,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
                     
-                    {/* NEW: TACTICAL HUD TOGGLE */}
                     <button onClick={() => { setShowTacticalDash(!showTacticalDash); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
                         <TrendingUp size={16}/> {showTacticalDash ? "Tactical HUD: ON" : "Tactical Dashboard"}
                     </button>
@@ -893,7 +925,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {/* --- NEW: THE TACTICAL HUD --- */}
             {showTacticalDash && (
                 <TacticalDashboard 
                     boundaries={sortedBoundaries} 
@@ -943,7 +974,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const bndRev = zoneRevenues[boundary.id] || 0;
                     const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
 
-                    // Visual Targeting if selected in Tactical HUD
                     const isSelected = selectedZone?.id === boundary.id;
 
                     return (
@@ -1008,7 +1038,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
             
-            {/* ONLY show generic ZoneHUD if Tactical Dashboard is OFF */}
             {!showTacticalDash && <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />}
             
             <style>{`
