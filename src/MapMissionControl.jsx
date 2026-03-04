@@ -424,6 +424,28 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setEditingId(null);
     };
 
+    // --- NEW: VISIBILITY TOGGLES ---
+    const toggleVisibility = async (id, currentHidden) => {
+        const updatedList = safeBoundaries.map(b => b.id === id ? { ...b, isHidden: !currentHidden } : b);
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        const target = updatedList.find(b => b.id === id);
+        if (target) await saveBoundaryToFirebase(target);
+    };
+
+    const toggleGroupVisibility = async (level, hide) => {
+        const updatedList = safeBoundaries.map(b => b.level === level ? { ...b, isHidden: hide } : b);
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        
+        safeBoundaries.forEach(b => {
+            if (b.level === level && !!b.isHidden !== hide) {
+                const target = updatedList.find(u => u.id === b.id);
+                if (target) saveBoundaryToFirebase(target);
+            }
+        });
+    };
+
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
         let level = "Kecamatan"; 
@@ -488,7 +510,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 fullName: `File: ${file.name}`,
                                 geometry: feature.geometry,
                                 color: color,
-                                level: level
+                                level: level,
+                                isHidden: false // Default to visible
                             };
                             newBoundaries.push(newBoundary);
                             await saveBoundaryToFirebase(newBoundary);
@@ -549,12 +572,21 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             if (!groupedBoundaries[level] || groupedBoundaries[level].length === 0) return null;
                             return (
                                 <div key={level}>
-                                    <div className="flex justify-between items-center bg-slate-800 p-2 rounded cursor-pointer mb-1 hover:bg-slate-700 transition-colors border border-slate-700" onClick={() => toggleGroup(level)}>
-                                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
-                                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? 'rotate-90' : ''}`}/>
+                                    {/* FIX: HEADER ROW WITH MASS TOGGLES */}
+                                    <div className="flex justify-between items-center bg-slate-800 p-2 rounded mb-1 border border-slate-700">
+                                        <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => toggleGroup(level)}>
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{level} ({groupedBoundaries[level].length})</span>
+                                            <ChevronRight size={14} className={`text-slate-400 transition-transform ${openGroups[level] ? 'rotate-90' : ''}`}/>
+                                        </div>
+                                        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                            <button onClick={() => toggleGroupVisibility(level, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-2 py-1 rounded transition-colors">SHOW ALL</button>
+                                            <button onClick={() => toggleGroupVisibility(level, true)} className="text-[8px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-2 py-1 rounded transition-colors">HIDE ALL</button>
+                                        </div>
                                     </div>
+
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
-                                        <div key={b.id} className="flex items-center justify-between bg-slate-900 p-2.5 rounded border border-slate-700 ml-2 mb-1 group hover:border-slate-500 transition-colors">
+                                        <div key={b.id} className={`flex items-center justify-between bg-slate-900 p-2.5 rounded border ml-2 mb-1 group hover:border-slate-500 transition-colors ${b.isHidden ? 'border-red-900/30 opacity-60' : 'border-slate-700'}`}>
+                                            {/* INLINE EDIT MODE */}
                                             {editingId === b.id ? (
                                                 <div className="flex flex-1 items-center gap-2 mr-2">
                                                     <input 
@@ -568,13 +600,17 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                                                    <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none' }}></div>
-                                                    <span className="text-xs text-white font-medium truncate" title={b.name}>{b.name}</span>
+                                                    <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none', opacity: b.isHidden ? 0.2 : 1 }}></div>
+                                                    <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-500 line-through' : 'text-white'}`} title={b.name}>{b.name}</span>
                                                     <span className="text-[8px] text-slate-400 bg-slate-900 px-1 rounded uppercase shrink-0">{String(b.level || '').substring(0,3)}</span>
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center gap-1 shrink-0 opacity-30 group-hover:opacity-100 transition-opacity">
+                                            {/* FIX: INDIVIDUAL ROW CONTROLS */}
+                                            <div className="flex items-center gap-1 shrink-0 opacity-100 lg:opacity-30 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>
+                                                    {b.isHidden ? 'HIDDEN' : 'VISIBLE'}
+                                                </button>
                                                 {editingId !== b.id && (
                                                     <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>
                                                 )}
@@ -859,9 +895,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         loadBorders();
     }, [db, appId, userId]);
 
+    // FIX: Filters out hidden boundaries so they are excluded from Map, Heatmap, and Dashboard math
     const sortedBoundaries = useMemo(() => {
         if (!Array.isArray(boundaries)) return [];
-        return boundaries.filter(b => b && b.id && b.geometry).sort((a, b) => {
+        return boundaries.filter(b => b && b.id && b.geometry && !b.isHidden).sort((a, b) => {
             const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
             return (lMap[a.level] || 4) - (lMap[b.level] || 4);
         });
