@@ -3615,16 +3615,20 @@ const handleGitHubMirror = async () => {
                         const data = directorySnap.data();
                         if (data.status === 'Active') {
                             
-                            // 🛑 THE HIJACK: Safely override the UID so the app reads the Boss's database
-                            const hijackedUser = Object.create(currentUser);
-                            Object.defineProperty(hijackedUser, 'uid', { value: data.bossUid });
-                            hijackedUser.realUid = currentUser.uid;
-                            hijackedUser.role = data.role;            // 'Motorist' or 'Canvas'
-                            hijackedUser.agentId = data.agentId;      // Links to their bike inventory
+                            // 🛑 THE HIJACK: Create a clean, verified Agent Object to bypass Firebase security
+                            const hijackedUser = {
+                                uid: data.bossUid,            // Routes them directly to the Admin's vault
+                                email: currentUser.email,
+                                displayName: currentUser.displayName || "Field Agent",
+                                photoURL: currentUser.photoURL,
+                                realUid: currentUser.uid,     // Keep their real ID just in case
+                                role: data.role,              // 'Motorist' or 'Canvas'
+                                agentId: data.agentId         // Links to their specific vehicle inventory
+                            };
                             
                             setUser(hijackedUser);
                             setIsAdmin(false); // Employees are never admins
-                            console.log("Traffic Cop: Employee routed to Boss Vault.");
+                            console.log("Traffic Cop Success: Employee routed to Master Vault.");
                         } else {
                             alert("Your access has been revoked by the Administrator.");
                             signOut(auth);
@@ -3657,7 +3661,7 @@ const handleGitHubMirror = async () => {
         setIsAdmin(false);
         triggerCapy("Admin session ended.");
       };
-      
+
 
   // --- DATA SYNC ---
   useEffect(() => {
