@@ -3586,87 +3586,100 @@ const handleGitHubMirror = async () => {
   const [editMsgText, setEditMsgText] = useState("");         
   
   const [editCompanyName, setEditCompanyName] = useState("");
-  const [currentUserEmail, setCurrentUserEmail] = useState("");
+ const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [editingSample, setEditingSample] = useState(null); 
-  const [showSamplingAnalytics, setShowSamplingAnalytics] = useState(false); // <--- NEW STATE
+  const [showSamplingAnalytics, setShowSamplingAnalytics] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
 
+  // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
+  const [userRole, setUserRole] = useState('ADMIN'); // Can be 'ADMIN', 'MOTORIST', or 'CANVAS'
+  const [bossUid, setBossUid] = useState(null);
+  const [agentProfileId, setAgentProfileId] = useState(null);
 
+  // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
+  const userId = bossUid || user?.uid || user?.id || 'default';
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
-      useEffect(() => {
-        // Catch the redirect result silently
-        getRedirectResult(auth).catch((error) => {
-            console.error("Redirect Error:", error);
-            setLoginError(`Login Failed: ${error.message}`);
-        });
+  useEffect(() => {
+    getRedirectResult(auth).catch((error) => {
+        console.error("Redirect Error:", error);
+        setLoginError(`Login Failed: ${error.message}`);
+    });
 
-        const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser && currentUser.email) {
-                const email = currentUser.email.toLowerCase().trim();
-                setCurrentUserEmail(email);
+    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser && currentUser.email) {
+            const email = currentUser.email.toLowerCase().trim();
+            setCurrentUserEmail(email);
 
-                try {
-                    // TRAFFIC COP: Check global directory for this email
-                    const directoryRef = doc(db, `artifacts/${appId}/employee_directory`, email);
-                    const directorySnap = await getDoc(directoryRef);
+            try {
+                // TRAFFIC COP: Check global directory for this email
+                const directoryRef = doc(db, `artifacts/${appId}/employee_directory`, email);
+                const directorySnap = await getDoc(directoryRef);
 
-                    if (directorySnap.exists()) {
-                        const data = directorySnap.data();
-                        if (data.status === 'Active') {
-                            
-                            // 🛑 THE HIJACK: Create a clean, verified Agent Object to bypass Firebase security
-                            const hijackedUser = {
-                                uid: data.bossUid,            // Routes them directly to the Admin's vault
-                                email: currentUser.email,
-                                displayName: currentUser.displayName || "Field Agent",
-                                photoURL: currentUser.photoURL,
-                                realUid: currentUser.uid,     // Keep their real ID just in case
-                                role: data.role,              // 'Motorist' or 'Canvas'
-                                agentId: data.agentId         // Links to their specific vehicle inventory
-                            };
-                            
-                            setUser(hijackedUser);
-                            setIsAdmin(false); // Employees are never admins
-                            console.log("Traffic Cop Success: Employee routed to Master Vault.");
-                        } else {
-                            alert("Your access has been revoked by the Administrator.");
-                            signOut(auth);
-                            setUser(null);
-                        }
+                if (directorySnap.exists()) {
+                    const data = directorySnap.data();
+                    if (data.status === 'Active') {
+                        
+                        // 1. UPDATE RBAC STATES
+                        setBossUid(data.bossUid);
+                        setUserRole(data.role.toUpperCase());
+                        setAgentProfileId(data.agentId);
+
+                        // 2. THE HIJACK: Create a clean Agent Object
+                        const hijackedUser = {
+                            uid: data.bossUid,            
+                            email: currentUser.email,
+                            displayName: currentUser.displayName || "Field Agent",
+                            photoURL: currentUser.photoURL,
+                            realUid: currentUser.uid,     
+                            role: data.role,              
+                            agentId: data.agentId         
+                        };
+                        
+                        setUser(hijackedUser);
+                        setIsAdmin(false); // Employees are never admins
+                        console.log("Traffic Cop Success: Employee routed to Master Vault.");
                     } else {
-                        // NO TICKET FOUND: Normal Admin/Owner Login
-                        setUser(currentUser);
-                        setIsAdmin(false); // Admin PIN lockscreen handles the rest
+                        alert("Your access has been revoked by the Administrator.");
+                        signOut(auth);
+                        setUser(null);
                     }
-                } catch (error) {
-                    console.error("Traffic Cop Error:", error);
+                } else {
+                    // NO TICKET FOUND: Normal Admin/Owner Login
+                    setBossUid(null);
+                    setUserRole('ADMIN');
+                    setAgentProfileId(null);
                     setUser(currentUser);
+                    setIsAdmin(false); 
                 }
-            } else {
-                setUser(null);
+            } catch (error) {
+                console.error("Traffic Cop Error:", error);
+                setUser(currentUser);
             }
-        });
-        
-        return () => unsubAuth();
-      }, []);
+        } else {
+            setUser(null);
+        }
+    });
+    
+    return () => unsubAuth();
+  }, []);
 
-      const handleAdminAuthSuccess = () => {
-        setIsAdmin(true);
-        setShowAdminLogin(false);
-        triggerCapy("Access Granted. Welcome back, Boss.");
-      };
+  const handleAdminAuthSuccess = () => {
+    setIsAdmin(true);
+    setShowAdminLogin(false);
+    triggerCapy("Access Granted. Welcome back, Boss.");
+  };
 
-      const handleAdminLogout = () => {
-        setIsAdmin(false);
-        triggerCapy("Admin session ended.");
-      };
-
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    triggerCapy("Admin session ended.");
+  };
 
   // --- DATA SYNC ---
   useEffect(() => {
-    if (!user || !user.uid) return;
-    const basePath = `artifacts/${appId}/users/${user.uid}`;
+    // FIX: Use 'userId' which is dynamically routed by the Traffic Cop
+    if (!user || !userId || userId === 'default') return;
+    const basePath = `artifacts/${appId}/users/${userId}`;
     
     // 1. Settings
     const unsubSettings = onSnapshot(doc(db, basePath, 'settings', 'general'), (snap) => {
@@ -3700,9 +3713,9 @@ const handleGitHubMirror = async () => {
     const savedTheme = localStorage.getItem('kpm_theme');
     if (savedTheme === 'light') setDarkMode(false);
     
-    // Make sure to add unsubProc() to the cleanup array!
+    // FIX: Added 'userId' to the dependency array so React knows to reload the data!
     return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); };
-  }, [user]);
+  }, [user, db, appId, userId]);
 
   useEffect(() => {
     if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('kpm_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('kpm_theme', 'light'); }
