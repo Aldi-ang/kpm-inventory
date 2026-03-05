@@ -40,35 +40,34 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
 
     useEffect(() => { fetchAgents(); }, [db, appId, userId]);
 
-    // --- UPGRADED: SAVE (HANDLES BOTH CREATE AND EDIT) ---
+    // --- UPGRADED: SAVE (ATOMIC BATCH) ---
     const handleSaveAgent = async () => {
         if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
         
         const emailKey = newAgent.email.toLowerCase().trim();
 
         try {
+            const batch = writeBatch(db); // Create an all-or-nothing batch
+
             if (editingAgentId) {
                 // --- EDIT EXISTING AGENT ---
                 const oldAgent = agents.find(a => a.id === editingAgentId);
                 const oldEmailKey = oldAgent?.email?.toLowerCase().trim();
 
                 const agentRef = doc(db, collPath, editingAgentId);
-                await updateDoc(agentRef, {
+                batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey
                 });
 
                 // If email changed, we MUST delete the old Traffic Cop ticket
                 if (oldEmailKey && oldEmailKey !== emailKey) {
-                    await deleteDoc(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
+                    batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 }
                 
                 // Set the new Traffic Cop ticket
-                await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
+                batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, status: 'Active'
                 });
-
-                triggerCapy(`Profile updated for ${newAgent.name}!`);
-                logAudit("FLEET_EDIT", `Updated profile for ${emailKey}`);
 
             } else {
                 // --- CREATE NEW AGENT ---
@@ -77,13 +76,21 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                     id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString()
                 };
 
-                await setDoc(doc(db, collPath, newId), agentData);
+                batch.set(doc(db, collPath, newId), agentData);
                 
-                // CREATE THE TRAFFIC COP TICKET (This is why your employee couldn't log in before!)
-                await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
+                // CREATE THE TRAFFIC COP TICKET
+                batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, status: 'Active'
                 });
+            }
 
+            // Execute the batch!
+            await batch.commit();
+
+            if (editingAgentId) {
+                triggerCapy(`Profile updated for ${newAgent.name}!`);
+                logAudit("FLEET_EDIT", `Updated profile for ${emailKey}`);
+            } else {
                 triggerCapy(`${newAgent.name} added! Their email is now authorized to access your vault. 🚀`);
                 logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${emailKey}`);
             }
@@ -94,8 +101,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
             setEditingAgentId(null);
             fetchAgents();
         } catch (e) {
-            console.error(e);
-            alert("Error saving fleet agent");
+            console.error("Batch Failed:", e);
+            alert("Firebase Blocked the Save: " + e.message + "\n\nPlease check your Firebase Security Rules.");
         }
     };
 
@@ -107,28 +114,33 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
         setIsAddingAgent(true);
     };
 
-    // --- NEW: DELETE (FIRE) AGENT ---
+    // --- UPGRADED: DELETE (ATOMIC BATCH) ---
     const handleDeleteAgent = async (e, agent) => {
         e.stopPropagation();
         if (!window.confirm(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
         
         try {
-            // 1. Remove from local roster
-            await deleteDoc(doc(db, collPath, agent.id));
+            const batch = writeBatch(db);
             
-            // 2. Destroy their Traffic Cop Ticket (Locks them out)
+            // 1. Remove from local roster
+            batch.delete(doc(db, collPath, agent.id));
+            
+            // 2. Destroy their Traffic Cop Ticket
             if (agent.email) {
-                await deleteDoc(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
+                batch.delete(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
             }
             
+            // Execute!
+            await batch.commit();
+
             triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
             fetchAgents();
         } catch (e) {
-            console.error(e);
-            alert("Failed to delete agent.");
+            console.error("Batch Failed:", e);
+            alert("Firebase Blocked the Deletion: " + e.message + "\n\nPlease check your Firebase Security Rules.");
         }
     };
 
