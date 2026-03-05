@@ -3011,8 +3011,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     }
   };
 
-  // --- COMPLETE SYSTEM PAYLOAD GENERATOR (INCLUDES ALL MODULES + MAPS) ---
+  // --- COMPLETE SYSTEM PAYLOAD GENERATOR (INCLUDES ALL MODULES + MAPS + INTEL) ---
   const generateFullSystemPayload = async (type) => {
+      triggerCapy("Deep-fetching system databases and intelligence... ⏳");
+      
       let mapSettings = [];
       try {
           // Explicitly fetch map borders/regions
@@ -3020,9 +3022,20 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (e) { console.warn("Could not fetch map settings"); }
 
+      // NEW: Explicitly deep-fetch Competitor Intelligence (Benchmarks)
+      const deepCustomers = [];
+      for (const cust of customers) {
+          const custCopy = { ...cust };
+          try {
+              const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`));
+              custCopy.benchmarks = benchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          } catch (e) { custCopy.benchmarks = []; }
+          deepCustomers.push(custCopy);
+      }
+
       return {
           meta: { type, ts: getCurrentTimestamp(), user: user.email },
-          inventory, transactions, customers, samplings, auditLogs, procurements, appSettings, tierSettings, mapSettings
+          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapSettings
       };
   };
 
@@ -4332,49 +4345,87 @@ const handleGitHubMirror = async () => {
   };
 
   const handleRestoreData = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !user) return;
-    if(!window.confirm("CRITICAL WARNING: Restoring from a backup will overwrite your live database with the file's contents. Proceed?")) return;
-    
-    triggerCapy("Initiating Full System Restore... Do not close the window. ⏳");
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        try {
-            const data = JSON.parse(event.target.result);
-            const batch = writeBatch(db);
-            
-            const queueToBatch = (collectionName, items) => {
-                if (items && Array.isArray(items)) {
-                    items.forEach(item => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/${collectionName}`, item.id || Date.now().toString()), item);
-                    });
-                }
-            };
+      const file = e.target.files[0];
+      if (!file || !user) return;
+      if(!window.confirm("CRITICAL WARNING: Restoring from a backup will overwrite your live database with the file's contents. Proceed?")) return;
+      
+      triggerCapy("Initiating Full System Restore... Do not close the window. ⏳");
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+          try {
+              const data = JSON.parse(event.target.result);
+              
+              // FIX: Firestore has a hard limit of 500 writes per batch. 
+              // We use chunked batches to ensure massive restores (including maps) never crash.
+              const batches = [];
+              let currentBatch = writeBatch(db);
+              let opCount = 0;
 
-            // Restore all collections
-            queueToBatch('products', data.inventory);
-            queueToBatch('customers', data.customers);
-            queueToBatch('transactions', data.transactions);
-            queueToBatch('samplings', data.samplings);
-            queueToBatch('procurement', data.procurements);
-            queueToBatch('audit_logs', data.auditLogs);
-            queueToBatch('mapSettings', data.mapSettings); // <--- Restores Map Borders!
+              const commitBatch = () => {
+                  batches.push(currentBatch.commit());
+                  currentBatch = writeBatch(db);
+                  opCount = 0;
+              };
 
-            // Restore core settings
-            if (data.appSettings) batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
-            if (data.tierSettings) batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: data.tierSettings });
+              const safeSet = (ref, itemData) => {
+                  currentBatch.set(ref, itemData);
+                  opCount++;
+                  if (opCount >= 450) commitBatch();
+              };
 
-            await batch.commit();
-            triggerCapy("System Restore Complete! Refreshing matrix... ✨");
-            setTimeout(() => window.location.reload(), 2500);
-        } catch (err) { 
-            alert("Failed to restore: " + err.message); 
-            console.error(err); 
-            triggerCapy("Restore Failed. File corrupted.");
-        }
-    };
-    reader.readAsText(file);
-    e.target.value = null; 
+              const queueToBatch = (collectionName, items) => {
+                  if (items && Array.isArray(items)) {
+                      items.forEach(item => {
+                          safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/${collectionName}`, item.id || Date.now().toString()), item);
+                      });
+                  }
+              };
+
+              // 1. Restore Standard Collections
+              queueToBatch('products', data.inventory);
+              queueToBatch('transactions', data.transactions);
+              queueToBatch('samplings', data.samplings);
+              queueToBatch('procurement', data.procurements);
+              queueToBatch('audit_logs', data.auditLogs);
+              queueToBatch('mapSettings', data.mapSettings); 
+
+              // 2. Deep Restore Customers & Competitor Intelligence
+              if (data.customers && Array.isArray(data.customers)) {
+                  data.customers.forEach(c => {
+                      const cData = { ...c };
+                      const benchmarks = cData.benchmarks || [];
+                      delete cData.benchmarks; // clean main profile payload
+
+                      safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id || Date.now().toString()), cData);
+                      
+                      if (c.id) {
+                          benchmarks.forEach(b => {
+                              safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${c.id}/benchmarks`, b.id || Date.now().toString()), b);
+                          });
+                      }
+                  });
+              }
+
+              // 3. Restore Core Settings
+              if (data.appSettings) safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
+              if (data.tierSettings) safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: data.tierSettings });
+
+              // 4. Commit remaining unpushed files
+              if (opCount > 0) batches.push(currentBatch.commit());
+              
+              // Wait for all batches to finish uploading concurrently
+              await Promise.all(batches);
+
+              triggerCapy("System Restore Complete! Refreshing matrix... ✨");
+              setTimeout(() => window.location.reload(), 2500);
+          } catch (err) { 
+              alert("Failed to restore: " + err.message); 
+              console.error(err); 
+              triggerCapy("Restore Failed. File corrupted.");
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = null; 
   };// 
   
   // --- NEW: EXPORT SHARED CONFIG (Products + Branding ONLY) ---
