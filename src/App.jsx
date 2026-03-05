@@ -3593,60 +3593,71 @@ const handleGitHubMirror = async () => {
 
 
 
-  // --- AUTHENTICATION FLOW & REDIRECT CATCHER ---
-  useEffect(() => {
-    // 1. Catch the user when Google bounces them back to the app
-    getRedirectResult(auth).then((result) => {
-        if (result && result.user) {
-            console.log("Redirect Login Success:", result.user);
-            setUser(result.user);
-            if (result.user.email) setCurrentUserEmail(result.user.email);
-        }
-    }).catch((error) => {
-        console.error("Redirect Error:", error);
-        setLoginError(`Login Failed: ${error.message}`);
-    });
+  // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
+      useEffect(() => {
+        // Catch the redirect result silently
+        getRedirectResult(auth).catch((error) => {
+            console.error("Redirect Error:", error);
+            setLoginError(`Login Failed: ${error.message}`);
+        });
 
-    // 2. Standard listener to keep them logged in
-    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
-        setUser(currentUser);
-        setIsAdmin(false);
-        if (currentUser?.email) setCurrentUserEmail(currentUser.email);
-    });
-    
-    return () => unsubAuth();
-  }, []);
+        const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser && currentUser.email) {
+                const email = currentUser.email.toLowerCase().trim();
+                setCurrentUserEmail(email);
 
-  const handleAdminAuthSuccess = () => {
-    setIsAdmin(true);
-    setShowAdminLogin(false);
-    triggerCapy("Access Granted. Welcome back, Boss.");
-  };
+                try {
+                    // TRAFFIC COP: Check global directory for this email
+                    const directoryRef = doc(db, `artifacts/${appId}/employee_directory`, email);
+                    const directorySnap = await getDoc(directoryRef);
 
-  const handleAdminLogout = () => {
-    setIsAdmin(false);
-    triggerCapy("Admin session ended.");
-  };
-
-  // --- DEBUG LOGIN LISTENER ---
-    useEffect(() => {
-        console.log("App loaded. Checking for redirect result..."); // <--- Check Console for this
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result) {
-                    console.log("✅ LOGIN SUCCESS! User:", result.user.email);
-                    // Force a state update if needed
-                    setUser(result.user);
-                } else {
-                    console.log("ℹ️ No redirect result found. (Normal if just refreshing)");
+                    if (directorySnap.exists()) {
+                        const data = directorySnap.data();
+                        if (data.status === 'Active') {
+                            
+                            // 🛑 THE HIJACK: Safely override the UID so the app reads the Boss's database
+                            const hijackedUser = Object.create(currentUser);
+                            Object.defineProperty(hijackedUser, 'uid', { value: data.bossUid });
+                            hijackedUser.realUid = currentUser.uid;
+                            hijackedUser.role = data.role;            // 'Motorist' or 'Canvas'
+                            hijackedUser.agentId = data.agentId;      // Links to their bike inventory
+                            
+                            setUser(hijackedUser);
+                            setIsAdmin(false); // Employees are never admins
+                            console.log("Traffic Cop: Employee routed to Boss Vault.");
+                        } else {
+                            alert("Your access has been revoked by the Administrator.");
+                            signOut(auth);
+                            setUser(null);
+                        }
+                    } else {
+                        // NO TICKET FOUND: Normal Admin/Owner Login
+                        setUser(currentUser);
+                        setIsAdmin(false); // Admin PIN lockscreen handles the rest
+                    }
+                } catch (error) {
+                    console.error("Traffic Cop Error:", error);
+                    setUser(currentUser);
                 }
-            })
-            .catch((error) => {
-                console.error("❌ REDIRECT ERROR:", error);
-                // THIS ALERT WILL TELL US THE REAL REASON
-                alert("Login Error Code: " + error.code + "\nMessage: " + error.message);
-            });
-    }, []);
+            } else {
+                setUser(null);
+            }
+        });
+        
+        return () => unsubAuth();
+      }, []);
+
+      const handleAdminAuthSuccess = () => {
+        setIsAdmin(true);
+        setShowAdminLogin(false);
+        triggerCapy("Access Granted. Welcome back, Boss.");
+      };
+
+      const handleAdminLogout = () => {
+        setIsAdmin(false);
+        triggerCapy("Admin session ended.");
+      };
+      
 
   // --- DATA SYNC ---
   useEffect(() => {

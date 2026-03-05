@@ -57,6 +57,19 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
 
         try {
             await setDoc(doc(db, collPath, newId), agentData);
+
+            // --- PHASE 2 UPGRADE: GLOBAL DIRECTORY TICKET ---
+            // This creates the routing rule for the Traffic Cop
+            if (agentData.email) {
+                await setDoc(doc(db, `artifacts/${appId}/employee_directory`, agentData.email), {
+                    bossUid: userId,
+                    agentId: newId,
+                    role: newAgent.role,
+                    status: 'Active'
+                });
+            }
+            // ------------------------------------------------
+
             triggerCapy(`${newAgent.name} added to the Fleet! Their email (${agentData.email}) is now authorized. 🚀`);
             setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' });
             setIsAddingAgent(false);
