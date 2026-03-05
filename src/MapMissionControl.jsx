@@ -1074,18 +1074,22 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={() => setShowBorders(!showBorders)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Globe size={16}/> {showBorders ? "Borders: ON" : "Regional Borders"}</button>
                     </div>
                     
-                    <button onClick={() => { 
-                        const nextState = !showTacticalDash;
-                        setShowTacticalDash(nextState); 
-                        if (nextState) {
-                            setSalesHeatmapMode(true);
-                            setShowBorders(true);
-                        }
-                    }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
-                        <TrendingUp size={16}/> {showTacticalDash ? "Tactical HUD: ON" : "Tactical Dashboard"}
-                    </button>
+                    {isAdmin && (
+                        <>
+                            <button onClick={() => { 
+                                const nextState = !showTacticalDash;
+                                setShowTacticalDash(nextState); 
+                                if (nextState) {
+                                    setSalesHeatmapMode(true);
+                                    setShowBorders(true);
+                                }
+                            }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}>
+                                <TrendingUp size={16}/> {showTacticalDash ? "Tactical HUD: ON" : "Tactical Dashboard"}
+                            </button>
 
-                    <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><DollarSign size={16}/> {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"}</button>
+                            <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><DollarSign size={16}/> {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"}</button>
+                        </>
+                    )}
                     <button onClick={() => setNetworkMode(!networkMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Database size={16}/> {networkMode ? "Supply Lines: ON" : "View Supply Map"}</button>
                     <button onClick={() => setConquestMode(!conquestMode)} className={`pointer-events-auto px-4 py-3 rounded-xl font-bold text-xs shadow-xl flex items-center gap-2 border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 animate-pulse' : 'bg-white text-slate-700 border-slate-200'}`}><Folder size={16}/> {conquestMode ? "Footprints: ON" : "Analyze Catchment Areas"}</button>
                 </div>

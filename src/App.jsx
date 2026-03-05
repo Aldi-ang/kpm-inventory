@@ -2272,7 +2272,7 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
 };
 
 // --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
-const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole }) => {
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     
     const handleLogout = () => {
@@ -2283,11 +2283,12 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     };
 
     const allMenuItems = [
-        { id: 'dashboard', label: 'Overview' },
+        { id: 'dashboard', label: 'Command Center' },
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
         { id: 'fleet', label: 'Fleet & Canvas' }, 
-        { id: 'inventory', label: 'Inventory' },
+        { id: 'inventory', label: 'Master Vault' },
+        { id: 'agent_inventory', label: 'My Vehicle Canvas' }, // <--- ADDED EMPLOYEE INVENTORY
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
         { id: 'consignment', label: 'Consignment' },
@@ -2299,11 +2300,15 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'settings', label: 'Settings' }
     ];
 
-    // 🛑 UI LOCKDOWN: Strict Sidebar Filtering based on Role
+    // 🛑 UI LOCKDOWN: Strict Sidebar Filtering based on Role & Unlock Status
     const visibleMenu = allMenuItems.filter(item => {
-        if (userRole === 'ADMIN') return true; // Admin sees all tabs
-        // Employees ONLY see these exact modules:
-        return ['map_war_room', 'journey', 'sales'].includes(item.id);
+        if (userRole === 'ADMIN') {
+            if (isAdmin) return true; // UNLOCKED Admin: sees everything
+            // LOCKED Admin (Safe Mode):
+            return ['map_war_room', 'journey', 'fleet', 'sales'].includes(item.id);
+        }
+        // Employees:
+        return ['map_war_room', 'journey', 'sales', 'agent_inventory'].includes(item.id);
     });
 
     return (
@@ -2364,6 +2369,15 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 {/* BOTTOM SECTION */}
                 <div className="mt-auto mb-2 border-t border-white/10 pt-3">
                     
+                    {/* NEW: UNLOCK BUTTON FOR ADMIN SAFE MODE */}
+                    {userRole === 'ADMIN' && !isAdmin && (
+                        <div className="px-2 mb-3">
+                            <button onClick={() => setShowAdminLogin && setShowAdminLogin(true)} className="w-full bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-400 hover:text-white p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
+                                <Lock size={14} /> Unlock Master Vault
+                            </button>
+                        </div>
+                    )}
+
                     {/* NEW: DOCKED MUSIC PLAYER (Admin Only) */}
                     {isAdmin && <MusicPlayer />}
 
