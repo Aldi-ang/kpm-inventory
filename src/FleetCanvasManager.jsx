@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy }) => {
+const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy, isAdmin }) => {
     const [agents, setAgents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     
@@ -210,9 +210,11 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                         <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Truck size={20} className="text-blue-500"/> Fleet Roster</h2>
                         <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Active Personnel: {agents.length}</p>
                     </div>
-                    <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' }); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
-                        {isAddingAgent ? <X size={18}/> : <UserPlus size={18}/>}
-                    </button>
+                    {isAdmin && (
+                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' }); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
+                            {isAddingAgent ? <X size={18}/> : <UserPlus size={18}/>}
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -267,10 +269,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                                         {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                     </span>
                                     {/* NEW: Edit and Delete actions */}
-                                    <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400"><Pencil size={14}/></button>
-                                        <button onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
-                                    </div>
+                                    {isAdmin && (
+                                        <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400"><Pencil size={14}/></button>
+                                            <button onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -310,7 +314,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                                         <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500">
                                             <option value="">-- Choose Product --</option>
                                             {inventory && inventory.map(item => (
-                                                <option key={item.id} value={item.id}>{item.name} (Vault: {item.stock} {item.unit})</option>
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name} {isAdmin ? `(Vault: ${item.stock} ${item.unit})` : ''}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
