@@ -4923,8 +4923,8 @@ const handleGitHubMirror = async () => {
         user={user} 
         appSettings={appSettings}
         isAdmin={isAdmin}
-        userRole={userRole}      // <--- ADDED: PASSES IDENTITY TO SIDEBAR
-        ONLOGIN={HANDLELOGIN} 
+        userRole={userRole}
+        onLogin={handleLogin} 
     >
       {/* 1. GLOBAL MODALS */}
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
