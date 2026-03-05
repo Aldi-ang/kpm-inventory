@@ -20,6 +20,7 @@ import StockOpnameView from './StockOpnameView';
 import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
+import FleetCanvasManager from './FleetCanvasManager';
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -2285,6 +2286,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'dashboard', label: 'Overview' },
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
+        { id: 'fleet', label: 'Fleet & Canvas' }, // <--- ADDED FLEET MENU ITEM
         { id: 'inventory', label: 'Inventory' },
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
@@ -5083,6 +5085,11 @@ const handleGitHubMirror = async () => {
 
           {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
           {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
+          
+          {/* NEW FLEET ROUTER */}
+          {activeTab === 'fleet' && (
+            <FleetCanvasManager db={db} appId={appId} user={user} inventory={inventory} logAudit={logAudit} triggerCapy={triggerCapy} />
+          )}
           
           {activeTab === 'inventory' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
