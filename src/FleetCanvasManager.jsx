@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Truck, UserPlus, PackagePlus, Save, Archive, 
-    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User
+    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
@@ -12,15 +12,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     
-    // NEW: Added 'role' to distinguish between Motorist and Canvas
-    const [newAgent, setNewAgent] = useState({ name: '', phone: '', vehicle: '', role: 'Motorist' });
+    // PHASE 1 UPGRADE: Added 'email' to establish the Digital Identity for login routing
+    const [newAgent, setNewAgent] = useState({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' });
 
     // Loading Dock State
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
 
     const userId = user?.uid || user?.id || 'default';
-    const collPath = `artifacts/${appId}/users/${userId}/motorists`; // Keeping backend path same for consistency
+    const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
     const fetchAgents = async () => {
         if (!db || !appId || !userId) return;
@@ -42,23 +42,26 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
     useEffect(() => { fetchAgents(); }, [db, appId, userId]);
 
     const handleCreateAgent = async () => {
-        if (!newAgent.name || !newAgent.phone) return alert("Name and Phone required!");
+        // Strict validation: Email is now mandatory
+        if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
+        
         const newId = `AGT_${Date.now()}`;
         const agentData = {
             id: newId,
             ...newAgent,
+            email: newAgent.email.toLowerCase().trim(), // Standardize the email for strict matching later
             status: 'Active',
-            activeCanvas: [], // The vehicle inventory
+            activeCanvas: [], 
             createdAt: new Date().toISOString()
         };
 
         try {
             await setDoc(doc(db, collPath, newId), agentData);
-            triggerCapy(`${newAgent.name} added to the Fleet as a ${newAgent.role}! 🚀`);
-            setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist' });
+            triggerCapy(`${newAgent.name} added to the Fleet! Their email (${agentData.email}) is now authorized. 🚀`);
+            setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' });
             setIsAddingAgent(false);
             fetchAgents();
-            logAudit("FLEET_ADD", `Created new ${newAgent.role} profile: ${newAgent.name}`);
+            logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${agentData.email}`);
         } catch (e) {
             alert("Error creating fleet agent");
         }
@@ -77,7 +80,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
             const batch = writeBatch(db);
             const agentRef = doc(db, collPath, selectedAgent.id);
             
-            // Clone current canvas
             let updatedCanvas = [...(selectedAgent.activeCanvas || [])];
             const existingItemIndex = updatedCanvas.findIndex(item => item.productId === product.id);
 
@@ -98,7 +100,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
             triggerCapy(`Loaded ${qtyToLoad} ${product.unit || 'Slop'} of ${product.name} into ${selectedAgent.name}'s vehicle! 📦`);
             setLoadQty("");
             setSelectedProduct("");
-            fetchAgents(); // Refresh UI
+            fetchAgents(); 
             logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${product.name} to ${selectedAgent.name}`);
 
         } catch (e) {
@@ -141,7 +143,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                         <div className="bg-slate-800 p-4 rounded-xl border-2 border-dashed border-blue-500/50 mb-4 animate-slide-down">
                             <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">Deploy New Agent</h3>
                             
-                            {/* NEW: Role Selector */}
                             <select 
                                 value={newAgent.role} 
                                 onChange={e => setNewAgent({...newAgent, role: e.target.value})} 
@@ -152,9 +153,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                             </select>
 
                             <input type="text" placeholder="Agent Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
+                            
+                            {/* PHASE 1 UPGRADE: EMAIL INPUT */}
+                            <input type="email" placeholder="Google Account Email (Required for Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="w-full bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-mono"/>
+                            
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-3 outline-none focus:border-blue-500"/>
-                            <button onClick={handleCreateAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded text-xs uppercase tracking-widest transition-colors">Register to Fleet</button>
+                            <button onClick={handleCreateAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded text-xs uppercase tracking-widest transition-colors">Authorize & Register</button>
                         </div>
                     )}
 
@@ -177,15 +182,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                                     <div>
                                         <h4 className="font-bold text-sm text-white leading-tight">{m.name}</h4>
                                         <div className="flex items-center gap-2 mt-1">
-                                            {/* ROLE BADGE */}
                                             <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${m.role === 'Canvas' ? 'bg-purple-900/50 text-purple-400 border border-purple-500/30' : 'bg-blue-900/50 text-blue-400 border border-blue-500/30'}`}>
                                                 {m.role || 'Motorist'}
                                             </span>
-                                            <span className="text-[10px] text-slate-400 font-mono">{m.phone}</span>
+                                            {/* PHASE 1 UPGRADE: SHOW EMAIL ON LIST */}
+                                            <span className="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">{m.email || 'No Email'}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right shrink-0">
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>
                                         {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                     </span>
@@ -206,7 +211,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy 
                                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2"><Activity size={12}/> Active Deployment Terminal</p>
                                     <h2 className="text-3xl font-black text-white">{selectedAgent.name}</h2>
                                     <p className="text-xs text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-                                        Type: <span className={selectedAgent.role === 'Canvas' ? 'text-purple-400' : 'text-blue-400'}>{selectedAgent.role || 'Motorist'}</span> | ID: {selectedAgent.id}
+                                        Type: <span className={selectedAgent.role === 'Canvas' ? 'text-purple-400' : 'text-blue-400'}>{selectedAgent.role || 'Motorist'}</span> | 
+                                        {/* PHASE 1 UPGRADE: SHOW EMAIL IN HEADER */}
+                                        <Mail size={12} className="ml-1"/> <span className="font-mono lowercase">{selectedAgent.email || 'Unregistered'}</span>
                                     </p>
                                 </div>
                                 <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-center min-w-[100px]">
