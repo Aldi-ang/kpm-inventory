@@ -2272,7 +2272,7 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
 };
 
 // --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
-const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin }) => {
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     
     const handleLogout = () => {
@@ -2286,7 +2286,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'dashboard', label: 'Overview' },
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
-        { id: 'fleet', label: 'Fleet & Canvas' }, // <--- ADDED FLEET MENU ITEM
+        { id: 'fleet', label: 'Fleet & Canvas' }, 
         { id: 'inventory', label: 'Inventory' },
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
@@ -2299,9 +2299,12 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'settings', label: 'Settings' }
     ];
 
-    const visibleMenu = allMenuItems.filter(item => 
-        isAdmin ? true : !['transactions', 'audit', 'stock_opname', 'restock_vault'].includes(item.id)
-    );
+    // 🛑 UI LOCKDOWN: Strict Sidebar Filtering based on Role
+    const visibleMenu = allMenuItems.filter(item => {
+        if (userRole === 'ADMIN') return true; // Admin sees all tabs
+        // Employees ONLY see these exact modules:
+        return ['map_war_room', 'journey', 'sales'].includes(item.id);
+    });
 
     return (
         <div className="min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
@@ -3638,6 +3641,7 @@ const handleGitHubMirror = async () => {
                         
                         setUser(hijackedUser);
                         setIsAdmin(false); // Employees are never admins
+                        setActiveTab('journey'); // 🛑 UI LOCKDOWN: Force employees to start on Journey Plan
                         console.log("Traffic Cop Success: Employee routed to Master Vault.");
                     } else {
                         alert("Your access has been revoked by the Administrator.");
@@ -4919,7 +4923,8 @@ const handleGitHubMirror = async () => {
         user={user} 
         appSettings={appSettings}
         isAdmin={isAdmin}
-        onLogin={handleLogin} // <--- THIS IS THE MISSING LINK!
+        userRole={userRole}      // <--- ADDED: PASSES IDENTITY TO SIDEBAR
+        ONLOGIN={HANDLELOGIN} 
     >
       {/* 1. GLOBAL MODALS */}
       {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
@@ -4997,7 +5002,7 @@ const handleGitHubMirror = async () => {
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
-         {activeTab === 'dashboard' && (
+         {activeTab === 'dashboard' && userRole === 'ADMIN' && (
               <div className="space-y-8 relative">
                 {/* --- PINPOINT: Pass sessionStatus here --- */}
                 <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
@@ -5115,11 +5120,11 @@ const handleGitHubMirror = async () => {
           {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
           
           {/* NEW FLEET ROUTER */}
-          {activeTab === 'fleet' && (
+          {activeTab === 'fleet' && userRole === 'ADMIN' && (
             <FleetCanvasManager db={db} appId={appId} user={user} inventory={inventory} logAudit={logAudit} triggerCapy={triggerCapy} />
           )}
           
-          {activeTab === 'inventory' && (
+          {activeTab === 'inventory' && userRole === 'ADMIN' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
               
               <ResidentEvilInventory 
