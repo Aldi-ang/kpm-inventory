@@ -17,6 +17,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [paymentMethod, setPaymentMethod] = useState("Cash");
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
+    const [lockedTier, setLockedTier] = useState(null); // <--- NEW: Auto-Pricing Lock
+    
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
@@ -50,15 +52,55 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 2500);
     };
 
+    // --- NEW: AUTO-LOCK PRICING BASED ON CUSTOMER TIER ---
+    const handleCustomerSelect = (cust) => {
+        setCustomerName(cust.name);
+        setShowCustomerDropdown(false);
+        triggerMerchantSpeak('add');
+
+        let mappedTier = null;
+        const tierUpper = (cust.tier || '').toUpperCase();
+        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD')) mappedTier = 'Grosir';
+        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
+        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+        else if (tierUpper.includes('DISTRIBUTOR') || tierUpper.includes('PLATINUM')) mappedTier = 'Distributor';
+
+        setLockedTier(mappedTier);
+
+        if (mappedTier) {
+            setCart(prev => prev.map(item => {
+                const prod = item.product;
+                let base = prod.priceRetail || 0;
+                if (mappedTier === 'Ecer') base = prod.priceEcer || 0;
+                if (mappedTier === 'Grosir') base = prod.priceGrosir || 0;
+                if (mappedTier === 'Distributor') base = prod.priceDistributor || 0;
+
+                let mult = 1;
+                if (item.unit === 'Slop') mult = prod.packsPerSlop || 10;
+                if (item.unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
+                if (item.unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
+
+                return { ...item, priceTier: mappedTier, calculatedPrice: base * mult };
+            }));
+        }
+    };
+
     const addToCart = (product) => {
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
+            // NEW: Respect the locked tier when adding new items!
+            const tierToUse = lockedTier || 'Retail';
+            let basePrice = product.priceRetail || 0;
+            if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
+            if (tierToUse === 'Grosir') basePrice = product.priceGrosir || 0;
+            if (tierToUse === 'Distributor') basePrice = product.priceDistributor || 0;
+
             return [...prev, { 
                 productId: product.id, name: product.name, qty: 1, unit: 'Bks', 
-                priceTier: 'Ecer', calculatedPrice: product.priceEcer || 0, product 
+                priceTier: tierToUse, calculatedPrice: basePrice, product 
             }];
         });
     };
@@ -115,12 +157,15 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
         onProcessSale(finalCust, finalMethod, finalCart);
         
+        const agentFallback = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+
         setReceiptData({
             customer: finalCust,
             method: finalMethod,
             items: finalCart,
             total: finalTotal,
-            date: new Date().toLocaleString('id-ID')
+            date: new Date().toLocaleString('id-ID'),
+            AGENTNAME: AGENTFALLBACK
         });
 
         setCart([]); 
@@ -171,12 +216,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     {showCustomerDropdown && (
                         <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
                             {suggestedCustomers.map(c => (
-                                <div key={c.id} onClick={() => { setCustomerName(c.name); setShowCustomerDropdown(false); }} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
+                                <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
                                     <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
                                 </div>
                             ))}
                             {customerName && !suggestedCustomers.find(c => c.name.toLowerCase() === customerName.toLowerCase()) && (
-                                <div onClick={() => setShowCustomerDropdown(false)} className="p-2 text-xs font-bold text-orange-700 bg-orange-100/50 hover:bg-orange-200 cursor-pointer italic uppercase">
+                                <div onClick={() => { setShowCustomerDropdown(false); setLockedTier(null); }} className="p-2 text-xs font-bold text-orange-700 bg-orange-100/50 hover:bg-orange-200 cursor-pointer italic uppercase">
                                     Use "{customerName}" (One-time)
                                 </div>
                             )}
@@ -212,7 +257,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
                                 />
                                 <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1"><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
                             </div>
 
                           <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
@@ -329,41 +374,73 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
             
             {receiptData && (
-                <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4 animate-fade-in">
-                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } } `}</style>
-                    <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-800 rounded-lg overflow-hidden">
-                        <button onClick={() => setReceiptData(null)} className="no-print absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-gray-100 p-1 rounded-full transition-colors"><X size={20}/></button>
-                        <div className="p-8 pb-4 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-50 pointer-events-none"></div>
-                            <div className="text-center mb-6 relative z-10">
-                                <ShoppingBag size={32} className="mx-auto mb-2 text-gray-800"/>
-                                <h2 className="text-2xl font-black uppercase tracking-[0.2em]">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                <p className="text-[10px] text-gray-500 font-bold mt-2 uppercase tracking-widest">--- Official Sales Receipt ---</p>
-                            </div>
-                            <div className="border-t-2 border-b-2 border-dashed border-gray-300 py-4 mb-4 text-xs relative z-10 bg-gray-50/80 p-4 rounded">
-                                <div className="flex justify-between mb-1"><span className="text-gray-500">DATE:</span><span className="font-bold">{receiptData.date}</span></div>
-                                <div className="flex justify-between mb-1"><span className="text-gray-500">CUSTOMER:</span><span className="font-bold uppercase">{receiptData.customer}</span></div>
-                                <div className="flex justify-between"><span className="text-gray-500">PAYMENT:</span><span className="font-bold uppercase bg-gray-200 px-2 rounded-[4px] text-[10px]">{receiptData.method}</span></div>
-                            </div>
-                            <div className="min-h-[150px] relative z-10">
-                                <table className="w-full text-left mb-4">
-                                    <thead><tr className="text-[10px] text-gray-500 border-b border-gray-200"><th className="pb-2 font-bold">ITEM</th><th className="pb-2 text-right font-bold">QTY</th><th className="pb-2 text-right font-bold">TOTAL</th></tr></thead>
-                                    <tbody className="divide-y divide-dashed divide-gray-200">
-                                        {receiptData.items.map((item, i) => (
-                                            <tr key={i}><td className="py-3 pr-2"><div className="font-bold uppercase text-xs break-words">{item.name}</div><div className="text-[10px] text-gray-500">@ {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / {item.unit}</div></td><td className="py-3 text-right font-bold align-top">{item.qty}</td><td className="py-3 text-right font-black align-top">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</td></tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="flex justify-between items-center text-xl font-black mb-6 border-t-2 border-gray-800 pt-4 relative z-10"><span>TOTAL PAID</span><span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total)}</span></div>
-                            <div className="text-center text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest relative z-10"><p>*** ALL SALES ARE FINAL ***</p><p className="mt-1">Thank you for your patronage.</p></div>
-                        </div>
-                        <div className="no-print bg-[#1a1815] p-4 flex gap-3 border-t-4 border-[#ff9d00]">
-                            <button onClick={() => window.print()} className="flex-1 bg-[#3e3226] text-[#ff9d00] py-3 rounded-lg uppercase font-black flex items-center justify-center gap-2 hover:bg-[#5c4b3a] hover:text-white transition-all tracking-widest text-xs shadow-lg border-2 border-[#5c4b3a] active:scale-95"><Printer size={18}/> Print</button>
-                            <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-black flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-all tracking-widest text-xs shadow-lg border-2 border-[#128C7E] active:scale-95"><MessageSquare size={18}/> WhatsApp</button>
-                        </div>
-                    </div>
-                </div>
+                 <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+                     <style>{`
+                         @media print { 
+                             body * { visibility: hidden; } 
+                             .print-receipt, .print-receipt * { visibility: visible; } 
+                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } 
+                             .no-print { display: none !important; }
+                         }
+                     `}</style>
+                     <div className="print-receipt bg-white w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in" style={{ color: '#000' }}>
+                         
+                         <div className="p-6 pb-2">
+                             <div className="text-center mb-6">
+                                 <h2 className="text-2xl font-black uppercase tracking-widest" style={{ color: '#000' }}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] font-bold mt-1" style={{ color: '#666' }}>OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] mt-1 uppercase tracking-widest" style={{ color: '#888' }}>CUSTOMER COPY</p>
+                             </div>
+                             
+                             {/* BULLETPROOF: Forced Black Text via inline styles */}
+                             <div className="bg-slate-100 rounded-lg p-4 mb-4 text-xs border border-slate-300 space-y-2 shadow-inner">
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>DATE:</span><span style={{ color: '#000', fontWeight: '900' }}>{receiptData.date}</span></div>
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>CUST:</span><span style={{ color: '#000', fontWeight: '900' }}>{receiptData.customer}</span></div>
+                                 {/* NEW: Agent Name Displayed */}
+                                 {receiptData.agentName && receiptData.agentName !== 'Admin' && (
+                                     <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>AGENT:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{receiptData.agentName}</span></div>
+                                 )}
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>TYPE:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{receiptData.method || 'Cash'}</span></div>
+                             </div>
+
+                             <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
+                                 {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
+                                     <div key={i} className="mb-2">
+                                         <div className="font-bold uppercase text-xs" style={{ color: '#000' }}>{item.name}</div>
+                                         <div className="flex justify-between text-xs mt-0.5" style={{ color: '#555' }}>
+                                             <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                             <span style={{ color: '#000', fontWeight: 'bold' }}>{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                         </div>
+                                     </div>
+                                 )) : null}
+                             </div>
+
+                             <div className="flex justify-between items-center text-lg font-black mb-6" style={{ color: '#000' }}>
+                                 <span>TOTAL</span>
+                                 <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
+                             </div>
+                             
+                             <div className="text-center text-[10px] mb-4 font-bold" style={{ color: '#777' }}>
+                                 <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
+                             </div>
+                         </div>
+
+                         {/* Action Buttons */}
+                         <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
+                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-[10px] shadow-md">
+                                 <Printer size={14}/> Print
+                             </button>
+                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md">
+                                 <MessageSquare size={14}/> Share
+                             </button>
+                         </div>
+
+                         {/* BULLETPROOF MASSIVE CLOSE BUTTON AT BOTTOM */}
+                         <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" style={{ color: '#fff' }}>
+                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
+                         </button>
+                     </div>
+                 </div>
             )}
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
         </div>
