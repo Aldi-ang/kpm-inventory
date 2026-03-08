@@ -80,8 +80,16 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId }) => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-black text-emerald-400">{item.qty}</p>
-                                    <p className="text-[9px] text-slate-400 uppercase tracking-widest">{item.unit}</p>
+                                    {/* Smart Math: Convert everything to pure base Bks to avoid decimal confusion */}
+                                    <p className="text-2xl font-black text-emerald-400">
+                                        {Math.floor(item.qty * (item.unit === 'Slop' ? 10 : item.unit === 'Bal' ? 200 : item.unit === 'Karton' ? 800 : 1))}
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 uppercase tracking-widest">Total Bks</p>
+                                    
+                                    {/* Display the raw container data below it for reference */}
+                                    <p className="text-[8px] text-slate-600 font-mono mt-1 border-t border-white/10 pt-1">
+                                        [{Number(item.qty).toFixed(1)} {item.unit}]
+                                    </p>
                                 </div>
                             </div>
                         ))}

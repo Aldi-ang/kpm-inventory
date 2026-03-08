@@ -807,6 +807,9 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
   const filteredTransactions = useMemo(() => {
       const target = new Date(targetDate);
       return transactions.filter(t => {
+          // 🛑 SECURITY: Employees ONLY see their own transactions! Admin sees all.
+          if (!isAdmin && user?.agentId && t.agentId !== user.agentId) return false;
+
           const tDate = new Date(t.date);
           if (rangeType === 'daily') return t.date === targetDate;
           if (rangeType === 'weekly') {
@@ -1021,8 +1024,11 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              .no-print { display: none !important; }
                          }
                      `}</style>
-                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-200 animate-fade-in">
-                         <button onClick={() => setViewingReceipt(null)} className="no-print absolute -top-12 right-0 text-white hover:text-red-500"><X size={32}/></button>
+                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-200 animate-fade-in mt-12">
+                         {/* FIX: Moved X button INSIDE the visible screen area to make it clickable on mobile */}
+                         <button onClick={() => setViewingReceipt(null)} className="no-print absolute -top-4 -right-4 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-colors z-[300]">
+                             <X size={24}/>
+                         </button>
                          
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
@@ -1034,6 +1040,10 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              <div className="border-t-2 border-dashed border-gray-400 py-3 mb-3 text-xs">
                                  <div className="flex justify-between"><span>DATE:</span><span>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
                                  <div className="flex justify-between"><span>CUST:</span><span className="font-bold">{viewingReceipt.customerName}</span></div>
+                                 {/* NEW: Display which Agent made the sale! */}
+                                 {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
+                                     <div className="flex justify-between"><span>AGENT:</span><span className="uppercase text-slate-500">{viewingReceipt.agentName}</span></div>
+                                 )}
                                  <div className="flex justify-between"><span>TYPE:</span><span className="uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
                              </div>
 
@@ -2291,7 +2301,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'journey', label: 'Journey Plan' },
         { id: 'fleet', label: 'Fleet & Canvas' }, 
         { id: 'inventory', label: 'Master Vault' },
-        { id: 'agent_inventory', label: 'My Vehicle Canvas' }, // <--- ADDED EMPLOYEE INVENTORY
+        { id: 'agent_inventory', label: 'Agent Inventory' }, // <--- RENAMED
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
         { id: 'consignment', label: 'Consignment' },
@@ -2307,11 +2317,10 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     const visibleMenu = allMenuItems.filter(item => {
         if (userRole === 'ADMIN') {
             if (isAdmin) return true; // UNLOCKED Admin: sees everything
-            // LOCKED Admin (Safe Mode):
             return ['map_war_room', 'journey', 'fleet', 'sales'].includes(item.id);
         }
-        // Employees:
-        return ['map_war_room', 'journey', 'sales', 'agent_inventory'].includes(item.id);
+        // Employees: Added 'transactions' so they can see their own history!
+        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions'].includes(item.id);
     });
 
     return (
@@ -4202,7 +4211,18 @@ const handleGitHubMirror = async () => {
               }
 
               const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
-              firestoreTrans.set(transRef, { date: getCurrentDate(), customerName, paymentType, items: transactionItems, total: totalRevenue, totalProfit: totalProfit, type: 'SALE', timestamp: serverTimestamp() }); 
+              firestoreTrans.set(transRef, { 
+                  date: getCurrentDate(), 
+                  customerName, 
+                  paymentType, 
+                  items: transactionItems, 
+                  total: totalRevenue, 
+                  totalProfit: totalProfit, 
+                  type: 'SALE', 
+                  timestamp: serverTimestamp(),
+                  agentId: agentProfileId || 'ADMIN',       // <--- Links sale to Agent ID
+                  agentName: user.displayName || 'Admin'    // <--- Links sale to Agent Name
+              }); 
           }); 
 
           await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
