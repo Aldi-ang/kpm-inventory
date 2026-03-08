@@ -795,20 +795,20 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
 };
 
 // --- PINPOINT: Top of HistoryReportView (Line 508) ---
-const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, appSettings }) => {
+const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, appSettings, userRole, agentProfileId }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [reportView, setReportView] = useState(false);
   const [rangeType, setRangeType] = useState('daily');
   const [targetDate, setTargetDate] = useState(getCurrentDate());
   const [editingTrans, setEditingTrans] = useState(null);
-  const [viewingReceipt, setViewingReceipt] = useState(null); // <--- NEW: Controls the Receipt Modal
+  const [viewingReceipt, setViewingReceipt] = useState(null); 
 
   // Filter Transactions based on Date Range
   const filteredTransactions = useMemo(() => {
       const target = new Date(targetDate);
       return transactions.filter(t => {
           // 🛑 SECURITY: Employees ONLY see their own transactions! Admin sees all.
-          if (!isAdmin && user?.agentId && t.agentId !== user.agentId) return false;
+          if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return false;
 
           const tDate = new Date(t.date);
           if (rangeType === 'daily') return t.date === targetDate;
@@ -1024,31 +1024,23 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              .no-print { display: none !important; }
                          }
                      `}</style>
-                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in overflow-hidden">
-                         
-                         {/* NEW: Solid, unmissable Red Close Bar for Mobile */}
-                         <div className="bg-slate-100 border-b border-gray-300 p-3 flex justify-between items-center no-print">
-                             <span className="font-black text-slate-400 text-xs tracking-widest">SYSTEM RECEIPT</span>
-                             <button onClick={() => setViewingReceipt(null)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 transition-all active:scale-95">
-                                 <X size={18}/> CLOSE
-                             </button>
-                         </div>
+                     <div className="print-receipt bg-white w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in" style={{ color: '#000' }}>
                          
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] text-gray-600 font-bold mt-1">OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">REPRINT COPY</p>
+                                 <h2 className="text-2xl font-black uppercase tracking-widest" style={{ color: '#000' }}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] font-bold mt-1" style={{ color: '#666' }}>OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] mt-1 uppercase tracking-widest" style={{ color: '#888' }}>REPRINT COPY</p>
                              </div>
                              
-                             {/* NEW: High Contrast Info Box */}
-                             <div className="bg-gray-100 rounded-lg p-3 mb-4 text-xs border border-gray-300 space-y-1.5 shadow-inner">
-                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">DATE:</span><span className="text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">CUST:</span><span className="text-black font-black">{viewingReceipt.customerName}</span></div>
+                             {/* BULLETPROOF: Forced Black Text via inline styles */}
+                             <div className="bg-slate-100 rounded-lg p-4 mb-4 text-xs border border-slate-300 space-y-2 shadow-inner">
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>DATE:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>CUST:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.customerName}</span></div>
                                  {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
-                                     <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">AGENT:</span><span className="text-black font-black uppercase">{viewingReceipt.agentName}</span></div>
+                                     <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>AGENT:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{viewingReceipt.agentName}</span></div>
                                  )}
-                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">TYPE:</span><span className="text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>TYPE:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{viewingReceipt.paymentType || 'Cash'}</span></div>
                              </div>
 
                              <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
@@ -1079,15 +1071,18 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
                         {/* --- PINPOINT: Action Buttons inside viewingReceipt Modal --- */}
                          <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
-                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-xs shadow-md">
-                                 <Printer size={16}/> Print Receipt
+                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-[10px] shadow-md">
+                                 <Printer size={14}/> Print
                              </button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-xs shadow-md">
-                                 <MessageSquare size={16}/> WhatsApp
+                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md">
+                                 <MessageSquare size={14}/> Share
                              </button>
                          </div>
 
-                         
+                         {/* BULLETPROOF MASSIVE CLOSE BUTTON AT BOTTOM */}
+                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" style={{ color: '#fff' }}>
+                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
+                         </button>
                      </div>
                  </div>
              )}
@@ -1237,7 +1232,9 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customerStats.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group"><button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button><div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div><h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3><div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div></div>))}
+                {customerStats.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group">
+                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>}
+                    <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div><h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3><div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div></div>))}
             </div>
         </div>
       ); 
@@ -4224,8 +4221,9 @@ const handleGitHubMirror = async () => {
                   totalProfit: totalProfit, 
                   type: 'SALE', 
                   timestamp: serverTimestamp(),
-                  agentId: agentProfileId || 'ADMIN',       // <--- Links sale to Agent ID
-                  agentName: user.displayName || 'Admin'    // <--- Links sale to Agent Name
+                  agentId: agentProfileId || 'ADMIN',
+                  // Fallback: If no Display Name, split the email prefix and use that!
+                  agentName: agentProfileId ? (user.displayName || user.email?.split('@')[0] || 'Agent') : 'Admin' 
               }); 
           }); 
 
@@ -5439,7 +5437,7 @@ const handleGitHubMirror = async () => {
           )}
           
           {/* --- PINPOINT: Main App Render Block (Line 2618) --- */}
-          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} appSettings={appSettings} />}
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} />}
           
          {activeTab === 'audit' && (
     <div className="space-y-6 max-w-5xl mx-auto p-4">
