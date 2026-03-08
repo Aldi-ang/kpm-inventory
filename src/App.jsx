@@ -794,211 +794,137 @@ const ConsignmentView = ({ transactions, inventory, onAddGoods, onPayment, onRet
     );
 };
 
-// --- PINPOINT: Top of HistoryReportView (Line 508) ---
+// --- HIERARCHICAL RBAC REPORT ENGINE ---
 const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, appSettings, userRole, agentProfileId }) => {
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [reportView, setReportView] = useState(false);
-  const [rangeType, setRangeType] = useState('daily');
-  const [targetDate, setTargetDate] = useState(getCurrentDate());
-  const [editingTrans, setEditingTrans] = useState(null);
-  const [viewingReceipt, setViewingReceipt] = useState(null); 
+    const [selectedAgent, setSelectedAgent] = useState(null);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [reportView, setReportView] = useState(false);
+    const [rangeType, setRangeType] = useState('daily');
+    const [targetDate, setTargetDate] = useState(getCurrentDate());
+    const [editingTrans, setEditingTrans] = useState(null);
+    const [viewingReceipt, setViewingReceipt] = useState(null); 
 
-  // Filter Transactions based on Date Range
-  const filteredTransactions = useMemo(() => {
-      const target = new Date(targetDate);
-      return transactions.filter(t => {
-          // 🛑 SECURITY: Employees ONLY see their own transactions! Admin sees all.
-          if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return false;
+    // 1. RBAC & FOLDER STRUCTURE ENGINE
+    const reportData = useMemo(() => {
+        const structure = {};
+        transactions.forEach(t => {
+            // Security: Employees only see their own transactions!
+            if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return;
+            
+            const agent = t.agentName || 'Admin';
+            let cust = (t.customerName || 'Walk-in Customer').trim();
+            
+            // Auto-Route "Individuals" (Walk-ins & Ecer pricing)
+            const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
+            const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
+            
+            if (isWalkIn || isEcer) {
+                cust = "Individuals (Ecer)";
+            }
 
-          const tDate = new Date(t.date);
-          if (rangeType === 'daily') return t.date === targetDate;
-          if (rangeType === 'weekly') {
-              const startOfWeek = new Date(target);
-              startOfWeek.setDate(target.getDate() - target.getDay()); 
-              const endOfWeek = new Date(startOfWeek);
-              endOfWeek.setDate(startOfWeek.getDate() + 6);
-              return tDate >= startOfWeek && tDate <= endOfWeek;
-          }
-          if (rangeType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
-          if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
-          return false;
-      }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-  }, [transactions, rangeType, targetDate, isAdmin, user]); // <--- Security triggers added here!
+            // Initialize Agent Level
+            if (!structure[agent]) structure[agent] = { name: agent, total: 0, count: 0, customers: {}, lastDate: t.date };
+            structure[agent].total += (t.total || t.amountPaid || 0);
+            structure[agent].count += 1;
+            if (t.date > structure[agent].lastDate) structure[agent].lastDate = t.date;
 
-  // Calculate Statistics
-  const stats = useMemo(() => {
-    const totalRev = filteredTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
-    const totalProfit = filteredTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0); // New Profit Stat
-    const count = filteredTransactions.length;
-    const items = {};
-    
-    // Payment Method Breakdown
-    const payments = {
-        Cash: 0,
-        QRIS: 0,
-        Transfer: 0,
-        Titip: 0
+            // Initialize Customer Level
+            if (!structure[agent].customers[cust]) structure[agent].customers[cust] = { name: cust, count: 0, total: 0, lastDate: t.date, history: [] };
+            
+            structure[agent].customers[cust].count += 1;
+            structure[agent].customers[cust].total += (t.total || t.amountPaid || 0);
+            if (t.date > structure[agent].customers[cust].lastDate) structure[agent].customers[cust].lastDate = t.date;
+            
+            structure[agent].customers[cust].history.push(t);
+        });
+        return structure;
+    }, [transactions, userRole, agentProfileId]);
+
+    // Auto-route Employees directly to their Customer Folders
+    useEffect(() => {
+        if (userRole !== 'ADMIN') {
+            const agents = Object.keys(reportData);
+            if (agents.length > 0 && !selectedAgent) setSelectedAgent(agents[0]);
+        }
+    }, [userRole, reportData, selectedAgent]);
+
+    // 2. ANALYTICS FILTERING
+    const filteredTransactions = useMemo(() => {
+        const target = new Date(targetDate);
+        return transactions.filter(t => {
+            if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return false;
+            if (userRole === 'ADMIN' && selectedAgent && (t.agentName || 'Admin') !== selectedAgent) return false;
+
+            const tDate = new Date(t.date);
+            if (rangeType === 'daily') return t.date === targetDate;
+            if (rangeType === 'weekly') {
+                const start = new Date(target); start.setDate(target.getDate() - target.getDay()); 
+                const end = new Date(start); end.setDate(start.getDate() + 6);
+                return tDate >= start && tDate <= end;
+            }
+            if (rangeType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
+            if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
+            return false;
+        }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+    }, [transactions, rangeType, targetDate, isAdmin, user, userRole, agentProfileId, selectedAgent]);
+
+    const stats = useMemo(() => {
+        const totalRev = filteredTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+        const totalProfit = filteredTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0); 
+        const count = filteredTransactions.length;
+        const items = {};
+        const payments = { Cash: 0, QRIS: 0, Transfer: 0, Titip: 0 };
+
+        filteredTransactions.forEach(t => {
+            const method = t.paymentType || 'Cash';
+            if (payments[method] !== undefined) payments[method] += (t.total || t.amountPaid || 0);
+            else payments['Cash'] += (t.total || t.amountPaid || 0);
+
+            if(t.items) t.items.forEach(i => {
+                const product = inventory.find(p => p.id === i.productId);
+                const bksQty = convertToBks(i.qty, i.unit, product || {});
+                if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
+                items[i.name].qty += bksQty;
+                items[i.name].val += (i.calculatedPrice * i.qty);
+            });
+        });
+        return { totalRev, totalProfit, count, items, payments, transactions: filteredTransactions };
+    }, [filteredTransactions, inventory]);
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        if(!editingTrans || !user) return;
+        const formData = new FormData(e.target);
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
+                date: formData.get('date'),
+                customerName: formData.get('customerName'),
+                total: parseFloat(formData.get('total')) || 0,
+                updatedAt: serverTimestamp()
+            });
+            setEditingTrans(null);
+        } catch(err) { alert(err.message); }
     };
 
-    filteredTransactions.forEach(t => {
-        // Sum up payment types
-        const method = t.paymentType || 'Cash';
-        if (payments[method] !== undefined) {
-            payments[method] += (t.total || t.amountPaid || 0);
-        } else {
-            // Handle edge cases or old data
-            payments['Cash'] += (t.total || t.amountPaid || 0);
-        }
+    const handleWhatsAppShare = () => {
+        if (!viewingReceipt) return;
+        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT (REPRINT)*\n------------------------\n`;
+        text += `Date: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') : viewingReceipt.date}\n`;
+        text += `Customer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+        if (viewingReceipt.items) {
+            viewingReceipt.items.forEach(item => {
+                text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
+            });
+        } else text += `Transaction Record\n`;
+        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
 
-        // Sum up items
-        if(t.items) t.items.forEach(i => {
-            const product = inventory.find(p => p.id === i.productId);
-            const bksQty = convertToBks(i.qty, i.unit, product || {});
-            if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
-            items[i.name].qty += bksQty;
-            items[i.name].val += (i.calculatedPrice * i.qty);
-        });
-    });
-    return { totalRev, totalProfit, count, items, payments, transactions: filteredTransactions };
-  }, [filteredTransactions, inventory]);
-
-  const handleEditSubmit = async (e) => {
-      e.preventDefault();
-      if(!editingTrans || !user) return;
-      const formData = new FormData(e.target);
-      const updates = {
-          date: formData.get('date'),
-          customerName: formData.get('customerName'),
-          total: parseFloat(formData.get('total')) || 0,
-          updatedAt: serverTimestamp()
-      };
-      try {
-          await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), updates);
-          setEditingTrans(null);
-      } catch(err) { alert(err.message); }
-  };
-
-  // --- EXCEL EXPORT WITH PAYMENT BREAKDOWN ---
-  const generateExcel = () => {
-      const wb = XLSX.utils.book_new();
-
-      // 1. Header Info
-      const reportInfo = [
-          ["KPM INVENTORY - SALES REPORT"],
-          [`Period: ${rangeType.toUpperCase()}`],
-          [`Date Selected: ${targetDate}`],
-          [`Generated On: ${new Date().toLocaleString()}`],
-          [""]
-      ];
-
-      // 2. Summary Statistics
-      const summaryInfo = [
-          ["SUMMARY STATISTICS"],
-          ["Total Revenue", stats.totalRev], 
-          ["Total Profit (Cuan)", stats.totalProfit],
-          ["Total Transactions", stats.count],
-          ["Items Sold (Bks)", Object.values(stats.items).reduce((a,b)=>a+b.qty,0)],
-          [""]
-      ];
-
-      // 3. Payment Breakdown (New Section in Excel)
-      const paymentInfo = [
-          ["PAYMENT RECONCILIATION"],
-          ["Cash (Drawer)", stats.payments.Cash],
-          ["QRIS", stats.payments.QRIS],
-          ["Transfer (Bank)", stats.payments.Transfer],
-          ["Titip (Unpaid)", stats.payments.Titip],
-          [""]
-      ];
-
-      // 4. Main Data Table
-      const tableHeader = [["DATE", "TIME", "CUSTOMER", "TYPE", "PAYMENT", "ITEMS / DETAILS", "TOTAL (Rp)"]];
-      
-      const tableData = stats.transactions.map(t => {
-          const timeStr = t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-          let itemsStr = "";
-          if (t.items && t.items.length > 0) {
-              itemsStr = t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ");
-          } else if (t.paymentType === 'Titip') {
-              itemsStr = "Consignment Request";
-          } else if (t.itemsPaid) {
-              itemsStr = `Payment for ${t.itemsPaid.length} items`;
-          }
-
-          return [
-              t.date,
-              timeStr,
-              t.customerName,
-              t.type,
-              t.paymentType || 'Cash',
-              itemsStr,
-              t.total || t.amountPaid
-          ];
-      });
-
-      const finalData = [...reportInfo, ...summaryInfo, ...paymentInfo, ...tableHeader, ...tableData];
-      const ws = XLSX.utils.aoa_to_sheet(finalData);
-
-      // Set Column Widths
-      ws['!cols'] = [
-          { wch: 12 }, // Date
-          { wch: 10 }, // Time
-          { wch: 25 }, // Customer
-          { wch: 10 }, // Type
-          { wch: 10 }, // Payment Method
-          { wch: 50 }, // Items
-          { wch: 15 }  // Total
-      ];
-
-      XLSX.utils.book_append_sheet(wb, ws, "Sales Data");
-      XLSX.writeFile(wb, `KPM_Report_${rangeType}_${targetDate}.xlsx`);
-  };
-
-  const handlePrint = () => {
-      window.print();
-  };
-
-  const customerStats = useMemo(() => { const stats = {}; transactions.forEach(t => { const name = t.customerName || 'Unknown'; if (!stats[name]) stats[name] = { name, count: 0, total: 0, lastDate: t.date, history: [] }; stats[name].count += 1; if (t.type === 'SALE' || t.type === 'RETURN') stats[name].total += t.total || 0; if (t.date > stats[name].lastDate) stats[name].lastDate = t.date; stats[name].history.push(t); }); return Object.values(stats).sort((a,b) => b.total - a.total); }, [transactions]);
-
-// --- PINPOINT: Paste right above "if (reportView) {" (Line 598) ---
-  const handleWhatsAppShare = () => {
-      if (!viewingReceipt) return;
-      
-      let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n`;
-      text += `*OFFICIAL RECEIPT (REPRINT)*\n`;
-      text += `------------------------\n`;
-      
-      // Formatting Date properly from Firestore Timestamp or Fallback Date
-      const receiptDate = viewingReceipt.timestamp 
-          ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') 
-          : viewingReceipt.date;
-          
-      text += `Date: ${receiptDate}\n`;
-      text += `Customer: ${viewingReceipt.customerName}\n`;
-      text += `Payment: ${viewingReceipt.paymentType || 'Cash'}\n`;
-      text += `------------------------\n`;
-      
-      if (viewingReceipt.items && viewingReceipt.items.length > 0) {
-          viewingReceipt.items.forEach(item => {
-              text += `${item.qty} ${item.unit} ${item.name}\n`;
-              text += `   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
-          });
-      } else {
-          text += `${viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment' : 'Transaction Record'}\n`;
-      }
-      
-      text += `------------------------\n`;
-      text += `*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\n`;
-      text += `Thank you for your business!`;
-
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  if (reportView) {
-      return (
-        <div className="animate-fade-in max-w-5xl mx-auto">
-             {/* EDIT MODAL */}
-             {editingTrans && (
+    return (
+        <div className="animate-fade-in max-w-5xl mx-auto pb-20 relative">
+            
+            {/* GLOBAL MODALS (Always rendered on top if active) */}
+            {editingTrans && (
                  <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
                      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
                          <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Transaction</h3>
@@ -1012,28 +938,16 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  </div>
              )}
 
-             {/* --- PINPOINT: Paste below Edit Modal, above Header Controls (Line 615) --- */}
-             {/* NEW: THERMAL RECEIPT MODAL FOR PAST TRANSACTIONS */}
-             {viewingReceipt && (
+            {viewingReceipt && (
                  <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
-                     <style>{`
-                         @media print { 
-                             body * { visibility: hidden; } 
-                             .print-receipt, .print-receipt * { visibility: visible; } 
-                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } 
-                             .no-print { display: none !important; }
-                         }
-                     `}</style>
+                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } }`}</style>
                      <div className="print-receipt bg-white w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in" style={{ color: '#000' }}>
-                         
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
                                  <h2 className="text-2xl font-black uppercase tracking-widest" style={{ color: '#000' }}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
                                  <p className="text-[10px] font-bold mt-1" style={{ color: '#666' }}>OFFICIAL SALES RECEIPT</p>
                                  <p className="text-[9px] mt-1 uppercase tracking-widest" style={{ color: '#888' }}>REPRINT COPY</p>
                              </div>
-                             
-                             {/* BULLETPROOF: Forced Black Text via inline styles */}
                              <div className="bg-slate-100 rounded-lg p-4 mb-4 text-xs border border-slate-300 space-y-2 shadow-inner">
                                  <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>DATE:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
                                  <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>CUST:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.customerName}</span></div>
@@ -1042,7 +956,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                  )}
                                  <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>TYPE:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{viewingReceipt.paymentType || 'Cash'}</span></div>
                              </div>
-
                              <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
                                  {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
                                      <div key={i} className="mb-2">
@@ -1053,218 +966,249 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                          </div>
                                      </div>
                                  )) : (
-                                     <div className="flex items-center justify-center h-full text-gray-400 text-[10px] uppercase tracking-widest text-center">
-                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment Record' : 'No Itemized Data Available'}
-                                     </div>
+                                     <div className="flex items-center justify-center h-full text-gray-400 text-[10px] uppercase tracking-widest text-center">No Itemized Data Available</div>
                                  )}
                              </div>
-
                              <div className="flex justify-between items-center text-lg font-black mb-6">
-                                 <span>TOTAL</span>
-                                 <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
+                                 <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
                              </div>
-                             
-                             <div className="text-center text-[10px] text-gray-500 mb-4 font-bold">
-                                 <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
-                             </div>
+                             <div className="text-center text-[10px] text-gray-500 mb-4 font-bold"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
                          </div>
-
-                        {/* --- PINPOINT: Action Buttons inside viewingReceipt Modal --- */}
                          <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
-                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-[10px] shadow-md">
-                                 <Printer size={14}/> Print
-                             </button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md">
-                                 <MessageSquare size={14}/> Share
-                             </button>
+                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-[10px] shadow-md"><Printer size={14}/> Print</button>
+                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md"><MessageSquare size={14}/> Share</button>
                          </div>
-
-                         {/* BULLETPROOF MASSIVE CLOSE BUTTON AT BOTTOM */}
-                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" style={{ color: '#fff' }}>
-                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
-                         </button>
+                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" style={{ color: '#fff' }}><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
                      </div>
                  </div>
              )}
 
-             {/* HEADER CONTROLS (Hidden on Print) */}
-             <div className="print:hidden">
-                <button onClick={() => setReportView(false)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
-                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-xl border dark:border-slate-700">
-                        {['daily', 'weekly', 'monthly', 'yearly'].map(t => (
-                            <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{t}</button>
-                        ))}
+            {/* --- ANALYTICS DASHBOARD --- */}
+            {reportView && (
+                <div className="animate-fade-in relative z-10">
+                     <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-xl border dark:border-slate-700">
+                                {['daily', 'weekly', 'monthly', 'yearly'].map(t => (
+                                    <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{t}</button>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
+                                <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
+                            </div>
+                        </div>
+                     </div>
+
+                     <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
+                         <div className="flex justify-between items-end mb-8 border-b-2 border-orange-500 pb-4">
+                             <div>
+                                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
+                                     {userRole === 'ADMIN' ? (selectedAgent ? `${selectedAgent}'s Analytics` : 'Master Sales Analytics') : 'My Analytics'}
+                                 </h1>
+                                 <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
+                             </div>
+                             <div className="text-right"><p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p><p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
+                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p><p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
+                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Net Profit (Cuan)</p><p className="text-2xl font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
+                         </div>
+
+                         <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
+                            <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Wallet size={20} className="text-emerald-500"/> Money Breakdown</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
+                                    <div key={method} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
+                                        <p className="text-xs uppercase font-bold text-slate-400 mb-1">{method}</p>
+                                        <p className={`text-lg font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>{formatRupiah(stats.payments[method])}</p>
+                                    </div>
+                                ))}
+                            </div>
+                         </div>
+
+                         <div className="mb-8">
+                             <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="text-orange-500"/> Product Performance</h3>
+                             <div className="overflow-x-auto pb-2">
+                                 <table className="w-full text-sm text-left border-collapse min-w-[450px]">
+                                    <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
+                                        <tr><th className="py-2 w-1/2">Product Name</th><th className="py-2 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 text-right w-1/4">Revenue</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
+                                        {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
+                                            <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                                <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
+                                                <td className="py-3 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
+                                                <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                 </table>
+                             </div>
+                         </div>
+                     </div>
+                </div>
+            )}
+
+            {/* --- LEVEL 0: AGENT SELECTION (ADMIN ONLY) --- */}
+            {!reportView && !selectedAgent && userRole === 'ADMIN' && (
+                <div className="space-y-6 animate-fade-in relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><User size={24} className="text-blue-500"/> Team Reports</h2>
+                        <button onClick={() => setReportView(true)} className="bg-blue-600 hover:bg-blue-500 border border-blue-400 px-6 py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-white transition-all group">
+                            <div className="bg-white/20 p-2 rounded-lg text-white group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
+                            <span>Master Analytics</span>
+                        </button>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
-                        <button onClick={generateExcel} className="bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Download Excel (.xlsx)"><FileSpreadsheet size={20}/></button>
-                        <button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
+                    {Object.keys(reportData).length === 0 ? (
+                        <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Sales Recorded</p></div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.values(reportData).sort((a,b) => b.total - a.total).map(a => (
+                                <div key={a.name} onClick={() => setSelectedAgent(a.name)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><User size={24} /></div>
+                                        <span className="text-xs font-mono text-slate-400">{a.lastDate}</span>
+                                    </div>
+                                    <h3 className="font-bold text-lg dark:text-white mb-2">{a.name}</h3>
+                                    <div className="flex justify-between items-end">
+                                        <div><p className="text-[10px] text-slate-500 uppercase tracking-widest">Revenue</p><p className="font-bold text-emerald-500 text-lg">{formatRupiah(a.total)}</p></div>
+                                        <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest">Sales</p><p className="font-bold dark:text-white text-lg">{a.count}</p></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- LEVEL 1: CUSTOMER SELECTION (ADMIN OR AGENT) --- */}
+            {!reportView && selectedAgent && !selectedCustomer && (
+                <div className="space-y-6 animate-fade-in relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex items-center gap-4">
+                            {userRole === 'ADMIN' && <button onClick={() => setSelectedAgent(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/></button>}
+                            <div>
+                                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> {userRole === 'ADMIN' ? `${selectedAgent}'s Routing` : 'My Routing'}</h2>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Select a destination to view receipts</p>
+                            </div>
+                        </div>
+                        <button onClick={() => setReportView(true)} className="bg-orange-600 hover:bg-orange-500 border border-orange-400 px-6 py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-white transition-all group">
+                            <div className="bg-white/20 p-2 rounded-lg text-white group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
+                            <span>{userRole === 'ADMIN' ? `${selectedAgent}'s Analytics` : 'My Analytics'}</span>
+                        </button>
+                    </div>
+
+                    {!reportData[selectedAgent] ? (
+                        <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Customers Visited</p></div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.values(reportData[selectedAgent].customers).sort((a,b) => b.total - a.total).map(c => {
+                                const isIndiv = c.name === "Individuals (Ecer)";
+                                return (
+                                    <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-white dark:bg-slate-800 p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500' : 'dark:border-slate-700 hover:border-orange-500'}`}>
+                                        {isAdmin && (
+                                            <button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name, selectedAgent); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>
+                                        )}
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className={`p-3 rounded-lg transition-colors ${isIndiv ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white' : 'bg-orange-100 dark:bg-slate-700 text-orange-600 group-hover:bg-orange-500 group-hover:text-white'}`}>
+                                                {isIndiv ? <User size={24}/> : <Store size={24} />}
+                                            </div>
+                                            <span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span>
+                                        </div>
+                                        <h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3>
+                                        <div className="flex justify-between items-end mt-4">
+                                            <div><p className="text-[10px] text-slate-500 uppercase tracking-widest">Total Value</p><p className={`font-bold ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
+                                            <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest">Receipts</p><p className="font-bold dark:text-white">{c.count}</p></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- LEVEL 2: RECEIPT ARCHIVE --- */}
+            {!reportView && selectedAgent && selectedCustomer && (
+                <div className="animate-fade-in relative z-10">
+                    <button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Routing</button>
+                    
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
+                        {(() => {
+                            const cObj = reportData[selectedAgent]?.customers[selectedCustomer];
+                            if (!cObj) return null;
+                            
+                            const grouped = cObj.history.reduce((g, t) => { 
+                                const m = new Date(t.date).toLocaleString('default', { month: 'long', year: 'numeric' }); 
+                                if (!g[m]) g[m] = []; g[m].push(t); return g; 
+                            }, {});
+
+                            return (
+                                <>
+                                    <div className="bg-slate-900 text-white p-6 md:p-8">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="text-orange-500 font-bold tracking-widest text-[10px] uppercase mb-1">Receipt Archive • {selectedAgent}</p>
+                                                <h1 className="text-2xl md:text-3xl font-bold font-serif">{cObj.name}</h1>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] uppercase tracking-widest opacity-70">Total Value</p>
+                                                <p className="text-xl md:text-2xl font-bold text-emerald-400">{formatRupiah(cObj.total)}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 md:p-8">
+                                        {Object.entries(grouped).map(([month, trans]) => (
+                                            <div key={month} className="mb-8 last:mb-0">
+                                                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1 uppercase tracking-widest">{month}</h3>
+                                                <div className="overflow-x-auto pb-2">
+                                                    <table className="w-full text-sm text-left min-w-[500px]">
+                                                        <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+                                                            <tr><th className="p-3 rounded-l-lg">Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                                            {trans.map(t => (
+                                                                <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                                                                    <td className="p-3 font-mono text-slate-600 dark:text-slate-400 text-xs">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
+                                                                    <td className="p-3"><span className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td>
+                                                                    <td className="p-3 text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-[200px] break-words">
+                                                                        {t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}
+                                                                        {t.paymentType === 'Titip' && <span className="block mt-1 text-[9px] text-orange-500 font-bold tracking-wider border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
+                                                                        {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && <span className="block mt-1 text-[9px] text-blue-500 font-bold tracking-wider">({t.paymentType.toUpperCase()})</span>}
+                                                                    </td>
+                                                                    <td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</td>
+                                                                    <td className="p-3 text-center">
+                                                                        <div className="flex justify-center gap-2">
+                                                                            <button onClick={() => setViewingReceipt(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-orange-500 rounded transition-colors" title="View Receipt"><FileText size={14}/></button>
+                                                                            {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-500 rounded transition-colors" title="Edit"><Pencil size={14}/></button>}
+                                                                            {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-500 rounded transition-colors" title="Delete"><Trash2 size={14}/></button>}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
-             </div>
-
-             {/* PRINTABLE REPORT CONTAINER */}
-             <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
-                 <div className="flex justify-between items-end mb-8 border-b-2 border-orange-500 pb-4">
-                     <div>
-                         <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">Sales Report</h1>
-                         <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</p>
-                     </div>
-                     <div className="text-right"><p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
-                 </div>
-                 
-                 {/* SUMMARY CARDS */}
-                 {/* FIX: Stack vertically on mobile (grid-cols-1), side-by-side on desktop (md:grid-cols-3) */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p><p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p><p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                     <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Net Profit (Cuan)</p><p className="text-2xl font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
-                 </div>
-
-                 {/* NEW: PAYMENT METHOD BREAKDOWN (MONEY RECONCILIATION) */}
-                 <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
-                    <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2">
-                        <Wallet size={20} className="text-emerald-500"/> Money Breakdown (Reconciliation)
-                    </h3>
-                    {/* FIX: Forced lg:grid-cols-4 to protect phone landscape mode */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                        {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                            <div key={method} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                                <p className="text-xs uppercase font-bold text-slate-400 mb-1">{method}</p>
-                                <p className={`text-lg font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>
-                                    {formatRupiah(stats.payments[method])}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                 </div>
-
-                 {/* PRODUCT BREAKDOWN */}
-                 <div className="mb-8">
-                     <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2">
-                         <Package size={20} className="text-orange-500"/> Product Performance
-                     </h3>
-                     
-                     {/* FIX: Added scrollable container and min-w-[450px] to force spacious columns */}
-                     <div className="overflow-x-auto pb-2">
-                         <table className="w-full text-sm text-left border-collapse min-w-[450px]">
-                            <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
-                                <tr>
-                                    <th className="py-2 w-1/2">Product Name</th>
-                                    <th className="py-2 text-right pr-6 w-1/4">Qty (Bks)</th>
-                                    <th className="py-2 text-right w-1/4">Revenue</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
-                                {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
-                                    <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
-                                        <td className="py-3 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
-                                        <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                         </table>
-                     </div>
-                 </div>
-                 
-                 {/* LOG */}
-                 <div>
-                    <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><History size={20} className="text-orange-500"/> Transaction Log</h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left border-collapse">
-                            <thead className="bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 text-slate-500 font-bold"><tr><th className="p-3 rounded-l-lg">Time</th><th className="p-3">Customer</th><th className="p-3">Type</th><th className="p-3">Method</th><th className="p-3 text-right">Total</th><th className="p-3 rounded-r-lg text-right print:hidden">Action</th></tr></thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {stats.transactions.map(t => (
-                                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                        <td className="p-3 text-slate-500 font-mono text-xs">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : t.date}</td>
-                                        <td className="p-3 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black">{t.customerName}</td>
-                                        <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:print:bg-slate-200 dark:print:text-black border dark:border-slate-600">{t.type}</span></td>
-                                        <td className="p-3 text-xs text-slate-500">{t.paymentType || 'Cash'}</td>
-                                        <td className="p-3 text-right font-bold text-emerald-600">{formatRupiah(t.total || t.amountPaid)}</td>
-                                        
-                                        {/* --- PINPOINT: Transaction Log Action Buttons (Line 690) --- */}
-                                        <td className="p-3 text-right print:hidden">
-                                            <div className="flex justify-end gap-2">
-                                                {/* NEW: VIEW RECEIPT BUTTON */}
-                                                <button onClick={() => setViewingReceipt(t)} className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200 dark:hover:text-white dark:hover:bg-slate-700 rounded transition-colors" title="View Receipt">
-                                                    <FileText size={14}/>
-                                                </button>
-                                                
-                                                {isAdmin && (
-                                                    <>
-                                                        <button onClick={() => setEditingTrans(t)} className="p-1.5 text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors" title="Edit">
-                                                            <Pencil size={14}/>
-                                                        </button>
-                                                        <button onClick={() => onDeleteTransaction(t)} className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="Delete">
-                                                            <Trash2 size={14}/>
-                                                        </button>
-                                                    </>
-                                                )}
-
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                 </div>
-             </div>
-             
-             <style>{`@media print { @page { size: A4; margin: 20mm; } body { background: white; color: black; } .print\\:hidden { display: none !important; } .print\\:shadow-none { box-shadow: none !important; } .print\\:border-none { border: none !important; } .print\\:p-0 { padding: 0 !important; } .dark\\:print\\:text-black { color: black !important; } .dark\\:print\\:bg-white { background: white !important; } .dark\\:print\\:bg-slate-100 { background: #f1f5f9 !important; } .dark\\:print\\:border-slate-300 { border-color: #cbd5e1 !important; } nav, .capy-mascot { display: none !important; } main { margin: 0 !important; padding: 0 !important; } }`}</style>
+            )}
         </div>
-      );
-  }
-
-  if (!selectedCustomer) { 
-      return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText size={24} className="text-orange-500"/> Transaction Reports</h2>
-                
-                {/* --- CHANGED THIS BUTTON TO ORANGE FOR VISIBILITY --- */}
-                <button onClick={() => setReportView(true)} className="w-full md:w-auto bg-orange-600 border border-orange-400 px-6 py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 font-bold text-white hover:bg-orange-500 hover:scale-105 transition-all group">
-                    <div className="bg-white/20 p-2 rounded-lg text-white group-hover:scale-110 transition-transform"><Calendar size={20}/></div>
-                    <span>Open Analytics Dashboard</span>
-                </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customerStats.map(c => (<div key={c.name} onClick={() => setSelectedCustomer(c)} className="relative bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-all hover:border-orange-500 group">
-                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>}
-                    <div className="flex items-start justify-between mb-4"><div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div><span className="text-xs font-mono text-slate-400 mr-8">{c.lastDate}</span></div><h3 className="font-bold text-lg dark:text-white mb-1 truncate">{c.name}</h3><div className="flex justify-between items-end mt-4"><div><p className="text-xs text-slate-500 uppercase">Lifetime Value</p><p className="font-bold text-emerald-600 dark:text-emerald-400">{formatRupiah(c.total)}</p></div><div className="text-right"><p className="text-xs text-slate-500 uppercase">Transactions</p><p className="font-bold dark:text-white">{c.count}</p></div></div></div>))}
-            </div>
-        </div>
-      ); 
-  }
-  
-  const groupedByMonth = selectedCustomer.history.reduce((groups, t) => { const date = new Date(t.date); const key = date.toLocaleString('default', { month: 'long', year: 'numeric' }); if (!groups[key]) groups[key] = []; groups[key].push(t); return groups; }, {});
-  return (<div className="animate-fade-in max-w-4xl mx-auto"><button onClick={() => setSelectedCustomer(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button><div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden"><div className="bg-slate-900 text-white p-8"><div className="flex justify-between items-start"><div><p className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-1">Customer Performance Report</p><h1 className="text-3xl font-bold font-serif">{selectedCustomer.name}</h1></div><div className="text-right"><p className="text-sm opacity-70">Total Lifetime Value</p><p className="text-2xl font-bold">{formatRupiah(selectedCustomer.total)}</p></div></div></div><div className="p-8">{Object.entries(groupedByMonth).map(([month, trans]) => (<div key={month} className="mb-8 last:mb-0"><h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 border-b-2 border-orange-500 inline-block mb-4 pb-1">{month}</h3><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold"><tr><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-700">{trans.map(t => (<tr key={t.id}><td className="p-3 font-mono text-slate-600 dark:text-slate-400">{t.date}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td>
-  
-  {/* FIX: Detailed Item List with Wrapping & Clean Amount Column */}
-<td className="p-3 text-slate-600 dark:text-slate-300 max-w-[150px] md:max-w-[300px] break-words whitespace-normal text-xs leading-relaxed">
-    {/* Show full list of items instead of just "5 Items" */}
-    {t.items 
-        ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") 
-        : t.itemsPaid 
-            ? `Payment for ${t.itemsPaid.length} Items` 
-            : 'N/A'
-    }
-    {/* Consignment Badge on new line */}
-    {t.paymentType === 'Titip' && (
-        <span className="block mt-1 text-[10px] text-orange-500 font-bold tracking-wider">
-            (CONSIGNMENT)
-        </span>
-    )}
-</td>
-<td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-slate-700 dark:text-white'}`}>
-    {formatRupiah(t.amountPaid || t.total)}
-</td>
-  
-  </tr>))}</tbody></table></div></div>))}</div></div></div>);
+    );
 };
+
+
+
+
 // --- NEW: CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
     const [benchmarks, setBenchmarks] = useState([]);
@@ -3895,7 +3839,22 @@ const handleGitHubMirror = async () => {
   };
 
   const handleDeleteConsignmentData = async (customerName) => { if(!window.confirm(`Delete ALL history for ${customerName}?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN')); for(const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`); } catch(err) {} };
-  const handleDeleteHistory = async (customerName) => { if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}"?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName); for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName}`); triggerCapy(`Deleted ${targets.length} records for ${customerName}`); } catch (err) { console.error(err); alert("Error deleting history."); } };
+  const handleDeleteHistory = async (customerName, agentName) => { 
+      if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}" handled by ${agentName}?`)) return; 
+      try { 
+          const targets = transactions.filter(t => {
+              let cust = (t.customerName || 'Walk-in Customer').trim();
+              const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
+              const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
+              if (isWalkIn || isEcer) cust = "Individuals (Ecer)";
+
+              return cust === customerName && (t.agentName || 'Admin') === agentName;
+          }); 
+          for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } 
+          await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`); 
+          triggerCapy(`Deleted ${targets.length} records`); 
+      } catch (err) { console.error(err); alert("Error deleting history."); } 
+  };
   const handleExportCSV = () => { const headers = ["ID,Name,Category,Stock,Price(Retail)\n"]; const csvContent = inventory.map(p => `${p.id},"${p.name}",${p.type},${p.stock},${p.priceRetail}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `inventory_${getCurrentDate()}.csv`; a.click(); logAudit("EXPORT", "Downloaded Inventory CSV"); };
  
  
