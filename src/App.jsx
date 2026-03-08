@@ -1868,6 +1868,7 @@ const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => {
 
     const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+
     const addToCart = (item) => {
         setCart(prev => {
             const existing = prev.find(i => i.id === item.id);
@@ -4134,7 +4135,7 @@ const [agentCanvas, setAgentCanvas] = useState([]);
       if (e) e.preventDefault(); 
       if (!user) return; 
       
-      const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName').trim(); 
+      const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
       const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
       const activeCart = manualData ? manualData.cart : cart;
       const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
@@ -4143,12 +4144,12 @@ const [agentCanvas, setAgentCanvas] = useState([]);
 
       try { 
           await runTransaction(db, async (firestoreTrans) => { 
+              // 1. DO ALL DATABASE READS FIRST (Firebase requires this to prevent crashes)
               const updatesToPerform = [];
               const transactionItems = []; 
               let totalProfit = 0; 
 
               for (const item of activeCart) { 
-                  // FIX: Point to userId to ensure Traffic Cop routing works!
                   const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                   const prodDoc = await firestoreTrans.get(prodRef); 
                   
@@ -4164,83 +4165,63 @@ const [agentCanvas, setAgentCanvas] = useState([]);
                   if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
                   
                   const distributorPrice = prodData.priceDistributor || 0; 
-                  const totalCost = distributorPrice * qtyToDeduct; 
-                  const totalRevenueItem = item.calculatedPrice * item.qty; 
-                  const itemProfit = totalRevenueItem - totalCost; 
+                  const itemProfit = (item.calculatedPrice * item.qty) - (distributorPrice * qtyToDeduct); 
                   
                   totalProfit += itemProfit;
                   updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct, prodData });
-                  
-                  transactionItems.push({ 
-                      ...item, 
-                      distributorPriceSnapshot: distributorPrice, 
-                      profitSnapshot: itemProfit 
-                  });
+                  transactionItems.push({ ...item, distributorPriceSnapshot: distributorPrice, profitSnapshot: itemProfit });
               } 
 
-              for (const update of updatesToPerform) { firestoreTrans.update(update.ref, { stock: update.newStock }); }
-              
-              // --- NEW: DEDUCT FROM AGENT CANVAS IF EMPLOYEE ---
+              // FETCH AGENT CANVAS (STILL READING)
+              let agentDoc = null;
+              let agentRef = null;
               if (agentProfileId) {
-                  const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
-                  const agentDoc = await firestoreTrans.get(agentRef);
-                  if (agentDoc.exists()) {
-                      let currentCanvas = agentDoc.data().activeCanvas || [];
-                      let updatedCanvas = currentCanvas.map(c => {
-                          const soldItem = activeCart.find(cartItem => cartItem.productId === c.productId);
-                          if (soldItem) {
-                              const pData = updatesToPerform.find(u => u.ref.id === c.productId)?.prodData || {};
-                              
-                              let multSold = 1;
-                              if (soldItem.unit === 'Slop') multSold = pData.packsPerSlop || 10;
-                              if (soldItem.unit === 'Bal') multSold = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                              if (soldItem.unit === 'Karton') multSold = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                              const totalBksSold = soldItem.qty * multSold;
+                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+                  agentDoc = await firestoreTrans.get(agentRef);
+              }
 
-                              let multCanvas = 1;
-                              if (c.unit === 'Slop') multCanvas = pData.packsPerSlop || 10;
-                              if (c.unit === 'Bal') multCanvas = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                              if (c.unit === 'Karton') multCanvas = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-
-                              const currentCanvasBks = (c.qty * multCanvas) - totalBksSold;
-                              return { ...c, qty: Math.max(0, currentCanvasBks / multCanvas) };
-                          }
-                          return c;
-                      });
-                      updatedCanvas = updatedCanvas.filter(c => c.qty > 0); // Remove empty items
-                      firestoreTrans.update(agentRef, { activeCanvas: updatedCanvas });
-                  }
+              // 2. NOW DO ALL DATABASE WRITES
+              for (const update of updatesToPerform) { 
+                  firestoreTrans.update(update.ref, { stock: update.newStock }); 
+              }
+              
+              if (agentDoc && agentDoc.exists()) {
+                  let currentCanvas = agentDoc.data().activeCanvas || [];
+                  let updatedCanvas = currentCanvas.map(c => {
+                      const soldItem = activeCart.find(cartItem => cartItem.productId === c.productId);
+                      if (soldItem) {
+                          const pData = updatesToPerform.find(u => u.ref.id === c.productId)?.prodData || {};
+                          let mSold = soldItem.unit === 'Slop' ? (pData.packsPerSlop || 10) : soldItem.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : soldItem.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+                          let mCanvas = c.unit === 'Slop' ? (pData.packsPerSlop || 10) : c.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : c.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+                          const currentCanvasBks = (c.qty * mCanvas) - (soldItem.qty * mSold);
+                          return { ...c, qty: Math.max(0, currentCanvasBks / mCanvas) };
+                      }
+                      return c;
+                  });
+                  firestoreTrans.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
               }
 
               const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
-              firestoreTrans.set(transRef, { 
-                  date: getCurrentDate(), customerName, paymentType, 
-                  items: transactionItems, total: totalRevenue, totalProfit: totalProfit, 
-                  type: 'SALE', timestamp: serverTimestamp() 
-              }); 
+              firestoreTrans.set(transRef, { date: getCurrentDate(), customerName, paymentType, items: transactionItems, total: totalRevenue, totalProfit: totalProfit, type: 'SALE', timestamp: serverTimestamp() }); 
           }); 
 
           await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
           if (!manualData) setCart([]); 
           triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
-          return true; // <--- TELLS THE RECEIPT IT CAN CLOSE NOW!
+          return true; // <--- TELLS RECEIPT IT CAN CLOSE
       } catch(err) { 
-          console.error(err);
+          console.error("TRANSACTION ERROR:", err);
           alert("Transaction Failed: " + err); 
           throw err; 
       } 
   };
 
-
-  const handleMerchantSale = async (custName, payMethod, cartItems) => { // <--- ASYNC ADDED
-      const inputTrimmed = custName.trim().toLowerCase();
+  const handleMerchantSale = async (custName, payMethod, cartItems) => { 
+      const inputTrimmed = custName ? custName.trim().toLowerCase() : "Walk-in Customer";
       const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
-      const finalName = existingProfile ? existingProfile.name : custName.replace(/\b\w/g, l => l.toUpperCase());
+      const finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
 
-      // <--- AWAIT & RETURN ADDED
-      return await processTransaction(null, {
-          customerName: finalName, paymentType: payMethod, cart: cartItems
-      });
+      return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems });
   };
 
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
@@ -4568,6 +4549,21 @@ const [agentCanvas, setAgentCanvas] = useState([]);
   const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * (i.priceRetail || 0)), 0);
   const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
   
+// --- NEW: SAFE SALES TERMINAL INVENTORY ---
+  const salesTerminalInventory = React.useMemo(() => {
+      if (userRole === 'ADMIN') return filteredInventory;
+      return filteredInventory.filter(p => agentCanvas.some(c => c.productId === p.id)).map(p => {
+          const canvasItem = agentCanvas.find(c => c.productId === p.id);
+          if (!canvasItem) return p;
+          let multCanvas = 1;
+          if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
+          if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+          if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+          const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+          return { ...p, stock: trueStockInVehicle };
+      });
+  }, [userRole, filteredInventory, agentCanvas]);
+
   const chartData = React.useMemo(() => {
       const dataMap = {};
       const customers = new Set();
@@ -5327,38 +5323,18 @@ const [agentCanvas, setAgentCanvas] = useState([]);
           </div>
           )}
 
-          {activeTab === 'sales' && (() => {
-              // 🛑 UI LOCKDOWN: Dynamically filter inventory based on Employee's Vehicle Canvas
-              const salesTerminalInventory = userRole === 'ADMIN' 
-                  ? filteredInventory 
-                  : filteredInventory.filter(p => agentCanvas.some(c => c.productId === p.id)).map(p => {
-                      const canvasItem = agentCanvas.find(c => c.productId === p.id);
-                      
-                      // Calculate the true base units (Bks) they have in their vehicle
-                      let multCanvas = 1;
-                      if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
-                      if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                      if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                      
-                      const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
-
-                      // Override the Master Stock with their Vehicle Stock!
-                      return { ...p, stock: trueStockInVehicle };
-                  });
-
-              return (
-                  <div className="h-full w-full"> 
-                      <MerchantSalesView 
-                          inventory={salesTerminalInventory} 
-                          user={user} 
-                          appSettings={appSettings}
-                          customers={customers} 
-                          onProcessSale={handleMerchantSale}
-                          onInspect={(item) => setExaminingProduct(item)} 
-                      />
-                  </div>
-              );
-          })()}
+          {activeTab === 'sales' && (
+              <div className="h-full w-full"> 
+                  <MerchantSalesView 
+                      inventory={salesTerminalInventory} 
+                      user={user} 
+                      appSettings={appSettings}
+                      customers={customers} 
+                      onProcessSale={handleMerchantSale}
+                      onInspect={(item) => setExaminingProduct(item)} 
+                  />
+              </div>
+          )}
 
 
           {activeTab === 'customers' && (
