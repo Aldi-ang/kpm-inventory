@@ -677,9 +677,10 @@ const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
 
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-orange-300">
-           <span>STOCK: {product.stock} Bks</span>
+           {/* 🛑 UI LOCKDOWN: Hide stock from employees */}
+           <span>{isAdmin ? `STOCK: ${product.stock} Bks` : "3D VISUALIZATION"}</span>
            <span>TYPE: {product.type}</span>
-           <span>CUKAI: {product.taxStamp}</span>
+           <span>CUKAI: {product.taxStamp || 'Standard'}</span>
         </div>
         <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || "A standard pack of cigarettes. No unusual properties detected."}"</p>
       </div>
@@ -3406,6 +3407,21 @@ const handleGitHubMirror = async () => {
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
 
+const [agentCanvas, setAgentCanvas] = useState([]);
+
+  // --- NEW: FETCH AGENT CANVAS FOR SALES TERMINAL ---
+  useEffect(() => {
+      if (userRole !== 'ADMIN' && agentProfileId && db && userId) {
+          const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+          const unsub = onSnapshot(agentRef, (docSnap) => {
+              if (docSnap.exists()) {
+                  setAgentCanvas(docSnap.data().activeCanvas || []);
+              }
+          });
+          return () => unsub();
+      }
+  }, [userRole, agentProfileId, db, appId, userId]);
+
   const hasAlertedLowStock = useRef(false);
 
   // 1. Calculate low stock items (Threshold is minStock or default to 5)
@@ -4132,7 +4148,8 @@ const handleGitHubMirror = async () => {
               let totalProfit = 0; 
 
               for (const item of activeCart) { 
-                  const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); 
+                  // FIX: Point to userId to ensure Traffic Cop routing works!
+                  const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                   const prodDoc = await firestoreTrans.get(prodRef); 
                   
                   if(!prodDoc.exists()) throw `Product ${item.name} not found`; 
@@ -4152,7 +4169,7 @@ const handleGitHubMirror = async () => {
                   const itemProfit = totalRevenueItem - totalCost; 
                   
                   totalProfit += itemProfit;
-                  updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                  updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct, prodData });
                   
                   transactionItems.push({ 
                       ...item, 
@@ -4163,49 +4180,66 @@ const handleGitHubMirror = async () => {
 
               for (const update of updatesToPerform) { firestoreTrans.update(update.ref, { stock: update.newStock }); }
               
-              const transRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); 
+              // --- NEW: DEDUCT FROM AGENT CANVAS IF EMPLOYEE ---
+              if (agentProfileId) {
+                  const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+                  const agentDoc = await firestoreTrans.get(agentRef);
+                  if (agentDoc.exists()) {
+                      let currentCanvas = agentDoc.data().activeCanvas || [];
+                      let updatedCanvas = currentCanvas.map(c => {
+                          const soldItem = activeCart.find(cartItem => cartItem.productId === c.productId);
+                          if (soldItem) {
+                              const pData = updatesToPerform.find(u => u.ref.id === c.productId)?.prodData || {};
+                              
+                              let multSold = 1;
+                              if (soldItem.unit === 'Slop') multSold = pData.packsPerSlop || 10;
+                              if (soldItem.unit === 'Bal') multSold = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                              if (soldItem.unit === 'Karton') multSold = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                              const totalBksSold = soldItem.qty * multSold;
+
+                              let multCanvas = 1;
+                              if (c.unit === 'Slop') multCanvas = pData.packsPerSlop || 10;
+                              if (c.unit === 'Bal') multCanvas = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                              if (c.unit === 'Karton') multCanvas = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+
+                              const currentCanvasBks = (c.qty * multCanvas) - totalBksSold;
+                              return { ...c, qty: Math.max(0, currentCanvasBks / multCanvas) };
+                          }
+                          return c;
+                      });
+                      updatedCanvas = updatedCanvas.filter(c => c.qty > 0); // Remove empty items
+                      firestoreTrans.update(agentRef, { activeCanvas: updatedCanvas });
+                  }
+              }
+
+              const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
               firestoreTrans.set(transRef, { 
-                  date: getCurrentDate(), 
-                  customerName, 
-                  paymentType, 
-                  items: transactionItems, 
-                  total: totalRevenue,
-                  totalProfit: totalProfit, 
-                  type: 'SALE', 
-                  timestamp: serverTimestamp() 
+                  date: getCurrentDate(), customerName, paymentType, 
+                  items: transactionItems, total: totalRevenue, totalProfit: totalProfit, 
+                  type: 'SALE', timestamp: serverTimestamp() 
               }); 
           }); 
 
           await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
           if (!manualData) setCart([]); 
-          triggerCapy("Sale Recorded! Profit Calculated. 💰"); 
+          triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
+          return true; // <--- TELLS THE RECEIPT IT CAN CLOSE NOW!
       } catch(err) { 
           console.error(err);
           alert("Transaction Failed: " + err); 
+          throw err; 
       } 
   };
 
 
-  const handleMerchantSale = (custName, payMethod, cartItems) => {
-      // 1. Normalize the typed input
+  const handleMerchantSale = async (custName, payMethod, cartItems) => { // <--- ASYNC ADDED
       const inputTrimmed = custName.trim().toLowerCase();
+      const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
+      const finalName = existingProfile ? existingProfile.name : custName.replace(/\b\w/g, l => l.toUpperCase());
 
-      // 2. SMART MATCH: Check if this name already exists in your official Customer Profiles
-      // This looks for an exact match OR if the typed name is part of an official name (e.g., "Aneka" matches "TOKO ANEKA (MTL)")
-      const existingProfile = customers.find(c => 
-          c.name.toLowerCase() === inputTrimmed || 
-          c.name.toLowerCase().includes(inputTrimmed)
-      );
-
-      // 3. Use the Official Name if found, otherwise Title Case the new name
-      const finalName = existingProfile 
-          ? existingProfile.name 
-          : custName.replace(/\b\w/g, l => l.toUpperCase());
-
-      processTransaction(null, {
-          customerName: finalName,
-          paymentType: payMethod,
-          cart: cartItems
+      // <--- AWAIT & RETURN ADDED
+      return await processTransaction(null, {
+          customerName: finalName, paymentType: payMethod, cart: cartItems
       });
   };
 
@@ -5293,18 +5327,38 @@ const handleGitHubMirror = async () => {
           </div>
           )}
 
-          {activeTab === 'sales' && (
-      <div className="h-full w-full"> 
-          <MerchantSalesView 
-              inventory={filteredInventory} 
-              user={user} 
-              appSettings={appSettings}
-              customers={customers} // <--- ADD THIS: Passes the list for the dropdown
-              onProcessSale={handleMerchantSale}
-              onInspect={(item) => setExaminingProduct(item)} 
-          />
-      </div>
-  )}
+          {activeTab === 'sales' && (() => {
+              // 🛑 UI LOCKDOWN: Dynamically filter inventory based on Employee's Vehicle Canvas
+              const salesTerminalInventory = userRole === 'ADMIN' 
+                  ? filteredInventory 
+                  : filteredInventory.filter(p => agentCanvas.some(c => c.productId === p.id)).map(p => {
+                      const canvasItem = agentCanvas.find(c => c.productId === p.id);
+                      
+                      // Calculate the true base units (Bks) they have in their vehicle
+                      let multCanvas = 1;
+                      if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
+                      if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                      if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                      
+                      const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+
+                      // Override the Master Stock with their Vehicle Stock!
+                      return { ...p, stock: trueStockInVehicle };
+                  });
+
+              return (
+                  <div className="h-full w-full"> 
+                      <MerchantSalesView 
+                          inventory={salesTerminalInventory} 
+                          user={user} 
+                          appSettings={appSettings}
+                          customers={customers} 
+                          onProcessSale={handleMerchantSale}
+                          onInspect={(item) => setExaminingProduct(item)} 
+                      />
+                  </div>
+              );
+          })()}
 
 
           {activeTab === 'customers' && (
