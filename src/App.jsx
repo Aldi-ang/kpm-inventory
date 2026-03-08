@@ -823,7 +823,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
           if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
           return false;
       }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-  }, [transactions, rangeType, targetDate]);
+  }, [transactions, rangeType, targetDate, isAdmin, user]); // <--- Security triggers added here!
 
   // Calculate Statistics
   const stats = useMemo(() => {
@@ -1024,27 +1024,31 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              .no-print { display: none !important; }
                          }
                      `}</style>
-                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-gray-200 animate-fade-in mt-12">
-                         {/* FIX: Moved X button INSIDE the visible screen area to make it clickable on mobile */}
-                         <button onClick={() => setViewingReceipt(null)} className="no-print absolute -top-4 -right-4 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition-colors z-[300]">
-                             <X size={24}/>
-                         </button>
+                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in overflow-hidden">
+                         
+                         {/* NEW: Solid, unmissable Red Close Bar for Mobile */}
+                         <div className="bg-slate-100 border-b border-gray-300 p-3 flex justify-between items-center no-print">
+                             <span className="font-black text-slate-400 text-xs tracking-widest">SYSTEM RECEIPT</span>
+                             <button onClick={() => setViewingReceipt(null)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 transition-all active:scale-95">
+                                 <X size={18}/> CLOSE
+                             </button>
+                         </div>
                          
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] text-gray-500 font-bold mt-1">OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] text-gray-400 mt-1 uppercase tracking-widest">REPRINT COPY</p>
+                                 <h2 className="text-2xl font-black uppercase tracking-widest text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] text-gray-600 font-bold mt-1">OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">REPRINT COPY</p>
                              </div>
                              
-                             <div className="border-t-2 border-dashed border-gray-400 py-3 mb-3 text-xs">
-                                 <div className="flex justify-between"><span>DATE:</span><span>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                 <div className="flex justify-between"><span>CUST:</span><span className="font-bold">{viewingReceipt.customerName}</span></div>
-                                 {/* NEW: Display which Agent made the sale! */}
+                             {/* NEW: High Contrast Info Box */}
+                             <div className="bg-gray-100 rounded-lg p-3 mb-4 text-xs border border-gray-300 space-y-1.5 shadow-inner">
+                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">DATE:</span><span className="text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">CUST:</span><span className="text-black font-black">{viewingReceipt.customerName}</span></div>
                                  {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
-                                     <div className="flex justify-between"><span>AGENT:</span><span className="uppercase text-slate-500">{viewingReceipt.agentName}</span></div>
+                                     <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">AGENT:</span><span className="text-black font-black uppercase">{viewingReceipt.agentName}</span></div>
                                  )}
-                                 <div className="flex justify-between"><span>TYPE:</span><span className="uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                 <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">TYPE:</span><span className="text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
                              </div>
 
                              <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
