@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins } from 'lucide-react';
+import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 // --- FINANCIAL HELPERS ---
@@ -52,12 +52,17 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // --- FINANCIAL MATH ENGINE ---
     const todayDate = getCurrentDate();
     
-    // 1. SUM TODAY'S SALES FOR THIS AGENT
-    const todayRevenue = transactions
-        .filter(t => t.agentId === agentProfileId && t.date === todayDate && (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT'))
-        .reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+    // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY
+    const todayTransactions = transactions.filter(t => 
+        t.agentId === agentProfileId && 
+        t.date === todayDate && 
+        (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT')
+    );
 
-    // 2. CALCULATE LOAD VALUE & PROFIT MARGINS
+    // 2. SUM TOTAL REVENUE
+    const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+
+    // 3. CALCULATE LOAD VALUE & PROFIT MARGINS
     let estValue = 0;
     let estCost = 0;
 
@@ -110,22 +115,24 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
             </div>
 
-            {/* PRODUCT MANIFEST LIST */}
+            {/* SCROLLABLE CONTENT AREA */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10">
+                
+                {/* 1. PRODUCT MANIFEST LIST */}
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-full opacity-50">
+                    <div className="flex items-center justify-center h-40 opacity-50">
                         <div className="text-center animate-pulse">
                             <AlertCircle size={32} className="mx-auto mb-3 text-slate-600"/>
                             <p className="text-xs font-bold tracking-widest uppercase text-slate-500">Syncing database...</p>
                         </div>
                     </div>
                 ) : canvasItems.length === 0 ? (
-                    <div className="flex items-center justify-center h-full opacity-30 flex-col">
+                    <div className="flex items-center justify-center h-40 opacity-30 flex-col">
                         <Package size={48} className="mb-4 text-slate-600"/>
                         <p className="font-black text-lg tracking-widest uppercase text-slate-500">Vehicle empty</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pb-20">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
                         {canvasItems.map((item, idx) => {
                             const itemBks = calculateBks(item.qty, item.unit);
                             return (
@@ -154,6 +161,42 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         })}
                     </div>
                 )}
+
+                {/* 2. TODAY'S SALES BREAKDOWN LEDGER */}
+                <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                    <Receipt size={16} className="text-orange-500" />
+                    <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Today's Transactions</h3>
+                </div>
+
+                {todayTransactions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
+                        <Coins size={32} className="mb-3 text-slate-600"/>
+                        <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No sales recorded today</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3 pb-20">
+                        {todayTransactions.map((tx, idx) => (
+                            <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
+                                <div>
+                                    <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                        <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                            {tx.paymentType || 'CASH'}
+                                        </span>
+                                        <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                            {tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-lg md:text-xl font-black text-orange-400 leading-none drop-shadow-sm">{formatRupiah(tx.total || tx.amountPaid || 0)}</p>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} Items Sold</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
             </div>
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }`}</style>
         </div>
