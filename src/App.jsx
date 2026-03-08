@@ -3409,21 +3409,6 @@ const handleGitHubMirror = async () => {
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
 
-const [agentCanvas, setAgentCanvas] = useState([]);
-
-  // --- NEW: FETCH AGENT CANVAS FOR SALES TERMINAL ---
-  useEffect(() => {
-      if (userRole !== 'ADMIN' && agentProfileId && db && userId) {
-          const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
-          const unsub = onSnapshot(agentRef, (docSnap) => {
-              if (docSnap.exists()) {
-                  setAgentCanvas(docSnap.data().activeCanvas || []);
-              }
-          });
-          return () => unsub();
-      }
-  }, [userRole, agentProfileId, db, appId, userId]);
-
   const hasAlertedLowStock = useRef(false);
 
   // 1. Calculate low stock items (Threshold is minStock or default to 5)
@@ -3627,12 +3612,26 @@ const [agentCanvas, setAgentCanvas] = useState([]);
   const [editingFolder, setEditingFolder] = useState(null);
 
   // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
-  const [userRole, setUserRole] = useState('ADMIN'); // Can be 'ADMIN', 'MOTORIST', or 'CANVAS'
+  const [userRole, setUserRole] = useState('ADMIN'); 
   const [bossUid, setBossUid] = useState(null);
   const [agentProfileId, setAgentProfileId] = useState(null);
+  const [agentCanvas, setAgentCanvas] = useState([]);
 
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
+
+  // --- NEW: FETCH AGENT CANVAS FOR SALES TERMINAL ---
+  useEffect(() => {
+      if (userRole !== 'ADMIN' && agentProfileId && db && userId && userId !== 'default') {
+          const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+          const unsub = onSnapshot(agentRef, (docSnap) => {
+              if (docSnap.exists()) {
+                  setAgentCanvas(docSnap.data().activeCanvas || []);
+              }
+          });
+          return () => unsub();
+      }
+  }, [userRole, agentProfileId, db, appId, userId]);
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
   useEffect(() => {
