@@ -20,7 +20,6 @@ import StockOpnameView from './StockOpnameView';
 import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
-import FleetCanvasManager from './FleetCanvasManager';
 import AgentInventoryView from './AgentInventoryView';
 
 // --- MAP ENGINE IMPORTS ---
