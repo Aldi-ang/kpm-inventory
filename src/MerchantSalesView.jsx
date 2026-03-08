@@ -389,66 +389,66 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                              .no-print { display: none !important; }
                          }
                      `}</style>
-                     {/* SECURED: explicitly forced inline styles to fight Dark Mode */}
-                     <div className="print-receipt bg-white text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                     
+                     {/* SECURED: Using Tailwind's ! modifier to force white background and black text */}
+                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
                          
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest" style={{ color: '#000000' }}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] font-bold mt-1" style={{ color: '#475569' }}>OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] mt-1 uppercase tracking-widest" style={{ color: '#64748b' }}>CUSTOMER COPY</p>
+                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
                              </div>
                              
                              {/* HIGH CONTRAST INFO BOX */}
-                             <div className="bg-slate-100 rounded-lg p-4 mb-4 text-xs border border-slate-300 space-y-2 shadow-inner">
-                                 <div className="flex justify-between items-center"><span style={{ color: '#475569', fontWeight: 'bold' }}>DATE:</span><span style={{ color: '#000000', fontWeight: '900' }}>{receiptData.date}</span></div>
-                                 <div className="flex justify-between items-center"><span style={{ color: '#475569', fontWeight: 'bold' }}>CUST:</span><span style={{ color: '#000000', fontWeight: '900', textTransform: 'uppercase' }}>{receiptData.customer}</span></div>
-                                 {/* Agent display remains, App.jsx update will map this to "mas Gilga" */}
+                             <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
                                  {receiptData.agentName && receiptData.agentName !== 'Admin' && (
-                                     <div className="flex justify-between items-center"><span style={{ color: '#475569', fontWeight: 'bold' }}>AGENT:</span><span style={{ color: '#000000', fontWeight: '900', textTransform: 'uppercase' }}>{receiptData.agentName}</span></div>
+                                     <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{receiptData.agentName}</span></div>
                                  )}
-                                 <div className="flex justify-between items-center"><span style={{ color: '#475569', fontWeight: 'bold' }}>TYPE:</span><span style={{ color: '#000000', fontWeight: '900', textTransform: 'uppercase' }}>{receiptData.method || 'Cash'}</span></div>
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
                              </div>
 
                              {/* ITEMS TABLE */}
-                             <div className="border-t-2 border-b-2 border-dashed border-slate-400 py-3 mb-4 min-h-[150px]">
+                             <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
                                  {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
                                      <div key={i} className="mb-2">
                                          {/* HIGH CONTRAST: Forced black on item name */}
-                                         <div className="font-bold uppercase text-xs" style={{ color: '#000000' }}>{item.name}</div>
+                                         <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
                                          <div className="flex justify-between text-xs mt-0.5">
-                                             <span style={{ color: '#475569' }}>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                             <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
                                              {/* HIGH CONTRAST: Forced black on item total */}
-                                             <span style={{ color: '#000000', fontWeight: '900' }}>{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                             <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
                                          </div>
                                      </div>
                                  )) : null}
                              </div>
 
                              {/* TOTAL */}
-                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t border-slate-200 pt-3" style={{ color: '#000000' }}>
+                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
                                  <span>TOTAL</span>
                                  <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
                              </div>
                              
-                             <div className="text-center text-[10px] mb-4 font-bold" style={{ color: '#64748b' }}>
+                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500">
                                  <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
                                  <p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p>
                              </div>
                          </div>
 
                          {/* Action Buttons */}
-                         <div className="no-print bg-slate-100 p-4 flex gap-3 border-t border-slate-300 mt-auto">
-                             <button onClick={() => window.print()} className="flex-1 bg-slate-800 text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
+                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                  <Printer size={14}/> Print
                              </button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                  <MessageSquare size={14}/> Share
                              </button>
                          </div>
 
                          {/* MASSIVE CLOSE BUTTON AT BOTTOM */}
-                         <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform">
+                         <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
                              <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
                          </button>
                      </div>
