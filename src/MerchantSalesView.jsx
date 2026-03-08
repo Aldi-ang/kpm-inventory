@@ -155,10 +155,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalTotal = cartTotal;
 
         try {
-            // FIX: Await the transaction so the receipt actually waits to appear!
-            await onProcessSale(finalCust, finalMethod, finalCart);
+            // FIX: Capture the true exact Agent Name directly from the database engine!
+            const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart);
             
-            const agentFallback = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+            const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
             setReceiptData({
                 customer: finalCust,
@@ -166,7 +166,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 items: finalCart,
                 total: finalTotal,
                 date: new Date().toLocaleString('id-ID'),
-                agentName: agentFallback // FIXED: Corrected the capitalization typo!
+                agentName: agentFallback 
             });
 
             setCart([]); 

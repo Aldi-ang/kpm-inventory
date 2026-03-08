@@ -4153,6 +4153,9 @@ const handleGitHubMirror = async () => {
       
       if(!customerName) { alert("Customer Name is required!"); return; } 
 
+      // NEW: Declare the name here so it can be passed back to the receipt!
+      let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+
       try { 
           await runTransaction(db, async (firestoreTrans) => { 
               // 1. DO ALL DATABASE READS FIRST (Firebase requires this to prevent crashes)
@@ -4213,7 +4216,6 @@ const handleGitHubMirror = async () => {
               }
 
               // GUARANTEE THE NAME: Read exactly what the Admin named this agent in the vehicle database!
-              let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
               if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
                   finalAgentName = agentDoc.data().name; 
               }
@@ -4236,7 +4238,7 @@ const handleGitHubMirror = async () => {
           await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
           if (!manualData) setCart([]); 
           triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
-          return true; // <--- TELLS RECEIPT IT CAN CLOSE
+          return finalAgentName; // <--- RETURN THE EXACT NAME "mas Gilga" TO THE RECEIPT!
       } catch(err) { 
           console.error("TRANSACTION ERROR:", err);
           alert("Transaction Failed: " + err); 
