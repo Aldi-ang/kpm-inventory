@@ -21,6 +21,7 @@ import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
 import AgentInventoryView from './AgentInventoryView';
+import FleetCanvasManager from './FleetCanvasManager'; // <--- ADDED BACK!
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
