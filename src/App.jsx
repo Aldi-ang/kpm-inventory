@@ -5008,6 +5008,8 @@ const handleGitHubMirror = async () => {
                appId={appId} 
                userId={userId} 
                agentProfileId={agentProfileId} 
+               inventory={inventory}
+               transactions={transactions}
            />
       )}
 
