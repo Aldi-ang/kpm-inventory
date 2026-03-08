@@ -3673,7 +3673,8 @@ const handleGitHubMirror = async () => {
                         const hijackedUser = {
                             uid: data.bossUid,            
                             email: currentUser.email,
-                            displayName: currentUser.displayName || "Field Agent",
+                            // FIXED: Force the system to use the custom name you gave them in the database!
+                            displayName: data.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
                             role: data.role,              
@@ -4211,6 +4212,12 @@ const handleGitHubMirror = async () => {
                   firestoreTrans.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
               }
 
+              // GUARANTEE THE NAME: Read exactly what the Admin named this agent in the vehicle database!
+              let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+              if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
+                  finalAgentName = agentDoc.data().name; 
+              }
+
               const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
               firestoreTrans.set(transRef, { 
                   date: getCurrentDate(), 
@@ -4222,8 +4229,7 @@ const handleGitHubMirror = async () => {
                   type: 'SALE', 
                   timestamp: serverTimestamp(),
                   agentId: agentProfileId || 'ADMIN',
-                  // Fallback: If no Display Name, split the email prefix and use that!
-                  agentName: agentProfileId ? (user.displayName || user.email?.split('@')[0] || 'Agent') : 'Admin' 
+                  agentName: finalAgentName
               }); 
           }); 
 
