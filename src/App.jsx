@@ -21,6 +21,7 @@ import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
 import FleetCanvasManager from './FleetCanvasManager';
+import AgentInventoryView from './AgentInventoryView';
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -4943,11 +4944,12 @@ const handleGitHubMirror = async () => {
     >
       {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
       {activeTab === 'agent_inventory' && (
-           <div className="p-6 mt-6 h-full flex flex-col items-center justify-center text-slate-500 bg-black/50 rounded-2xl border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <Package size={64} className="mb-4 text-emerald-500 animate-pulse"/>
-                <h2 className="text-xl font-black uppercase tracking-[0.2em] text-white">My Vehicle Canvas</h2>
-                <p className="text-xs mt-2 uppercase tracking-widest font-mono">Connecting to live vehicle telemetry... (Building Next)</p>
-           </div>
+           <AgentInventoryView 
+               db={db} 
+               appId={appId} 
+               userId={userId} 
+               agentProfileId={agentProfileId} 
+           />
       )}
 
       {/* 1. GLOBAL MODALS */}
