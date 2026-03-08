@@ -60,10 +60,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
         let mappedTier = null;
         const tierUpper = (cust.tier || '').toUpperCase();
-        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD')) mappedTier = 'Grosir';
+        
+        // SECURED: Added Wholesale and REMOVED Distributor!
+        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
         else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
-        else if (tierUpper.includes('DISTRIBUTOR') || tierUpper.includes('PLATINUM')) mappedTier = 'Distributor';
 
         setLockedTier(mappedTier);
 
@@ -73,7 +74,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 let base = prod.priceRetail || 0;
                 if (mappedTier === 'Ecer') base = prod.priceEcer || 0;
                 if (mappedTier === 'Grosir') base = prod.priceGrosir || 0;
-                if (mappedTier === 'Distributor') base = prod.priceDistributor || 0;
 
                 let mult = 1;
                 if (item.unit === 'Slop') mult = prod.packsPerSlop || 10;
@@ -91,12 +91,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
-            // NEW: Respect the locked tier when adding new items!
             const tierToUse = lockedTier || 'Retail';
             let basePrice = product.priceRetail || 0;
             if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
             if (tierToUse === 'Grosir') basePrice = product.priceGrosir || 0;
-            if (tierToUse === 'Distributor') basePrice = product.priceDistributor || 0;
 
             return [...prev, { 
                 productId: product.id, name: product.name, qty: 1, unit: 'Bks', 
@@ -113,10 +111,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 let base = prod.priceRetail || 0;
                 if (updated.priceTier === 'Grosir') base = prod.priceGrosir || 0;
                 if (updated.priceTier === 'Ecer') base = prod.priceEcer || 0;
-                if (updated.priceTier === 'Distributor') base = prod.priceDistributor || 0;
+                
                 let mult = 1;
                 if (updated.unit === 'Slop') mult = prod.packsPerSlop || 10;
                 if (updated.unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
+                if (updated.unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
                 updated.calculatedPrice = base * mult;
                 return updated;
             }
@@ -147,7 +146,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
-    const handleFinalDeal = () => {
+    const handleFinalDeal = async () => {
         if (cart.length === 0 || !customerName.trim()) return;
         
         const finalCust = customerName.trim();
@@ -155,24 +154,31 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalCart = [...cart];
         const finalTotal = cartTotal;
 
-        onProcessSale(finalCust, finalMethod, finalCart);
-        
-        const agentFallback = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+        try {
+            // FIX: Await the transaction so the receipt actually waits to appear!
+            await onProcessSale(finalCust, finalMethod, finalCart);
+            
+            const agentFallback = user?.displayName || user?.email?.split('@')[0] || 'Admin';
 
-        setReceiptData({
-            customer: finalCust,
-            method: finalMethod,
-            items: finalCart,
-            total: finalTotal,
-            date: new Date().toLocaleString('id-ID'),
-            AGENTNAME: AGENTFALLBACK
-        });
+            setReceiptData({
+                customer: finalCust,
+                method: finalMethod,
+                items: finalCart,
+                total: finalTotal,
+                date: new Date().toLocaleString('id-ID'),
+                agentName: agentFallback // FIXED: Corrected the capitalization typo!
+            });
 
-        setCart([]); 
-        setCustomerName("");
-        setMerchantMood("deal"); 
-        setMerchantMsg("Heh heh heh... Thank you, stranger!");
-        setTimeout(() => setMerchantMood("idle"), 3000);
+            setCart([]); 
+            setCustomerName("");
+            setLockedTier(null); // Unlock the pricing for the next customer
+            setMerchantMood("deal"); 
+            setMerchantMsg("Heh heh heh... Thank you, stranger!");
+            setTimeout(() => setMerchantMood("idle"), 3000);
+        } catch (error) {
+            console.error("Transaction failed:", error);
+            alert("Transaction Failed! Please try again.");
+        }
     };
 
     const scroll = (direction) => {
@@ -257,7 +263,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
                                 />
                                 <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}><option>Retail</option><option>Grosir</option><option>Ecer</option><option>Distributor</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}><option>Retail</option><option>Grosir</option><option>Ecer</option></select>
                             </div>
 
                           <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
