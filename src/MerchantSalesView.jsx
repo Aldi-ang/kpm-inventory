@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
 
-const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [] }) => {
+const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'] }) => {
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -14,10 +14,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("Cash");
+    const [paymentMethod, setPaymentMethod] = useState(allowedPayments[0] || "Cash");
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
-    const [lockedTier, setLockedTier] = useState(null); // <--- NEW: Auto-Pricing Lock
+    const [lockedTier, setLockedTier] = useState(null); 
     
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
@@ -33,6 +33,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    // Reset payment method if allowed payments change
+    useEffect(() => {
+        if (!allowedPayments.includes(paymentMethod)) {
+            setPaymentMethod(allowedPayments[0] || 'Cash');
+        }
+    }, [allowedPayments]);
 
     const suggestedCustomers = customers.filter(c => 
         c.name.toLowerCase().includes(customerName.toLowerCase())
@@ -52,7 +59,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 2500);
     };
 
-    // --- NEW: AUTO-LOCK PRICING BASED ON CUSTOMER TIER ---
     const handleCustomerSelect = (cust) => {
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
@@ -61,7 +67,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         let mappedTier = null;
         const tierUpper = (cust.tier || '').toUpperCase();
         
-        // SECURED: Added Wholesale and REMOVED Distributor!
         if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
         else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
@@ -91,7 +96,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
-            const tierToUse = lockedTier || 'Retail';
+            // STRICT DEFAULT TIER LOGIC
+            const defaultTier = allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail');
+            const tierToUse = lockedTier || defaultTier;
+            
             let basePrice = product.priceRetail || 0;
             if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
             if (tierToUse === 'Grosir') basePrice = product.priceGrosir || 0;
@@ -155,9 +163,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalTotal = cartTotal;
 
         try {
-            // FIX: Capture the true exact Agent Name directly from the database engine!
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart);
-            
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
             setReceiptData({
@@ -171,7 +177,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
             setCart([]); 
             setCustomerName("");
-            setLockedTier(null); // Unlock the pricing for the next customer
+            setLockedTier(null); 
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
@@ -238,7 +244,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded">
-                        <option value="Cash">Cash</option><option value="QRIS">QRIS</option><option value="Transfer">Transfer</option><option value="Titip">Consignment</option>
+                        {/* RESTRICTED PAYMENT DROPDOWN */}
+                        {allowedPayments.map(method => (
+                            <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option>
+                        ))}
                     </select>
                 </div>
             </div>
@@ -247,7 +256,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
-                    cart.map((item, idx) => (
+                    cart.map((item, idx) => {
+                        // Gather allowed tiers, inject lockedTier if it exists
+                        const mergedTiers = new Set(allowedTiers);
+                        if (lockedTier) mergedTiers.add(lockedTier);
+                        
+                        return (
                         <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
                             <div className="flex justify-between items-start mb-2">
                                 <span className="text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
@@ -263,14 +277,20 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]"
                                 />
                                 <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}><option>Retail</option><option>Grosir</option><option>Ecer</option></select>
+                                
+                                {/* RESTRICTED TIER DROPDOWN */}
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    {Array.from(mergedTiers).map(tier => (
+                                        <option key={tier} value={tier}>{tier}</option>
+                                    ))}
+                                </select>
                             </div>
 
                           <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]"> 
                                 Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)} 
                             </div>
                         </div>
-                    ))
+                    )})
                 )}
             </div>
         </div>
@@ -338,10 +358,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} 
-                            /* SCALED DOWN: Width from w-[320px] to w-[260px] */
                             className="product-card snap-start w-[160px] md:w-[240px] lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max"
                         >
-                            {/* SCALED DOWN: Image height from h-64 to h-48 */}
                             <div className="h-32 md:h-44 lg:h-48 p-3 md:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
@@ -350,7 +368,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 </div>
                             </div>
                             
-                            {/* SCALED DOWN: Padding from p-5 to p-4 */}
                             <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-4 flex flex-col font-mono relative">
                                 
                                 <h4 className="text-[#d4c5a3] text-[11px] md:text-sm font-black uppercase mb-3 line-clamp-2 h-[32px] md:h-[40px] leading-tight group-hover:text-white transition-colors" title={item.name}>
@@ -366,7 +383,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     </div>
                                     <div className="text-left md:text-right w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-[#3e3226] md:border-none">
                                         <span className="text-[8px] md:text-[9px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
-                                        {/* SCALED DOWN: Font size from 3xl to 2xl */}
                                         <span className="text-[16px] md:text-2xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                                             {new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}
                                         </span>

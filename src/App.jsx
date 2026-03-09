@@ -3576,20 +3576,33 @@ const handleGitHubMirror = async () => {
   const [bossUid, setBossUid] = useState(null);
   const [agentProfileId, setAgentProfileId] = useState(null);
   const [agentCanvas, setAgentCanvas] = useState([]);
+  
+  // NEW: Agent Permissions State
+  const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
 
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
 
-  // --- NEW: FETCH AGENT CANVAS FOR SALES TERMINAL ---
+  // --- NEW: FETCH AGENT CANVAS & PERMISSIONS FOR SALES TERMINAL ---
   useEffect(() => {
       if (userRole !== 'ADMIN' && agentProfileId && db && userId && userId !== 'default') {
           const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
           const unsub = onSnapshot(agentRef, (docSnap) => {
               if (docSnap.exists()) {
-                  setAgentCanvas(docSnap.data().activeCanvas || []);
+                  const data = docSnap.data();
+                  setAgentCanvas(data.activeCanvas || []);
+                  
+                  // APPLY RESTRICTIONS: Default strictly to Cash and Retail/Ecer if admin hasn't set otherwise
+                  setAgentSettings({
+                      allowedPayments: data.allowedPayments || ['Cash'],
+                      allowedTiers: data.allowedTiers || ['Retail', 'Ecer']
+                  });
               }
           });
           return () => unsub();
+      } else {
+          // ADMIN: Full access to all payments and tiers
+          setAgentSettings({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
@@ -4214,7 +4227,18 @@ const handleGitHubMirror = async () => {
   const handleMerchantSale = async (custName, payMethod, cartItems) => { 
       const inputTrimmed = custName ? custName.trim().toLowerCase() : "Walk-in Customer";
       const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
-      const finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
+      
+      let finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
+
+      // NEW: AUTO-DETECT CUSTOMER TYPE BASED ON PRICE CHARGED
+      if (!existingProfile && finalName !== "Walk-in Customer") {
+          const hasEcer = cartItems.some(i => i.priceTier === 'Ecer');
+          const hasGrosir = cartItems.some(i => i.priceTier === 'Grosir');
+          
+          if (hasEcer) finalName += " (Individual)";
+          else if (hasGrosir) finalName += " (Wholesale)";
+          else finalName += " (Retail)";
+      }
 
       return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems });
   };
@@ -5327,6 +5351,8 @@ const handleGitHubMirror = async () => {
                       user={user} 
                       appSettings={appSettings}
                       customers={customers} 
+                      allowedPayments={agentSettings.allowedPayments}
+                      allowedTiers={agentSettings.allowedTiers}
                       onProcessSale={handleMerchantSale}
                       onInspect={(item) => setExaminingProduct(item)} 
                   />
