@@ -61,25 +61,29 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // 2. SUM TOTAL REVENUE
     const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
 
-    // 3. CALCULATE LOAD VALUE & MULTI-TIER PROFIT MARGINS
-    let estCost = 0;
-    let potEcer = 0;
-    let potRetail = 0;
-    let potGrosir = 0;
+    // 3. CALCULATE INVENTORY VALUE & MULTI-TIER POTENTIAL REVENUE
+    let invValue = 0;
+    let revEcer = 0;
+    let revRetail = 0;
+    let revGrosir = 0;
 
     canvasItems.forEach(item => {
         const bksQty = calculateBks(item.qty, item.unit);
-        const productInfo = inventory.find(p => p.id === item.productId);
+        const productInfo = inventory.find(p => p.id === item.productId) || {};
         
-        const cost = productInfo?.priceDistributor || 0;
-        const ecer = productInfo?.priceEcer || 0;
-        const retail = productInfo?.priceRetail || 0;
-        const grosir = productInfo?.priceGrosir || 0;
+        const cost = productInfo.priceDistributor || 0;
+        const ecer = productInfo.priceEcer || 0;
+        const retail = productInfo.priceRetail || 0;
+        const grosir = productInfo.priceGrosir || 0;
 
-        estCost += (bksQty * cost);
-        potEcer += (bksQty * ecer) - (bksQty * cost);
-        potRetail += (bksQty * retail) - (bksQty * cost);
-        potGrosir += (bksQty * grosir) - (bksQty * cost);
+        // FIXED MATH:
+        // Inventory Value = Total Cost (Distributor Price * Bks)
+        invValue += (bksQty * cost);
+        
+        // Potential Revenue = Pure gross value at different tiers
+        revEcer += (bksQty * ecer);
+        revRetail += (bksQty * retail);
+        revGrosir += (bksQty * grosir);
     });
 
     return (
@@ -110,8 +114,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
                         
                         <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Modal</span>
-                            <span className="text-sm md:text-xl font-black text-slate-200">{formatRupiah(estCost)}</span>
+                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Inv. Value</span>
+                            <span className="text-sm md:text-xl font-black text-slate-200">{formatRupiah(invValue)}</span>
                         </div>
                         
                         <div className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
@@ -120,23 +124,23 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
                     </div>
 
-                    {/* BOTTOM ROW: 3-Tier Profit Box (Wide & Readable) */}
+                    {/* BOTTOM ROW: 3-Tier Revenue Box (Wide & Readable) */}
                     <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-xl p-3 shadow-inner">
                         <div className="flex items-center justify-center md:justify-start mb-2 border-b border-emerald-900/50 pb-2">
-                            <span className="text-[10px] md:text-xs text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Potential Profit (Cuan)</span>
+                            <span className="text-[10px] md:text-xs text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Potential Revenue</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2 divide-x divide-emerald-900/50">
                             <div className="flex flex-col items-center text-center">
                                 <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Ecer</span>
-                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potEcer)}</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revEcer)}</span>
                             </div>
                             <div className="flex flex-col items-center text-center pl-2">
                                 <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Retail</span>
-                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potRetail)}</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revRetail)}</span>
                             </div>
                             <div className="flex flex-col items-center text-center pl-2">
                                 <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Grosir</span>
-                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potGrosir)}</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revGrosir)}</span>
                             </div>
                         </div>
                     </div>
@@ -164,14 +168,27 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
                         {canvasItems.map((item, idx) => {
                             const itemBks = calculateBks(item.qty, item.unit);
+                            
+                            // CHECK FOR MISSING DISTRIBUTOR PRICE
+                            const productInfo = inventory.find(p => p.id === item.productId) || {};
+                            const isMissingCost = !productInfo.priceDistributor || productInfo.priceDistributor <= 0;
+
                             return (
                                 <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-slate-600 transition-colors shadow-sm group">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-slate-600 transition-colors">
                                             <Package size={18} className="text-slate-500 group-hover:text-blue-400 transition-colors"/>
                                         </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide group-hover:text-white transition-colors truncate">{item.name}</h4>
+                                        <div className="min-w-0 flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide group-hover:text-white transition-colors truncate">{item.name}</h4>
+                                                {/* MISSING COST WARNING BADGE */}
+                                                {isMissingCost && (
+                                                    <span className="bg-red-500/20 border border-red-500 text-red-500 text-[8px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
+                                                        No Cost Data
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-[10px] text-slate-600 font-mono mt-0.5 font-semibold">ID: {item.productId.slice(0,8)}</p>
                                         </div>
                                     </div>
