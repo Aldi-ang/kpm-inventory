@@ -3747,24 +3747,26 @@ const handleGitHubMirror = async () => {
             // 1. Force persistence (Store login in Local Storage)
             await setPersistence(auth, browserLocalPersistence);
             
-            // 2. Attempt POPUP first (Best for PC/Laptops)
-            const result = await signInWithPopup(auth, googleProvider);
+            // 2. Device Detection Engine
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             
-            // 3. Catch the user immediately
-            console.log("Login Success:", result.user);
-            setUser(result.user);
-            if (result.user.email) setCurrentUserEmail(result.user.email);
+            if (isMobile) {
+                // MOBILE: Go straight to redirect. 
+                // Browsers delete auth cookies if a redirect is fired from inside an error block.
+                triggerCapy("Routing to secure mobile login...");
+                await signInWithRedirect(auth, googleProvider);
+            } else {
+                // PC: Use popup for a smoother, in-page experience
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log("Login Success:", result.user);
+                setUser(result.user);
+                if (result.user.email) setCurrentUserEmail(result.user.email);
+            }
             
         } catch (error) {
             console.error("Login Error:", error);
-            
-            // --- NEW: SMART MOBILE FALLBACK ---
-            if (error.code === 'auth/popup-blocked') {
-                console.log("Popup blocked by mobile browser. Falling back to Redirect mode...");
-                // Silently trigger redirect mode instead of annoying the user
-                signInWithRedirect(auth, googleProvider);
-            } else {
-                // Only alert for actual critical failures
+            // Catch actual errors (like network dropping)
+            if (error.code !== 'auth/popup-blocked') {
                 alert(`Login Failed: ${error.message}`); 
                 setLoginError(`Error: ${error.code} - ${error.message}`);
             }
