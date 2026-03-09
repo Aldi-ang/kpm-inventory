@@ -86,8 +86,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         <div className="h-[850px] lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-slate-950 font-sans border-x border-slate-800 shadow-2xl overflow-hidden relative">
             
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
-            <div className="bg-slate-900 border-b border-slate-800 p-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shrink-0 relative z-10 shadow-md">
-                <div className="flex items-center gap-3">
+            <div className="bg-slate-900 border-b border-slate-800 p-4 flex flex-col xl:flex-row justify-between items-start gap-4 shrink-0 relative z-10 shadow-md">
+                
+                {/* LEFT: AGENT IDENTITY */}
+                <div className="flex items-center gap-3 shrink-0 w-full xl:w-auto">
                     <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 shadow-inner">
                         <Truck className="text-blue-500" size={24} />
                     </div>
@@ -97,30 +99,48 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </div>
                 </div>
                 
-                {/* THE 4 FINANCIAL METRICS (UPDATED FOR 3 TIERS) */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                    <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={10}/> Load (Bks)</span>
-                        <span className="text-lg md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)}</span>
-                    </div>
+                {/* RIGHT: THE FINANCIAL METRICS (MOBILE OPTIMIZED BLOCK LAYOUT) */}
+                <div className="flex flex-col gap-3 w-full xl:w-[65%] mt-2 xl:mt-0">
                     
-                    <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={10}/> Capital (Modal)</span>
-                        <span className="text-sm md:text-base font-black text-slate-200">{formatRupiah(estCost)}</span>
+                    {/* TOP ROW: 3 Core Metrics */}
+                    <div className="grid grid-cols-3 gap-2 md:gap-3">
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
+                            <span className="text-base md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[9px] font-bold text-slate-600">Bks</span></span>
+                        </div>
+                        
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Modal</span>
+                            <span className="text-sm md:text-xl font-black text-slate-200">{formatRupiah(estCost)}</span>
+                        </div>
+                        
+                        <div className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                            <span className="text-[9px] md:text-xs text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Sales</span>
+                            <span className="text-sm md:text-xl font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
+                        </div>
                     </div>
-                    
-                    {/* NEW 3-TIER PROFIT BOX */}
-                    <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-lg p-2 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 border-b border-emerald-900/50 pb-1"><TrendingUp size={10}/> Pot. Profit</span>
-                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Ecer</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potEcer)}</span></div>
-                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Retail</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potRetail)}</span></div>
-                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Grosir</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potGrosir)}</span></div>
+
+                    {/* BOTTOM ROW: 3-Tier Profit Box (Wide & Readable) */}
+                    <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-xl p-3 shadow-inner">
+                        <div className="flex items-center justify-center md:justify-start mb-2 border-b border-emerald-900/50 pb-2">
+                            <span className="text-[10px] md:text-xs text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Potential Profit (Cuan)</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 divide-x divide-emerald-900/50">
+                            <div className="flex flex-col items-center text-center">
+                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Ecer</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potEcer)}</span>
+                            </div>
+                            <div className="flex flex-col items-center text-center pl-2">
+                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Retail</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potRetail)}</span>
+                            </div>
+                            <div className="flex flex-col items-center text-center pl-2">
+                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Grosir</span>
+                                <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(potGrosir)}</span>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div className="bg-orange-950/30 border border-orange-900/50 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={10}/> Today Sales</span>
-                        <span className="text-lg md:text-xl font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
-                    </div>
+
                 </div>
             </div>
 
