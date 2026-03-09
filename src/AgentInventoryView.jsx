@@ -46,7 +46,6 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         return numQty * mult;
     };
 
-    const totalContainers = canvasItems.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
     const totalBks = canvasItems.reduce((sum, item) => sum + calculateBks(item.qty, item.unit), 0);
 
     // --- FINANCIAL MATH ENGINE ---
@@ -62,22 +61,26 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // 2. SUM TOTAL REVENUE
     const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
 
-    // 3. CALCULATE LOAD VALUE & PROFIT MARGINS
-    let estValue = 0;
+    // 3. CALCULATE LOAD VALUE & MULTI-TIER PROFIT MARGINS
     let estCost = 0;
+    let potEcer = 0;
+    let potRetail = 0;
+    let potGrosir = 0;
 
     canvasItems.forEach(item => {
         const bksQty = calculateBks(item.qty, item.unit);
         const productInfo = inventory.find(p => p.id === item.productId);
         
-        const retailPrice = productInfo?.priceRetail || 0;
-        const distPrice = productInfo?.priceDistributor || 0;
+        const cost = productInfo?.priceDistributor || 0;
+        const ecer = productInfo?.priceEcer || 0;
+        const retail = productInfo?.priceRetail || 0;
+        const grosir = productInfo?.priceGrosir || 0;
 
-        estValue += (bksQty * retailPrice);
-        estCost += (bksQty * distPrice);
+        estCost += (bksQty * cost);
+        potEcer += (bksQty * ecer) - (bksQty * cost);
+        potRetail += (bksQty * retail) - (bksQty * cost);
+        potGrosir += (bksQty * grosir) - (bksQty * cost);
     });
-
-    const estProfit = estValue - estCost;
 
     return (
         <div className="h-[850px] lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-slate-950 font-sans border-x border-slate-800 shadow-2xl overflow-hidden relative">
@@ -94,23 +97,29 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </div>
                 </div>
                 
-                {/* THE 4 FINANCIAL METRICS */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                {/* THE 4 FINANCIAL METRICS (UPDATED FOR 3 TIERS) */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full xl:w-auto mt-2 xl:mt-0">
                     <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1"><Package size={10}/> Load (Bks)</span>
-                        <span className="text-sm md:text-base font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={10}/> Load (Bks)</span>
+                        <span className="text-lg md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)}</span>
                     </div>
+                    
                     <div className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1"><Wallet size={10}/> Asset Value</span>
-                        <span className="text-sm md:text-base font-black text-slate-200">{formatRupiah(estValue)}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={10}/> Capital (Modal)</span>
+                        <span className="text-sm md:text-base font-black text-slate-200">{formatRupiah(estCost)}</span>
                     </div>
-                    <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={10}/> Pot. Profit</span>
-                        <span className="text-sm md:text-base font-black text-emerald-400">{formatRupiah(estProfit)}</span>
+                    
+                    {/* NEW 3-TIER PROFIT BOX */}
+                    <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-lg p-2 flex flex-col justify-center shadow-inner">
+                        <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 border-b border-emerald-900/50 pb-1"><TrendingUp size={10}/> Pot. Profit</span>
+                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Ecer</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potEcer)}</span></div>
+                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Retail</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potRetail)}</span></div>
+                        <div className="flex justify-between items-center mt-0.5"><span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-wider">Grosir</span><span className="text-[10px] md:text-[11px] font-black text-emerald-400">{formatRupiah(potGrosir)}</span></div>
                     </div>
+                    
                     <div className="bg-orange-950/30 border border-orange-900/50 rounded-lg p-2.5 flex flex-col justify-center shadow-inner">
-                        <span className="text-[9px] text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1"><Coins size={10}/> Today Sales</span>
-                        <span className="text-sm md:text-base font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
+                        <span className="text-[9px] text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={10}/> Today Sales</span>
+                        <span className="text-lg md:text-xl font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
                     </div>
                 </div>
             </div>
