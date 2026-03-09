@@ -41,9 +41,21 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     }, [allowedPayments]);
 
-    const suggestedCustomers = customers.filter(c => 
-        c.name.toLowerCase().includes(customerName.toLowerCase())
-    ).slice(0, 5);
+    // --- NEW: INTELLIGENT CUSTOMER FILTER ---
+    const suggestedCustomers = customers.filter(c => {
+        // 1. Must match the letters typed in the search box
+        if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
+        
+        // 2. Identify this specific customer's tier
+        let mappedTier = 'Retail'; // Fallback default
+        const tierUpper = (c.tier || '').toUpperCase();
+        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
+        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
+        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+
+        // 3. Only show them if the agent is allowed to sell to this tier!
+        return allowedTiers.includes(mappedTier);
+    }).slice(0, 5);
 
     const triggerMerchantSpeak = (type) => {
         const lines = {
