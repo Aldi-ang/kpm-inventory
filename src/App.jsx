@@ -3742,12 +3742,12 @@ const handleGitHubMirror = async () => {
   }, [darkMode]);
 
  const handleLogin = async () => {
-        setLoginError(null); // Reset errors
+        setLoginError(null); 
         try {
             // 1. Force persistence (Store login in Local Storage)
             await setPersistence(auth, browserLocalPersistence);
             
-            // 2. Use POPUP (Highly reliable now that the button is wired up!)
+            // 2. Attempt POPUP first (Best for PC/Laptops)
             const result = await signInWithPopup(auth, googleProvider);
             
             // 3. Catch the user immediately
@@ -3757,8 +3757,17 @@ const handleGitHubMirror = async () => {
             
         } catch (error) {
             console.error("Login Error:", error);
-            alert(`Login Failed: ${error.message}`); // Forces a visible popup if it fails
-            setLoginError(`Error: ${error.code} - ${error.message}`);
+            
+            // --- NEW: SMART MOBILE FALLBACK ---
+            if (error.code === 'auth/popup-blocked') {
+                console.log("Popup blocked by mobile browser. Falling back to Redirect mode...");
+                // Silently trigger redirect mode instead of annoying the user
+                signInWithRedirect(auth, googleProvider);
+            } else {
+                // Only alert for actual critical failures
+                alert(`Login Failed: ${error.message}`); 
+                setLoginError(`Error: ${error.code} - ${error.message}`);
+            }
         }
     };
 
