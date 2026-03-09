@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Truck, UserPlus, PackagePlus, Save, Archive, 
-    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2
+    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, ShieldCheck
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
@@ -11,9 +11,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
-    const [editingAgentId, setEditingAgentId] = useState(null); // Tracks if we are editing
+    const [editingAgentId, setEditingAgentId] = useState(null); 
     
-    const [newAgent, setNewAgent] = useState({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' });
+    // NEW: Added default permissions to the initial state
+    const defaultAgentState = { 
+        name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
+        allowedPayments: ['Cash'], 
+        allowedTiers: ['Retail', 'Ecer']
+    };
+    const [newAgent, setNewAgent] = useState(defaultAgentState);
 
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
@@ -40,37 +46,55 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
 
     useEffect(() => { fetchAgents(); }, [db, appId, userId]);
 
-    // --- UPGRADED: SAVE (ATOMIC BATCH) ---
+    // --- TOGGLE PERMISSION HANDLERS ---
+    const togglePayment = (method) => {
+        setNewAgent(prev => ({
+            ...prev,
+            allowedPayments: prev.allowedPayments.includes(method) 
+                ? prev.allowedPayments.filter(m => m !== method) 
+                : [...prev.allowedPayments, method]
+        }));
+    };
+
+    const toggleTier = (tier) => {
+        setNewAgent(prev => ({
+            ...prev,
+            allowedTiers: prev.allowedTiers.includes(tier) 
+                ? prev.allowedTiers.filter(t => t !== tier) 
+                : [...prev.allowedTiers, tier]
+        }));
+    };
+
     const handleSaveAgent = async () => {
         if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
-        
+        if (newAgent.allowedPayments.length === 0) return alert("You must allow at least one Payment Method (e.g., Cash)!");
+        if (newAgent.allowedTiers.length === 0) return alert("You must allow at least one Price Tier!");
+
         const emailKey = newAgent.email.toLowerCase().trim();
 
         try {
-            const batch = writeBatch(db); // Create an all-or-nothing batch
+            const batch = writeBatch(db);
 
             if (editingAgentId) {
-                // --- EDIT EXISTING AGENT ---
                 const oldAgent = agents.find(a => a.id === editingAgentId);
                 const oldEmailKey = oldAgent?.email?.toLowerCase().trim();
 
                 const agentRef = doc(db, collPath, editingAgentId);
                 batch.update(agentRef, {
-                    name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey
+                    name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
+                    allowedPayments: newAgent.allowedPayments, // Save Permissions
+                    allowedTiers: newAgent.allowedTiers        // Save Permissions
                 });
 
-                // If email changed, we MUST delete the old Traffic Cop ticket
                 if (oldEmailKey && oldEmailKey !== emailKey) {
                     batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 }
                 
-                // Set the new Traffic Cop ticket
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, status: 'Active'
                 });
 
             } else {
-                // --- CREATE NEW AGENT ---
                 const newId = `AGT_${Date.now()}`;
                 const agentData = {
                     id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString()
@@ -78,13 +102,11 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
 
                 batch.set(doc(db, collPath, newId), agentData);
                 
-                // CREATE THE TRAFFIC COP TICKET
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, status: 'Active'
                 });
             }
 
-            // Execute the batch!
             await batch.commit();
 
             if (editingAgentId) {
@@ -95,8 +117,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                 logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${emailKey}`);
             }
 
-            // Reset Form
-            setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' });
+            setNewAgent(defaultAgentState);
             setIsAddingAgent(false);
             setEditingAgentId(null);
             fetchAgents();
@@ -106,31 +127,27 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
         }
     };
 
-    // --- NEW: EDIT CLICK HANDLER ---
     const handleEditClick = (e, agent) => {
         e.stopPropagation();
-        setNewAgent({ name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '' });
+        setNewAgent({ 
+            name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
+            allowedPayments: agent.allowedPayments || ['Cash'],
+            allowedTiers: agent.allowedTiers || ['Retail', 'Ecer']
+        });
         setEditingAgentId(agent.id);
         setIsAddingAgent(true);
     };
 
-    // --- UPGRADED: DELETE (ATOMIC BATCH) ---
     const handleDeleteAgent = async (e, agent) => {
         e.stopPropagation();
         if (!window.confirm(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
         
         try {
             const batch = writeBatch(db);
-            
-            // 1. Remove from local roster
             batch.delete(doc(db, collPath, agent.id));
-            
-            // 2. Destroy their Traffic Cop Ticket
             if (agent.email) {
                 batch.delete(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
             }
-            
-            // Execute!
             await batch.commit();
 
             triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
@@ -211,7 +228,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                         <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Active Personnel: {agents.length}</p>
                     </div>
                     {isAdmin && (
-                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent({ name: '', phone: '', vehicle: '', role: 'Motorist', email: '' }); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
+                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
                             {isAddingAgent ? <X size={18}/> : <UserPlus size={18}/>}
                         </button>
                     )}
@@ -230,10 +247,41 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                             <input type="text" placeholder="Agent Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             <input type="email" placeholder="Google Account Email (Required for Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="w-full bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-mono"/>
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
-                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-3 outline-none focus:border-blue-500"/>
+                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
                             
-                            <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded text-xs uppercase tracking-widest transition-colors">
-                                {editingAgentId ? 'Save Changes' : 'Authorize & Register'}
+                            {/* --- NEW: SECURITY & PERMISSIONS PANEL --- */}
+                            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
+                                <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1">
+                                    <ShieldCheck size={12}/> Agent Security Limits
+                                </h4>
+                                
+                                <div className="mb-3">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
+                                            <label key={method} className={`flex items-center gap-1.5 cursor-pointer text-xs font-bold px-2 py-1 rounded border transition-colors ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
+                                                <input type="checkbox" className="hidden" checked={newAgent.allowedPayments.includes(method)} onChange={() => togglePayment(method)} />
+                                                {method === 'Titip' ? 'Consignment' : method}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Ecer', 'Retail', 'Grosir'].map(tier => (
+                                            <label key={tier} className={`flex items-center gap-1.5 cursor-pointer text-xs font-bold px-2 py-1 rounded border transition-colors ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
+                                                <input type="checkbox" className="hidden" checked={newAgent.allowedTiers.includes(tier)} onChange={() => toggleTier(tier)} />
+                                                {tier}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
+                                {editingAgentId ? 'Save Profile & Permissions' : 'Authorize & Register'}
                             </button>
                         </div>
                     )}
@@ -268,7 +316,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>
                                         {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                     </span>
-                                    {/* NEW: Edit and Delete actions */}
                                     {isAdmin && (
                                         <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400"><Pencil size={14}/></button>
@@ -295,8 +342,21 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                         Type: <span className={selectedAgent.role === 'Canvas' ? 'text-purple-400' : 'text-blue-400'}>{selectedAgent.role || 'Motorist'}</span> | 
                                         <Mail size={12} className="ml-1"/> <span className="font-mono lowercase">{selectedAgent.email || 'Unregistered'}</span>
                                     </p>
+                                    
+                                    {/* DISPLAY CURRENT PERMISSIONS TO ADMIN */}
+                                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                        <ShieldCheck size={14} className="text-emerald-500"/>
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Permissions:</span>
+                                        {(selectedAgent.allowedPayments || ['Cash']).map(p => (
+                                            <span key={p} className="text-[9px] bg-blue-900/30 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
+                                        ))}
+                                        <span className="text-slate-600">|</span>
+                                        {(selectedAgent.allowedTiers || ['Retail', 'Ecer']).map(t => (
+                                            <span key={t} className="text-[9px] bg-emerald-900/30 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-center min-w-[100px]">
+                                <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-center min-w-[100px] shrink-0 ml-4">
                                     <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Vehicle Load</p>
                                     <p className="text-xl font-black text-white">{(selectedAgent.activeCanvas || []).reduce((sum, item) => sum + item.qty, 0)} <span className="text-xs text-slate-500">Items</span></p>
                                 </div>
