@@ -4594,6 +4594,29 @@ const handleGitHubMirror = async () => {
       });
   }, [userRole, filteredInventory, agentCanvas]);
 
+// --- NEW: SAFE CUSTOMERS LOGIC FOR JOURNEY & MAP ---
+  const permittedCustomers = React.useMemo(() => {
+      // Admin sees everyone
+      if (userRole === 'ADMIN') return customers;
+      
+      const allowedTiers = agentSettings.allowedTiers || ['Retail', 'Ecer'];
+      
+      // Filter customers strictly based on the agent's authorized tiers
+      return customers.filter(c => {
+          let mappedTier = c.priceTier || 'Retail'; 
+          
+          // Fallback logic for legacy customers missing the explicit priceTier
+          if (!c.priceTier) {
+              const tierUpper = (c.tier || '').toUpperCase();
+              if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
+              else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
+              else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+          }
+          
+          return allowedTiers.includes(mappedTier);
+      });
+  }, [customers, userRole, agentSettings.allowedTiers]);
+
   const chartData = React.useMemo(() => {
       const dataMap = {};
       const customers = new Set();
@@ -5203,8 +5226,9 @@ const handleGitHubMirror = async () => {
           )}
 
 
-          {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
-          {activeTab === 'journey' && <JourneyView customers={customers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
+          {/* FIXED: Passing 'permittedCustomers' to securely lock down map and journey views */}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
           
           {/* NEW FLEET ROUTER */}
           {activeTab === 'fleet' && userRole === 'ADMIN' && (
