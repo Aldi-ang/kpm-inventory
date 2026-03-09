@@ -41,19 +41,23 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     }, [allowedPayments]);
 
-    // --- NEW: INTELLIGENT CUSTOMER FILTER ---
+    // --- UPDATED: INTELLIGENT CUSTOMER FILTER ---
     const suggestedCustomers = customers.filter(c => {
         // 1. Must match the letters typed in the search box
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
         
-        // 2. Identify this specific customer's tier
-        let mappedTier = 'Retail'; // Fallback default
-        const tierUpper = (c.tier || '').toUpperCase();
-        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
-        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
-        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+        // 2. Read their EXACT Pricing Type from the database (Fallback for legacy customers)
+        let mappedTier = c.priceTier || 'Retail'; 
+        
+        // 3. Fallback logic ONLY IF they haven't been assigned a priceTier yet
+        if (!c.priceTier) {
+            const tierUpper = (c.tier || '').toUpperCase();
+            if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
+            else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
+            else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+        }
 
-        // 3. Only show them if the agent is allowed to sell to this tier!
+        // 4. Strictly block them if the agent isn't authorized for this tier
         return allowedTiers.includes(mappedTier);
     }).slice(0, 5);
 

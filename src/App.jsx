@@ -1366,15 +1366,15 @@ const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, trigg
     );
 };          
 
-// --- UPGRADED: CUSTOMER MANAGEMENT (RESTORED EMBED LINK FIELD) ---
+// --- UPGRADED: CUSTOMER MANAGEMENT (ADDED EXPLICIT PRICING TIER) ---
 const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [formData, setFormData] = useState({ 
         name: '', phone: '', region: '', city: '', address: '', 
-        gmapsUrl: '', embedHtml: '', // <--- Added embedHtml here
+        gmapsUrl: '', embedHtml: '', 
         latitude: '', longitude: '', storeImage: '', 
-        tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] 
+        tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] // <--- NEW: priceTier added
     });
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
@@ -1467,7 +1467,7 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                 await logAudit("CUSTOMER_ADD", `Added: ${formData.name}`); 
                 triggerCapy("Customer added!"); 
             } 
-            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
+            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
             setCoordInput("");
         } catch (err) { console.error(err); } 
     };
@@ -1475,10 +1475,10 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
     const handleEdit = (c) => { 
         setFormData({ 
             name: c.name, phone: c.phone || '', region: c.region || '', city: c.city || '', 
-            address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '', // <--- Load Saved Link
+            address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '',
             storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
-            tier: c.tier || 'Silver', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0]
+            tier: c.tier || 'Silver', priceTier: c.priceTier || 'Retail', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0]
         }); 
         setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
         setEditingId(c.id); 
@@ -1496,20 +1496,28 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
                     </div>
 
-                    {/* STRATEGY & IMAGE UPLOAD - FIXED ALIGNMENT */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
+                    {/* NEW: 4-COLUMN GRID WITH PRICING TIER */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
                         <div>
-                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Tier</label>
+                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Map Pin Tier</label>
                             <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none">
                                 {tierSettings && tierSettings.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 {!tierSettings && <option value="Silver">Silver</option>}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-orange-500 uppercase mb-1 block">Pricing Type</label>
+                            <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-orange-500">
+                                <option value="Grosir">Grosir (Wholesale)</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Ecer">Ecer (Individual)</option>
                             </select>
                         </div>
                         <div>
@@ -1535,7 +1543,7 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                         </div>
                     </div>
 
-                    {/* LOCATION TOOLS (RESTORED EMBED LINK) */}
+                    {/* LOCATION TOOLS */}
                     <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-3">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -1553,7 +1561,6 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                         </div>
 
 
-                        {/* FIX: Stack inputs on mobile */}
                         <div className="flex flex-col md:flex-row gap-2">
                             <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Region (Kabupaten)" />
                             <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
@@ -1594,7 +1601,6 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                             <div>
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-3">
-                                        {/* NEW: Store Photo Thumbnail Preview */}
                                         {c.storeImage ? (
                                             <img src={c.storeImage} className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm" alt={c.name} />
                                         ) : (
@@ -1602,19 +1608,24 @@ const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy,
                                                 <Store size={20} className="text-slate-400" />
                                             </div>
                                         )}
-                                        <div>
-                                            <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors">{c.name}</h3>
-                                            {(c.city || c.region) && <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{c.city} {c.region}</p>}
+                                        <div className="min-w-0 pr-2">
+                                            <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors truncate">{c.name}</h3>
+                                            {(c.city || c.region) && <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 truncate">{c.city} {c.region}</p>}
                                         </div>
                                     </div>
                                     {c.latitude ? <MapPin size={16} className="text-emerald-500 shrink-0"/> : <MapPin size={16} className="text-slate-500 shrink-0"/>}
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 items-center flex-wrap">
                                     {tierDef ? (
                                         <span className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                         </span>
                                     ) : ( <span className="text-[10px] px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
+                                    
+                                    {/* NEW: PRICING TYPE BADGE RENDERED ON CARD */}
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                        {c.priceTier || 'Retail'}
+                                    </span>
                                 </div>
                             </div>
                             {isAdmin && (
