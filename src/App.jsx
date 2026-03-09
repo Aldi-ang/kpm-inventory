@@ -5226,8 +5226,10 @@ const handleGitHubMirror = async () => {
           )}
 
 
-          {/* FIXED: Passing 'permittedCustomers' to securely lock down map and journey views */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          
+          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
           {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} />}
           
           {/* NEW FLEET ROUTER */}
