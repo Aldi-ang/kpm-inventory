@@ -3744,29 +3744,24 @@ const handleGitHubMirror = async () => {
  const handleLogin = async () => {
         setLoginError(null); 
         try {
-            // 1. Force persistence (Store login in Local Storage)
-            await setPersistence(auth, browserLocalPersistence);
+            // 🚨 CRITICAL MOBILE FIX: 
+            // We MUST NOT put any 'await' commands before opening the popup.
+            // Mobile browsers strictly require popups to open in the EXACT same 
+            // split-second microtask as the user's physical tap. 
+            const result = await signInWithPopup(auth, googleProvider);
             
-            // 2. Device Detection Engine
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                // MOBILE: Go straight to redirect. 
-                // Browsers delete auth cookies if a redirect is fired from inside an error block.
-                triggerCapy("Routing to secure mobile login...");
-                await signInWithRedirect(auth, googleProvider);
-            } else {
-                // PC: Use popup for a smoother, in-page experience
-                const result = await signInWithPopup(auth, googleProvider);
-                console.log("Login Success:", result.user);
-                setUser(result.user);
-                if (result.user.email) setCurrentUserEmail(result.user.email);
-            }
+            console.log("Login Success:", result.user);
+            setUser(result.user);
+            if (result.user.email) setCurrentUserEmail(result.user.email);
             
         } catch (error) {
             console.error("Login Error:", error);
-            // Catch actual errors (like network dropping)
-            if (error.code !== 'auth/popup-blocked') {
+            
+            // Smart Fallback ONLY for embedded browsers (like clicking a link inside Instagram/Line)
+            if (error.code === 'auth/popup-blocked') {
+                console.log("In-app browser blocked popup. Rerouting...");
+                signInWithRedirect(auth, googleProvider);
+            } else {
                 alert(`Login Failed: ${error.message}`); 
                 setLoginError(`Error: ${error.code} - ${error.message}`);
             }
