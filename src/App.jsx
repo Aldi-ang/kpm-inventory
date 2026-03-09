@@ -939,49 +939,55 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
              )}
 
             {viewingReceipt && (
-                 <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
-                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; } .no-print { display: none !important; } }`}</style>
-                     <div className="print-receipt bg-white w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-slate-800 animate-fade-in" style={{ color: '#000' }}>
+                 <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
+                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
+                     
+                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
                          <div className="p-6 pb-2">
                              <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest" style={{ color: '#000' }}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] font-bold mt-1" style={{ color: '#666' }}>OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] mt-1 uppercase tracking-widest" style={{ color: '#888' }}>REPRINT COPY</p>
+                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
                              </div>
-                             <div className="bg-slate-100 rounded-lg p-4 mb-4 text-xs border border-slate-300 space-y-2 shadow-inner">
-                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>DATE:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>CUST:</span><span style={{ color: '#000', fontWeight: '900' }}>{viewingReceipt.customerName}</span></div>
+                             
+                             <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
                                  {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
-                                     <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>AGENT:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{viewingReceipt.agentName}</span></div>
+                                     <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName}</span></div>
                                  )}
-                                 <div className="flex justify-between items-center"><span style={{ color: '#555', fontWeight: 'bold' }}>TYPE:</span><span style={{ color: '#000', fontWeight: '900', textTransform: 'uppercase' }}>{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
                              </div>
-                             <div className="border-t-2 border-b-2 border-dashed border-gray-400 py-3 mb-4 min-h-[150px]">
+
+                             <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
                                  {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
                                      <div key={i} className="mb-2">
-                                         <div className="font-bold uppercase text-xs">{item.name}</div>
-                                         <div className="flex justify-between text-xs text-gray-600 mt-0.5">
-                                             <span>{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                             <span className="text-black font-bold">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                         <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
+                                         <div className="flex justify-between text-xs mt-0.5">
+                                             <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                             <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
                                          </div>
                                      </div>
                                  )) : (
-                                     <div className="flex items-center justify-center h-full text-gray-400 text-[10px] uppercase tracking-widest text-center">No Itemized Data Available</div>
+                                     <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">
+                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment Record' : 'No Itemized Data Available'}
+                                     </div>
                                  )}
                              </div>
-                             <div className="flex justify-between items-center text-lg font-black mb-6">
+
+                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
                                  <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
                              </div>
-                             <div className="text-center text-[10px] text-gray-500 mb-4 font-bold"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
+                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
                          </div>
-                         <div className="no-print bg-gray-100 p-4 flex gap-3 border-t border-gray-300">
-                             <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors tracking-widest text-[10px] shadow-md"><Printer size={14}/> Print</button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 bg-[#25D366] text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md"><MessageSquare size={14}/> Share</button>
+                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
+                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
+                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
                          </div>
-                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full bg-red-600 hover:bg-red-700 text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform" style={{ color: '#fff' }}><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
+                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
                      </div>
                  </div>
-             )}
+            )}
 
             {/* --- ANALYTICS DASHBOARD --- */}
             {reportView && (
