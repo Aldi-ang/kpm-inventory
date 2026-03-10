@@ -2623,7 +2623,7 @@ const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) 
 };
 
 // --- NEW: RESIDENT EVIL INVENTORY (SUPPORTS ZOOM SAVE) ---
-const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct }) => { 
+const ResidentEvilInventory = ({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct }) => { 
     const [selectedId, setSelectedId] = useState(null);
     const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
@@ -2689,20 +2689,40 @@ const ResidentEvilInventory = ({ inventory, isAdmin, onEdit, onDelete, onAddNew,
                                 </div>
 
                                 <div className="flex-1 min-w-0">
-                                    {/* INCREASED: Product Name is now text-base and font-black */}
                                     <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-orange-400' : isLowStock && isAdmin ? 'text-red-400' : 'text-slate-300'}`}>
                                         {item.name}
                                     </h4>
                                     
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        {/* INCREASED: Stock number is now text-base and bolder */}
-                                        <p className={`text-sm md:text-base font-mono ${isLowStock && isAdmin ? 'text-red-500 font-bold' : 'text-slate-400 font-bold'}`}>
-                                            STK: {isAdmin ? item.stock : "**"}
-                                        </p>
+                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                        {(() => {
+                                            if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
+                                            
+                                            // --- DYNAMIC ASSET MATH ---
+                                            const todayStr = new Date().toISOString().split('T')[0];
+                                            let fieldBks = 0;
+                                            motorists.forEach(m => {
+                                                const cItem = (m.activeCanvas || []).find(c => c.productId === item.id);
+                                                if (cItem) fieldBks += convertToBks(cItem.qty, cItem.unit, item);
+                                            });
+                                            let soldBks = 0;
+                                            transactions.filter(t => t.date === todayStr && t.type === 'SALE').forEach(t => {
+                                                const tItem = (t.items || []).find(i => i.productId === item.id);
+                                                if (tItem) soldBks += convertToBks(tItem.qty, tItem.unit, item);
+                                            });
+                                            const startBks = item.stock + fieldBks + soldBks;
+
+                                            return (
+                                                <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono font-bold w-full">
+                                                    <span className={isLowStock ? 'text-red-500' : 'text-slate-300'}>VAULT: {item.stock}</span>
+                                                    <span className="text-slate-500 border-l border-white/20 pl-2">START: {startBks}</span>
+                                                    <span className="text-orange-400 border-l border-white/20 pl-2">FIELD: {fieldBks}</span>
+                                                    <span className="text-emerald-400 border-l border-white/20 pl-2">SOLD: {soldBks}</span>
+                                                </div>
+                                            );
+                                        })()}
                                         
-                                        {/* INCREASED: LOW badge is now text-xs, wider, and has a slight glow */}
                                         {isLowStock && isAdmin && (
-                                            <span className="text-xs font-black bg-red-900/50 text-red-400 px-2 py-0.5 rounded border border-red-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)]">
+                                            <span className="text-[9px] font-black bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded border border-red-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">
                                                 Low
                                             </span>
                                         )}
@@ -3375,7 +3395,8 @@ const handleGitHubMirror = async () => {
   const [transactions, setTransactions] = useState([]);
   const [samplings, setSamplings] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [procurements, setProcurements] = useState([]); // <--- NEW STATE
+  const [procurements, setProcurements] = useState([]); 
+  const [motorists, setMotorists] = useState([]); // <--- NEW: GLOBAL FLEET TRACKER
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
@@ -3742,7 +3763,10 @@ const handleGitHubMirror = async () => {
     // 7. Procurement Ledger
     const unsubProc = onSnapshot(query(collection(db, basePath, 'procurement'), orderBy('timestamp', 'desc')), (snap) => setProcurements(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
-    // 8. BOSS VEHICLE CANVAS
+    // 8. ALL MOTORISTS (For Global Asset Tracking)
+    const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+    // 9. BOSS VEHICLE CANVAS
     const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
         if (snap.exists()) {
             setAdminCanvas(snap.data().activeCanvas || []);
@@ -3763,8 +3787,7 @@ const handleGitHubMirror = async () => {
     const savedTheme = localStorage.getItem('kpm_theme');
     if (savedTheme === 'light') setDarkMode(false);
     
-    // FIX: Added 'userId' to the dependency array so React knows to reload the data!
-    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); unsubAdminVeh(); };
+    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); unsubMotorists(); unsubAdminVeh(); };
   }, [user, db, appId, userId]);
 
   useEffect(() => {
@@ -5319,6 +5342,8 @@ const handleGitHubMirror = async () => {
               
               <ResidentEvilInventory 
                   inventory={filteredInventory}
+                  motorists={motorists}
+                  transactions={transactions}
                   isAdmin={isAdmin}
                   backgroundSrc={appSettings?.inventoryBg}
                   onUploadBg={handleInventoryBgSelect}
