@@ -2278,7 +2278,12 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     // 🛑 UI LOCKDOWN: Strict Sidebar Filtering based on Role & Unlock Status
     const visibleMenu = allMenuItems.filter(item => {
         if (userRole === 'ADMIN') {
-            if (isAdmin) return true; // UNLOCKED Admin: sees everything
+            if (isAdmin) {
+                // FIX: Hide the redundant 'Agent Inventory' tab from Admins to keep the UI clean.
+                // Admins use 'Fleet & Canvas' to view agent inventories instead!
+                if (item.id === 'agent_inventory') return false;
+                return true; 
+            }
             return ['map_war_room', 'journey', 'fleet', 'sales'].includes(item.id);
         }
         // Employees: Added 'transactions' so they can see their own history!
