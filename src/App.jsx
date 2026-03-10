@@ -4188,6 +4188,11 @@ const handleGitHubMirror = async () => {
               const transactionItems = []; 
               let totalProfit = 0; 
 
+              // Determine routing context
+              let currentAgentProfileId = agentProfileId;
+              if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
+              else if (userRole === 'ADMIN') currentAgentProfileId = null;
+
               for (const item of activeCart) { 
                   const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                   const prodDoc = await firestoreTrans.get(prodRef); 
@@ -4201,28 +4206,26 @@ const handleGitHubMirror = async () => {
                   if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
                   
                   const qtyToDeduct = item.qty * mult; 
-                  if(prodData.stock < qtyToDeduct) throw `Not enough stock for ${item.name}`; 
+                  
+                  // 🚨 CRITICAL FIX: Only deduct from Master Vault if Admin is selling directly from the Vault.
+                  // If it's a vehicle, the stock was ALREADY deducted when they loaded the car!
+                  if (!currentAgentProfileId) {
+                      if(prodData.stock < qtyToDeduct) throw `Not enough stock in Vault for ${item.name}`; 
+                      updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                  }
                   
                   const distributorPrice = prodData.priceDistributor || 0; 
                   const itemProfit = (item.calculatedPrice * item.qty) - (distributorPrice * qtyToDeduct); 
                   
                   totalProfit += itemProfit;
-                  updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct, prodData });
-                  transactionItems.push({ ...item, distributorPriceSnapshot: distributorPrice, profitSnapshot: itemProfit });
+                  // Pass prodData forward so the vehicle math can read the pack definitions
+                  transactionItems.push({ ...item, distributorPriceSnapshot: distributorPrice, profitSnapshot: itemProfit, prodData }); 
               } 
 
-              // FETCH AGENT CANVAS (STILL READING)
+              // FETCH AGENT CANVAS
               let agentDoc = null;
               let agentRef = null;
               
-              // Target either Employee Vehicle, Boss Vehicle, or Master Vault
-              let currentAgentProfileId = agentProfileId;
-              if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') {
-                  currentAgentProfileId = 'ADMIN_VEHICLE';
-              } else if (userRole === 'ADMIN') {
-                  currentAgentProfileId = null; 
-              }
-
               if (currentAgentProfileId) {
                   agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
                   agentDoc = await firestoreTrans.get(agentRef);
@@ -4236,20 +4239,33 @@ const handleGitHubMirror = async () => {
               if (agentDoc && agentDoc.exists()) {
                   let currentCanvas = agentDoc.data().activeCanvas || [];
                   let updatedCanvas = currentCanvas.map(c => {
-                      const soldItem = activeCart.find(cartItem => cartItem.productId === c.productId);
+                      const soldItem = transactionItems.find(cartItem => cartItem.productId === c.productId);
                       if (soldItem) {
-                          const pData = updatesToPerform.find(u => u.ref.id === c.productId)?.prodData || {};
+                          const pData = soldItem.prodData || {};
                           let mSold = soldItem.unit === 'Slop' ? (pData.packsPerSlop || 10) : soldItem.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : soldItem.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
                           let mCanvas = c.unit === 'Slop' ? (pData.packsPerSlop || 10) : c.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : c.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
-                          const currentCanvasBks = (c.qty * mCanvas) - (soldItem.qty * mSold);
-                          return { ...c, qty: Math.max(0, currentCanvasBks / mCanvas) };
+                          
+                          const soldBks = soldItem.qty * mSold;
+                          const currentCanvasBks = (c.qty * mCanvas) - soldBks;
+                          
+                          // 🚨 2nd VALIDATION: Stop "Phantom Sales" from vehicles
+                          if (currentCanvasBks < 0) throw `Vehicle doesn't have enough ${soldItem.name} left!`;
+
+                          return { ...c, qty: currentCanvasBks / mCanvas }; 
                       }
                       return c;
                   });
                   firestoreTrans.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
               }
 
-              // GUARANTEE THE NAME: Read exactly what the Admin named this agent in the vehicle database!
+              // Clean up the transaction log payload before saving to database
+              const finalTransItems = transactionItems.map(i => {
+                  const copy = {...i};
+                  delete copy.prodData;
+                  return copy;
+              });
+
+              // GUARANTEE THE NAME
               if (userRole === 'ADMIN' && adminSalesMode === 'VAULT') {
                   finalAgentName = "Admin";
               } else if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
@@ -4261,7 +4277,7 @@ const handleGitHubMirror = async () => {
                   date: getCurrentDate(), 
                   customerName, 
                   paymentType, 
-                  items: transactionItems, 
+                  items: finalTransItems, 
                   total: totalRevenue, 
                   totalProfit: totalProfit, 
                   type: 'SALE', 

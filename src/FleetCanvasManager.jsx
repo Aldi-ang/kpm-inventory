@@ -161,6 +161,18 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
         }
     };
 
+    // --- HELPER: UNIT CONVERSION ENGINE ---
+    const convertToBks = (qty, unit, product) => {
+        if (!product) return qty;
+        const packsPerSlop = product.packsPerSlop || 10;
+        const slopsPerBal = product.slopsPerBal || 20;
+        const balsPerCarton = product.balsPerCarton || 4;
+        if (unit === 'Slop') return qty * packsPerSlop;
+        if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
+        if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
+        return qty; 
+    };
+
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
@@ -169,11 +181,23 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
         if (!product) return;
 
         const qtyToLoad = Number(loadQty);
+        const unitToLoad = product.unit || 'Slop';
+        const loadInBks = convertToBks(qtyToLoad, unitToLoad, product);
+
+        // 🚨 1. STRICT VALIDATION CHECK
+        if ((product.stock || 0) < loadInBks) {
+            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks (${qtyToLoad} ${unitToLoad}), but the Master Vault only has ${product.stock || 0} Bks available.`);
+        }
 
         try {
             const batch = writeBatch(db);
-            const agentRef = doc(db, collPath, selectedAgent.id);
             
+            // 🚨 2. DEDUCT FROM MASTER VAULT
+            const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
+            batch.update(prodRef, { stock: (product.stock || 0) - loadInBks });
+
+            // 3. ADD TO VEHICLE
+            const agentRef = doc(db, collPath, selectedAgent.id);
             let updatedCanvas = [...(selectedAgent.activeCanvas || [])];
             const existingItemIndex = updatedCanvas.findIndex(item => item.productId === product.id);
 
@@ -184,14 +208,14 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                     productId: product.id,
                     name: product.name,
                     qty: qtyToLoad,
-                    unit: product.unit || 'Slop'
+                    unit: unitToLoad
                 });
             }
 
             batch.update(agentRef, { activeCanvas: updatedCanvas });
             await batch.commit();
 
-            triggerCapy(`Loaded ${qtyToLoad} ${product.unit || 'Slop'} of ${product.name} into ${selectedAgent.name}'s vehicle! 📦`);
+            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. Vault stock deducted! 📦`);
             setLoadQty("");
             setSelectedProduct("");
             fetchAgents(); 
@@ -199,21 +223,39 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
 
         } catch (e) {
             console.error(e);
-            alert("Failed to load vehicle canvas.");
+            alert("Failed to load vehicle canvas: " + e.message);
         }
     };
 
     const handleClearCanvas = async () => {
         if (!selectedAgent) return;
-        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? (Perform this during End-of-Day Reconciliation)`)) return;
+        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the Master Vault.`)) return;
 
         try {
-            await setDoc(doc(db, collPath, selectedAgent.id), { activeCanvas: [] }, { merge: true });
-            triggerCapy(`${selectedAgent.name}'s vehicle cleared and reconciled! 🧹`);
+            const batch = writeBatch(db);
+            const currentCanvas = selectedAgent.activeCanvas || [];
+            
+            // 🚨 1. RESTORE UNSOLD INVENTORY TO WAREHOUSE
+            currentCanvas.forEach(item => {
+                const product = inventory.find(p => p.id === item.productId);
+                if (product) {
+                    const returnInBks = convertToBks(item.qty, item.unit, product);
+                    const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
+                    batch.update(prodRef, { stock: (product.stock || 0) + returnInBks });
+                }
+            });
+
+            // 2. CLEAR VEHICLE CANVAS
+            const agentRef = doc(db, collPath, selectedAgent.id);
+            batch.update(agentRef, { activeCanvas: [] });
+            
+            await batch.commit();
+
+            triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
             fetchAgents();
-            logAudit("CANVAS_CLEAR", `Cleared canvas for ${selectedAgent.name}`);
+            logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name}`);
         } catch(e) {
-            alert("Failed to clear canvas");
+            alert("Failed to clear canvas: " + e.message);
         }
     };
 
