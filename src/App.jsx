@@ -3636,7 +3636,18 @@ const handleGitHubMirror = async () => {
 
                 if (directorySnap.exists()) {
                     const data = directorySnap.data();
-                    if (data.status === 'Active') {
+                    
+                    // 🚨 ANTI-LOCKOUT: BOSS IMMUNITY 🚨
+                    // If the logged-in user is the actual owner of the database, IGNORE the employee tag!
+                    if (currentUser.uid === data.bossUid) {
+                        console.log("Boss Immunity Activated: Restoring Admin Access.");
+                        setBossUid(null);
+                        setUserRole('ADMIN');
+                        setAgentProfileId(null);
+                        setUser(currentUser);
+                        setIsAdmin(false); // Still requires your PIN to fully unlock
+                    } 
+                    else if (data.status === 'Active') {
                         
                         // 1. UPDATE RBAC STATES
                         setBossUid(data.bossUid);
@@ -3647,7 +3658,6 @@ const handleGitHubMirror = async () => {
                         const hijackedUser = {
                             uid: data.bossUid,            
                             email: currentUser.email,
-                            // FIXED: Force the system to use the custom name you gave them in the database!
                             displayName: data.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
@@ -3656,9 +3666,9 @@ const handleGitHubMirror = async () => {
                         };
                         
                         setUser(hijackedUser);
-                        setIsAdmin(false); // Employees are never admins
-                        setActiveTab('journey'); // 🛑 UI LOCKDOWN: Force employees to start on Journey Plan
-                        console.log("Traffic Cop Success: Employee routed to Master Vault.");
+                        setIsAdmin(false); 
+                        setActiveTab('journey'); 
+                        console.log("Traffic Cop Success: Employee routed.");
                     } else {
                         alert("Your access has been revoked by the Administrator.");
                         signOut(auth);
