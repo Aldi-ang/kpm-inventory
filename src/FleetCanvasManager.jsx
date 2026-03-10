@@ -27,6 +27,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     // --- NEW UI STATES ---
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
+    const [viewingSuratJalan, setViewingSuratJalan] = useState(false); // NEW: Surat Jalan UI
 
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
@@ -336,6 +337,98 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 </div>
             )}
 
+            {/* NEW: OFFICIAL SURAT JALAN MODAL */}
+            {viewingSuratJalan && selectedAgent && (
+                <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
+                    <style>{`@media print { body * { visibility: hidden; } .print-sj, .print-sj * { visibility: visible; } .print-sj { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
+                    <div className="print-sj !bg-white !text-black w-full max-w-2xl shadow-2xl relative flex flex-col font-sans text-sm animate-fade-in rounded-lg max-h-[90vh] overflow-y-auto">
+                        
+                        <div className="p-8 pb-4 border-b-2 !border-black mb-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h1 className="text-3xl font-black uppercase tracking-widest">{appSettings?.companyName || "KPM INVENTORY"}</h1>
+                                    <p className="text-xs font-bold mt-1">OFFICIAL DELIVERY ORDER / SURAT JALAN</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold uppercase text-gray-500">Document No.</p>
+                                    <p className="text-sm font-mono font-bold">SJ-{new Date().toISOString().split('T')[0].replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
+                                    <p className="text-xs mt-1">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-8 mb-6 grid grid-cols-2 gap-4">
+                            <div className="border border-gray-300 p-3 rounded">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
+                                <p className="font-black text-lg uppercase">{selectedAgent.name}</p>
+                                <p className="text-xs mt-1">Role: {selectedAgent.role}</p>
+                            </div>
+                            <div className="border border-gray-300 p-3 rounded">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Informasi Kendaraan</p>
+                                <p className="font-black text-lg uppercase">{selectedAgent.vehicle || 'TIDAK ADA DATA KENDARAAN'}</p>
+                                <p className="text-xs mt-1">Deployment Time: {new Date().toLocaleTimeString('id-ID')}</p>
+                            </div>
+                        </div>
+
+                        <div className="px-8 mb-6 min-h-[200px]">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-black bg-gray-100">
+                                        <th className="p-2 w-12 text-center">NO</th>
+                                        <th className="p-2">NAMA BARANG</th>
+                                        <th className="p-2 text-right w-24">QTY</th>
+                                        <th className="p-2 w-24">UNIT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(selectedAgent.activeCanvas || []).length === 0 ? (
+                                        <tr><td colSpan="4" className="text-center p-8 text-gray-400 italic">Tidak ada barang yang dimuat.</td></tr>
+                                    ) : (
+                                        (selectedAgent.activeCanvas || []).map((item, idx) => (
+                                            <tr key={idx} className="border-b border-gray-300">
+                                                <td className="p-2 text-center font-mono">{idx + 1}</td>
+                                                <td className="p-2 font-bold uppercase">{item.name}</td>
+                                                <td className="p-2 text-right font-black text-lg">{item.qty}</td>
+                                                <td className="p-2 font-bold">{item.unit}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="px-8 mb-8">
+                            <div className="bg-gray-100 p-3 border border-gray-300 rounded text-[10px] text-justify leading-relaxed italic">
+                                <strong>PERNYATAAN:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
+                            </div>
+                        </div>
+
+                        <div className="px-8 mb-8 grid grid-cols-3 gap-4 text-center mt-auto">
+                            <div>
+                                <p className="text-xs mb-16">Admin Gudang (Diserahkan)</p>
+                                <p className="font-bold border-t border-black pt-1 px-4 inline-block">{user.displayName || 'Admin'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs mb-16">Security (Diketahui)</p>
+                                <p className="font-bold border-t border-black pt-1 px-4 inline-block">Pos Jaga</p>
+                            </div>
+                            <div>
+                                <p className="text-xs mb-16">Sales/Motorist (Diterima)</p>
+                                <p className="font-bold border-t border-black pt-1 px-4 inline-block uppercase">{selectedAgent.name}</p>
+                            </div>
+                        </div>
+
+                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300">
+                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md"><Printer size={14}/> Print Surat Jalan</button>
+                            <button onClick={() => setViewingSuratJalan(false)} className="px-6 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-bold uppercase text-[10px] rounded-lg">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+
+
 
             {/* LEFT PANEL: FLEET ROSTER */}
             <div className="w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
@@ -530,8 +623,22 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                             {/* CURRENT MOTORCYCLE INVENTORY (PER-ITEM BREAKDOWN) */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
+                                
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
-                                    <button onClick={handleClearCanvas} className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => setViewingSuratJalan(true)} 
+                                            className="text-[9px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"
+                                        >
+                                            <Printer size={12}/> Surat Jalan
+                                        </button>
+                                        <button 
+                                            onClick={handleClearCanvas} 
+                                            className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors"
+                                        >
+                                            Reconcile & Clear
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 
