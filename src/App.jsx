@@ -3587,6 +3587,8 @@ const handleGitHubMirror = async () => {
   const [bossUid, setBossUid] = useState(null);
   const [agentProfileId, setAgentProfileId] = useState(null);
   const [agentCanvas, setAgentCanvas] = useState([]);
+  const [adminCanvas, setAdminCanvas] = useState([]);
+  const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
   
   // NEW: Agent Permissions State
   const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
@@ -3740,11 +3742,29 @@ const handleGitHubMirror = async () => {
     // 7. Procurement Ledger
     const unsubProc = onSnapshot(query(collection(db, basePath, 'procurement'), orderBy('timestamp', 'desc')), (snap) => setProcurements(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
+    // 8. BOSS VEHICLE CANVAS
+    const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
+        if (snap.exists()) {
+            setAdminCanvas(snap.data().activeCanvas || []);
+        } else if (userRole === 'ADMIN') {
+            // Auto-create Boss Vehicle so it appears in Fleet Manager
+            setDoc(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), {
+                name: "Admin (Boss Vehicle)",
+                role: "Canvas",
+                status: "Active",
+                email: user.email || "admin@system.local",
+                activeCanvas: [],
+                allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'],
+                allowedTiers: ['Retail', 'Grosir', 'Ecer']
+            });
+        }
+    });
+
     const savedTheme = localStorage.getItem('kpm_theme');
     if (savedTheme === 'light') setDarkMode(false);
     
     // FIX: Added 'userId' to the dependency array so React knows to reload the data!
-    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); };
+    return () => { unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); unsubLogs(); unsubCust(); unsubProc(); unsubAdminVeh(); };
   }, [user, db, appId, userId]);
 
   useEffect(() => {
@@ -4194,8 +4214,17 @@ const handleGitHubMirror = async () => {
               // FETCH AGENT CANVAS (STILL READING)
               let agentDoc = null;
               let agentRef = null;
-              if (agentProfileId) {
-                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+              
+              // Target either Employee Vehicle, Boss Vehicle, or Master Vault
+              let currentAgentProfileId = agentProfileId;
+              if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') {
+                  currentAgentProfileId = 'ADMIN_VEHICLE';
+              } else if (userRole === 'ADMIN') {
+                  currentAgentProfileId = null; 
+              }
+
+              if (currentAgentProfileId) {
+                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
                   agentDoc = await firestoreTrans.get(agentRef);
               }
 
@@ -4221,7 +4250,9 @@ const handleGitHubMirror = async () => {
               }
 
               // GUARANTEE THE NAME: Read exactly what the Admin named this agent in the vehicle database!
-              if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
+              if (userRole === 'ADMIN' && adminSalesMode === 'VAULT') {
+                  finalAgentName = "Admin";
+              } else if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
                   finalAgentName = agentDoc.data().name; 
               }
 
@@ -4235,7 +4266,7 @@ const handleGitHubMirror = async () => {
                   totalProfit: totalProfit, 
                   type: 'SALE', 
                   timestamp: serverTimestamp(),
-                  agentId: agentProfileId || 'ADMIN',
+                  agentId: currentAgentProfileId || 'ADMIN',
                   agentName: finalAgentName
               }); 
           }); 
@@ -4597,7 +4628,21 @@ const handleGitHubMirror = async () => {
   
 // --- NEW: SAFE SALES TERMINAL INVENTORY ---
   const salesTerminalInventory = React.useMemo(() => {
-      if (userRole === 'ADMIN') return filteredInventory;
+      if (userRole === 'ADMIN') {
+          if (adminSalesMode === 'VAULT') return filteredInventory;
+          // Boss Vehicle Mode
+          return filteredInventory.filter(p => adminCanvas.some(c => c.productId === p.id)).map(p => {
+              const canvasItem = adminCanvas.find(c => c.productId === p.id);
+              if (!canvasItem) return p;
+              let multCanvas = 1;
+              if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
+              if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+              if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+              const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+              return { ...p, stock: trueStockInVehicle };
+          });
+      }
+      // Employee Mode
       return filteredInventory.filter(p => agentCanvas.some(c => c.productId === p.id)).map(p => {
           const canvasItem = agentCanvas.find(c => c.productId === p.id);
           if (!canvasItem) return p;
@@ -4608,7 +4653,7 @@ const handleGitHubMirror = async () => {
           const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
           return { ...p, stock: trueStockInVehicle };
       });
-  }, [userRole, filteredInventory, agentCanvas]);
+  }, [userRole, filteredInventory, agentCanvas, adminSalesMode, adminCanvas]);
 
 // --- NEW: SAFE CUSTOMERS LOGIC FOR JOURNEY & MAP ---
   const permittedCustomers = React.useMemo(() => {
@@ -5398,7 +5443,14 @@ const handleGitHubMirror = async () => {
           )}
 
           {activeTab === 'sales' && (
-              <div className="h-full w-full"> 
+              <div className="h-full w-full relative"> 
+                  {/* --- NEW: ADMIN FIELD MODE TOGGLE --- */}
+                  {userRole === 'ADMIN' && (
+                      <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-[200] bg-black/90 backdrop-blur-md border border-white/20 p-1.5 rounded-full flex items-center shadow-2xl animate-fade-in-up">
+                          <button onClick={() => setAdminSalesMode('VAULT')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VAULT' ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Master Vault</button>
+                          <button onClick={() => setAdminSalesMode('VEHICLE')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VEHICLE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Boss Car</button>
+                      </div>
+                  )}
                   <MerchantSalesView 
                       inventory={salesTerminalInventory} 
                       user={user} 
