@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Truck, UserPlus, PackagePlus, Save, Archive, 
-    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, ShieldCheck
+    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
+    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy, isAdmin }) => {
+const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin }) => {
     const [agents, setAgents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     
@@ -13,7 +14,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
-    // NEW: Added default permissions to the initial state
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
         allowedPayments: ['Cash'], 
@@ -23,6 +23,10 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
 
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
+    
+    // --- NEW UI STATES ---
+    const [showHistory, setShowHistory] = useState(false);
+    const [viewingReceipt, setViewingReceipt] = useState(null);
 
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
@@ -46,22 +50,17 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
 
     useEffect(() => { fetchAgents(); }, [db, appId, userId]);
 
-    // --- TOGGLE PERMISSION HANDLERS ---
     const togglePayment = (method) => {
         setNewAgent(prev => ({
             ...prev,
-            allowedPayments: prev.allowedPayments.includes(method) 
-                ? prev.allowedPayments.filter(m => m !== method) 
-                : [...prev.allowedPayments, method]
+            allowedPayments: prev.allowedPayments.includes(method) ? prev.allowedPayments.filter(m => m !== method) : [...prev.allowedPayments, method]
         }));
     };
 
     const toggleTier = (tier) => {
         setNewAgent(prev => ({
             ...prev,
-            allowedTiers: prev.allowedTiers.includes(tier) 
-                ? prev.allowedTiers.filter(t => t !== tier) 
-                : [...prev.allowedTiers, tier]
+            allowedTiers: prev.allowedTiers.includes(tier) ? prev.allowedTiers.filter(t => t !== tier) : [...prev.allowedTiers, tier]
         }));
     };
 
@@ -82,8 +81,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                 const agentRef = doc(db, collPath, editingAgentId);
                 batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
-                    allowedPayments: newAgent.allowedPayments, // Save Permissions
-                    allowedTiers: newAgent.allowedTiers        // Save Permissions
+                    allowedPayments: newAgent.allowedPayments,
+                    allowedTiers: newAgent.allowedTiers        
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) {
@@ -101,7 +100,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                 };
 
                 batch.set(doc(db, collPath, newId), agentData);
-                
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, status: 'Active'
                 });
@@ -141,23 +139,18 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
     const handleDeleteAgent = async (e, agent) => {
         e.stopPropagation();
         if (!window.confirm(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
-        
         try {
             const batch = writeBatch(db);
             batch.delete(doc(db, collPath, agent.id));
-            if (agent.email) {
-                batch.delete(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
-            }
+            if (agent.email) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
             await batch.commit();
-
             triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
-            
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
             fetchAgents();
         } catch (e) {
             console.error("Batch Failed:", e);
-            alert("Firebase Blocked the Deletion: " + e.message + "\n\nPlease check your Firebase Security Rules.");
+            alert("Firebase Blocked the Deletion: " + e.message);
         }
     };
 
@@ -176,7 +169,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
-
         const product = inventory.find(p => p.id === selectedProduct);
         if (!product) return;
 
@@ -184,19 +176,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
         const unitToLoad = product.unit || 'Slop';
         const loadInBks = convertToBks(qtyToLoad, unitToLoad, product);
 
-        // 🚨 1. STRICT VALIDATION CHECK
         if ((product.stock || 0) < loadInBks) {
             return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks (${qtyToLoad} ${unitToLoad}), but the Master Vault only has ${product.stock || 0} Bks available.`);
         }
 
         try {
             const batch = writeBatch(db);
-            
-            // 🚨 2. DEDUCT FROM MASTER VAULT
             const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
             batch.update(prodRef, { stock: (product.stock || 0) - loadInBks });
 
-            // 3. ADD TO VEHICLE
             const agentRef = doc(db, collPath, selectedAgent.id);
             let updatedCanvas = [...(selectedAgent.activeCanvas || [])];
             const existingItemIndex = updatedCanvas.findIndex(item => item.productId === product.id);
@@ -204,12 +192,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
             if (existingItemIndex >= 0) {
                 updatedCanvas[existingItemIndex].qty += qtyToLoad;
             } else {
-                updatedCanvas.push({
-                    productId: product.id,
-                    name: product.name,
-                    qty: qtyToLoad,
-                    unit: unitToLoad
-                });
+                updatedCanvas.push({ productId: product.id, name: product.name, qty: qtyToLoad, unit: unitToLoad });
             }
 
             batch.update(agentRef, { activeCanvas: updatedCanvas });
@@ -220,7 +203,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
             setSelectedProduct("");
             fetchAgents(); 
             logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${product.name} to ${selectedAgent.name}`);
-
         } catch (e) {
             console.error(e);
             alert("Failed to load vehicle canvas: " + e.message);
@@ -235,7 +217,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
             const batch = writeBatch(db);
             const currentCanvas = selectedAgent.activeCanvas || [];
             
-            // 🚨 1. RESTORE UNSOLD INVENTORY TO WAREHOUSE
             currentCanvas.forEach(item => {
                 const product = inventory.find(p => p.id === item.productId);
                 if (product) {
@@ -245,12 +226,10 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                 }
             });
 
-            // 2. CLEAR VEHICLE CANVAS
             const agentRef = doc(db, collPath, selectedAgent.id);
             batch.update(agentRef, { activeCanvas: [] });
             
             await batch.commit();
-
             triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
             fetchAgents();
             logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name}`);
@@ -259,9 +238,105 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
         }
     };
 
+    const handleWhatsAppShare = () => {
+        if (!viewingReceipt) return;
+        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT (REPRINT)*\n------------------------\n`;
+        text += `Date: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') : viewingReceipt.date}\n`;
+        text += `Customer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+        if (viewingReceipt.items) {
+            viewingReceipt.items.forEach(item => {
+                text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
+            });
+        }
+        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    // --- NEW: DYNAMIC PER-ITEM MATH ENGINE ---
+    const todayStr = new Date().toISOString().split('T')[0];
+    const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && t.type === 'SALE');
+    
+    const combinedItems = useMemo(() => {
+        if (!selectedAgent) return [];
+        const map = {};
+        
+        // 1. Log what is currently in the car
+        (selectedAgent.activeCanvas || []).forEach(item => {
+            const p = inventory.find(x => x.id === item.productId);
+            map[item.productId] = {
+                productId: item.productId,
+                name: item.name,
+                currentBks: convertToBks(item.qty, item.unit, p),
+                soldBks: 0,
+                unit: item.unit, 
+                currentRaw: item.qty 
+            };
+        });
+        
+        // 2. Add back what was sold today to find the Starting Balance
+        agentSales.forEach(t => {
+            (t.items || []).forEach(item => {
+                const p = inventory.find(x => x.id === item.productId);
+                const bks = convertToBks(item.qty, item.unit, p);
+                if (!map[item.productId]) {
+                    map[item.productId] = { productId: item.productId, name: item.name, currentBks: 0, soldBks: 0, unit: 'Bks', currentRaw: 0 };
+                }
+                map[item.productId].soldBks += bks;
+            });
+        });
+        
+        return Object.values(map).map(i => ({ ...i, initialBks: i.currentBks + i.soldBks }));
+    }, [selectedAgent, inventory, agentSales]);
+
+
     return (
-        <div className="h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans">
+        <div className="h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
             
+            {/* GLOBAL RECEIPT MODAL */}
+            {viewingReceipt && (
+                <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
+                    <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
+                    <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
+                        <div className="p-6 pb-2">
+                            <div className="text-center mb-6">
+                                <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
+                            </div>
+                            <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
+                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName || 'Unknown'}</span></div>
+                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
+                            </div>
+                            <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
+                                {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
+                                    <div key={i} className="mb-2">
+                                        <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
+                                        <div className="flex justify-between text-xs mt-0.5">
+                                            <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                            <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">{viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment' : 'No Itemized Data'}</div>
+                                )}
+                            </div>
+                            <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
+                                <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
+                            </div>
+                            <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
+                        </div>
+                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
+                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
+                            <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
+                        </div>
+                        <button onClick={() => setViewingReceipt(null)} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
+                    </div>
+                </div>
+            )}
+
+
             {/* LEFT PANEL: FLEET ROSTER */}
             <div className="w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-black/20">
@@ -291,12 +366,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
                             
-                            {/* --- NEW: SECURITY & PERMISSIONS PANEL --- */}
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
-                                <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1">
-                                    <ShieldCheck size={12}/> Agent Security Limits
-                                </h4>
-                                
+                                <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 <div className="mb-3">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
                                     <div className="flex flex-wrap gap-2">
@@ -308,7 +379,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                         ))}
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
                                     <div className="flex flex-wrap gap-2">
@@ -321,7 +391,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                     </div>
                                 </div>
                             </div>
-
                             <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
                                 {editingAgentId ? 'Save Profile & Permissions' : 'Authorize & Register'}
                             </button>
@@ -380,12 +449,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                 <div>
                                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2"><Activity size={12}/> Active Deployment Terminal</p>
                                     <h2 className="text-3xl font-black text-white">{selectedAgent.name}</h2>
-                                    <p className="text-xs text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
-                                        Type: <span className={selectedAgent.role === 'Canvas' ? 'text-purple-400' : 'text-blue-400'}>{selectedAgent.role || 'Motorist'}</span> | 
-                                        <Mail size={12} className="ml-1"/> <span className="font-mono lowercase">{selectedAgent.email || 'Unregistered'}</span>
-                                    </p>
-                                    
-                                    {/* DISPLAY CURRENT PERMISSIONS TO ADMIN */}
                                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                                         <ShieldCheck size={14} className="text-emerald-500"/>
                                         <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Permissions:</span>
@@ -398,9 +461,41 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                         ))}
                                     </div>
                                 </div>
-                                <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-center min-w-[100px] shrink-0 ml-4">
-                                    <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Vehicle Load</p>
-                                    <p className="text-xl font-black text-white">{(selectedAgent.activeCanvas || []).reduce((sum, item) => sum + item.qty, 0)} <span className="text-xs text-slate-500">Items</span></p>
+                                <div className="flex gap-2">
+                                    {(() => {
+                                        // Top Level Global Summary
+                                        let currentLoadBks = 0;
+                                        (selectedAgent.activeCanvas || []).forEach(item => {
+                                            const product = inventory.find(p => p.id === item.productId);
+                                            currentLoadBks += convertToBks(item.qty, item.unit, product);
+                                        });
+                                        let soldTodayBks = 0;
+                                        agentSales.forEach(t => {
+                                            (t.items || []).forEach(item => {
+                                                const product = inventory.find(p => p.id === item.productId);
+                                                soldTodayBks += convertToBks(item.qty, item.unit, product);
+                                            });
+                                        });
+                                        const initialLoadBks = currentLoadBks + soldTodayBks;
+
+                                        return (
+                                            <>
+                                                <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center min-w-[70px] shadow-inner">
+                                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1">Initial</p>
+                                                    <p className="text-lg font-black text-slate-300">{initialLoadBks}</p>
+                                                </div>
+                                                <div className="bg-orange-900/20 p-2.5 rounded-xl border border-orange-500/30 text-center min-w-[70px] shadow-inner">
+                                                    <p className="text-[8px] text-orange-400 uppercase tracking-widest mb-1">Sold</p>
+                                                    <p className="text-lg font-black text-orange-500">{soldTodayBks}</p>
+                                                </div>
+                                                <div className="bg-emerald-900/20 p-2.5 rounded-xl border border-emerald-500/30 text-center min-w-[70px] shadow-inner relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-emerald-500/10 animate-pulse pointer-events-none"></div>
+                                                    <p className="text-[8px] text-emerald-400 uppercase tracking-widest mb-1">Current</p>
+                                                    <p className="text-lg font-black text-emerald-500 relative z-10">{currentLoadBks}</p>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -432,35 +527,81 @@ const FleetCanvasManager = ({ db, appId, user, inventory, logAudit, triggerCapy,
                                 </div>
                             </div>
 
-                            {/* CURRENT MOTORCYCLE INVENTORY */}
+                            {/* CURRENT MOTORCYCLE INVENTORY (PER-ITEM BREAKDOWN) */}
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Verified Loadout</h3>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
                                     <button onClick={handleClearCanvas} className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
                                 )}
                             </div>
 
                             <div className="space-y-2">
-                                {(selectedAgent.activeCanvas || []).length === 0 ? (
+                                {combinedItems.length === 0 ? (
                                     <div className="text-center py-8 bg-black/20 rounded-xl border border-slate-800 border-dashed">
                                         <Archive size={24} className="mx-auto mb-2 text-slate-600"/>
-                                        <p className="text-xs text-slate-500 uppercase tracking-widest">Vehicle Vault is Empty</p>
+                                        <p className="text-xs text-slate-500 uppercase tracking-widest">No Items Assigned Today</p>
                                     </div>
                                 ) : (
-                                    (selectedAgent.activeCanvas || []).map((item, idx) => (
-                                        <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center animate-pop-in">
+                                    combinedItems.map((item, idx) => (
+                                        <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                                                <span className="font-bold text-white text-sm">{item.name}</span>
+                                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${item.currentBks > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                                                <div>
+                                                    <span className="font-bold text-white text-sm">{item.name}</span>
+                                                    {item.currentRaw > 0 && <p className="text-[10px] text-slate-400 mt-0.5">Active Load: {item.currentRaw} {item.unit}</p>}
+                                                </div>
                                             </div>
-                                            <div className="bg-black/40 px-4 py-1.5 rounded-lg border border-slate-600 flex items-center gap-2">
-                                                <span className="text-lg font-black text-emerald-400">{item.qty}</span>
-                                                <span className="text-[10px] text-slate-500 uppercase tracking-widest">{item.unit}</span>
+                                            
+                                            {/* PER-ITEM MATH OVERVIEW */}
+                                            <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-600 text-[10px] font-mono font-bold w-full md:w-auto">
+                                                <span className="text-slate-400 w-16 text-center">INIT: {item.initialBks}</span>
+                                                <span className="w-[1px] h-4 bg-slate-700"></span>
+                                                <span className="text-orange-400 w-16 text-center">SOLD: {item.soldBks}</span>
+                                                <span className="w-[1px] h-4 bg-slate-700"></span>
+                                                <span className={`${item.currentBks > 0 ? 'text-emerald-400' : 'text-red-500'} w-16 text-center`}>LEFT: {item.currentBks}</span>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
+
+                            {/* NEW: TRANSACTION HISTORY ACCORDION */}
+                            <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
+                                <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={18} className="text-blue-500"/>
+                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Sales History ({agentSales.length})</h3>
+                                    </div>
+                                    {showHistory ? <ChevronUp size={18} className="text-slate-400"/> : <ChevronDown size={18} className="text-slate-400"/>}
+                                </button>
+                                
+                                {showHistory && (
+                                    <div className="p-4 space-y-3 bg-black/10">
+                                        {agentSales.length === 0 ? (
+                                            <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4">No sales recorded today.</p>
+                                        ) : (
+                                            agentSales.map(tx => (
+                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm">
+                                                    <div>
+                                                        <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
+                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString() : 'Today'} • {tx.paymentType}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-right">
+                                                            <p className="text-emerald-400 font-black text-sm md:text-base">{new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}</p>
+                                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
+                                                        </div>
+                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
+                                                            <FileText size={16}/>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </>
                 ) : (

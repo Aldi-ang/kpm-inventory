@@ -5334,7 +5334,17 @@ const handleGitHubMirror = async () => {
           
           {/* NEW FLEET ROUTER */}
           {activeTab === 'fleet' && userRole === 'ADMIN' && (
-            <FleetCanvasManager db={db} appId={appId} user={user} inventory={inventory} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} />
+            <FleetCanvasManager 
+                db={db} 
+                appId={appId} 
+                user={user} 
+                inventory={inventory} 
+                transactions={transactions} 
+                appSettings={appSettings}
+                logAudit={logAudit} 
+                triggerCapy={triggerCapy} 
+                isAdmin={isAdmin} 
+            />
           )}
           
           {activeTab === 'inventory' && userRole === 'ADMIN' && (
