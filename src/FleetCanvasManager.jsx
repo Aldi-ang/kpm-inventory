@@ -345,9 +345,17 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         
                         <div className="p-8 pb-4 border-b-2 !border-black mb-4">
                             <div className="flex justify-between items-start">
-                                <div>
-                                    <h1 className="text-3xl font-black uppercase tracking-widest">{appSettings?.companyName || "KPM INVENTORY"}</h1>
-                                    <p className="text-xs font-bold mt-1">OFFICIAL DELIVERY ORDER / SURAT JALAN</p>
+                                {/* DYNAMIC CORPORATE HEADER */}
+                                <div className="flex items-center gap-4">
+                                    {appSettings?.mascotImage && (
+                                        <img src={appSettings.mascotImage} className="w-16 h-16 object-contain" alt="Company Logo" />
+                                    )}
+                                    <div>
+                                        <h1 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h1>
+                                        {appSettings?.companyAddress && <p className="text-[10px] mt-0.5 !text-slate-700 max-w-sm">{appSettings.companyAddress}</p>}
+                                        {appSettings?.companyPhone && <p className="text-[10px] mt-0.5 !text-slate-700">Telp/WA: {appSettings.companyPhone}</p>}
+                                        <p className="text-xs font-bold mt-2 !text-black bg-slate-200 inline-block px-2 py-1 rounded">OFFICIAL DELIVERY ORDER / SURAT JALAN</p>
+                                    </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-bold uppercase text-gray-500">Document No.</p>
@@ -361,7 +369,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                             <div className="border border-gray-300 p-3 rounded">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
                                 <p className="font-black text-lg uppercase">{selectedAgent.name}</p>
-                                <p className="text-xs mt-1">Role: {selectedAgent.role}</p>
+                                {/* DYNAMIC ROLE FIX */}
+                                <p className="text-xs mt-1">Role: {selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</p>
                             </div>
                             <div className="border border-gray-300 p-3 rounded">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Informasi Kendaraan</p>
@@ -510,7 +519,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         <h4 className="font-bold text-sm text-white leading-tight">{m.name}</h4>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${m.role === 'Canvas' ? 'bg-purple-900/50 text-purple-400 border border-purple-500/30' : 'bg-blue-900/50 text-blue-400 border border-blue-500/30'}`}>
-                                                {m.role || 'Motorist'}
+                                                {m.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}
                                             </span>
                                             <span className="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">{m.email || 'No Email'}</span>
                                         </div>

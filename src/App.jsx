@@ -3602,7 +3602,7 @@ const handleGitHubMirror = async () => {
   const [editingMsgIndex, setEditingMsgIndex] = useState(-1); 
   const [editMsgText, setEditMsgText] = useState("");         
   
-  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editCompanyProfile, setEditCompanyProfile] = useState({ name: "", address: "", phone: "" });
  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [editingSample, setEditingSample] = useState(null); 
   const [showSamplingAnalytics, setShowSamplingAnalytics] = useState(false);
@@ -3744,7 +3744,11 @@ const handleGitHubMirror = async () => {
         if (snap.exists()) {
             const data = snap.data();
             setAppSettings(data);
-            setEditCompanyName(data?.companyName || "KPM Inventory");
+            setEditCompanyProfile({
+                name: data?.companyName || "KPM Inventory",
+                address: data?.companyAddress || "",
+                phone: data?.companyPhone || ""
+            });
         } else {
             setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
         }
@@ -4064,12 +4068,16 @@ const handleGitHubMirror = async () => {
   };
 
   // --- SETTINGS ACTIONS ---
-  const handleSaveCompanyName = () => { 
+  const handleSaveCompanyProfile = () => { 
       if(user) { 
-          setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { companyName: editCompanyName }, {merge: true}); 
-          logAudit("SETTINGS_UPDATE", `Company Name changed to ${editCompanyName}`); 
+          setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { 
+              companyName: editCompanyProfile.name,
+              companyAddress: editCompanyProfile.address,
+              companyPhone: editCompanyProfile.phone
+          }, {merge: true}); 
+          logAudit("SETTINGS_UPDATE", `Company Profile updated`); 
       } 
-      triggerCapy("Company name updated!"); 
+      triggerCapy("Company Profile updated! Ready for Surat Jalan. 🏢"); 
   };
 
   // --- PRODUCT MANAGEMENT ---
@@ -5081,10 +5089,21 @@ const handleGitHubMirror = async () => {
 
             {/* 6. COMPANY IDENTITY */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
-                <h3 className="font-bold text-lg mb-4 dark:text-white">Company Identity</h3>
-                <div className="flex gap-2">
-                    <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyName || ""} onChange={handleEditCompNameChange}/>
-                    <button onClick={handleSaveCompanyName} className="bg-orange-500 text-white px-4 rounded font-bold">Save Name</button>
+                <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity (Surat Jalan Info)</h3>
+                <div className="space-y-3">
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
+                        <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Official Address</label>
+                        <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="e.g. Jl. Jendral Sudirman No.123, Jakarta"/>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Contact Number</label>
+                        <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="e.g. (021) 1234567"/>
+                    </div>
+                    <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-2 shadow-md">Save Corporate Profile</button>
                 </div>
             </div>
 
