@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle } from 'lucide-react';
 
 const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'] }) => {
     const [mobileTab, setMobileTab] = useState('products');
@@ -18,9 +18,59 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
+
+    // --- NEW: GEO-FENCE STATE ---
+    const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);
+    const [gpsStatus, setGpsStatus] = useState('idle'); // idle, checking, verified, too_far, bypass, error
+    const [distanceToStore, setDistanceToStore] = useState(null);
     
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
+
+    // --- HELPER: HAVERSINE DISTANCE CALCULATOR ---
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; 
+    };
+
+    const verifyLocation = () => {
+        if (!selectedCustomerInfo) return;
+        if (!selectedCustomerInfo.latitude || !selectedCustomerInfo.longitude) {
+            setGpsStatus('bypass'); // Store hasn't been mapped yet
+            setDistanceToStore(null);
+            return;
+        }
+
+        setGpsStatus('checking');
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const dist = calculateDistance(
+                        position.coords.latitude, position.coords.longitude,
+                        selectedCustomerInfo.latitude, selectedCustomerInfo.longitude
+                    );
+                    setDistanceToStore(Math.round(dist));
+                    setGpsStatus(dist <= 50 ? 'verified' : 'too_far');
+                },
+                (error) => {
+                    console.error("GPS Error:", error);
+                    setGpsStatus('error');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else {
+            setGpsStatus('error');
+        }
+    };
+
+    // Auto-verify when a customer is selected
+    useEffect(() => { verifyLocation(); }, [selectedCustomerInfo]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
@@ -41,15 +91,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     }, [allowedPayments]);
 
-    // --- UPDATED: INTELLIGENT CUSTOMER FILTER ---
+    // --- INTELLIGENT CUSTOMER FILTER ---
     const suggestedCustomers = customers.filter(c => {
-        // 1. Must match the letters typed in the search box
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
         
-        // 2. Read their EXACT Pricing Type from the database (Fallback for legacy customers)
         let mappedTier = c.priceTier || 'Retail'; 
         
-        // 3. Fallback logic ONLY IF they haven't been assigned a priceTier yet
         if (!c.priceTier) {
             const tierUpper = (c.tier || '').toUpperCase();
             if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
@@ -57,7 +104,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
         }
 
-        // 4. Strictly block them if the agent isn't authorized for this tier
         return allowedTiers.includes(mappedTier);
     }).slice(0, 5);
 
@@ -79,6 +125,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
         triggerMerchantSpeak('add');
+
+        setSelectedCustomerInfo(cust); // <--- Triggers GPS Check
 
         let mappedTier = null;
         const tierUpper = (cust.tier || '').toUpperCase();
@@ -106,13 +154,20 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     };
 
+    const handleManualCustomerType = (e) => {
+        setCustomerName(e.target.value);
+        setShowCustomerDropdown(true);
+        setSelectedCustomerInfo(null); // Resets GPS to Walk-in mode
+        setLockedTier(null);
+        setGpsStatus('idle');
+    };
+
     const addToCart = (product) => {
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
-            // STRICT DEFAULT TIER LOGIC
             const defaultTier = allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail');
             const tierToUse = lockedTier || defaultTier;
             
@@ -194,6 +249,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             setCart([]); 
             setCustomerName("");
             setLockedTier(null); 
+            setSelectedCustomerInfo(null);
+            setGpsStatus('idle');
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
@@ -237,10 +294,38 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <input 
                         value={customerName} 
                         onFocus={() => setShowCustomerDropdown(true)}
-                        onChange={(e) => setCustomerName(e.target.value)} 
+                        onChange={handleManualCustomerType} 
                         placeholder="TYPE OR SELECT..." 
                         className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded" 
                     />
+                    
+                    {/* --- NEW: LIVE GEO-FENCE STATUS --- */}
+                    <div className="mt-2 min-h-[20px]">
+                        {selectedCustomerInfo ? (
+                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
+                                {gpsStatus === 'checking' && <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>}
+                                {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
+                                {gpsStatus === 'too_far' && (
+                                    <div className="flex items-center gap-2 w-full">
+                                        <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded"><MapPin size={12}/> Geofence Blocked ({distanceToStore}m / 50m max)</span>
+                                        <button onClick={verifyLocation} className="text-blue-400 hover:text-white underline ml-auto">Retry GPS</button>
+                                    </div>
+                                )}
+                                {gpsStatus === 'bypass' && <span className="text-orange-400 flex items-center gap-1"><MapPin size={12}/> Unmapped Store (Bypass Allowed)</span>}
+                                {gpsStatus === 'error' && (
+                                    <div className="flex items-center gap-2 w-full">
+                                        <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost / Denied</span>
+                                        <button onClick={verifyLocation} className="text-blue-400 hover:text-white underline ml-auto">Retry</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : customerName.length > 0 ? (
+                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-400">
+                                <MapPin size={12}/> Unregistered Walk-in (Bypass Allowed)
+                            </div>
+                        ) : null}
+                    </div>
+
                     {showCustomerDropdown && (
                         <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
                             {suggestedCustomers.map(c => (
@@ -260,7 +345,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded">
-                        {/* RESTRICTED PAYMENT DROPDOWN */}
                         {allowedPayments.map(method => (
                             <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option>
                         ))}
@@ -273,7 +357,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
                     cart.map((item, idx) => {
-                        // Gather allowed tiers, inject lockedTier if it exists
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         
@@ -294,7 +377,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 />
                                 <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
                                 
-                                {/* RESTRICTED TIER DROPDOWN */}
                                 <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => (
                                         <option key={tier} value={tier}>{tier}</option>
@@ -343,8 +425,14 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
                         <span className="text-2xl md:text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
                     </div>
-                    <button onClick={handleFinalDeal} disabled={cart.length === 0 || !customerName.trim()} className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}>
-                        {customerName.trim() ? <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</> : "SIGN MANIFEST >"}
+                    <button 
+                        onClick={handleFinalDeal} 
+                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking'} 
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                    >
+                        {gpsStatus === 'checking' ? 'Awaiting Satellites...' : 
+                         gpsStatus === 'too_far' ? 'Return to Store' :
+                         customerName.trim() ? <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</> : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
@@ -358,14 +446,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
                     </div>
-                    {/* PC Scroll Arrows Restored */}
                     <div className="hidden lg:flex gap-1">
                         <button onClick={() => scroll('left')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
                         <button onClick={() => scroll('right')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
                     </div>
                 </div>
 
-                {/* THE MAGIC FIX: Scaled Down Dimensions for Laptop Screens */}
                 <div 
                     className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-6 scroll-smooth" 
                     ref={scrollContainerRef}
@@ -422,7 +508,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                          }
                      `}</style>
                      
-                     {/* SECURED: Using Tailwind's ! modifier to force white background and black text */}
                      <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
                          
                          <div className="p-6 pb-2">
@@ -432,7 +517,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                  <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
                              </div>
                              
-                             {/* HIGH CONTRAST INFO BOX */}
                              <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
                                  <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
                                  <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
@@ -442,22 +526,18 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                  <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
                              </div>
 
-                             {/* ITEMS TABLE */}
                              <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
                                  {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
                                      <div key={i} className="mb-2">
-                                         {/* HIGH CONTRAST: Forced black on item name */}
                                          <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
                                          <div className="flex justify-between text-xs mt-0.5">
                                              <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                             {/* HIGH CONTRAST: Forced black on item total */}
                                              <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
                                          </div>
                                      </div>
                                  )) : null}
                              </div>
 
-                             {/* TOTAL */}
                              <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
                                  <span>TOTAL</span>
                                  <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
@@ -469,7 +549,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                              </div>
                          </div>
 
-                         {/* Action Buttons */}
                          <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
                              <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                  <Printer size={14}/> Print
@@ -479,7 +558,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                              </button>
                          </div>
 
-                         {/* MASSIVE CLOSE BUTTON AT BOTTOM */}
                          <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
                              <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
                          </button>
