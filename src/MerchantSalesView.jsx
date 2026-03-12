@@ -19,17 +19,18 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
 
-    // --- NEW: GEO-FENCE STATE ---
+    // --- NEW: GEO-FENCE & AUTO-MAPPER STATE ---
     const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);
-    const [gpsStatus, setGpsStatus] = useState('idle'); // idle, checking, verified, too_far, bypass, error
+    const [gpsStatus, setGpsStatus] = useState('idle'); 
     const [distanceToStore, setDistanceToStore] = useState(null);
+    const [agentLocation, setAgentLocation] = useState(null); // The Trap State
     
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
     // --- HELPER: HAVERSINE DISTANCE CALCULATOR ---
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3; // Earth radius in meters
+        const R = 6371e3; 
         const φ1 = lat1 * Math.PI/180;
         const φ2 = lat2 * Math.PI/180;
         const Δφ = (lat2-lat1) * Math.PI/180;
@@ -40,23 +41,27 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     };
 
     const verifyLocation = () => {
-        if (!selectedCustomerInfo) return;
-        if (!selectedCustomerInfo.latitude || !selectedCustomerInfo.longitude) {
-            setGpsStatus('bypass'); // Store hasn't been mapped yet
-            setDistanceToStore(null);
-            return;
-        }
-
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const dist = calculateDistance(
-                        position.coords.latitude, position.coords.longitude,
-                        selectedCustomerInfo.latitude, selectedCustomerInfo.longitude
-                    );
-                    setDistanceToStore(Math.round(dist));
-                    setGpsStatus(dist <= 50 ? 'verified' : 'too_far');
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    setAgentLocation({ latitude: lat, longitude: lon }); // Secretly capture agent's location
+
+                    if (selectedCustomerInfo) {
+                        if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
+                            const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
+                            setDistanceToStore(Math.round(dist));
+                            setGpsStatus(dist <= 50 ? 'verified' : 'too_far');
+                        } else {
+                            setGpsStatus('bypass'); 
+                        }
+                    } else if (customerName.trim().length > 0) {
+                        setGpsStatus('new_store_mapped'); // Trigger the trap UI
+                    } else {
+                        setGpsStatus('idle');
+                    }
                 },
                 (error) => {
                     console.error("GPS Error:", error);
@@ -69,8 +74,20 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     };
 
-    // Auto-verify when a customer is selected
-    useEffect(() => { verifyLocation(); }, [selectedCustomerInfo]);
+    // Auto-verify when customer is selected, OR silently map them when they stop typing
+    useEffect(() => { 
+        if (selectedCustomerInfo) {
+            verifyLocation();
+        } else if (customerName.trim().length > 2) {
+            const timer = setTimeout(() => {
+                verifyLocation(); // The Silent Trap triggers 1 second after they stop typing
+            }, 1000); 
+            return () => clearTimeout(timer);
+        } else {
+            setGpsStatus('idle');
+            setAgentLocation(null);
+        }
+    }, [selectedCustomerInfo, customerName]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
@@ -84,14 +101,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         };
     }, []);
 
-    // Reset payment method if allowed payments change
     useEffect(() => {
         if (!allowedPayments.includes(paymentMethod)) {
             setPaymentMethod(allowedPayments[0] || 'Cash');
         }
     }, [allowedPayments]);
 
-    // --- INTELLIGENT CUSTOMER FILTER ---
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
         
@@ -126,7 +141,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setShowCustomerDropdown(false);
         triggerMerchantSpeak('add');
 
-        setSelectedCustomerInfo(cust); // <--- Triggers GPS Check
+        setSelectedCustomerInfo(cust); 
 
         let mappedTier = null;
         const tierUpper = (cust.tier || '').toUpperCase();
@@ -157,9 +172,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const handleManualCustomerType = (e) => {
         setCustomerName(e.target.value);
         setShowCustomerDropdown(true);
-        setSelectedCustomerInfo(null); // Resets GPS to Walk-in mode
+        setSelectedCustomerInfo(null); 
         setLockedTier(null);
-        setGpsStatus('idle');
     };
 
     const addToCart = (product) => {
@@ -204,24 +218,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     const handleWhatsAppShare = () => {
         if (!receiptData) return;
-        
-        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n`;
-        text += `*OFFICIAL RECEIPT*\n`;
-        text += `------------------------\n`;
-        text += `Date: ${receiptData.date}\n`;
-        text += `Customer: ${receiptData.customer}\n`;
-        text += `Payment: ${receiptData.method}\n`;
-        text += `------------------------\n`;
-        
-        receiptData.items.forEach(item => {
-            text += `${item.qty} ${item.unit} ${item.name}\n`;
-            text += `   Rp ${new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}\n`;
-        });
-        
-        text += `------------------------\n`;
-        text += `*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total)}*\n\n`;
-        text += `Thank you for your business!`;
-
+        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method}\n------------------------\n`;
+        receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}\n`; });
+        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total)}*\n\nThank you for your business!`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -234,16 +233,17 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalTotal = cartTotal;
 
         try {
-            const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart);
+            // --- NEW: THE HAND-OFF ---
+            // If the store is unmapped, pass the captured GPS coordinates to the Admin Engine
+            const isNewStore = !selectedCustomerInfo;
+            const newStoreData = isNewStore && agentLocation ? { latitude: agentLocation.latitude, longitude: agentLocation.longitude } : null;
+
+            const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStoreData);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
             setReceiptData({
-                customer: finalCust,
-                method: finalMethod,
-                items: finalCart,
-                total: finalTotal,
-                date: new Date().toLocaleString('id-ID'),
-                agentName: agentFallback 
+                customer: finalCust, method: finalMethod, items: finalCart, total: finalTotal,
+                date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
             setCart([]); 
@@ -251,6 +251,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             setLockedTier(null); 
             setSelectedCustomerInfo(null);
             setGpsStatus('idle');
+            setAgentLocation(null);
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
@@ -266,21 +267,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             if (cardNode) {
                 const gap = window.innerWidth >= 1024 ? 24 : 12; 
                 const scrollAmount = cardNode.offsetWidth + gap; 
-                scrollContainerRef.current.scrollBy({
-                    left: direction === 'left' ? -scrollAmount : scrollAmount,
-                    behavior: 'smooth'
-                });
+                scrollContainerRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
             }
         }
     };
 
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
-
-    const filteredItems = inventory.filter(i => 
-        (activeCategory === "ALL" || i.type === activeCategory) &&
-        i.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+    const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
     const renderManifestUI = (isMobile) => (
@@ -299,12 +292,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded" 
                     />
                     
-                    {/* --- NEW: LIVE GEO-FENCE STATUS --- */}
                     <div className="mt-2 min-h-[20px]">
-                        {selectedCustomerInfo ? (
+                        {selectedCustomerInfo || customerName.trim().length > 2 ? (
                             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                 {gpsStatus === 'checking' && <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>}
                                 {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
+                                {gpsStatus === 'new_store_mapped' && <span className="text-purple-500 flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.3)]"><MapPin size={12}/> Auto-Mapping Store (Ecer Locked)</span>}
                                 {gpsStatus === 'too_far' && (
                                     <div className="flex items-center gap-2 w-full">
                                         <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded"><MapPin size={12}/> Geofence Blocked ({distanceToStore}m / 50m max)</span>
@@ -321,7 +314,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             </div>
                         ) : customerName.length > 0 ? (
                             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-400">
-                                <MapPin size={12}/> Unregistered Walk-in (Bypass Allowed)
+                                <MapPin size={12}/> Walk-in...
                             </div>
                         ) : null}
                     </div>
