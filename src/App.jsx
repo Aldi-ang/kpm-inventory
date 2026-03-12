@@ -4210,6 +4210,7 @@ const handleGitHubMirror = async () => {
       const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
       const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
       const activeCart = manualData ? manualData.cart : cart;
+      const newStoreData = manualData ? manualData.newStoreData : null; // <--- CATCH THE NOO DATA
       const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
       
       if(!customerName) { alert("Customer Name is required!"); return; } 
@@ -4321,6 +4322,39 @@ const handleGitHubMirror = async () => {
                   agentId: currentAgentProfileId || 'ADMIN',
                   agentName: finalAgentName
               }); 
+
+              // --- NEW: AUTO-MAP NEW STORES (NOO) ---
+              if (newStoreData) {
+                  const custRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+                  
+                  // If they went through the formal NOO Registration Gate
+                  if (newStoreData.isNooRegistration) {
+                      firestoreTrans.set(custRef, {
+                          name: customerName,
+                          phone: newStoreData.phone,
+                          address: newStoreData.address,
+                          pricingTier: newStoreData.requestedTier, 
+                          latitude: newStoreData.latitude,
+                          longitude: newStoreData.longitude,
+                          status: 'NOO_ACTIVE', 
+                          mappedBy: finalAgentName,
+                          mappedAt: serverTimestamp(),
+                          hasPhotoProof: true,
+                          storeImage: newStoreData.photoUrl || ''
+                      });
+                  } else {
+                      // Legacy Walk-In Trap
+                      firestoreTrans.set(custRef, {
+                          name: customerName,
+                          latitude: newStoreData.latitude || null,
+                          longitude: newStoreData.longitude || null,
+                          pricingTier: 'Ecer', 
+                          status: 'WALK_IN',
+                          mappedBy: finalAgentName,
+                          mappedAt: serverTimestamp()
+                      });
+                  }
+              }
           }); 
 
           await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
@@ -4334,7 +4368,7 @@ const handleGitHubMirror = async () => {
       } 
   };
 
-  const handleMerchantSale = async (custName, payMethod, cartItems) => { 
+  const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null) => { 
       const inputTrimmed = custName ? custName.trim().toLowerCase() : "Walk-in Customer";
       const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
       
@@ -4350,7 +4384,7 @@ const handleGitHubMirror = async () => {
           else finalName += " (Retail)";
       }
 
-      return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems });
+      return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData });
   };
 
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
