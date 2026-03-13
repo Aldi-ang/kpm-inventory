@@ -93,11 +93,22 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
+        
         const handleClickOutside = (e) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowCustomerDropdown(false);
+            // Check if the tap happened inside ANY manifest area, ignoring refs
+            if (!e.target.closest('.manifest-dropdown-area')) {
+                setShowCustomerDropdown(false);
+            }
         };
+
         document.addEventListener("mousedown", handleClickOutside);
-        return () => { clearTimeout(timer); document.removeEventListener("mousedown", handleClickOutside); };
+        document.addEventListener("touchstart", handleClickOutside, { passive: true }); // Mobile touch support
+        
+        return () => { 
+            clearTimeout(timer); 
+            document.removeEventListener("mousedown", handleClickOutside); 
+            document.removeEventListener("touchstart", handleClickOutside); 
+        };
     }, []);
 
     useEffect(() => {
