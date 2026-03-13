@@ -2351,7 +2351,13 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                     {/* NEW: UNLOCK BUTTON FOR ADMIN SAFE MODE */}
                     {userRole === 'ADMIN' && !isAdmin && (
                         <div className="px-2 mb-3">
-                            <button onClick={() => setShowAdminLogin && setShowAdminLogin(true)} className="w-full bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-400 hover:text-white p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20">
+                            <button 
+                                onClick={() => {
+                                    if (setShowAdminLogin) setShowAdminLogin(true);
+                                    setIsMobileMenuOpen(false); // <--- Instantly closes the mobile sidebar
+                                }} 
+                                className="w-full bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-400 hover:text-white p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20"
+                            >
                                 <Lock size={14} /> Unlock Master Vault
                             </button>
                         </div>
@@ -5201,7 +5207,7 @@ const handleGitHubMirror = async () => {
       
       {/* --- PINPOINT: Improved Admin Modal (Fixed Fonts & Layout) --- */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 font-mono">
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 font-mono">
           <div className={`bg-black border-2 ${isResetMode ? 'border-orange-500' : 'border-red-600/50'} p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
             
             {/* Terminal Decoration */}
