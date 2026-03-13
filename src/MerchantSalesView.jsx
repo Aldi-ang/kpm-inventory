@@ -45,7 +45,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return R * c; 
     };
 
-    const verifyLocation = (useLowAccuracy = false) => { // <-- ADDED PARAMETER
+    const verifyLocation = (useLowAccuracy = false) => {
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -60,10 +60,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             setDistanceToStore(Math.round(dist));
                             setGpsStatus(dist <= 50 ? 'verified' : 'too_far');
                         } else {
-                            setGpsStatus('bypass'); // Legacy unmapped store
+                            setGpsStatus('bypass'); 
                         }
                     } else if (customerName.trim().length > 0) {
-                        setGpsStatus('walk_in'); // Unregistered, strictly Ecer
+                        setGpsStatus('walk_in'); 
                     } else {
                         setGpsStatus('idle');
                     }
@@ -72,8 +72,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     console.error("GPS Error:", error);
                     setGpsStatus('error');
                 },
-                // Turn off High Accuracy if the PC bypass is clicked
-                { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 0 } 
+                { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 0 }
             );
         } else {
             setGpsStatus('error');
@@ -151,7 +150,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setCustomerName(e.target.value);
         setShowCustomerDropdown(true);
         setSelectedCustomerInfo(null); 
-        setLockedTier('Ecer'); // Strict walk-in quarantine
+        setLockedTier('Ecer'); 
         updateCartPricing('Ecer');
     };
 
@@ -212,7 +211,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }));
     };
 
-    // --- NEW: NOO REGISTRATION HANDLERS ---
     const handlePhotoCapture = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -226,7 +224,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             return alert("All fields (Phone, Address, Photo) are required to register a new outlet and unlock pricing!");
         }
         
-        // Transform the walk-in into a temporarily registered store
         const tempStore = {
             id: 'NOO_TEMP',
             name: customerName,
@@ -240,8 +237,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setLockedTier(nooForm.requestedTier);
         updateCartPricing(nooForm.requestedTier);
         setShowNooModal(false);
-        setGpsStatus('verified'); // Force verified since we just took the photo and GPS
+        setGpsStatus('verified'); 
         triggerMerchantSpeak('expensive');
+    };
+
+    const handleWhatsAppShare = () => {
+        if (!receiptData) return;
+        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method}\n------------------------\n`;
+        receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}\n`; });
+        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total)}*\n\nThank you for your business!`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
     const handleFinalDeal = async () => {
@@ -253,7 +258,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const finalTotal = cartTotal;
 
         try {
-            // Pass the NOO data payload to App.jsx if this was a formal registration
             const isFormalNoo = selectedCustomerInfo?.isNooRegistration;
             const newStorePayload = isFormalNoo ? selectedCustomerInfo : null;
 
@@ -281,6 +285,17 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     };
 
+    const scroll = (direction) => {
+        if (scrollContainerRef.current) {
+            const cardNode = scrollContainerRef.current.querySelector('.product-card');
+            if (cardNode) {
+                const gap = window.innerWidth >= 1024 ? 24 : 12; 
+                const scrollAmount = cardNode.offsetWidth + gap; 
+                scrollContainerRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+            }
+        }
+    };
+
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
@@ -305,11 +320,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
                             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                 {gpsStatus === 'checking' && (
-    <div className="flex items-center justify-between w-full">
-        <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-        <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
-    </div>
-)}
+                                    <div className="flex items-center justify-between w-full">
+                                        <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+                                        <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
+                                    </div>
+                                )}
                                 {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
                                 {gpsStatus === 'too_far' && (
                                     <div className="flex items-center gap-2 w-full">
@@ -328,7 +343,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-600">
                                     <AlertCircle size={12}/> Walk-in (Locked to Ecer)
                                 </div>
-                                {/* THE REGISTRATION BUTTON */}
                                 <button 
                                     onClick={() => setShowNooModal(true)}
                                     className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors"
@@ -364,25 +378,29 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
-                {cart.map((item, idx) => {
-                    const mergedTiers = new Set(allowedTiers);
-                    if (lockedTier) mergedTiers.add(lockedTier);
-                    return (
-                    <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
-                            <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
+                {cart.length === 0 ? (
+                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
+                ) : (
+                    cart.map((item, idx) => {
+                        const mergedTiers = new Set(allowedTiers);
+                        if (lockedTier) mergedTiers.add(lockedTier);
+                        return (
+                        <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
+                            </div>
+                            <div className="flex items-center gap-1 md:gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
+                                <input type="number" value={item.qty} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]" />
+                                <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                                    {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
+                                </select>
+                            </div>
+                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</div>
                         </div>
-                        <div className="flex items-center gap-1 md:gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
-                            <input type="number" value={item.qty} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]" />
-                            <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                            <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
-                                {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
-                            </select>
-                        </div>
-                        <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</div>
-                    </div>
-                )})}
+                    )})
+                )}
             </div>
         </div>
     );
@@ -391,7 +409,17 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         <div className="flex h-full w-full bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
-            <div className={`w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pt-12 lg:pt-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            {/* --- NEW BOTTOM NAVIGATION BAR FOR MOBILE --- */}
+            <div className="lg:hidden absolute bottom-0 inset-x-0 h-14 flex border-t-2 border-[#5c4b3a] bg-[#0f0e0d] z-[150] shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                <button onClick={() => setMobileTab('products')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}>
+                    <ShoppingBag size={18}/> Wares
+                </button>
+                <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}>
+                    <User size={18}/> Merchant ({cart.length})
+                </button>
+            </div>
+
+            <div className={`w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="h-40 md:h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[200px] lg:min-h-[250px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
@@ -424,8 +452,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             </div>
 
-            <div className={`flex-1 flex-col bg-[#161412] pt-12 lg:pt-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                {/* Product UI rendering remains the same */}
+            <div className={`flex-1 flex-col bg-[#161412] pb-14 lg:pb-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
@@ -434,13 +461,22 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
                     </div>
+                    <div className="hidden lg:flex gap-1">
+                        <button onClick={() => scroll('left')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
+                        <button onClick={() => scroll('right')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card snap-start w-[160px] md:w-[240px] lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
                             <div className="h-32 md:h-44 lg:h-48 p-3 md:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
+                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[8px] md:text-[10px] font-black px-2 py-0.5 md:px-2 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                    {item.type || 'MISC'}
+                                </div>
                             </div>
                             <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-4 flex flex-col font-mono relative">
                                 <h4 className="text-[#d4c5a3] text-[11px] md:text-sm font-black uppercase mb-3 line-clamp-2 h-[32px] md:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
@@ -522,8 +558,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                         <p className="text-xs text-blue-400 font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
                                     </div>
                                 </div>
-                                
-                                {/* NEW: PC BYPASS BUTTON */}
                                 {!agentLocation && (
                                     <button onClick={() => verifyLocation(true)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
                                         PC Fast Scan
@@ -541,8 +575,74 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             )}
             
-            {/* ... (Receipt Modal remains below, same as before) ... */}
-            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+            {receiptData && (
+                 <div className="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
+                     <style>{`
+                         @media print { 
+                             body * { visibility: hidden; } 
+                             .print-receipt, .print-receipt * { visibility: visible; } 
+                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; } 
+                             .no-print { display: none !important; }
+                         }
+                     `}</style>
+                     
+                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
+                         
+                         <div className="p-6 pb-2">
+                             <div className="text-center mb-6">
+                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                 <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
+                             </div>
+                             
+                             <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
+                                 {receiptData.agentName && receiptData.agentName !== 'Admin' && (
+                                     <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{receiptData.agentName}</span></div>
+                                 )}
+                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
+                             </div>
+
+                             <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
+                                 {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
+                                     <div key={i} className="mb-2">
+                                         <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
+                                         <div className="flex justify-between text-xs mt-0.5">
+                                             <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                             <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+                                         </div>
+                                     </div>
+                                 )) : null}
+                             </div>
+
+                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
+                                 <span>TOTAL</span>
+                                 <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
+                             </div>
+                             
+                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500">
+                                 <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
+                                 <p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p>
+                             </div>
+                         </div>
+
+                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
+                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                 <Printer size={14}/> Print
+                             </button>
+                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                 <MessageSquare size={14}/> Share
+                             </button>
+                         </div>
+
+                         <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
+                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
+                         </button>
+                     </div>
+                 </div>
+            )}
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     );
 };

@@ -5558,13 +5558,13 @@ const handleGitHubMirror = async () => {
           )}
 
           {activeTab === 'sales' && (
-              <div className="h-full w-full flex flex-col relative"> 
+              <div className="h-full w-full flex flex-col relative bg-black"> 
                   {/* --- FIXED: ADMIN FIELD MODE TOGGLE BAR --- */}
                   {userRole === 'ADMIN' && (
-                      <div className="w-full shrink-0 bg-[#0f0e0d] border-b border-[#3e3226] p-2 flex justify-center z-[200] relative shadow-md">
-                          <div className="bg-black/90 backdrop-blur-md border border-white/20 p-1 md:p-1.5 rounded-full flex items-center shadow-xl">
-                              <button onClick={() => setAdminSalesMode('VAULT')} className={`px-4 md:px-8 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VAULT' ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Master Vault</button>
-                              <button onClick={() => setAdminSalesMode('VEHICLE')} className={`px-4 md:px-8 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VEHICLE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Boss Car</button>
+                      <div className="w-full shrink-0 bg-[#0f0e0d] border-b-2 border-[#3e3226] p-3 flex justify-center z-[200] shadow-md">
+                          <div className="bg-black/90 backdrop-blur-md border border-[#8b7256] p-1.5 rounded-full flex items-center shadow-2xl">
+                              <button onClick={() => setAdminSalesMode('VAULT')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VAULT' ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Master Vault</button>
+                              <button onClick={() => setAdminSalesMode('VEHICLE')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VEHICLE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Boss Car</button>
                           </div>
                       </div>
                   )}
