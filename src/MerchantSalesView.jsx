@@ -45,7 +45,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return R * c; 
     };
 
-    const verifyLocation = () => {
+    const verifyLocation = (useLowAccuracy = false) => { // <-- ADDED PARAMETER
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -72,7 +72,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     console.error("GPS Error:", error);
                     setGpsStatus('error');
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                // Turn off High Accuracy if the PC bypass is clicked
+                { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 0 } 
             );
         } else {
             setGpsStatus('error');
@@ -303,7 +304,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <div className="mt-2 min-h-[20px]">
                         {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
                             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
-                                {gpsStatus === 'checking' && <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>}
+                                {gpsStatus === 'checking' && (
+    <div className="flex items-center justify-between w-full">
+        <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+        <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
+    </div>
+)}
                                 {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
                                 {gpsStatus === 'too_far' && (
                                     <div className="flex items-center gap-2 w-full">
@@ -508,12 +514,21 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             </div>
                             
                             {/* GPS STATUS FEEDBACK INSIDE MODAL */}
-                            <div className="bg-black/30 p-3 rounded border border-slate-700 flex items-center gap-3">
-                                <div className="p-2 bg-blue-900/30 text-blue-400 rounded-full"><Map size={16}/></div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location Tracking</p>
-                                    <p className="text-xs text-blue-400 font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
+                            <div className="bg-black/30 p-3 rounded border border-slate-700 flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-900/30 text-blue-400 rounded-full"><Map size={16}/></div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location Tracking</p>
+                                        <p className="text-xs text-blue-400 font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
+                                    </div>
                                 </div>
+                                
+                                {/* NEW: PC BYPASS BUTTON */}
+                                {!agentLocation && (
+                                    <button onClick={() => verifyLocation(true)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
+                                        PC Fast Scan
+                                    </button>
+                                )}
                             </div>
                         </div>
 
