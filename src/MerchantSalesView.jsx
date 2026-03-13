@@ -316,7 +316,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-40 pointer-events-none"></div>
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
-            <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4" ref={dropdownRef}>
+            <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
                 <div className="relative">
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Customer Name</label>
                     <input 
