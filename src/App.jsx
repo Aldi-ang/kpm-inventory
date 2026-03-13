@@ -975,6 +975,18 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                  )}
                              </div>
 
+                             {/* --- SHOW THE PHOTO ON THE RECEIPT --- */}
+                             {viewingReceipt.deliveryProof && (
+                                 <div className="mb-4 flex flex-col items-center justify-center border-b-2 border-dashed !border-slate-400 pb-4">
+                                     <span className="text-[10px] font-bold !text-slate-600 mb-2 uppercase tracking-widest">Verified Delivery Proof</span>
+                                     <img src={viewingReceipt.deliveryProof.photo} className="w-48 h-auto border-2 !border-slate-300 rounded shadow-sm grayscale contrast-125" alt="Proof" />
+                                     <div className="text-[8px] !text-slate-500 mt-2 font-mono text-center">
+                                        GPS: {viewingReceipt.deliveryProof.latitude ? viewingReceipt.deliveryProof.latitude.toFixed(5) : 'N/A'}, {viewingReceipt.deliveryProof.longitude ? viewingReceipt.deliveryProof.longitude.toFixed(5) : 'N/A'}<br/>
+                                        Time: {viewingReceipt.deliveryProof.capturedAt ? new Date(viewingReceipt.deliveryProof.capturedAt).toLocaleString('id-ID') : 'N/A'}
+                                     </div>
+                                 </div>
+                             )}
+
                              <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
                                  <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
                              </div>
@@ -4216,7 +4228,8 @@ const handleGitHubMirror = async () => {
       const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
       const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
       const activeCart = manualData ? manualData.cart : cart;
-      const newStoreData = manualData ? manualData.newStoreData : null; // <--- CATCH THE NOO DATA
+      const newStoreData = manualData ? manualData.newStoreData : null; 
+      const proofPayload = manualData ? manualData.proofPayload : null; // <--- CATCH THE PROOF
       const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
       
       if(!customerName) { alert("Customer Name is required!"); return; } 
@@ -4309,8 +4322,8 @@ const handleGitHubMirror = async () => {
               });
 
               // GUARANTEE THE NAME
-              if (userRole === 'ADMIN' && adminSalesMode === 'VAULT') {
-                  finalAgentName = "Admin";
+              if (userRole === 'ADMIN') {
+                  finalAgentName = "Admin"; // Unify ALL Admin sales (Vault + Boss Car) into one folder!
               } else if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
                   finalAgentName = agentDoc.data().name; 
               }
@@ -4326,7 +4339,14 @@ const handleGitHubMirror = async () => {
                   type: 'SALE', 
                   timestamp: serverTimestamp(),
                   agentId: currentAgentProfileId || 'ADMIN',
-                  agentName: finalAgentName
+                  agentName: finalAgentName,
+                  // --- NEW: THE IMMUTABLE LIVE PROOF ---
+                  deliveryProof: proofPayload ? {
+                      photo: proofPayload.photoData,
+                      latitude: proofPayload.latitude,
+                      longitude: proofPayload.longitude,
+                      capturedAt: proofPayload.timestamp
+                  } : null
               }); 
 
               // --- NEW: AUTO-MAP NEW STORES (NOO) ---
@@ -4374,7 +4394,7 @@ const handleGitHubMirror = async () => {
       } 
   };
 
-  const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null) => { 
+  const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null) => { 
       const inputTrimmed = custName ? custName.trim().toLowerCase() : "Walk-in Customer";
       const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
       
@@ -4390,7 +4410,7 @@ const handleGitHubMirror = async () => {
           else finalName += " (Retail)";
       }
 
-      return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData });
+      return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload });
   };
 
   const executeReturn = async (returnQtys) => { if (!returningTransaction || !user) return; const trans = returningTransaction; let totalRefundValue = 0; const itemsToReturn = []; trans.items.forEach(item => { const qty = returnQtys[item.productId] || 0; if (qty > 0) { totalRefundValue += (item.calculatedPrice * qty); itemsToReturn.push({ ...item, qty }); } }); if (itemsToReturn.length === 0) { setReturningTransaction(null); return; } handleConsignmentReturn(trans.customerName, itemsToReturn, totalRefundValue); setReturningTransaction(null); };
