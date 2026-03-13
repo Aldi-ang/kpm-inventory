@@ -660,7 +660,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 </div>
                                 {!agentLocation && (
                                     <button onClick={() => verifyLocation(true)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
-                                        PC Fast Scan
+                                        Force GPS Lock
                                     </button>
                                 )}
                             </div>
