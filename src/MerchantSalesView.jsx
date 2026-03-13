@@ -317,15 +317,41 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
             <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
-                <div className="relative">
-                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Customer Name</label>
-                    <input 
-                        value={customerName} 
-                        onFocus={() => setShowCustomerDropdown(true)}
-                        onChange={handleManualCustomerType} 
-                        placeholder="TYPE OR SELECT..." 
-                        className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded" 
-                    />
+                {/* --- NEW: FOCUS DIMMER BACKDROP --- */}
+                {showCustomerDropdown && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
+                )}
+                
+                <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
+                    <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
+                    
+                    <div className="relative">
+                        <input 
+                            value={customerName} 
+                            onFocus={() => setShowCustomerDropdown(true)}
+                            onChange={handleManualCustomerType} 
+                            placeholder="TYPE OR SELECT..." 
+                            className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
+                        />
+                        
+                        {/* --- THE 1-TAP DELETE BUTTON --- */}
+                        {customerName.length > 0 && (
+                            <button 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCustomerName("");
+                                    setSelectedCustomerInfo(null);
+                                    setLockedTier(null);
+                                    setGpsStatus('idle');
+                                    setShowCustomerDropdown(true); // Keep list open to pick a new one
+                                }}
+                                className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}
+                            >
+                                <X size={16} strokeWidth={3}/>
+                            </button>
+                        )}
+                    </div>
                     
                     <div className="mt-2 min-h-[20px]">
                         {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
