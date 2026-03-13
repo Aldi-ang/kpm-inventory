@@ -118,8 +118,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
         
-        // UNIFIED DB CHECK: Prioritize Admin Directory ('tier'), fallback to NOO ('pricingTier')
-        const rawTier = c.tier || c.pricingTier || c.priceTier || '';
+        // UNIFIED DB CHECK: ABSOLUTE PRIORITY to Admin Directory ('priceTier'), then legacy ('tier'), then NOO ('pricingTier')
+        const rawTier = c.priceTier || c.tier || c.pricingTier || '';
         const tierUpper = rawTier.toUpperCase();
         
         let mappedTier = 'Retail'; // Default fallback
@@ -150,8 +150,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
 
-        // UNIFIED DB CHECK: Prioritize Admin Directory ('tier'), fallback to NOO ('pricingTier')
-        const rawTier = cust.tier || cust.pricingTier || cust.priceTier || '';
+        // UNIFIED DB CHECK: ABSOLUTE PRIORITY to Admin Directory ('priceTier'), then legacy ('tier'), then NOO ('pricingTier')
+        const rawTier = cust.priceTier || cust.tier || cust.pricingTier || '';
         const tierUpper = rawTier.toUpperCase();
         
         let mappedTier = 'Retail'; // Default fallback
