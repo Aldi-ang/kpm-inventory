@@ -33,6 +33,32 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
+    // --- NEW: TRANSACTION LIVE PROOF STATE ---
+    const [txProofPhoto, setTxProofPhoto] = useState(null);
+
+    // --- NEW: IMAGE COMPRESSOR (Prevents Database Overload) ---
+    const handleTxPhotoCapture = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600; // Shrink to 600px width
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% Quality JPEG
+                setTxProofPhoto(compressedDataUrl);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
     // --- HELPER: HAVERSINE DISTANCE CALCULATOR ---
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
         const R = 6371e3; 
@@ -95,14 +121,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         const timer = setTimeout(() => setDoorsOpen(true), 500);
         
         const handleClickOutside = (e) => {
-            // Check if the tap happened inside ANY manifest area, ignoring refs
             if (!e.target.closest('.manifest-dropdown-area')) {
                 setShowCustomerDropdown(false);
             }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
-        document.addEventListener("touchstart", handleClickOutside, { passive: true }); // Mobile touch support
+        document.addEventListener("touchstart", handleClickOutside, { passive: true }); 
         
         return () => { 
             clearTimeout(timer); 
@@ -118,11 +143,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
         
-        // UNIFIED DB CHECK: ABSOLUTE PRIORITY to Admin Directory ('priceTier'), then legacy ('tier'), then NOO ('pricingTier')
         const rawTier = c.priceTier || c.tier || c.pricingTier || '';
         const tierUpper = rawTier.toUpperCase();
         
-        let mappedTier = 'Retail'; // Default fallback
+        let mappedTier = 'Retail'; 
         if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
         else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
@@ -150,11 +174,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
 
-        // UNIFIED DB CHECK: ABSOLUTE PRIORITY to Admin Directory ('priceTier'), then legacy ('tier'), then NOO ('pricingTier')
         const rawTier = cust.priceTier || cust.tier || cust.pricingTier || '';
         const tierUpper = rawTier.toUpperCase();
         
-        let mappedTier = 'Retail'; // Default fallback
+        let mappedTier = 'Retail'; 
         if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
         else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
@@ -267,7 +290,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     };
 
     const handleFinalDeal = async () => {
-        if (cart.length === 0 || !customerName.trim()) return;
+        // PREVENT SALE IF NO PHOTO IS TAKEN
+        if (cart.length === 0 || !customerName.trim() || !txProofPhoto) return;
         
         const finalCust = customerName.trim();
         const finalMethod = paymentMethod;
@@ -278,7 +302,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             const isFormalNoo = selectedCustomerInfo?.isNooRegistration;
             const newStorePayload = isFormalNoo ? selectedCustomerInfo : null;
 
-            const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload);
+            // --- NEW: COMPILE THE DELIVERY PROOF ---
+            const proofPayload = {
+                photoData: txProofPhoto,
+                latitude: agentLocation?.latitude || 0,
+                longitude: agentLocation?.longitude || 0,
+                timestamp: new Date().toISOString()
+            };
+
+            // Pass proofPayload as the 5th argument
+            const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
             setReceiptData({
@@ -292,6 +325,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             setSelectedCustomerInfo(null);
             setGpsStatus('idle');
             setAgentLocation(null);
+            setTxProofPhoto(null); // Reset the photo for the next sale!
             setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
@@ -323,7 +357,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
             <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
-                {/* --- NEW: FOCUS DIMMER BACKDROP --- */}
                 {showCustomerDropdown && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
                 )}
@@ -340,7 +373,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
                         />
                         
-                        {/* --- THE 1-TAP DELETE BUTTON --- */}
                         {customerName.length > 0 && (
                             <button 
                                 onClick={(e) => {
@@ -350,7 +382,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     setSelectedCustomerInfo(null);
                                     setLockedTier(null);
                                     setGpsStatus('idle');
-                                    setShowCustomerDropdown(true); // Keep list open to pick a new one
+                                    setShowCustomerDropdown(true); 
                                 }}
                                 className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}
                             >
@@ -479,17 +511,42 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
                
                 <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+                    
+                    {/* --- NEW: LIVE DELIVERY PROOF UI --- */}
+                    <div className="mb-4">
+                        <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Live Delivery Proof <span className="text-red-500">*</span></label>
+                        <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
+                        
+                        {txProofPhoto ? (
+                            <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)]">
+                                <img src={txProofPhoto} alt="Proof" className="w-full h-24 object-cover opacity-80" />
+                                <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
+                                <div className="absolute bottom-0 inset-x-0 bg-black/80 p-1.5 text-[9px] text-[#ff9d00] font-mono text-center tracking-widest uppercase">
+                                    <MapPin size={10} className="inline mr-1"/> Verified • {new Date().toLocaleTimeString()}
+                                </div>
+                            </div>
+                        ) : (
+                            <button onClick={() => document.getElementById('txProof').click()} className="w-full py-4 border-2 border-dashed border-[#5c4b3a] hover:border-[#ff9d00] text-[#8b7256] hover:text-[#ff9d00] bg-black/40 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
+                                <Camera size={24} />
+                                <span className="text-[10px] uppercase tracking-widest font-bold">Capture Handover Photo</span>
+                            </button>
+                        )}
+                    </div>
+
                     <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#5c4b3a] pb-2 md:pb-3 font-mono">
                         <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
                         <span className="text-2xl md:text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
                     </div>
+                    
+                    {/* BUTTON DISABLED IF NO PHOTO */}
                     <button 
                         onClick={handleFinalDeal} 
-                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking'} 
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking' || !txProofPhoto} 
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' && txProofPhoto ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
                         {gpsStatus === 'checking' ? 'Awaiting GPS...' : 
                          gpsStatus === 'too_far' ? 'Return to Store' :
+                         !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
                          customerName.trim() ? <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</> : "SIGN MANIFEST >"}
                     </button>
                 </div>
@@ -540,7 +597,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             </div>
             <div className="hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
 
-            {/* --- NEW: THE NOO (NEW OPEN OUTLET) REGISTRATION MODAL --- */}
+            {/* --- THE NOO (NEW OPEN OUTLET) REGISTRATION MODAL --- */}
             {showNooModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
                     <div className="bg-slate-900 w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
@@ -592,7 +649,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 )}
                             </div>
                             
-                            {/* GPS STATUS FEEDBACK INSIDE MODAL */}
                             <div className="bg-black/30 p-3 rounded border border-slate-700 flex justify-between items-center gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-blue-900/30 text-blue-400 rounded-full"><Map size={16}/></div>
