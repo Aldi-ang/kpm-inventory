@@ -108,14 +108,15 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     useEffect(() => { 
         if (selectedCustomerInfo) {
             verifyLocation();
-        } else if (customerName.trim().length > 2 && !showNooModal) {
+        } else if (customerName.trim().length > 2) {
+            // FIX: Never stop tracking GPS just because the modal is open!
             const timer = setTimeout(() => { verifyLocation(); }, 1000); 
             return () => clearTimeout(timer);
         } else {
             setGpsStatus('idle');
             setAgentLocation(null);
         }
-    }, [selectedCustomerInfo, customerName, showNooModal]);
+    }, [selectedCustomerInfo, customerName]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
