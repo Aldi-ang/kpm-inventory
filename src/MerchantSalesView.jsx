@@ -117,12 +117,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
-        let mappedTier = c.priceTier || 'Retail'; 
-        if (!c.priceTier) {
+        
+        // CHECK ALL POSSIBLE DATABASE KEYS
+        let mappedTier = c.pricingTier || c.priceTier || null; 
+        
+        if (!mappedTier) {
             const tierUpper = (c.tier || '').toUpperCase();
             if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
             else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
             else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+            else mappedTier = 'Retail'; // The ultimate fallback
         }
         return allowedTiers.includes(mappedTier);
     }).slice(0, 5);
@@ -147,11 +151,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
 
-        let mappedTier = null;
-        const tierUpper = (cust.tier || '').toUpperCase();
-        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
-        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
-        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+        // CHECK ALL POSSIBLE DATABASE KEYS
+        let mappedTier = cust.pricingTier || cust.priceTier || null;
+        
+        if (!mappedTier) {
+            const tierUpper = (cust.tier || '').toUpperCase();
+            if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
+            else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
+            else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+            else mappedTier = 'Retail'; // The ultimate fallback
+        }
 
         setLockedTier(mappedTier);
         updateCartPricing(mappedTier);
