@@ -943,9 +943,9 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  <div className="fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                      <style>{`
                          @media print { 
-                             body * { visibility: hidden; } 
-                             .print-receipt, .print-receipt * { visibility: visible; } 
-                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; max-height: none !important; overflow: visible !important; } 
+                             body { visibility: hidden; height: auto !important; overflow: visible !important; } 
+                             .print-receipt { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; max-height: none !important; overflow: visible !important; } 
+                             .fixed { position: absolute !important; height: auto !important; overflow: visible !important; background: transparent !important; }
                              .no-print { display: none !important; } 
                          }
                      `}</style>
