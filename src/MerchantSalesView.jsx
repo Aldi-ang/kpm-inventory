@@ -677,27 +677,35 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             
             {receiptData && (() => {
                 const activeTier = receiptData.items?.[0]?.priceTier || 'Retail';
+                // DYNAMIC UNIT: Grosir uses Slop, Retail/Ecer uses Bks
+                const isGrosir = activeTier === 'Grosir' || activeTier === 'Distributor';
+                const unitLabel = isGrosir ? 'SLOP' : 'BKS';
+
                 const catalogRows = inventory.map(invItem => {
                     const packsPerSlop = invItem.packsPerSlop || 10;
                     let basePrice = invItem.priceRetail || 0;
                     if (activeTier === 'Grosir') basePrice = invItem.priceGrosir || 0;
                     if (activeTier === 'Ecer') basePrice = invItem.priceEcer || 0;
-                    const slopPrice = basePrice * packsPerSlop;
+                    
+                    // Display price follows the specific unit length
+                    const displayPrice = isGrosir ? (basePrice * packsPerSlop) : basePrice;
 
                     const boughtItem = receiptData.items?.find(i => i.productId === invItem.id);
-                    let qtySlop = 0;
+                    let displayQty = 0;
                     let rowTotal = 0;
                     
                     if (boughtItem) {
-                        let multToSlop = 0;
-                        if (boughtItem.unit === 'Bks') multToSlop = 1 / packsPerSlop;
-                        if (boughtItem.unit === 'Slop') multToSlop = 1;
-                        if (boughtItem.unit === 'Bal') multToSlop = (invItem.slopsPerBal || 20);
-                        if (boughtItem.unit === 'Karton') multToSlop = (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20);
-                        qtySlop = boughtItem.qty * multToSlop;
+                        // Normalize everything to Bungkus first
+                        let qtyInBks = boughtItem.qty;
+                        if (boughtItem.unit === 'Slop') qtyInBks = boughtItem.qty * packsPerSlop;
+                        if (boughtItem.unit === 'Bal') qtyInBks = boughtItem.qty * (invItem.slopsPerBal || 20) * packsPerSlop;
+                        if (boughtItem.unit === 'Karton') qtyInBks = boughtItem.qty * (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20) * packsPerSlop;
+                        
+                        // Convert to display unit
+                        displayQty = isGrosir ? (qtyInBks / packsPerSlop) : qtyInBks;
                         rowTotal = boughtItem.calculatedPrice * boughtItem.qty;
                     }
-                    return { name: invItem.name, slopPrice, qtySlop, total: rowTotal, isBought: !!boughtItem };
+                    return { name: invItem.name, displayPrice, displayQty, total: rowTotal, isBought: !!boughtItem };
                 });
 
                 return (
@@ -765,8 +773,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                             <tr>
                                                 <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / SLOP</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY (SLOP)</th>
+                                                {/* DYNAMIC HEADER BASED ON TIER */}
+                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
                                             </tr>
                                         </thead>
@@ -775,8 +784,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                 <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
                                                     <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
                                                     <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.slopPrice)}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.qtySlop > 0 ? Number(item.qtySlop.toFixed(2)) : ''}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
                                                     <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
                                                 </tr>
                                             ))}
@@ -841,6 +850,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 );
             })()}
+        
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     );

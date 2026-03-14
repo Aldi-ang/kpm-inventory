@@ -803,7 +803,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     const [targetDate, setTargetDate] = useState(getCurrentDate());
     const [editingTrans, setEditingTrans] = useState(null);
     const [viewingReceipt, setViewingReceipt] = useState(null); 
-    const [showColorPhoto, setShowColorPhoto] = useState(false); 
+    const [viewingPhoto, setViewingPhoto] = useState(null); // <--- NEW: PHOTO VIEWER STATE
     const [printFormat, setPrintFormat] = useState('thermal'); // <--- NEW: DUAL PRINT FORMAT
 
     // 1. RBAC & FOLDER STRUCTURE ENGINE
@@ -926,6 +926,24 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
         <div className="print-reset animate-fade-in max-w-5xl mx-auto pb-20 relative">
             
             {/* GLOBAL MODALS (Always rendered on top if active) */}
+            
+            {/* NEW: DEDICATED PHOTO VIEWER MODAL */}
+            {viewingPhoto && (
+                 <div className="fixed inset-0 z-[600] bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
+                     <button onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-white hover:text-red-500 z-50 bg-black/50 p-2 rounded-full transition-colors"><X size={32}/></button>
+                     <div className="bg-white p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
+                         <img src={viewingPhoto.photo || viewingPhoto} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" alt="Delivery Proof" />
+                     </div>
+                     {viewingPhoto.latitude && (
+                         <div className="text-white mt-4 font-mono text-xs text-center bg-black/60 px-6 py-3 rounded-xl border border-white/10 shadow-lg">
+                             <p className="font-bold text-emerald-400 mb-1">GPS VERIFIED LOCATION</p>
+                             <p>LAT/LNG: {viewingPhoto.latitude.toFixed(5)}, {viewingPhoto.longitude.toFixed(5)}</p>
+                             <p>TIME: {new Date(viewingPhoto.capturedAt).toLocaleString('id-ID')}</p>
+                         </div>
+                     )}
+                 </div>
+             )}
+
             {editingTrans && (
                  <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
                      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
@@ -940,107 +958,193 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                  </div>
              )}
 
-            {viewingReceipt && (
-                 <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+            {viewingReceipt && (() => {
+                const activeTier = viewingReceipt.items?.[0]?.priceTier || 'Retail';
+                // DYNAMIC UNIT: Grosir uses Slop, Retail/Ecer uses Bks
+                const isGrosir = activeTier === 'Grosir' || activeTier === 'Distributor';
+                const unitLabel = isGrosir ? 'SLOP' : 'BKS';
 
+                const catalogRows = inventory.map(invItem => {
+                    const packsPerSlop = invItem.packsPerSlop || 10;
+                    let basePrice = invItem.priceRetail || 0;
+                    if (activeTier === 'Grosir') basePrice = invItem.priceGrosir || 0;
+                    if (activeTier === 'Ecer') basePrice = invItem.priceEcer || 0;
+                    
+                    // Display price follows the specific unit length
+                    const displayPrice = isGrosir ? (basePrice * packsPerSlop) : basePrice;
 
+                    const boughtItem = viewingReceipt.items?.find(i => i.productId === invItem.id);
+                    let displayQty = 0;
+                    let rowTotal = 0;
+                    
+                    if (boughtItem) {
+                        // Normalize everything to Bungkus first
+                        let qtyInBks = boughtItem.qty;
+                        if (boughtItem.unit === 'Slop') qtyInBks = boughtItem.qty * packsPerSlop;
+                        if (boughtItem.unit === 'Bal') qtyInBks = boughtItem.qty * (invItem.slopsPerBal || 20) * packsPerSlop;
+                        if (boughtItem.unit === 'Karton') qtyInBks = boughtItem.qty * (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20) * packsPerSlop;
+                        
+                        // Convert to display unit
+                        displayQty = isGrosir ? (qtyInBks / packsPerSlop) : qtyInBks;
+                        rowTotal = boughtItem.calculatedPrice * boughtItem.qty;
+                    }
+                    return { name: invItem.name, displayPrice, displayQty, total: rowTotal, isBought: !!boughtItem };
+                });
 
-                     {/* Master CSS handles thermal B&W styling */}
-                     <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-2xl'} shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
-                         
-                         <div className={`p-6 pb-2 shrink-0 ${printFormat === 'a4' ? 'md:p-10' : ''}`}>
-                             <div className={`mb-6 ${printFormat === 'a4' ? 'text-left border-b-2 !border-slate-800 pb-4' : 'text-center'}`}>
-                                 <h2 className={`${printFormat === 'a4' ? 'text-3xl' : 'text-2xl'} font-black uppercase tracking-widest !text-black`}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
-                             </div>
-                             
-                             <div className={`!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 shadow-inner ${printFormat === 'a4' ? 'grid grid-cols-2 gap-x-8 gap-y-2' : 'space-y-2'}`}>
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
-                                 {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
-                                     <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName}</span></div>
-                                 )}
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
-                             </div>
+                viewingReceipt.items?.forEach(boughtItem => {
+                    if (!inventory.find(i => i.id === boughtItem.productId)) {
+                        let qtyInBks = boughtItem.unit === 'Bks' ? boughtItem.qty : boughtItem.qty * 10;
+                        let bksPrice = boughtItem.unit === 'Bks' ? boughtItem.calculatedPrice : boughtItem.calculatedPrice / 10;
+                        
+                        let displayQty = isGrosir ? (qtyInBks / 10) : qtyInBks;
+                        let displayPrice = isGrosir ? (bksPrice * 10) : bksPrice;
+                        
+                        catalogRows.push({ name: boughtItem.name + " (Discontinued)", displayPrice, displayQty, total: boughtItem.calculatedPrice * boughtItem.qty, isBought: true });
+                    }
+                });
 
-                             <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
-                                 {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                     <div key={i} className={`mb-2 ${printFormat === 'a4' ? 'flex justify-between items-center border-b !border-slate-200 pb-2' : ''}`}>
-                                         <div className="font-bold uppercase text-xs !text-black flex-1">{item.name}</div>
-                                         <div className={`flex justify-between text-xs mt-0.5 ${printFormat === 'a4' ? 'w-1/2 ml-4' : ''}`}>
-                                             <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                             <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
-                                         </div>
-                                     </div>
-                                 )) : (
-                                     <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">
-                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment Record' : 'No Itemized Data Available'}
-                                     </div>
-                                 )}
-                             </div>
+                return (
+                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
+                            
+                            {/* --- THERMAL POS LAYOUT --- */}
+                            {printFormat === 'thermal' && (
+                                <div className="p-6 pb-2 shrink-0 font-mono">
+                                    <div className="text-center mb-6">
+                                        <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                        <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
+                                    </div>
+                                    <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
+                                        {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName}</span></div>}
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                    </div>
+                                    <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
+                                        {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
+                                            <div key={i} className="mb-2">
+                                                <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
+                                                <div className="flex justify-between text-xs mt-0.5"><span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span><span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span></div>
+                                            </div>
+                                        )) : <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">No Itemized Data Available</div>}
+                                    </div>
+                                    <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black"><span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span></div>
+                                    <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
+                                </div>
+                            )}
 
-                             {viewingReceipt.deliveryProof && (
-                                 <div className={`mb-4 flex ${printFormat === 'a4' ? 'flex-row items-center gap-6' : 'flex-col items-center'} justify-center border-b-2 border-dashed !border-slate-400 pb-4`}>
-                                     <div className={`${printFormat === 'a4' ? 'flex-1' : 'w-full'} flex justify-between items-center px-4 mb-3`}>
-                                         <span className="text-[10px] font-bold !text-slate-600 uppercase tracking-widest">Verified Delivery Proof</span>
-                                         <button onClick={() => setShowColorPhoto(!showColorPhoto)} className="no-print text-[9px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase hover:bg-blue-200 transition-colors shadow-sm">
-                                             {showColorPhoto ? 'Receipt Mode' : 'View HD Color'}
-                                         </button>
-                                     </div>
-                                     <img 
-                                         src={viewingReceipt.deliveryProof.photo} 
-                                         onClick={() => setShowColorPhoto(!showColorPhoto)}
-                                         className={`w-full ${printFormat === 'a4' ? 'max-w-[150px]' : 'max-w-[220px]'} h-auto border-2 !border-slate-300 rounded shadow-sm transition-all duration-300 cursor-pointer ${showColorPhoto ? '' : 'grayscale contrast-125'}`} 
-                                         alt="Proof" 
-                                     />
-                                     <div className="text-[8px] !text-slate-500 mt-2 font-mono text-center">
-                                        GPS: {viewingReceipt.deliveryProof.latitude ? viewingReceipt.deliveryProof.latitude.toFixed(5) : 'N/A'}, {viewingReceipt.deliveryProof.longitude ? viewingReceipt.deliveryProof.longitude.toFixed(5) : 'N/A'}<br/>
-                                        Time: {viewingReceipt.deliveryProof.capturedAt ? new Date(viewingReceipt.deliveryProof.capturedAt).toLocaleString('id-ID') : 'N/A'}
-                                     </div>
-                                 </div>
-                             )}
+                            {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
+                            {printFormat === 'a4' && (
+                                <div className="p-8 md:p-12 shrink-0 font-sans bg-white relative">
+                                    <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end">
+                                        <div>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">PT KARYAMEGA PUTERA MANDIRI</h1>
+                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1">Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
+                                            <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
+                                        </div>
+                                    </div>
 
-                             <div className={`flex justify-between items-center ${printFormat === 'a4' ? 'text-2xl' : 'text-lg'} font-black mb-6 border-t !border-slate-300 pt-3 !text-black`}>
-                                 <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
-                             </div>
-                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
-                         </div>
+                                    <div className="flex justify-between mb-8 text-sm">
+                                        <table className="w-1/3">
+                                            <tbody>
+                                                <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : viewingReceipt.date}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName || 'Admin'}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                            </tbody>
+                                        </table>
+                                        <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
+                                            <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                            <p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                        </div>
+                                    </div>
 
-                         {/* NEW: DUAL PRINT TOGGLES */}
-                         <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                             <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
-                                 <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
-                                 Thermal (80mm)
-                             </label>
-                             <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
-                                 <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-slate-800"/>
-                                 Standard (A4)
-                             </label>
-                         </div>
+                                    <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                        <thead className="!bg-blue-50 !text-blue-900">
+                                            <tr>
+                                                <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
+                                                {/* DYNAMIC HEADER */}
+                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {catalogRows.map((item, i) => (
+                                                <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr className="!bg-blue-100">
+                                                <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
+                                                <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
 
-                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                 <Printer size={14}/> Print Document
-                             </button>
-                             <button onClick={() => {
-                                 let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
-                                 if (viewingReceipt.items && viewingReceipt.items.length > 0) {
-                                     viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
-                                 }
-                                 text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
-                                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                             }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                 <MessageSquare size={14}/> Share
-                             </button>
-                         </div>
+                                    <div className="flex justify-between items-start mt-12 pb-4">
+                                        <div className="w-1/2">
+                                            <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
+                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke BCA:</p>
+                                                <p className="text-3xl font-black !text-blue-900 tracking-[0.15em] mt-2 leading-none">0301138379</p>
+                                                <p className="font-bold !text-blue-800 mt-2 uppercase text-sm">A/N ABEDNEGO YB</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
+                                            <div className="flex flex-col items-center">
+                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
+                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.customerName}</p>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
+                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName || 'Sales'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                         <button onClick={() => { setViewingReceipt(null); setShowColorPhoto(false); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
-                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
-                         </button>
-                     </div>
-                 </div>
-            )}
+                            {/* --- SHARED TOGGLES & BUTTONS --- */}
+                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0 rounded-b-lg mt-auto">
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                    <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
+                                    Thermal POS (80mm)
+                                </label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800">
+                                    <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>
+                                    Standard Invoice (A4)
+                                </label>
+                            </div>
+
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 shrink-0">
+                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Document</button>
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                    if (viewingReceipt.items && viewingReceipt.items.length > 0) viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> WhatsApp Share</button>
+                            </div>
+
+                            <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* HIDE MASSIVE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
             <div className="hide-on-print w-full">
@@ -1245,6 +1349,10 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                                                     <td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</td>
                                                                     <td className="p-3 text-center">
                                                                         <div className="flex justify-center gap-2">
+                                                                            {/* NEW DEDICATED PHOTO BUTTON */}
+                                                                            {t.deliveryProof && (
+                                                                                <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded transition-colors" title="View Delivery Photo"><Camera size={14}/></button>
+                                                                            )}
                                                                             <button onClick={() => setViewingReceipt(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-orange-500 rounded transition-colors" title="View Receipt"><FileText size={14}/></button>
                                                                             {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-500 rounded transition-colors" title="Edit"><Pencil size={14}/></button>}
                                                                             {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-500 rounded transition-colors" title="Delete"><Trash2 size={14}/></button>}
