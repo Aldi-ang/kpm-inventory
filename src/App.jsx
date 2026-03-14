@@ -550,7 +550,7 @@ const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticIm
 
     return (
         <div 
-            className={`fixed bottom-0 right-0 z-[9999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
+            className={`hide-on-print fixed bottom-0 right-0 z-[9999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
             onClick={onMascotClick}
             style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
         >
@@ -2337,19 +2337,19 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         <div className="min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             
             {/* BACKGROUND LAYERS */}
-            <div className="absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
+            <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
+            <div className="hide-on-print absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
 
             {/* --- 1. FIXED MOBILE MENU BUTTON --- */}
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                className="hide-on-print lg:hidden fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
             >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
             {/* LEFT COLUMN: NAVIGATION */}
-            <div className={`
+            <div className={`hide-on-print
                 fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:relative lg:translate-x-0
@@ -2439,7 +2439,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (Restored to its original state) */}
-                <div className="pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
+                <div className="hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
@@ -2468,7 +2468,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 </div>
 
                 {/* FOOTER */}
-                <div className="hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
+                <div className="hide-on-print hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
                     <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
                     <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
                 </div>
