@@ -675,74 +675,172 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             )}
             
-            {receiptData && (
-                 <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
-                     <style>{`
-                         @media print { 
-                             body, html { background: white !important; height: auto !important; overflow: visible !important; }
-                             .hide-on-print { display: none !important; }
-                             .print-modal-wrapper { position: absolute !important; inset: 0 !important; background: transparent !important; padding: 0 !important; display: block !important; }
-                             .print-receipt { position: relative !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; max-height: none !important; overflow: visible !important; border-radius: 0 !important; }
-                             .no-print { display: none !important; } 
-                         }
-                     `}</style>
-                     
-                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
-                         
-                         <div className="p-6 pb-2">
-                             <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
-                                 <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
-                             </div>
-                             
-                             <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
-                                 {receiptData.agentName && receiptData.agentName !== 'Admin' && (
-                                     <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{receiptData.agentName}</span></div>
-                                 )}
-                                 <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
-                             </div>
+            {receiptData && (() => {
+                const activeTier = receiptData.items?.[0]?.priceTier || 'Retail';
+                const catalogRows = inventory.map(invItem => {
+                    const packsPerSlop = invItem.packsPerSlop || 10;
+                    let basePrice = invItem.priceRetail || 0;
+                    if (activeTier === 'Grosir') basePrice = invItem.priceGrosir || 0;
+                    if (activeTier === 'Ecer') basePrice = invItem.priceEcer || 0;
+                    const slopPrice = basePrice * packsPerSlop;
 
-                             <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
-                                 {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
-                                     <div key={i} className="mb-2">
-                                         <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
-                                         <div className="flex justify-between text-xs mt-0.5">
-                                             <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                             <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
-                                         </div>
-                                     </div>
-                                 )) : null}
-                             </div>
+                    const boughtItem = receiptData.items?.find(i => i.productId === invItem.id);
+                    let qtySlop = 0;
+                    let rowTotal = 0;
+                    
+                    if (boughtItem) {
+                        let multToSlop = 0;
+                        if (boughtItem.unit === 'Bks') multToSlop = 1 / packsPerSlop;
+                        if (boughtItem.unit === 'Slop') multToSlop = 1;
+                        if (boughtItem.unit === 'Bal') multToSlop = (invItem.slopsPerBal || 20);
+                        if (boughtItem.unit === 'Karton') multToSlop = (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20);
+                        qtySlop = boughtItem.qty * multToSlop;
+                        rowTotal = boughtItem.calculatedPrice * boughtItem.qty;
+                    }
+                    return { name: invItem.name, slopPrice, qtySlop, total: rowTotal, isBought: !!boughtItem };
+                });
 
-                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
-                                 <span>TOTAL</span>
-                                 <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
-                             </div>
-                             
-                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500">
-                                 <p>*** THANK YOU FOR YOUR BUSINESS ***</p>
-                                 <p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p>
-                             </div>
-                         </div>
+                return (
+                    <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
+                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
+                            
+                            {/* --- THERMAL POS LAYOUT --- */}
+                            {printFormat === 'thermal' && (
+                                <div className="p-6 pb-2 shrink-0 font-mono">
+                                    <div className="text-center mb-6">
+                                        <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                        <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
+                                    </div>
+                                    <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
+                                        {receiptData.agentName && receiptData.agentName !== 'Admin' && <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{receiptData.agentName}</span></div>}
+                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
+                                    </div>
+                                    <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
+                                        {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
+                                            <div key={i} className="mb-2">
+                                                <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
+                                                <div className="flex justify-between text-xs mt-0.5"><span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span><span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span></div>
+                                            </div>
+                                        )) : null}
+                                    </div>
+                                    <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black"><span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span></div>
+                                    <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
+                                </div>
+                            )}
 
-                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
-                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                 <Printer size={14}/> Print
-                             </button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                 <MessageSquare size={14}/> Share
-                             </button>
-                         </div>
+                            {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
+                            {printFormat === 'a4' && (
+                                <div className="p-8 md:p-12 shrink-0 font-sans bg-white relative">
+                                    <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end">
+                                        <div>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">PT KARYAMEGA PUTERA MANDIRI</h1>
+                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1">Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
+                                            <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
+                                        </div>
+                                    </div>
 
-                         <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
-                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
-                         </button>
-                     </div>
-                 </div>
-            )}
+                                    <div className="flex justify-between mb-8 text-sm">
+                                        <table className="w-1/3">
+                                            <tbody>
+                                                <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName || 'Admin'}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
+                                            </tbody>
+                                        </table>
+                                        <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
+                                            <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                            <p className="text-xl font-black uppercase !text-slate-900">{receiptData.customer}</p>
+                                        </div>
+                                    </div>
+
+                                    <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                        <thead className="!bg-blue-50 !text-blue-900">
+                                            <tr>
+                                                <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / SLOP</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY (SLOP)</th>
+                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {catalogRows.map((item, i) => (
+                                                <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.slopPrice)}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.qtySlop > 0 ? Number(item.qtySlop.toFixed(2)) : ''}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr className="!bg-blue-100">
+                                                <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
+                                                <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+
+                                    <div className="flex justify-between items-start mt-12 pb-4">
+                                        <div className="w-1/2">
+                                            <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
+                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke BCA:</p>
+                                                <p className="text-3xl font-black !text-blue-900 tracking-[0.15em] mt-2 leading-none">0301138379</p>
+                                                <p className="font-bold !text-blue-800 mt-2 uppercase text-sm">A/N ABEDNEGO YB</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
+                                            <div className="flex flex-col items-center">
+                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
+                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                <p className="text-xs mt-2 uppercase font-bold">{receiptData.customer}</p>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
+                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                <p className="text-xs mt-2 uppercase font-bold">{receiptData.agentName || 'Sales'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- SHARED TOGGLES & BUTTONS --- */}
+                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0 rounded-b-lg mt-auto">
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                    <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
+                                    Thermal POS (80mm)
+                                </label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800">
+                                    <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>
+                                    Standard Invoice (A4)
+                                </label>
+                            </div>
+
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 shrink-0">
+                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Document</button>
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
+                                    if (receiptData.items && receiptData.items.length > 0) receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> WhatsApp Share</button>
+                            </div>
+
+                            <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                        </div>
+                    </div>
+                );
+            })()}
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     );
