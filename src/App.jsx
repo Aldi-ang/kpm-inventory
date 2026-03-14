@@ -941,16 +941,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
             {viewingReceipt && (
                  <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
-                     <style>{`
-                         @media print { 
-                             body, html { background: white !important; height: auto !important; overflow: visible !important; }
-                             .hide-on-print { display: none !important; }
-                             .print-modal-wrapper { position: absolute !important; inset: 0 !important; background: transparent !important; padding: 0 !important; display: block !important; }
-                             .print-receipt { position: relative !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; max-height: none !important; overflow: visible !important; border-radius: 0 !important; }
-                             .no-print { display: none !important; } 
-                         }
-                     `}</style>
-                     
+                     {/* Master CSS handles thermal B&W styling */}
                      <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar">
                          
                          <div className="p-6 pb-2 shrink-0">
@@ -2494,22 +2485,26 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 .text-shadow-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
                 
                 /* --- KILL THE WHITE MAP POPUPS --- */
-                .leaflet-container .leaflet-popup-content-wrapper {
-                    background: transparent !important;
-                    box-shadow: none !important;
-                    border: none !important;
-                    padding: 0 !important;
-                }
-                .leaflet-container .leaflet-popup-tip-container {
-                    display: none !important;
-                }
-                .leaflet-container .leaflet-popup-content {
-                    margin: 0 !important;
-                    line-height: normal !important;
-                    width: auto !important;
-                }
-                .leaflet-container a.leaflet-popup-close-button {
-                    display: none !important;
+                .leaflet-container .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+                .leaflet-container .leaflet-popup-tip-container { display: none !important; }
+                .leaflet-container .leaflet-popup-content { margin: 0 !important; line-height: normal !important; width: auto !important; }
+                .leaflet-container a.leaflet-popup-close-button { display: none !important; }
+
+                /* --- MASTER THERMAL PRINTER OVERRIDE --- */
+                @media print {
+                    @page { margin: 0; }
+                    body, html, #root { background-color: white !important; color: black !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+                    
+                    /* Delete the entire app layout structure */
+                    nav, header { display: none !important; }
+                    #root > div, #root > div > div, #root > div > div > main { background: white !important; height: auto !important; overflow: visible !important; position: static !important; display: block !important; }
+                    .hide-on-print { display: none !important; }
+
+                    /* Isolate the receipt and force pure B&W */
+                    .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
+                    .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; }
+                    .print-receipt * { color: black !important; border-color: black !important; }
+                    .no-print { display: none !important; }
                 }
             `}</style>
         </div>
