@@ -803,6 +803,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     const [targetDate, setTargetDate] = useState(getCurrentDate());
     const [editingTrans, setEditingTrans] = useState(null);
     const [viewingReceipt, setViewingReceipt] = useState(null); 
+    const [showColorPhoto, setShowColorPhoto] = useState(false); // <--- NEW: HD PHOTO STATE
 
     // 1. RBAC & FOLDER STRUCTURE ENGINE
     const reportData = useMemo(() => {
@@ -939,11 +940,19 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
              )}
 
             {viewingReceipt && (
-                 <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
-                     <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
+                 <div className="fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                     <style>{`
+                         @media print { 
+                             body * { visibility: hidden; } 
+                             .print-receipt, .print-receipt * { visibility: visible; } 
+                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; max-height: none !important; overflow: visible !important; } 
+                             .no-print { display: none !important; } 
+                         }
+                     `}</style>
                      
-                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
-                         <div className="p-6 pb-2">
+                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar">
+                         
+                         <div className="p-6 pb-2 shrink-0">
                              <div className="text-center mb-6">
                                  <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
                                  <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
@@ -975,11 +984,20 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                  )}
                              </div>
 
-                             {/* --- SHOW THE PHOTO ON THE RECEIPT --- */}
                              {viewingReceipt.deliveryProof && (
                                  <div className="mb-4 flex flex-col items-center justify-center border-b-2 border-dashed !border-slate-400 pb-4">
-                                     <span className="text-[10px] font-bold !text-slate-600 mb-2 uppercase tracking-widest">Verified Delivery Proof</span>
-                                     <img src={viewingReceipt.deliveryProof.photo} className="w-48 h-auto border-2 !border-slate-300 rounded shadow-sm grayscale contrast-125" alt="Proof" />
+                                     <div className="flex justify-between items-center w-full px-4 mb-3">
+                                         <span className="text-[10px] font-bold !text-slate-600 uppercase tracking-widest">Verified Delivery Proof</span>
+                                         <button onClick={() => setShowColorPhoto(!showColorPhoto)} className="no-print text-[9px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase hover:bg-blue-200 transition-colors shadow-sm">
+                                             {showColorPhoto ? 'Receipt Mode' : 'View HD Color'}
+                                         </button>
+                                     </div>
+                                     <img 
+                                         src={viewingReceipt.deliveryProof.photo} 
+                                         onClick={() => setShowColorPhoto(!showColorPhoto)}
+                                         className={`w-full max-w-[220px] h-auto border-2 !border-slate-300 rounded shadow-sm transition-all duration-300 cursor-pointer ${showColorPhoto ? '' : 'grayscale contrast-125'}`} 
+                                         alt="Proof" 
+                                     />
                                      <div className="text-[8px] !text-slate-500 mt-2 font-mono text-center">
                                         GPS: {viewingReceipt.deliveryProof.latitude ? viewingReceipt.deliveryProof.latitude.toFixed(5) : 'N/A'}, {viewingReceipt.deliveryProof.longitude ? viewingReceipt.deliveryProof.longitude.toFixed(5) : 'N/A'}<br/>
                                         Time: {viewingReceipt.deliveryProof.capturedAt ? new Date(viewingReceipt.deliveryProof.capturedAt).toLocaleString('id-ID') : 'N/A'}
@@ -992,11 +1010,26 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              </div>
                              <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
                          </div>
-                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
-                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
-                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
+
+                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                 <Printer size={14}/> Print
+                             </button>
+                             <button onClick={() => {
+                                 let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                 if (viewingReceipt.items && viewingReceipt.items.length > 0) {
+                                     viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                 }
+                                 text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
+                                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                             }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                 <MessageSquare size={14}/> Share
+                             </button>
                          </div>
-                         <button onClick={() => setViewingReceipt(null)} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
+
+                         <button onClick={() => { setViewingReceipt(null); setShowColorPhoto(false); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg">
+                             <div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div>
+                         </button>
                      </div>
                  </div>
             )}
@@ -2296,7 +2329,8 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 if (item.id === 'agent_inventory') return false;
                 return true; 
             }
-            return ['map_war_room', 'journey', 'fleet', 'sales'].includes(item.id);
+            // security fix: 'fleet' removed from locked view!
+            return ['map_war_room', 'journey', 'sales'].includes(item.id);
         }
         // Employees: Added 'transactions' so they can see their own history!
         return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions'].includes(item.id);
