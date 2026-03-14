@@ -803,7 +803,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     const [targetDate, setTargetDate] = useState(getCurrentDate());
     const [editingTrans, setEditingTrans] = useState(null);
     const [viewingReceipt, setViewingReceipt] = useState(null); 
-    const [showColorPhoto, setShowColorPhoto] = useState(false); // <--- NEW: HD PHOTO STATE
+    const [showColorPhoto, setShowColorPhoto] = useState(false); 
+    const [printFormat, setPrintFormat] = useState('thermal'); // <--- NEW: DUAL PRINT FORMAT
 
     // 1. RBAC & FOLDER STRUCTURE ENGINE
     const reportData = useMemo(() => {
@@ -941,17 +942,20 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
             {viewingReceipt && (
                  <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+
+
+
                      {/* Master CSS handles thermal B&W styling */}
-                     <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar">
+                     <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-2xl'} shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
                          
-                         <div className="p-6 pb-2 shrink-0">
-                             <div className="text-center mb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                         <div className={`p-6 pb-2 shrink-0 ${printFormat === 'a4' ? 'md:p-10' : ''}`}>
+                             <div className={`mb-6 ${printFormat === 'a4' ? 'text-left border-b-2 !border-slate-800 pb-4' : 'text-center'}`}>
+                                 <h2 className={`${printFormat === 'a4' ? 'text-3xl' : 'text-2xl'} font-black uppercase tracking-widest !text-black`}>{appSettings?.companyName || "KPM INVENTORY"}</h2>
                                  <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
                                  <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
                              </div>
                              
-                             <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                             <div className={`!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 shadow-inner ${printFormat === 'a4' ? 'grid grid-cols-2 gap-x-8 gap-y-2' : 'space-y-2'}`}>
                                  <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
                                  <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
                                  {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && (
@@ -962,9 +966,9 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
                              <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
                                  {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                     <div key={i} className="mb-2">
-                                         <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
-                                         <div className="flex justify-between text-xs mt-0.5">
+                                     <div key={i} className={`mb-2 ${printFormat === 'a4' ? 'flex justify-between items-center border-b !border-slate-200 pb-2' : ''}`}>
+                                         <div className="font-bold uppercase text-xs !text-black flex-1">{item.name}</div>
+                                         <div className={`flex justify-between text-xs mt-0.5 ${printFormat === 'a4' ? 'w-1/2 ml-4' : ''}`}>
                                              <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
                                              <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
                                          </div>
@@ -977,8 +981,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                              </div>
 
                              {viewingReceipt.deliveryProof && (
-                                 <div className="mb-4 flex flex-col items-center justify-center border-b-2 border-dashed !border-slate-400 pb-4">
-                                     <div className="flex justify-between items-center w-full px-4 mb-3">
+                                 <div className={`mb-4 flex ${printFormat === 'a4' ? 'flex-row items-center gap-6' : 'flex-col items-center'} justify-center border-b-2 border-dashed !border-slate-400 pb-4`}>
+                                     <div className={`${printFormat === 'a4' ? 'flex-1' : 'w-full'} flex justify-between items-center px-4 mb-3`}>
                                          <span className="text-[10px] font-bold !text-slate-600 uppercase tracking-widest">Verified Delivery Proof</span>
                                          <button onClick={() => setShowColorPhoto(!showColorPhoto)} className="no-print text-[9px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase hover:bg-blue-200 transition-colors shadow-sm">
                                              {showColorPhoto ? 'Receipt Mode' : 'View HD Color'}
@@ -987,7 +991,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                      <img 
                                          src={viewingReceipt.deliveryProof.photo} 
                                          onClick={() => setShowColorPhoto(!showColorPhoto)}
-                                         className={`w-full max-w-[220px] h-auto border-2 !border-slate-300 rounded shadow-sm transition-all duration-300 cursor-pointer ${showColorPhoto ? '' : 'grayscale contrast-125'}`} 
+                                         className={`w-full ${printFormat === 'a4' ? 'max-w-[150px]' : 'max-w-[220px]'} h-auto border-2 !border-slate-300 rounded shadow-sm transition-all duration-300 cursor-pointer ${showColorPhoto ? '' : 'grayscale contrast-125'}`} 
                                          alt="Proof" 
                                      />
                                      <div className="text-[8px] !text-slate-500 mt-2 font-mono text-center">
@@ -997,15 +1001,27 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                  </div>
                              )}
 
-                             <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
+                             <div className={`flex justify-between items-center ${printFormat === 'a4' ? 'text-2xl' : 'text-lg'} font-black mb-6 border-t !border-slate-300 pt-3 !text-black`}>
                                  <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
                              </div>
                              <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
                          </div>
 
+                         {/* NEW: DUAL PRINT TOGGLES */}
+                         <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
+                             <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                 <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
+                                 Thermal (80mm)
+                             </label>
+                             <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                 <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-slate-800"/>
+                                 Standard (A4)
+                             </label>
+                         </div>
+
                          <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                              <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                 <Printer size={14}/> Print
+                                 <Printer size={14}/> Print Document
                              </button>
                              <button onClick={() => {
                                  let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
@@ -2503,7 +2519,12 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                     /* Isolate the receipt */
                     .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
-                    .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; }
+                    .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; }
+                    
+                    /* NEW: DUAL PRINT SIZING */
+                    .print-receipt.format-thermal { width: 80mm !important; max-width: 80mm !important; padding: 5mm !important; }
+                    .print-receipt.format-a4 { width: 100% !important; max-width: 210mm !important; padding: 15mm !important; }
+                    
                     .print-receipt * { color: black !important; border-color: black !important; }
                     .no-print { display: none !important; }
                 }
