@@ -922,7 +922,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     };
 
     return (
-        <div className="animate-fade-in max-w-5xl mx-auto pb-20 relative">
+        <div className="print-reset animate-fade-in max-w-5xl mx-auto pb-20 relative">
             
             {/* GLOBAL MODALS (Always rendered on top if active) */}
             {editingTrans && (
@@ -2334,7 +2334,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     });
 
     return (
-        <div className="min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
+        <div className="print-reset min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             
             {/* BACKGROUND LAYERS */}
             <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
@@ -2436,7 +2436,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             </div>
 
             {/* RIGHT COLUMN: CONTENT AREA */}
-            <div className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
+            <div className="print-reset relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (Restored to its original state) */}
                 <div className="hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
@@ -2461,7 +2461,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
+                <div className="print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
                     <div className="biohazard-content max-w-full mx-auto">
                         {children}
                     </div>
@@ -2493,14 +2493,15 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 /* --- MASTER THERMAL PRINTER OVERRIDE --- */
                 @media print {
                     @page { margin: 0; }
-                    body, html, #root { background-color: white !important; color: black !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+                    body, html, #root { background-color: white !important; color: black !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; display: block !important; }
                     
-                    /* Delete the entire app layout structure */
+                    /* Destroy layout traps (overflow/fixed heights) that clip absolute elements */
+                    .print-reset { display: block !important; height: auto !important; min-height: auto !important; overflow: visible !important; position: static !important; }
+                    
                     nav, header { display: none !important; }
-                    #root > div, #root > div > div, #root > div > div > main { background: white !important; height: auto !important; overflow: visible !important; position: static !important; display: block !important; }
                     .hide-on-print { display: none !important; }
 
-                    /* Isolate the receipt and force pure B&W */
+                    /* Isolate the receipt */
                     .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
                     .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; }
                     .print-receipt * { color: black !important; border-color: black !important; }
