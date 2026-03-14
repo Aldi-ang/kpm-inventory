@@ -1036,11 +1036,11 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
                             {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
                             {printFormat === 'a4' && (
-                                <div className="p-8 md:p-12 shrink-0 font-sans bg-white relative">
+                                <div className="p-8 md:p-12 shrink-0 font-sans relative" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                                     <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end">
                                         <div>
-                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">PT KARYAMEGA PUTERA MANDIRI</h1>
-                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1">Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang</p>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                         </div>
                                         <div className="text-right">
                                             <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
@@ -1053,7 +1053,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                             <tbody>
                                                 <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : viewingReceipt.date}</td></tr>
                                                 <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName || 'Admin'}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
                                                 <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                             </tbody>
                                         </table>
@@ -1068,7 +1068,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                             <tr>
                                                 <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
-                                                {/* DYNAMIC HEADER */}
                                                 <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
@@ -1096,9 +1095,10 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                     <div className="flex justify-between items-start mt-12 pb-4">
                                         <div className="w-1/2">
                                             <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
-                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke BCA:</p>
-                                                <p className="text-3xl font-black !text-blue-900 tracking-[0.15em] mt-2 leading-none">0301138379</p>
-                                                <p className="font-bold !text-blue-800 mt-2 uppercase text-sm">A/N ABEDNEGO YB</p>
+                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
+                                                <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
+                                                    {appSettings?.bankDetails || 'BCA 0301138379\\nA/N ABEDNEGO YB'}
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -1111,7 +1111,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                             <div className="flex flex-col items-center">
                                                 <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
                                                 <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName || 'Sales'}</p>
+                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -5314,21 +5314,50 @@ const handleGitHubMirror = async () => {
 
             {/* 6. COMPANY IDENTITY */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
-                <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity (Surat Jalan Info)</h3>
+                <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity & Invoice Data</h3>
                 <div className="space-y-3">
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
                         <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
                     </div>
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Official Address</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Official Address (Used on Invoice Header)</label>
                         <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="e.g. Jl. Jendral Sudirman No.123, Jakarta"/>
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">Contact Number</label>
                         <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="e.g. (021) 1234567"/>
                     </div>
-                    <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-2 shadow-md">Save Corporate Profile</button>
+
+                    {/* NEW A4 INVOICE SETTINGS (Auto-Saves Instantly) */}
+                    <div className="pt-4 border-t dark:border-slate-700">
+                        <label className="text-xs font-bold text-emerald-500 uppercase">Admin/Boss Display Name (For Signature)</label>
+                        <input 
+                            className="w-full p-2 border rounded dark:bg-slate-900 dark:border-emerald-800/50 dark:text-white focus:border-emerald-500 outline-none transition-colors" 
+                            value={appSettings.adminDisplayName || ''} 
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setAppSettings(prev => ({...prev, adminDisplayName: val}));
+                                if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { adminDisplayName: val }, {merge: true});
+                            }}
+                            placeholder="e.g. Abednego YB"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-blue-500 uppercase">Bank Details (Invoice Footer)</label>
+                        <textarea 
+                            className="w-full p-2 border rounded dark:bg-slate-900 dark:border-blue-800/50 dark:text-white focus:border-blue-500 outline-none transition-colors resize-none h-20" 
+                            value={appSettings.bankDetails || ''} 
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setAppSettings(prev => ({...prev, bankDetails: val}));
+                                if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { bankDetails: val }, {merge: true});
+                            }}
+                            placeholder={"BCA 0301138379\nA/N ABEDNEGO YB"}
+                        />
+                    </div>
+
+                    <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-4 shadow-md">Save Corporate Profile</button>
                 </div>
             </div>
 

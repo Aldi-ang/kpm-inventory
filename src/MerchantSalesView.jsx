@@ -741,11 +741,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
                             {printFormat === 'a4' && (
-                                <div className="p-8 md:p-12 shrink-0 font-sans bg-white relative">
+                                <div className="p-8 md:p-12 shrink-0 font-sans relative" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                                     <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end">
                                         <div>
-                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">PT KARYAMEGA PUTERA MANDIRI</h1>
-                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1">Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang</p>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                         </div>
                                         <div className="text-right">
                                             <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
@@ -758,7 +758,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                             <tbody>
                                                 <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
                                                 <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName || 'Admin'}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
                                                 <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                             </tbody>
                                         </table>
@@ -773,7 +773,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                             <tr>
                                                 <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
-                                                {/* DYNAMIC HEADER BASED ON TIER */}
                                                 <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
                                                 <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
@@ -801,9 +800,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     <div className="flex justify-between items-start mt-12 pb-4">
                                         <div className="w-1/2">
                                             <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
-                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke BCA:</p>
-                                                <p className="text-3xl font-black !text-blue-900 tracking-[0.15em] mt-2 leading-none">0301138379</p>
-                                                <p className="font-bold !text-blue-800 mt-2 uppercase text-sm">A/N ABEDNEGO YB</p>
+                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
+                                                <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
+                                                    {appSettings?.bankDetails || 'BCA 0301138379\\nA/N ABEDNEGO YB'}
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -816,7 +816,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                             <div className="flex flex-col items-center">
                                                 <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
                                                 <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                                <p className="text-xs mt-2 uppercase font-bold">{receiptData.agentName || 'Sales'}</p>
+                                                <p className="text-xs mt-2 uppercase font-bold">{receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</p>
                                             </div>
                                         </div>
                                     </div>
