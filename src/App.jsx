@@ -940,12 +940,13 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
              )}
 
             {viewingReceipt && (
-                 <div className="fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                 <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                      <style>{`
                          @media print { 
-                             body { visibility: hidden; height: auto !important; overflow: visible !important; } 
-                             .print-receipt { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; max-height: none !important; overflow: visible !important; } 
-                             .fixed { position: absolute !important; height: auto !important; overflow: visible !important; background: transparent !important; }
+                             body, html { background: white !important; height: auto !important; overflow: visible !important; }
+                             .hide-on-print { display: none !important; }
+                             .print-modal-wrapper { position: absolute !important; inset: 0 !important; background: transparent !important; padding: 0 !important; display: block !important; }
+                             .print-receipt { position: relative !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; max-height: none !important; overflow: visible !important; border-radius: 0 !important; }
                              .no-print { display: none !important; } 
                          }
                      `}</style>
@@ -1033,6 +1034,9 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                      </div>
                  </div>
             )}
+
+            {/* HIDE MASSIVE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
+            <div className="hide-on-print w-full">
 
             {/* --- ANALYTICS DASHBOARD --- */}
             {reportView && (
@@ -1253,6 +1257,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     </div>
                 </div>
             )}
+
+            </div> {/* end hide-on-print wrapper */}
         </div>
     );
 };

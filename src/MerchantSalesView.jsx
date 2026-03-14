@@ -486,7 +486,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
             {/* --- NEW BOTTOM NAVIGATION BAR FOR MOBILE --- */}
-            <div className="lg:hidden absolute bottom-0 inset-x-0 h-14 flex border-t-2 border-[#5c4b3a] bg-[#0f0e0d] z-[150] shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+            <div className="hide-on-print lg:hidden absolute bottom-0 inset-x-0 h-14 flex border-t-2 border-[#5c4b3a] bg-[#0f0e0d] z-[150] shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
                 <button onClick={() => setMobileTab('products')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}>
                     <ShoppingBag size={18}/> Wares
                 </button>
@@ -495,7 +495,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </button>
             </div>
 
-            <div className={`w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            <div className={`hide-on-print w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="h-40 md:h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[200px] lg:min-h-[250px]">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
@@ -553,7 +553,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             </div>
 
-            <div className={`flex-1 flex-col bg-[#161412] pb-14 lg:pb-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            <div className={`hide-on-print flex-1 flex-col bg-[#161412] pb-14 lg:pb-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
@@ -596,7 +596,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     ))}
                 </div>
             </div>
-            <div className="hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
+            <div className="hide-on-print hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
 
             {/* --- THE NOO (NEW OPEN OUTLET) REGISTRATION MODAL --- */}
             {showNooModal && (
@@ -676,12 +676,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             )}
             
             {receiptData && (
-                 <div className="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
+                 <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
                      <style>{`
                          @media print { 
-                             body { visibility: hidden; height: auto !important; overflow: visible !important; } 
-                             .print-receipt { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; max-height: none !important; overflow: visible !important; } 
-                             .fixed { position: absolute !important; height: auto !important; overflow: visible !important; background: transparent !important; }
+                             body, html { background: white !important; height: auto !important; overflow: visible !important; }
+                             .hide-on-print { display: none !important; }
+                             .print-modal-wrapper { position: absolute !important; inset: 0 !important; background: transparent !important; padding: 0 !important; display: block !important; }
+                             .print-receipt { position: relative !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; max-height: none !important; overflow: visible !important; border-radius: 0 !important; }
                              .no-print { display: none !important; } 
                          }
                      `}</style>
