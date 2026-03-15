@@ -338,11 +338,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
             {/* NEW: OFFICIAL SURAT JALAN MODAL (FIXED A4 MOBILE SCROLL & PRINT LAG) */}
             {viewingSuratJalan && selectedAgent && (
-                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
-                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
+                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:p-0">
+                    <style>{`@media print { .print-modal-wrapper { background: transparent !important; padding: 0 !important; } .print-receipt { box-shadow: none !important; border: none !important; border-radius: 0 !important; } }`}</style>
+                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:max-h-none print:border-none print:shadow-none">
                         
-                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible">
-                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible print:border-none print:flex print:justify-center">
+                            {/* NEW ALIGNMENT FIX: print:min-w-0 overrides the 800px on mobile so it centers perfectly on A4! */}
+                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:min-w-0 print:w-full print:max-w-[210mm] print:p-8 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                                 <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                     <div className="flex-1 flex items-center gap-4">
                                         {appSettings?.mascotImage && (
@@ -400,33 +402,33 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 </table>
 
                                 <div className="mb-8">
-                                    <div className="!bg-blue-50 p-4 border-2 !border-blue-800 rounded-xl text-[10px] text-justify leading-relaxed italic !text-blue-900 shadow-md">
+                                    {/* FIX: Increased text size to text-sm */}
+                                    <div className="!bg-blue-50 p-4 border-2 !border-blue-800 rounded-xl text-sm text-justify leading-relaxed italic !text-blue-900 shadow-md">
                                         <strong className="uppercase tracking-widest block mb-1">Pernyataan:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4 text-center mt-12 pb-4 !text-black">
+                                {/* FIX: Removed Security Pos & Switched to 2-Column Grid */}
+                                <div className="grid grid-cols-2 gap-8 text-center mt-12 pb-4 !text-black print:mt-24">
                                     <div className="flex flex-col items-center">
                                         <p className="font-bold text-sm mb-24 uppercase tracking-widest">Admin Gudang</p>
-                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                        <p className="text-xs mt-2 uppercase font-bold">{user.displayName || 'Admin'}</p>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Security (Pos)</p>
-                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                        <p className="text-xs mt-2 uppercase font-bold">Pos Jaga</p>
+                                        <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
+                                        <p className="text-sm mt-2 uppercase font-bold">{user.displayName || 'Admin'}</p>
                                     </div>
                                     <div className="flex flex-col items-center">
                                         <p className="font-bold text-sm mb-24 uppercase tracking-widest">Sales/Motorist</p>
-                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                        <p className="text-xs mt-2 uppercase font-bold">{selectedAgent.name}</p>
+                                        <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
+                                        <p className="text-sm mt-2 uppercase font-bold">{selectedAgent.name}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
-                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
+                            {/* FIX: Anti-Lag setTimeout. Gives iOS 300ms to clear memory before freezing for print calculation */}
+                            <button onClick={() => {
+                                setTimeout(() => window.print(), 300);
+                            }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
                             <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
                         </div>
                     </div>
