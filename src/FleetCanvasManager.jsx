@@ -291,14 +291,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
 
     return (
-        <div className="h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
+        <div className="print-reset h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
             
-            {/* GLOBAL RECEIPT MODAL */}
+            {/* GLOBAL RECEIPT MODAL (FIXED FOR LAG AND DARK MODE) */}
             {viewingReceipt && (
-                <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
-                    <style>{`@media print { body * { visibility: hidden; } .print-receipt, .print-receipt * { visibility: visible; } .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
-                    <div className="print-receipt !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg">
-                        <div className="p-6 pb-2">
+                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                    <div className="print-receipt format-thermal !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
+                        <div className="p-6 pb-2 shrink-0">
                             <div className="text-center mb-6">
                                 <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
                                 <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
@@ -328,119 +327,114 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                             </div>
                             <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
                         </div>
-                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto">
+                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
                             <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
                         </div>
-                        <button onClick={() => setViewingReceipt(null)} className="no-print w-full !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
+                        <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
                     </div>
                 </div>
             )}
 
-            {/* NEW: OFFICIAL SURAT JALAN MODAL */}
+            {/* NEW: OFFICIAL SURAT JALAN MODAL (FIXED A4 MOBILE SCROLL & PRINT LAG) */}
             {viewingSuratJalan && selectedAgent && (
-                <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4">
-                    <style>{`@media print { body * { visibility: hidden; } .print-sj, .print-sj * { visibility: visible; } .print-sj { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; box-shadow: none; background: white !important; color: black !important; } .no-print { display: none !important; } }`}</style>
-                    <div className="print-sj !bg-white !text-black w-full max-w-2xl shadow-2xl relative flex flex-col font-sans text-sm animate-fade-in rounded-lg max-h-[90vh] overflow-y-auto">
+                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
                         
-                        <div className="p-8 pb-4 border-b-2 !border-black mb-4">
-                            <div className="flex justify-between items-start">
-                                {/* DYNAMIC CORPORATE HEADER */}
-                                <div className="flex items-center gap-4">
-                                    {appSettings?.mascotImage && (
-                                        <img src={appSettings.mascotImage} className="w-16 h-16 object-contain" alt="Company Logo" />
-                                    )}
-                                    <div>
-                                        <h1 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h1>
-                                        {appSettings?.companyAddress && <p className="text-[10px] mt-0.5 !text-slate-700 max-w-sm">{appSettings.companyAddress}</p>}
-                                        {appSettings?.companyPhone && <p className="text-[10px] mt-0.5 !text-slate-700">Telp/WA: {appSettings.companyPhone}</p>}
-                                        <p className="text-xs font-bold mt-2 !text-black bg-slate-200 inline-block px-2 py-1 rounded">OFFICIAL DELIVERY ORDER / SURAT JALAN</p>
+                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible">
+                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                                <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
+                                    <div className="flex-1 flex items-center gap-4">
+                                        {appSettings?.mascotImage && (
+                                            <img src={appSettings.mascotImage} className="w-16 h-16 object-contain" alt="Company Logo" />
+                                        )}
+                                        <div>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
+                                            {appSettings?.companyPhone && <p className="text-xs font-bold !text-slate-700 mt-0.5">Telp/WA: {appSettings.companyPhone}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">SURAT JALAN</h2>
+                                        <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">OFFICIAL DELIVERY ORDER</p>
+                                        <p className="text-sm font-mono font-black mt-2 !text-black">SJ-{new Date().toISOString().split('T')[0].replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-bold uppercase text-gray-500">Document No.</p>
-                                    <p className="text-sm font-mono font-bold">SJ-{new Date().toISOString().split('T')[0].replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
-                                    <p className="text-xs mt-1">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+                                <div className="px-0 mb-6 grid grid-cols-2 gap-4">
+                                    <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm">
+                                        <p className="text-[10px] font-bold !text-slate-500 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
+                                        <p className="font-black text-lg uppercase !text-black">{selectedAgent.name}</p>
+                                        <p className="text-xs mt-1 font-bold !text-slate-700">Role: {selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</p>
+                                    </div>
+                                    <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm text-right">
+                                        <p className="text-[10px] font-bold !text-slate-500 uppercase mb-1">Informasi Kendaraan / Waktu</p>
+                                        <p className="font-black text-lg uppercase !text-black">{selectedAgent.vehicle || 'TIDAK ADA DATA KENDARAAN'}</p>
+                                        <p className="text-xs mt-1 font-bold !text-slate-700">Deploy: {new Date().toLocaleTimeString('id-ID')}</p>
+                                    </div>
+                                </div>
+
+                                <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                    <thead className="!bg-blue-50 !text-blue-900">
+                                        <tr>
+                                            <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                            <th className="border-2 !border-slate-800 p-3 text-left font-black">NAMA BARANG</th>
+                                            <th className="border-2 !border-slate-800 p-3 text-right w-32 font-black">QTY</th>
+                                            <th className="border-2 !border-slate-800 p-3 w-32 text-center font-black">UNIT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(selectedAgent.activeCanvas || []).length === 0 ? (
+                                            <tr><td colSpan="4" className="text-center p-8 text-gray-400 italic border-2 !border-slate-800">Tidak ada barang yang dimuat.</td></tr>
+                                        ) : (
+                                            (selectedAgent.activeCanvas || []).map((item, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-600">{idx + 1}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 font-bold uppercase !text-black">{item.name}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-blue-700">{item.qty}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-black">{item.unit}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+
+                                <div className="mb-8">
+                                    <div className="!bg-blue-50 p-4 border-2 !border-blue-800 rounded-xl text-[10px] text-justify leading-relaxed italic !text-blue-900 shadow-md">
+                                        <strong className="uppercase tracking-widest block mb-1">Pernyataan:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4 text-center mt-12 pb-4 !text-black">
+                                    <div className="flex flex-col items-center">
+                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Admin Gudang</p>
+                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                        <p className="text-xs mt-2 uppercase font-bold">{user.displayName || 'Admin'}</p>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Security (Pos)</p>
+                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                        <p className="text-xs mt-2 uppercase font-bold">Pos Jaga</p>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Sales/Motorist</p>
+                                        <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                        <p className="text-xs mt-2 uppercase font-bold">{selectedAgent.name}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="px-8 mb-6 grid grid-cols-2 gap-4">
-                            <div className="border border-gray-300 p-3 rounded">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
-                                <p className="font-black text-lg uppercase">{selectedAgent.name}</p>
-                                {/* DYNAMIC ROLE FIX */}
-                                <p className="text-xs mt-1">Role: {selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</p>
-                            </div>
-                            <div className="border border-gray-300 p-3 rounded">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Informasi Kendaraan</p>
-                                <p className="font-black text-lg uppercase">{selectedAgent.vehicle || 'TIDAK ADA DATA KENDARAAN'}</p>
-                                <p className="text-xs mt-1">Deployment Time: {new Date().toLocaleTimeString('id-ID')}</p>
-                            </div>
-                        </div>
-
-                        <div className="px-8 mb-6 min-h-[200px]">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b-2 border-black bg-gray-100">
-                                        <th className="p-2 w-12 text-center">NO</th>
-                                        <th className="p-2">NAMA BARANG</th>
-                                        <th className="p-2 text-right w-24">QTY</th>
-                                        <th className="p-2 w-24">UNIT</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(selectedAgent.activeCanvas || []).length === 0 ? (
-                                        <tr><td colSpan="4" className="text-center p-8 text-gray-400 italic">Tidak ada barang yang dimuat.</td></tr>
-                                    ) : (
-                                        (selectedAgent.activeCanvas || []).map((item, idx) => (
-                                            <tr key={idx} className="border-b border-gray-300">
-                                                <td className="p-2 text-center font-mono">{idx + 1}</td>
-                                                <td className="p-2 font-bold uppercase">{item.name}</td>
-                                                <td className="p-2 text-right font-black text-lg">{item.qty}</td>
-                                                <td className="p-2 font-bold">{item.unit}</td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="px-8 mb-8">
-                            <div className="bg-gray-100 p-3 border border-gray-300 rounded text-[10px] text-justify leading-relaxed italic">
-                                <strong>PERNYATAAN:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
-                            </div>
-                        </div>
-
-                        <div className="px-8 mb-8 grid grid-cols-3 gap-4 text-center mt-auto">
-                            <div>
-                                <p className="text-xs mb-16">Admin Gudang (Diserahkan)</p>
-                                <p className="font-bold border-t border-black pt-1 px-4 inline-block">{user.displayName || 'Admin'}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs mb-16">Security (Diketahui)</p>
-                                <p className="font-bold border-t border-black pt-1 px-4 inline-block">Pos Jaga</p>
-                            </div>
-                            <div>
-                                <p className="text-xs mb-16">Sales/Motorist (Diterima)</p>
-                                <p className="font-bold border-t border-black pt-1 px-4 inline-block uppercase">{selectedAgent.name}</p>
-                            </div>
-                        </div>
-
-                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300">
-                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md"><Printer size={14}/> Print Surat Jalan</button>
-                            <button onClick={() => setViewingSuratJalan(false)} className="px-6 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-bold uppercase text-[10px] rounded-lg">Tutup</button>
+                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
+                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
+                            <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
                         </div>
                     </div>
                 </div>
             )}
 
-
-
-
-
             {/* LEFT PANEL: FLEET ROSTER */}
-            <div className="w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
+            <div className="hide-on-print w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-black/20">
                     <div>
                         <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Truck size={20} className="text-blue-500"/> Fleet Roster</h2>
@@ -543,7 +537,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             </div>
 
             {/* RIGHT PANEL: THE LOADING DOCK */}
-            <div className="flex-1 bg-slate-900 flex flex-col">
+            <div className="hide-on-print flex-1 bg-slate-900 flex flex-col">
                 {selectedAgent ? (
                     <>
                         <div className="p-6 border-b border-slate-800 bg-black/40">
