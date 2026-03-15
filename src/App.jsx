@@ -1007,7 +1007,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
                             
-                            {/* --- THERMAL POS LAYOUT --- */}
                             {printFormat === 'thermal' && (
                                 <div className="p-6 pb-2 shrink-0 font-mono">
                                     <div className="text-center mb-6">
@@ -1034,92 +1033,92 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                 </div>
                             )}
 
-                            {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
                             {printFormat === 'a4' && (
-                                <div className="p-8 md:p-12 shrink-0 font-sans relative" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                                    <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end">
-                                        <div>
-                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
-                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
+                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible">
+                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                                        <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
+                                            <div className="flex-1">
+                                                <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                                <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || "Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang"}</p>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
+                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
-                                            <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
-                                        </div>
-                                    </div>
 
-                                    <div className="flex justify-between mb-8 text-sm">
-                                        <table className="w-1/3">
-                                            <tbody>
-                                                <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : viewingReceipt.date}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
-                                            </tbody>
-                                        </table>
-                                        <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                            <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
-                                            <p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                        <div className="flex justify-between mb-8 text-sm">
+                                            <table className="w-1/3">
+                                                <tbody>
+                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : viewingReceipt.date}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                </tbody>
+                                            </table>
+                                            <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
+                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                                <p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                        <thead className="!bg-blue-50 !text-blue-900">
-                                            <tr>
-                                                <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
-                                                <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {catalogRows.map((item, i) => (
-                                                <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                        <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                            <thead className="!bg-blue-50 !text-blue-900">
+                                                <tr>
+                                                    <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                        <tfoot>
-                                            <tr className="!bg-blue-100">
-                                                <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
-                                                <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {catalogRows.map((item, i) => (
+                                                    <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="!bg-blue-100">
+                                                    <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
+                                                    <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
 
-                                    <div className="flex justify-between items-start mt-12 pb-4">
-                                        <div className="w-1/2">
-                                            <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
-                                                <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
-                                                <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
-                                                    {appSettings?.bankDetails || 'BCA 0301138379\\nA/N ABEDNEGO YB'}
-                                                </p>
+                                        <div className="flex justify-between items-start mt-12 pb-4">
+                                            <div className="w-1/2">
+                                                <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
+                                                    <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
+                                                    <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
+                                                        {appSettings?.bankDetails || `BCA 0301138379\nA/N ABEDNEGO YB`}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
-                                            <div className="flex flex-col items-center">
-                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
-                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.customerName}</p>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
-                                                <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
-                                                <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</p>
+                                            
+                                            <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
+                                                <div className="flex flex-col items-center">
+                                                    <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
+                                                    <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                    <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.customerName}</p>
+                                                </div>
+                                                <div className="flex flex-col items-center">
+                                                    <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
+                                                    <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                    <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* --- SHARED TOGGLES & BUTTONS --- */}
-                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0 rounded-b-lg mt-auto">
+                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
                                 <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
                                     <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
                                     Thermal POS (80mm)
@@ -1130,17 +1129,23 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                 </label>
                             </div>
 
-                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 shrink-0">
-                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Document</button>
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <Printer size={14}/> Print Document
+                                </button>
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
-                                    if (viewingReceipt.items && viewingReceipt.items.length > 0) viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    if (viewingReceipt.items && viewingReceipt.items.length > 0) {
+                                        viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    }
                                     text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
                                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> WhatsApp Share</button>
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <MessageSquare size={14}/> Share
+                                </button>
                             </div>
 
-                            <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                            <button onClick={() => { setViewingReceipt(null); setShowColorPhoto(false); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
                         </div>
                     </div>
                 );
