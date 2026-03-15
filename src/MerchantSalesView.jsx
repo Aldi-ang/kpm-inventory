@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map } from 'lucide-react';
 
-const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'] }) => {
+const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [] }) => {
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -18,6 +18,30 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
+    const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); // NEW: TEMPO STATE
+
+    // NEW: LIVE DEBT RADAR ENGINE
+    const selectedCustomerDebts = React.useMemo(() => {
+        if (!customerName || !transactions || transactions.length === 0) return { totalDebt: 0, isOverdue: false };
+        let titipTotal = 0; let paymentTotal = 0; let isOverdue = false;
+        const now = new Date().getTime();
+
+        transactions.forEach(t => {
+            const tCust = t.customerName || t.customer;
+            if (tCust?.toLowerCase() === customerName.toLowerCase()) {
+                if (t.paymentType === 'Titip' || t.method === 'Titip') {
+                    titipTotal += (t.total || 0);
+                    // Check if this specific invoice has passed its Jatuh Tempo
+                    const saleDate = t.timestamp?.seconds ? t.timestamp.seconds * 1000 : (t.timestamp || new Date(t.date).getTime());
+                    const tempo = t.tempoDays || 7;
+                    if (now > (saleDate + (tempo * 86400000))) isOverdue = true;
+                }
+                if (t.type === 'CONSIGNMENT_PAYMENT') paymentTotal += (t.amountPaid || t.total || 0);
+            }
+        });
+        const totalDebt = titipTotal - paymentTotal;
+        return { totalDebt: Math.max(0, totalDebt), isOverdue: totalDebt > 0 ? isOverdue : false };
+    }, [customerName, transactions]); 
 
     // --- GEO-FENCE & NOO (NEW OPEN OUTLET) STATE ---
     const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);
@@ -308,7 +332,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 photoData: txProofPhoto,
                 latitude: agentLocation?.latitude || 0,
                 longitude: agentLocation?.longitude || 0,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                tempoDays: paymentMethod === 'Titip' ? tempoDays : null
             };
 
             // Pass proofPayload as the 5th argument
@@ -451,6 +476,44 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
                 </div>
+
+                {/* NEW: JATUH TEMPO CONFIGURATOR */}
+                {paymentMethod === 'Titip' && (
+                    <div className="mt-3 bg-[#3e3226] border border-[#ff9d00]/50 p-3 rounded shadow-inner animate-fade-in">
+                        <label className="text-[10px] font-bold text-[#d4c5a3] mb-2 flex items-center justify-between uppercase tracking-widest">
+                            <span>Jatuh Tempo (Due Date)</span>
+                            <span className="bg-[#ff9d00] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
+                        </label>
+                        <div className="flex items-center gap-3">
+                            <input 
+                                type="range" min="1" max="60" value={tempoDays} 
+                                onChange={(e) => setTempoDays(parseInt(e.target.value))} 
+                                className="w-full accent-[#ff9d00] h-1.5 bg-[#1a1815] rounded-lg appearance-none cursor-pointer"
+                            />
+                            <input 
+                                type="number" min="1" max="60" value={tempoDays} 
+                                onChange={(e) => setTempoDays(parseInt(e.target.value))} 
+                                className="w-12 bg-[#1a1815] border border-[#5c4b3a] rounded p-1 text-center text-[#ff9d00] text-xs font-bold focus:outline-none focus:border-[#ff9d00]"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* NEW: LIVE DEBT RADAR WARNING */}
+                {selectedCustomerDebts.totalDebt > 0 && (
+                    <div className={`mt-3 p-2 rounded border flex items-start gap-2 animate-fade-in shadow-md ${selectedCustomerDebts.isOverdue ? 'bg-red-900/20 border-red-500/50' : 'bg-orange-900/20 border-orange-500/50'}`}>
+                        <AlertCircle className={`shrink-0 mt-0.5 ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`} size={16}/>
+                        <div>
+                            <h4 className={`font-black text-[9px] uppercase tracking-[0.1em] ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
+                                {selectedCustomerDebts.isOverdue ? '⚠️ OVERDUE TITIP DETECTED' : 'Active Titip Balance'}
+                            </h4>
+                            <p className="text-[10px] text-[#5c4b3a] mt-0.5 leading-tight font-bold">
+                                <strong className="text-[#3e3226]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
+                                {selectedCustomerDebts.isOverdue && <span className="text-red-600 block mt-0.5">Collect payment before new Titip!</span>}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
