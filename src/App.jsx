@@ -2621,7 +2621,11 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                 /* --- MASTER THERMAL PRINTER OVERRIDE --- */
                 @media print {
-                    @page { margin: 0; }
+                    /* STRICT ORIENTATION AND MARGIN LOCK TO PREVENT 2ND BLANK PAGE */
+                    @page { 
+                        size: A4 portrait !important; 
+                        margin: 5mm !important; 
+                    }
                     body, html, #root { background-color: white !important; color: black !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; display: block !important; }
                     
                     /* Destroy layout traps (overflow/fixed heights) that clip absolute elements */
@@ -2630,13 +2634,18 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                     nav, header { display: none !important; }
                     .hide-on-print { display: none !important; }
 
-                    /* Isolate the receipt */
-                    .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
-                    .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; }
+                    /* Isolate the receipt and block height spillover */
+                    .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
+                    .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; page-break-after: avoid !important; page-break-inside: avoid !important; }
                     
-                    /* NEW: DUAL PRINT SIZING */
+                    /* NEW: STRICT DUAL PRINT SIZING */
                     .print-receipt.format-thermal { width: 80mm !important; max-width: 80mm !important; padding: 5mm !important; }
-                    .print-receipt.format-a4 { width: 100% !important; max-width: 210mm !important; padding: 15mm !important; }
+                    .print-receipt.format-a4 { 
+                        width: 210mm !important; 
+                        max-width: 210mm !important; 
+                        padding: 10mm !important; 
+                        box-sizing: border-box !important;
+                    }
                     
                     .print-receipt * { color: black !important; border-color: black !important; }
                     .no-print { display: none !important; }
