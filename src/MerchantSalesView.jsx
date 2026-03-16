@@ -21,6 +21,50 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); // NEW: TEMPO STATE
     const [printFormat, setPrintFormat] = useState('thermal'); // 🚀 CRASH FIX: Added missing print state!
 
+    // 🚀 THE FIFO DEBT ENGINE (Monitors Jatuh Tempo in Real-Time) 🚀
+    const debtInfo = React.useMemo(() => {
+        if (!customerName) return null;
+        const custTrans = transactions.filter(t => 
+            (t.customerName || '').trim().toLowerCase() === customerName.trim().toLowerCase()
+        ).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        let debts = [];
+        custTrans.forEach(t => {
+            if (t.type === 'SALE' && t.paymentType === 'Titip') {
+                debts.push({ date: t.date, remaining: t.total });
+            }
+            if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+                let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
+                for (let i = 0; i < debts.length; i++) {
+                    if (debts[i].remaining > 0) {
+                        if (deduction >= debts[i].remaining) {
+                            deduction -= debts[i].remaining;
+                            debts[i].remaining = 0;
+                        } else {
+                            debts[i].remaining -= deduction;
+                            deduction = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        const activeDebts = debts.filter(d => d.remaining > 0.01);
+        if (activeDebts.length === 0) return null;
+
+        const totalDebt = activeDebts.reduce((sum, d) => sum + d.remaining, 0);
+        const oldestDate = activeDebts[0].date;
+        const diffTime = Math.abs(new Date() - new Date(oldestDate));
+        const ageDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        let status = 'GREEN';
+        if (ageDays >= 14) status = 'RED';
+        else if (ageDays >= 8) status = 'YELLOW';
+
+        return { totalDebt, ageDays, status, oldestDate };
+    }, [customerName, transactions]);
+
     // NEW: LIVE DEBT RADAR ENGINE
     const selectedCustomerDebts = React.useMemo(() => {
         if (!customerName || !transactions || transactions.length === 0) return { totalDebt: 0, isOverdue: false };
@@ -386,6 +430,31 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
                 {showCustomerDropdown && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
+                )}
+
+                {/* --- DEBT WARNING BANNER (RE4 MERCHANT THEME) --- */}
+                {debtInfo && debtInfo.status === 'RED' && (
+                    <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <AlertCircle className="text-red-500 shrink-0" size={16}/>
+                            <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
+                        </div>
+                        <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
+                            {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO ({debtInfo.oldestDate}).
+                        </p>
+                        <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
+                    </div>
+                )}
+                {debtInfo && debtInfo.status === 'YELLOW' && (
+                    <div className="bg-[#3e3226] border border-yellow-500/50 p-3 shadow-md rounded-sm relative z-[65]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <AlertCircle className="text-yellow-500 shrink-0" size={16}/>
+                            <h4 className="text-yellow-500 font-black uppercase tracking-widest text-[10px]">Notice: Payment Due Soon</h4>
+                        </div>
+                        <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
+                            {customerName} OWES <span className="font-bold text-white">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> ({debtInfo.ageDays} DAYS OLD).
+                        </p>
+                    </div>
                 )}
                 
                 <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
