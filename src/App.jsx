@@ -1128,42 +1128,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                             </div>
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                                <button onClick={() => {
-                                    // 🚀 THE WEBKIT PAGINATION SLEDGEHAMMER 🚀
-                                    const receipt = document.querySelector('.print-receipt');
-                                    const appRoot = document.getElementById('root') || document.body.firstElementChild;
-                                    if (!receipt || !appRoot) { window.print(); return; }
-
-                                    // 1. Isolate the DOM
-                                    const printStage = document.createElement('div');
-                                    printStage.id = 'webkit-print-hack';
-                                    printStage.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; background: white; z-index: 9999999; margin: 0; padding: 0;';
-                                    
-                                    // 2. Obliterate WebKit Loop Crashes (Forces everything into flat, native blocks)
-                                    const styleOverride = document.createElement('style');
-                                    styleOverride.innerHTML = `
-                                        #webkit-print-hack * { overflow: visible !important; max-height: none !important; height: auto !important; min-width: 0 !important; transform: none !important; animation: none !important; transition: none !important; box-shadow: none !important; }
-                                        #webkit-print-hack .no-print { display: none !important; }
-                                    `;
-                                    printStage.appendChild(styleOverride);
-
-                                    // 3. Move Nodes & Hide the App (Synchronous, zero memory cloning)
-                                    const originalParent = receipt.parentElement;
-                                    printStage.appendChild(receipt);
-                                    document.body.appendChild(printStage);
-                                    
-                                    const originalDisplay = appRoot.style.display;
-                                    appRoot.style.display = 'none';
-
-                                    // 4. Execute Native Print
-                                    window.print();
-
-                                    // 5. Instantly Restore
-                                    originalParent.appendChild(receipt);
-                                    document.body.removeChild(printStage);
-                                    appRoot.style.display = originalDisplay;
-
-                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <Printer size={14}/> Print Document
                                 </button>
                                 <button onClick={() => {
