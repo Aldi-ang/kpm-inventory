@@ -19,6 +19,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
     const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); // NEW: TEMPO STATE
+    const [printFormat, setPrintFormat] = useState('thermal'); // 🚀 CRASH FIX: Added missing print state!
 
     // NEW: LIVE DEBT RADAR ENGINE
     const selectedCustomerDebts = React.useMemo(() => {
@@ -768,8 +769,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 });
 
                 return (
-                    <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
-                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all`}>
+                    <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!absolute print:!inset-0 print:!p-0 print:!m-0 print:!block print:!z-auto">
+                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!transition-none print:!animate-none print:!transform-none print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none print:!overflow-visible`}>
                             
                             {printFormat === 'thermal' && (
                                 <div className="p-6 pb-2 shrink-0 font-mono">
@@ -798,8 +799,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             )}
 
                             {printFormat === 'a4' && (
-                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible">
-                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:!overflow-visible print:!border-none print:!block print:!w-full print:!m-0 print:!p-0">
+                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:!min-w-0 print:!w-full print:!max-w-[210mm] print:!p-8 print:!m-0 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                         <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
                                                 <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
@@ -817,7 +818,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Bayr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
