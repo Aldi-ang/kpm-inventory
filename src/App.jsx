@@ -110,7 +110,7 @@ const googleProvider = new GoogleAuthProvider();
 const appId = "cello-inventory-manager"; 
 
 // 🚀 MASTER AUTO-VERSION TRACKER 🚀
-const APP_VERSION = `V${PACKAGEJSON.VERSION}`; 
+const APP_VERSION = `v${packageJson.version}`; 
 
 // --- CONSTANTS ---
 const ADMIN_PASS = "KomuroMangetsu02";
