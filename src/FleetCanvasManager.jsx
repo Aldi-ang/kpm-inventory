@@ -336,15 +336,14 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 </div>
             )}
 
-            {/* NEW: OFFICIAL SURAT JALAN MODAL (FIXED A4 MOBILE SCROLL & PRINT LAG) */}
+           {/* NEW: OFFICIAL SURAT JALAN MODAL (ULTIMATE ALIGNMENT FIX) */}
             {viewingSuratJalan && selectedAgent && (
-                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:p-0">
-                    {/* NO TOXIC <STYLE> TAG HERE. THIS FIXES THE LAG AND CRASHES! */}
-                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:max-h-none print:border-none print:shadow-none">
+                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!p-0 print:!m-0 print:!block">
+                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none">
                         
-                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible print:border-none print:flex print:justify-center">
-                            {/* NEW ALIGNMENT FIX: print:min-w-0 overrides the 800px on mobile so it centers perfectly on A4! */}
-                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:min-w-0 print:w-full print:max-w-[210mm] print:p-8 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:!overflow-visible print:!border-none print:!block print:!w-full print:!m-0 print:!p-0">
+                            {/* ULTIMATE ALIGNMENT FIX: Using !important on print classes to absolutely destroy the 800px mobile scroll lock and double-padding during print */}
+                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:!min-w-0 print:!w-full print:!max-w-none print:!p-0 print:!m-0 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                 <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                     <div className="flex-1 flex items-center gap-4">
                                         {appSettings?.mascotImage && (
@@ -423,7 +422,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         </div>
 
                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
-                            {/* PURE WINDOW.PRINT() TO BYPASS SAFARI ALLOW/IGNORE POPUPS */}
                             <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
                             <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
                         </div>
