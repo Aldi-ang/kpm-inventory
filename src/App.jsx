@@ -960,7 +960,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
             {viewingReceipt && (() => {
                 const activeTier = viewingReceipt.items?.[0]?.priceTier || 'Retail';
-                // DYNAMIC UNIT: Grosir uses Slop, Retail/Ecer uses Bks
                 const isGrosir = activeTier === 'Grosir' || activeTier === 'Distributor';
                 const unitLabel = isGrosir ? 'SLOP' : 'BKS';
 
@@ -970,7 +969,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     if (activeTier === 'Grosir') basePrice = invItem.priceGrosir || 0;
                     if (activeTier === 'Ecer') basePrice = invItem.priceEcer || 0;
                     
-                    // Display price follows the specific unit length
                     const displayPrice = isGrosir ? (basePrice * packsPerSlop) : basePrice;
 
                     const boughtItem = viewingReceipt.items?.find(i => i.productId === invItem.id);
@@ -978,13 +976,11 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     let rowTotal = 0;
                     
                     if (boughtItem) {
-                        // Normalize everything to Bungkus first
                         let qtyInBks = boughtItem.qty;
                         if (boughtItem.unit === 'Slop') qtyInBks = boughtItem.qty * packsPerSlop;
                         if (boughtItem.unit === 'Bal') qtyInBks = boughtItem.qty * (invItem.slopsPerBal || 20) * packsPerSlop;
                         if (boughtItem.unit === 'Karton') qtyInBks = boughtItem.qty * (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20) * packsPerSlop;
                         
-                        // Convert to display unit
                         displayQty = isGrosir ? (qtyInBks / packsPerSlop) : qtyInBks;
                         rowTotal = boughtItem.calculatedPrice * boughtItem.qty;
                     }
@@ -1004,8 +1000,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                 });
 
                 return (
-                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!p-0 print:!m-0 print:!block">
-                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none`}>
+                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!absolute print:!inset-0 print:!p-0 print:!m-0 print:!block print:!z-auto">
+                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!transition-none print:!animate-none print:!transform-none print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none print:!overflow-visible`}>
                             
                             {printFormat === 'thermal' && (
                                 <div className="p-6 pb-2 shrink-0 font-mono">
@@ -1133,7 +1129,14 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                 <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <Printer size={14}/> Print Document
                                 </button>
-                                <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                    if (viewingReceipt.items && viewingReceipt.items.length > 0) {
+                                        viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    }
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> Share
                                 </button>
                             </div>
@@ -1143,7 +1146,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                     </div>
                 );
             })()}
-
+            
             {/* HIDE MASSIVE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
             <div className="hide-on-print w-full">
 
