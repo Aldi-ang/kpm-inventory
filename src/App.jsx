@@ -1029,9 +1029,10 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                 </div>
                             )}
 
-                           {printFormat === 'a4' && (
-                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:!overflow-visible print:!border-none print:!block print:!w-full print:!m-0 print:!p-0">
-                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:!min-w-0 print:!w-full print:!max-w-[210mm] print:!p-8 print:!m-0 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
+                           {/* --- A4 STANDARD INVOICE LAYOUT (B2B) --- */}
+                            {printFormat === 'a4' && (
+                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
+                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                         <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
                                                 <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
@@ -1049,6 +1050,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : viewingReceipt.date}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                    {/* EXACT SPELLING FIX APPLIED HERE */}
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Bayar</td><td className="font-bold !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
@@ -1127,34 +1129,37 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-                                    // 🚀 iOS SAFARI DOM-ISOLATION HACK 🚀
+                                    // 🚀 THE WEBKIT PAGINATION SLEDGEHAMMER 🚀
                                     const receipt = document.querySelector('.print-receipt');
                                     const appRoot = document.getElementById('root') || document.body.firstElementChild;
                                     if (!receipt || !appRoot) { window.print(); return; }
 
-                                    // 1. Create a pure, empty stage for printing
+                                    // 1. Isolate the DOM
                                     const printStage = document.createElement('div');
-                                    printStage.style.cssText = 'position:absolute; top:0; left:0; width:100%; min-height:100vh; background:white; z-index:999999; margin:0; padding:0; display:flex; justify-content:center; align-items:flex-start;';
+                                    printStage.id = 'webkit-print-hack';
+                                    printStage.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; background: white; z-index: 9999999; margin: 0; padding: 0;';
                                     
-                                    // 2. Clone the receipt and strip all buttons and mobile constraints
-                                    const clone = receipt.cloneNode(true);
-                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
-                                    clone.style.cssText = 'width: 100%; max-width: 210mm; padding: 10mm; background: white; border: none; box-shadow: none; max-height: none !important; height: auto !important; overflow: visible !important;';
-                                    clone.querySelectorAll('.overflow-y-auto, .overflow-x-auto, .custom-scrollbar, .min-w-[800px]').forEach(el => {
-                                        el.style.cssText = 'overflow: visible !important; max-height: none !important; height: auto !important; min-width: 0 !important; display: block !important;';
-                                    });
+                                    // 2. Obliterate WebKit Loop Crashes (Forces everything into flat, native blocks)
+                                    const styleOverride = document.createElement('style');
+                                    styleOverride.innerHTML = `
+                                        #webkit-print-hack * { overflow: visible !important; max-height: none !important; height: auto !important; min-width: 0 !important; transform: none !important; animation: none !important; transition: none !important; box-shadow: none !important; }
+                                        #webkit-print-hack .no-print { display: none !important; }
+                                    `;
+                                    printStage.appendChild(styleOverride);
 
-                                    printStage.appendChild(clone);
+                                    // 3. Move Nodes & Hide the App (Synchronous, zero memory cloning)
+                                    const originalParent = receipt.parentElement;
+                                    printStage.appendChild(receipt);
                                     document.body.appendChild(printStage);
-
-                                    // 3. Completely hide the massive React app to drop Safari Memory to 0
+                                    
                                     const originalDisplay = appRoot.style.display;
                                     appRoot.style.display = 'none';
 
-                                    // 4. Synchronous Print (Bypasses the "Allow" prompt completely)
+                                    // 4. Execute Native Print
                                     window.print();
 
-                                    // 5. Instantly clean up and restore the app
+                                    // 5. Instantly Restore
+                                    originalParent.appendChild(receipt);
                                     document.body.removeChild(printStage);
                                     appRoot.style.display = originalDisplay;
 
