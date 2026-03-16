@@ -771,27 +771,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
                         
-                        {/* 🚀 THE MASTER SAFARI CRASH PREVENTER 🚀 */}
-                        <style>{`
-                            @media print {
-                                /* 1. Strip the root app of all scroll locks to stop Safari crashing */
-                                html, body, #root, [class*="h-screen"], [class*="overflow-hidden"] {
-                                    height: auto !important; min-height: auto !important; max-height: none !important; overflow: visible !important;
-                                }
-                                /* 2. Obliterate the 800px mobile wrapper so it fits perfectly on A4 */
-                                .a4-print-jail {
-                                    min-width: 0 !important; width: 100% !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important;
-                                }
-                                /* 3. Disable animations that freeze the spooler */
-                                * { transition: none !important; animation: none !important; }
-                                /* 4. Force the receipt to the absolute top of the page */
-                                .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; background: transparent !important; display: block !important; padding: 0 !important; margin: 0 !important; }
-                                .print-receipt { border: none !important; box-shadow: none !important; margin: 0 !important; }
-                                /* 5. Hide the heavy dashboard background */
-                                .no-print, nav, header { display: none !important; }
-                            }
-                        `}</style>
-
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
                             {printFormat === 'thermal' && (
@@ -822,7 +801,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             {printFormat === 'a4' && (
                                 <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
-                                    <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
+                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                         <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
                                                 <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
@@ -840,6 +819,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
+                                                    {/* EXACT SPELLING FIX APPLIED HERE */}
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Bayar</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
@@ -918,16 +898,64 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-                                    const ua = navigator.userAgent || navigator.vendor || window.opera;
-                                    if (/GSA|Instagram|FBAN|FBAV/i.test(ua)) {
-                                        alert("🖨️ Printing is blocked by this App! Please open KPM Inventory directly in the native Safari or Chrome app.");
+                                    // 🚀 THE DEDICATED iOS PRINT SPOOLER TAB 🚀
+                                    const receipt = document.querySelector('.print-receipt');
+                                    if (!receipt) return;
+                                    
+                                    // 1. Open a new window immediately
+                                    const printWindow = window.open('', '_blank');
+                                    if (!printWindow) {
+                                        alert("⚠️ Safari Blocked the Print Window! Please go to your iPhone Settings > Safari > Turn OFF 'Block Pop-ups'.");
                                         return;
                                     }
-                                    window.print();
+
+                                    // 2. Clone the receipt and clean it for print
+                                    const clone = receipt.cloneNode(true);
+                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+                                    // 3. Write a pure, lightweight HTML page to the new tab
+                                    printWindow.document.open();
+                                    printWindow.document.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <title>KPM Invoice</title>
+                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                            <script src="https://cdn.tailwindcss.com"></script>
+                                            <style>
+                                                @media print {
+                                                    @page { margin: 5mm; }
+                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                    /* Disable the scroll locks that crash Safari */
+                                                    .min-w-\\[800px\\] { min-width: 0 !important; width: 100% !important; }
+                                                    .overflow-x-auto, .overflow-y-auto { overflow: visible !important; }
+                                                    * { box-shadow: none !important; }
+                                                }
+                                            </style>
+                                        </head>
+                                        <body style="background: white; padding: 20px; display: flex; justify-content: center; font-family: sans-serif;">
+                                            ${clone.outerHTML}
+                                            <script>
+                                                // Automatically open the print menu once loaded
+                                                setTimeout(function() {
+                                                    window.print();
+                                                }, 1000);
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `);
+                                    printWindow.document.close();
                                 }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <Printer size={14}/> Print Document
                                 </button>
-                                <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
+                                    if (receiptData.items && receiptData.items.length > 0) {
+                                        receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    }
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> WhatsApp Share
                                 </button>
                             </div>
