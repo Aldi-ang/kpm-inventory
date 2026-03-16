@@ -768,40 +768,83 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     return { name: invItem.name, displayPrice, displayQty, total: rowTotal, isBought: !!boughtItem };
                 });
 
+                receiptData.items?.forEach(boughtItem => {
+                    if (!inventory.find(i => i.id === boughtItem.productId)) {
+                        let qtyInBks = boughtItem.unit === 'Bks' ? boughtItem.qty : boughtItem.qty * 10;
+                        let bksPrice = boughtItem.unit === 'Bks' ? boughtItem.calculatedPrice : boughtItem.calculatedPrice / 10;
+                        
+                        let displayQty = isGrosir ? (qtyInBks / 10) : qtyInBks;
+                        let displayPrice = isGrosir ? (bksPrice * 10) : bksPrice;
+                        
+                        catalogRows.push({ name: boughtItem.name + " (Discontinued)", displayPrice, displayQty, total: boughtItem.calculatedPrice * boughtItem.qty, isBought: true });
+                    }
+                });
+
+                // 🚀 SMART DATE/TIME SPLITTER 🚀
+                const rawDate = receiptData.date || '';
+                const dateParts = rawDate.split(', ');
+                const receiptDateStr = dateParts[0] || rawDate;
+                const receiptTimeStr = dateParts[1] || '';
+
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
-                        
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
+                            {/* --- THERMAL POS LAYOUT (REDESIGNED FOR 58MM) --- */}
                             {printFormat === 'thermal' && (
-                                <div className="p-6 pb-2 shrink-0 font-mono">
-                                    <div className="text-center mb-6">
-                                        <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                <div className="p-4 shrink-0 font-mono text-xs">
+                                    <div className="text-center mb-4">
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
                                         <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
-                                        <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">CUSTOMER COPY</p>
                                     </div>
-                                    <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
-                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{receiptData.date}</span></div>
-                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{receiptData.customer}</span></div>
-                                        {receiptData.agentName && receiptData.agentName !== 'Admin' && <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{receiptData.agentName}</span></div>}
-                                        <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{receiptData.method || 'Cash'}</span></div>
+                                    
+                                    <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
+                                        <div className="flex"><span className="w-12 font-bold">TGL</span><span>: {receiptDateStr}</span></div>
+                                        <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
+                                        <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {receiptData.customer}</span></div>
+                                        {receiptData.agentName && receiptData.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {receiptData.agentName}</span></div>}
+                                        <div className="flex"><span className="w-12 font-bold">BAYAR</span><span className="uppercase">: {receiptData.method || 'Cash'}</span></div>
                                     </div>
-                                    <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
-                                        {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
-                                            <div key={i} className="mb-2">
-                                                <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
-                                                <div className="flex justify-between text-xs mt-0.5"><span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span><span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span></div>
-                                            </div>
-                                        )) : null}
+
+                                    <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-dashed !border-slate-400">
+                                                    <th className="pb-1 font-bold">ITEM</th>
+                                                    <th className="pb-1 text-right font-bold">TOTAL</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="align-top">
+                                                {receiptData.items && receiptData.items.length > 0 ? receiptData.items.map((item, i) => (
+                                                    <tr key={i}>
+                                                        <td className="py-1 pr-2">
+                                                            <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
+                                                            <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
+                                                        </td>
+                                                        <td className="py-1 text-right font-black whitespace-nowrap">
+                                                            {new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                        </td>
+                                                    </tr>
+                                                )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black"><span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span></div>
-                                    <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p><p className="mt-1 font-mono text-[9px]">SYSTEM: KPM_ENV_V3</p></div>
+                                    
+                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
+                                        <span>TOTAL</span>
+                                        <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
+                                    </div>
+                                    
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500">
+                                        <p>*** THANK YOU ***</p>
+                                    </div>
                                 </div>
                             )}
 
+                            {/* --- A4 STANDARD INVOICE LAYOUT --- */}
                             {printFormat === 'a4' && (
                                 <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
-                                    <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
+                                    <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                         <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
                                                 <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
@@ -816,11 +859,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3">
                                                 <tbody>
-                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
-                                                    {/* EXACT SPELLING FIX APPLIED HERE */}
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Bayar</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
+                                                    {/* 🚀 A4 STACKED DATE & TIME 🚀 */}
+                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                                    
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Harga</td><td className="font-bold py-1 !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
@@ -888,7 +933,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
                                 <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
                                     <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
-                                    Thermal POS (80mm)
+                                    Thermal POS (58mm)
                                 </label>
                                 <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800">
                                     <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>
@@ -898,7 +943,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-                                    // 🚀 THE INSTANT-STYLE DEDICATED SPOOLER 🚀
                                     const receipt = document.querySelector('.print-receipt');
                                     if (!receipt) return;
                                     
@@ -931,7 +975,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                     @page { margin: 0; size: ${isThermal ? '58mm auto' : 'A4 portrait'}; }
                                                     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; margin: 0 !important; padding: 0 !important; }
                                                     .format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important; }
-                                                    /* STRICT 58mm THERMAL LOCK */
                                                     .format-thermal { width: 58mm !important; max-width: 58mm !important; padding: 2mm !important; margin: 0 auto !important; font-size: 10px !important; }
                                                     .format-thermal * { font-size: 10px !important; line-height: 1.2 !important; }
                                                     table { table-layout: fixed !important; width: 100% !important; }
@@ -957,7 +1000,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     <Printer size={14}/> Print Document
                                 </button>
                                 <button onClick={() => {
-                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
                                     if (receiptData.items && receiptData.items.length > 0) {
                                         receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
