@@ -1129,22 +1129,26 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-                                    // 🚀 THE DEDICATED iOS PRINT SPOOLER TAB 🚀
+                                    // 🚀 THE INSTANT-STYLE DEDICATED SPOOLER 🚀
                                     const receipt = document.querySelector('.print-receipt');
                                     if (!receipt) return;
                                     
-                                    // 1. Open a new window immediately
                                     const printWindow = window.open('', '_blank');
                                     if (!printWindow) {
                                         alert("⚠️ Safari Blocked the Print Window! Please go to your iPhone Settings > Safari > Turn OFF 'Block Pop-ups'.");
                                         return;
                                     }
 
-                                    // 2. Clone the receipt and clean it for print
                                     const clone = receipt.cloneNode(true);
                                     clone.querySelectorAll('.no-print').forEach(el => el.remove());
 
-                                    // 3. Write a pure, lightweight HTML page to the new tab
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
+
+                                    const isThermal = clone.classList.contains('format-thermal');
+                                    
                                     printWindow.document.open();
                                     printWindow.document.write(`
                                         <!DOCTYPE html>
@@ -1152,25 +1156,27 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                         <head>
                                             <title>KPM Invoice</title>
                                             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                            <script src="https://cdn.tailwindcss.com"></script>
+                                            ${parentStyles}
                                             <style>
                                                 @media print {
-                                                    @page { margin: 5mm; }
-                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                                    /* Disable the scroll locks that crash Safari */
+                                                    @page { margin: 0; size: ${isThermal ? '80mm auto' : 'A4 portrait'}; }
+                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; margin: 0 !important; padding: 0 !important; }
+                                                    .format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important; }
+                                                    .format-thermal { width: 78mm !important; max-width: 78mm !important; padding: 5mm !important; margin: 0 auto !important; }
+                                                    table { table-layout: fixed !important; width: 100% !important; }
+                                                    th, td { word-wrap: break-word !important; }
                                                     .min-w-\\[800px\\] { min-width: 0 !important; width: 100% !important; }
-                                                    .overflow-x-auto, .overflow-y-auto { overflow: visible !important; }
-                                                    * { box-shadow: none !important; }
+                                                    * { box-shadow: none !important; border-color: black !important; color: black !important; }
                                                 }
+                                                body { background: #52525b; display: flex; justify-content: center; padding: 20px; font-family: sans-serif; }
+                                                .format-a4 { background: white; width: 210mm; }
+                                                .format-thermal { background: white; width: 80mm; }
                                             </style>
                                         </head>
-                                        <body style="background: white; padding: 20px; display: flex; justify-content: center; font-family: sans-serif;">
+                                        <body>
                                             ${clone.outerHTML}
                                             <script>
-                                                // Automatically open the print menu once loaded
-                                                setTimeout(function() {
-                                                    window.print();
-                                                }, 1000);
+                                                setTimeout(function() { window.print(); }, 250);
                                             </script>
                                         </body>
                                         </html>
@@ -2531,9 +2537,13 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             `}>
                 
                 {/* BRANDING (Moved text beside burger button) */}
-                <h1 className="text-sm lg:text-xl font-bold text-white mb-6 font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)] ml-12 lg:ml-2 mt-0.5 lg:mt-0">
-                    {appSettings?.companyName || "KPM SYSTEM"}
-                </h1>
+                <div className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0">
+                    <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                        {appSettings?.companyName || "KPM SYSTEM"}
+                    </h1>
+                    {/* INJECT VERSION TRACKER HERE */}
+                    <p className="text-[10px] font-mono text-blue-400 tracking-widest mt-1">BUILD {APP_VERSION}</p>
+                </div>
 
                 {/* MENU */}
                 {user ? (
@@ -3229,6 +3239,9 @@ const SafetyStatus = ({ auditLogs = [], sessionStatus }) => {
 
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
+  // 🚀 MASTER VERSION TRACKER (Update this every time you push!) 🚀
+  const APP_VERSION = "v3.2.0"; 
+
   const [user, setUser] = useState(null);
   // ... rest of your code ...
   const [isAdmin, setIsAdmin] = useState(true);

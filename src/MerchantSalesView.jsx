@@ -898,22 +898,28 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-                                    // 🚀 THE DEDICATED iOS PRINT SPOOLER TAB 🚀
+                                    // 🚀 THE INSTANT-STYLE DEDICATED SPOOLER 🚀
                                     const receipt = document.querySelector('.print-receipt');
                                     if (!receipt) return;
                                     
-                                    // 1. Open a new window immediately
                                     const printWindow = window.open('', '_blank');
                                     if (!printWindow) {
                                         alert("⚠️ Safari Blocked the Print Window! Please go to your iPhone Settings > Safari > Turn OFF 'Block Pop-ups'.");
                                         return;
                                     }
 
-                                    // 2. Clone the receipt and clean it for print
                                     const clone = receipt.cloneNode(true);
                                     clone.querySelectorAll('.no-print').forEach(el => el.remove());
 
-                                    // 3. Write a pure, lightweight HTML page to the new tab
+                                    // Instantly copy ALL compiled Tailwind CSS from the main app memory (No waiting for internet!)
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
+
+                                    // Detect format and enforce strict paper widths
+                                    const isThermal = clone.classList.contains('format-thermal');
+                                    
                                     printWindow.document.open();
                                     printWindow.document.write(`
                                         <!DOCTYPE html>
@@ -921,25 +927,33 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                         <head>
                                             <title>KPM Invoice</title>
                                             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                            <script src="https://cdn.tailwindcss.com"></script>
+                                            ${parentStyles}
                                             <style>
                                                 @media print {
-                                                    @page { margin: 5mm; }
-                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                                    /* Disable the scroll locks that crash Safari */
+                                                    @page { margin: 0; size: ${isThermal ? '80mm auto' : 'A4 portrait'}; }
+                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; margin: 0 !important; padding: 0 !important; }
+                                                    
+                                                    /* Force absolute sizes to fix the scaling bugs */
+                                                    .format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important; }
+                                                    .format-thermal { width: 78mm !important; max-width: 78mm !important; padding: 5mm !important; margin: 0 auto !important; }
+                                                    
+                                                    /* Stop Safari from squishing columns */
+                                                    table { table-layout: fixed !important; width: 100% !important; }
+                                                    th, td { word-wrap: break-word !important; }
                                                     .min-w-\\[800px\\] { min-width: 0 !important; width: 100% !important; }
-                                                    .overflow-x-auto, .overflow-y-auto { overflow: visible !important; }
-                                                    * { box-shadow: none !important; }
+                                                    * { box-shadow: none !important; border-color: black !important; color: black !important; }
                                                 }
+                                                /* Screen view in new tab before printing */
+                                                body { background: #52525b; display: flex; justify-content: center; padding: 20px; font-family: sans-serif; }
+                                                .format-a4 { background: white; width: 210mm; }
+                                                .format-thermal { background: white; width: 80mm; }
                                             </style>
                                         </head>
-                                        <body style="background: white; padding: 20px; display: flex; justify-content: center; font-family: sans-serif;">
+                                        <body>
                                             ${clone.outerHTML}
                                             <script>
-                                                // Automatically open the print menu once loaded
-                                                setTimeout(function() {
-                                                    window.print();
-                                                }, 1000);
+                                                // Styles are instant, so we print almost immediately!
+                                                setTimeout(function() { window.print(); }, 250);
                                             </script>
                                         </body>
                                         </html>
