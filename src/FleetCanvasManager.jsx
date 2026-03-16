@@ -426,52 +426,48 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
                             <button onClick={() => {
-                                // 🔥 iOS SAFARI LIGHTNING PRINT HACK (Iframe Isolation) 🔥
-                                // Instead of freezing the iPhone while it tries to hide the massive app DOM, 
-                                // we extract ONLY the Surat Jalan HTML and print it inside an invisible, weightless Iframe.
-                                const contentNode = document.querySelector('.print-receipt');
-                                if (!contentNode) { window.print(); return; }
+                                // 🔥 ENTERPRISE DOM-STRIP HACK (Instant Print, No Popups) 🔥
+                                const receiptNode = document.querySelector('.print-receipt');
+                                if (!receiptNode) return;
+
+                                // 1. Clone the receipt perfectly without breaking React
+                                const printClone = receiptNode.cloneNode(true);
                                 
-                                const iframe = document.createElement('iframe');
-                                iframe.style.position = 'fixed';
-                                iframe.style.right = '0';
-                                iframe.style.bottom = '0';
-                                iframe.style.width = '0';
-                                iframe.style.height = '0';
-                                iframe.style.border = '0';
-                                document.body.appendChild(iframe);
+                                // Clean up the clone (remove buttons so they don't print)
+                                const noPrintEls = printClone.querySelectorAll('.no-print');
+                                noPrintEls.forEach(el => el.remove());
 
-                                const doc = iframe.contentWindow.document;
-                                doc.open();
-                                doc.write(`
-                                    <html>
-                                        <head>
-                                            <title>Surat Jalan</title>
-                                            ${document.head.innerHTML}
-                                            <style>
-                                                @media print {
-                                                    @page { size: A4 portrait !important; margin: 10mm !important; }
-                                                    body, html { background: white !important; color: black !important; margin: 0 !important; padding: 0 !important; }
-                                                    .no-print { display: none !important; }
-                                                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                                }
-                                            </style>
-                                        </head>
-                                        <body class="bg-white text-black font-sans">
-                                            <div style="width: 210mm; max-width: 210mm; margin: 0 auto; background: white;">
-                                                ${contentNode.innerHTML}
-                                            </div>
-                                        </body>
-                                    </html>
-                                `);
-                                doc.close();
+                                // 2. Create a pure, isolated print container
+                                const printWrapper = document.createElement('div');
+                                printWrapper.id = 'lightning-print-wrapper';
+                                printWrapper.style.backgroundColor = 'white';
+                                printWrapper.style.width = '100%';
+                                
+                                const innerDiv = document.createElement('div');
+                                innerDiv.style.width = '210mm';
+                                innerDiv.style.margin = '0 auto';
+                                innerDiv.appendChild(printClone);
+                                printWrapper.appendChild(innerDiv);
 
-                                // Give the iPhone 500ms to read the pure HTML, then pop the menu instantly!
-                                setTimeout(() => {
-                                    iframe.contentWindow.focus();
-                                    iframe.contentWindow.print();
-                                    setTimeout(() => document.body.removeChild(iframe), 2000); // Clean up after print
-                                }, 500);
+                                // 3. Physically hide the ENTIRE app to drop Safari's memory load to ZERO
+                                const originalStyles = [];
+                                Array.from(document.body.children).forEach(child => {
+                                    if (child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
+                                        originalStyles.push({ node: child, display: child.style.display });
+                                        child.style.display = 'none';
+                                    }
+                                });
+
+                                // 4. Attach and Print Synchronously (Bypasses the "Allow/Ignore" Safari popup completely!)
+                                document.body.appendChild(printWrapper);
+                                window.print();
+
+                                // 5. Instantly restore the app the second the print menu closes
+                                document.body.removeChild(printWrapper);
+                                originalStyles.forEach(item => {
+                                    item.node.style.display = item.display;
+                                });
+
                             }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
                             <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
                         </div>
