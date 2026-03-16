@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import packageJson from '../package.json'; // 🚀 INJECT THE PACKAGE LINK HERE
+
 import { 
   LayoutDashboard, Package, ShoppingCart, FileText, 
   Settings, Sun, Moon, Search, Plus, Trash2, 
@@ -27,6 +29,7 @@ import FleetCanvasManager from './FleetCanvasManager'; // <--- ADDED BACK!
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
 
 // Fix for default Leaflet marker icons in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -106,8 +109,8 @@ enableIndexedDbPersistence(db).catch((err) => {
 const googleProvider = new GoogleAuthProvider();
 const appId = "cello-inventory-manager"; 
 
-// 🚀 MASTER VERSION TRACKER (Global Scope, No Export Keyword!) 🚀
-const APP_VERSION = "V3.2.1"; 
+// 🚀 MASTER AUTO-VERSION TRACKER 🚀
+const APP_VERSION = `V${PACKAGEJSON.VERSION}`; 
 
 // --- CONSTANTS ---
 const ADMIN_PASS = "KomuroMangetsu02";
