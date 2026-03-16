@@ -104,10 +104,10 @@ enableIndexedDbPersistence(db).catch((err) => {
 });
 
 const googleProvider = new GoogleAuthProvider();
-
-// --- MISSING LINE: ADD THIS BACK ---
 const appId = "cello-inventory-manager"; 
-// ----------------------------------
+
+// 🚀 MASTER VERSION TRACKER (Global Scope, No Export Keyword!) 🚀
+const APP_VERSION = "V3.2.1"; 
 
 // --- CONSTANTS ---
 const ADMIN_PASS = "KomuroMangetsu02";
@@ -1159,10 +1159,12 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                             ${parentStyles}
                                             <style>
                                                 @media print {
-                                                    @page { margin: 0; size: ${isThermal ? '80mm auto' : 'A4 portrait'}; }
+                                                    @page { margin: 0; size: ${isThermal ? '58mm auto' : 'A4 portrait'}; }
                                                     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; margin: 0 !important; padding: 0 !important; }
                                                     .format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important; }
-                                                    .format-thermal { width: 78mm !important; max-width: 78mm !important; padding: 5mm !important; margin: 0 auto !important; }
+                                                    /* STRICT 58mm THERMAL LOCK */
+                                                    .format-thermal { width: 58mm !important; max-width: 58mm !important; padding: 2mm !important; margin: 0 auto !important; font-size: 10px !important; }
+                                                    .format-thermal * { font-size: 10px !important; line-height: 1.2 !important; }
                                                     table { table-layout: fixed !important; width: 100% !important; }
                                                     th, td { word-wrap: break-word !important; }
                                                     .min-w-\\[800px\\] { min-width: 0 !important; width: 100% !important; }
@@ -1170,7 +1172,7 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                                 }
                                                 body { background: #52525b; display: flex; justify-content: center; padding: 20px; font-family: sans-serif; }
                                                 .format-a4 { background: white; width: 210mm; }
-                                                .format-thermal { background: white; width: 80mm; }
+                                                .format-thermal { background: white; width: 58mm; font-size: 10px; }
                                             </style>
                                         </head>
                                         <body>
@@ -3239,8 +3241,6 @@ const SafetyStatus = ({ auditLogs = [], sessionStatus }) => {
 
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
-  // 🚀 MASTER VERSION TRACKER (Update this every time you push!) 🚀
-  const APP_VERSION = "v3.2.0"; 
 
   const [user, setUser] = useState(null);
   // ... rest of your code ...
