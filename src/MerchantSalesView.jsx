@@ -817,7 +817,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase">Tanggal</td><td className="font-bold !text-slate-900">: {receiptData.date}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Tipe Harga</td><td className="font-bold !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase">Sales / Agent</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Byr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase">Metode Bayr</td><td className="font-bold !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">

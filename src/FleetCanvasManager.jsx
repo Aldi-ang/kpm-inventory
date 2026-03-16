@@ -339,7 +339,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             {/* NEW: OFFICIAL SURAT JALAN MODAL (FIXED A4 MOBILE SCROLL & PRINT LAG) */}
             {viewingSuratJalan && selectedAgent && (
                 <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:p-0">
-                    <style>{`@media print { .print-modal-wrapper { background: transparent !important; padding: 0 !important; } .print-receipt { box-shadow: none !important; border: none !important; border-radius: 0 !important; } }`}</style>
+                    {/* NO TOXIC <STYLE> TAG HERE. THIS FIXES THE LAG AND CRASHES! */}
                     <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:max-h-none print:border-none print:shadow-none">
                         
                         <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:overflow-visible print:border-none print:flex print:justify-center">
@@ -402,13 +402,11 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 </table>
 
                                 <div className="mb-8">
-                                    {/* FIX: Increased text size to text-sm */}
                                     <div className="!bg-blue-50 p-4 border-2 !border-blue-800 rounded-xl text-sm text-justify leading-relaxed italic !text-blue-900 shadow-md">
                                         <strong className="uppercase tracking-widest block mb-1">Pernyataan:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
                                     </div>
                                 </div>
 
-                                {/* FIX: Removed Security Pos & Switched to 2-Column Grid */}
                                 <div className="grid grid-cols-2 gap-8 text-center mt-12 pb-4 !text-black print:mt-24">
                                     <div className="flex flex-col items-center">
                                         <p className="font-bold text-sm mb-24 uppercase tracking-widest">Admin Gudang</p>
@@ -425,50 +423,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         </div>
 
                         <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
-                            <button onClick={() => {
-                                // 🔥 ENTERPRISE DOM-STRIP HACK (Instant Print, No Popups) 🔥
-                                const receiptNode = document.querySelector('.print-receipt');
-                                if (!receiptNode) return;
-
-                                // 1. Clone the receipt perfectly without breaking React
-                                const printClone = receiptNode.cloneNode(true);
-                                
-                                // Clean up the clone (remove buttons so they don't print)
-                                const noPrintEls = printClone.querySelectorAll('.no-print');
-                                noPrintEls.forEach(el => el.remove());
-
-                                // 2. Create a pure, isolated print container
-                                const printWrapper = document.createElement('div');
-                                printWrapper.id = 'lightning-print-wrapper';
-                                printWrapper.style.backgroundColor = 'white';
-                                printWrapper.style.width = '100%';
-                                
-                                const innerDiv = document.createElement('div');
-                                innerDiv.style.width = '210mm';
-                                innerDiv.style.margin = '0 auto';
-                                innerDiv.appendChild(printClone);
-                                printWrapper.appendChild(innerDiv);
-
-                                // 3. Physically hide the ENTIRE app to drop Safari's memory load to ZERO
-                                const originalStyles = [];
-                                Array.from(document.body.children).forEach(child => {
-                                    if (child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
-                                        originalStyles.push({ node: child, display: child.style.display });
-                                        child.style.display = 'none';
-                                    }
-                                });
-
-                                // 4. Attach and Print Synchronously (Bypasses the "Allow/Ignore" Safari popup completely!)
-                                document.body.appendChild(printWrapper);
-                                window.print();
-
-                                // 5. Instantly restore the app the second the print menu closes
-                                document.body.removeChild(printWrapper);
-                                originalStyles.forEach(item => {
-                                    item.node.style.display = item.display;
-                                });
-
-                            }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
+                            {/* PURE WINDOW.PRINT() TO BYPASS SAFARI ALLOW/IGNORE POPUPS */}
+                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
                             <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
                         </div>
                     </div>
