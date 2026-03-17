@@ -5987,7 +5987,9 @@ const handleGitHubMirror = async () => {
                   onReturn={handleConsignmentReturn} 
                   onAddGoods={handleAddGoodsToCustomer}
                   onDeleteConsignment={handleDeleteConsignmentData}
-                  isAdmin={isAdmin} 
+                  isAdmin={isAdmin}
+                  user={user}
+                  agentProfileId={agentProfileId}
               />
           )}
 

@@ -16,7 +16,7 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin }) => {
+const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId }) => {
     const [activeTab, setActiveTab] = useState('financials');
 
     // --- OLD CONSIGNMENT STATE ---
@@ -25,10 +25,20 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
     const [returnMode, setReturnMode] = useState(false);
     const [itemQtys, setItemQtys] = useState({});
 
+    // 🚀 NEW: OWNERSHIP FILTER (Agents only see their own accounts) 🚀
+    const myTransactions = useMemo(() => {
+        if (isAdmin) return transactions; // Admins see everything
+        return transactions.filter(t => {
+            const matchId = agentProfileId && t.agentId === agentProfileId;
+            const matchName = user && t.agentName && (t.agentName === user.displayName || t.agentName === user.name || t.agentName === user.email?.split('@')[0]);
+            return matchId || matchName;
+        });
+    }, [transactions, isAdmin, agentProfileId, user]);
+
     // 🚀 1. FIFO DEBT ENGINE (A/R Financials) 🚀
     const debtData = useMemo(() => {
         const customers = {};
-        const sorted = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+        const sorted = [...myTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
 
         sorted.forEach(t => {
             const cName = (t.customerName || 'Unknown').trim();
@@ -89,7 +99,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
     // 🚀 2. PHYSICAL STOCK ENGINE (Restored) 🚀
     const customerData = useMemo(() => {
         const customers = {};
-        const sortedTransactions = [...transactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+        const sortedTransactions = [...myTransactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
         sortedTransactions.forEach(t => {
             if (!t.customerName) return; 
             const name = t.customerName.trim(); 
