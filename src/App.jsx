@@ -23,7 +23,8 @@ import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
 import AgentInventoryView from './AgentInventoryView';
-import FleetCanvasManager from './FleetCanvasManager'; // <--- ADDED BACK!
+import FleetCanvasManager from './FleetCanvasManager';
+import ConsignmentFinanceView from './ConsignmentFinanceView'; // 🚀 IMPORT THE NEW COMPONENT
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -1478,138 +1479,6 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     );
 };
 
-
-// --- NEW: PIUTANG / ACCOUNTS RECEIVABLE DASHBOARD ---
-const PiutangDashboardView = ({ transactions }) => {
-    // 1. FIFO Debt Calculation Engine
-    const debtData = React.useMemo(() => {
-        const customers = {};
-        const sorted = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
-
-        sorted.forEach(t => {
-            const cName = (t.customerName || 'Unknown').trim();
-            if (!customers[cName]) customers[cName] = { name: cName, debts: [], phone: '' };
-            if (t.phone) customers[cName].phone = t.phone;
-
-            if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                customers[cName].debts.push({ id: t.id, date: t.date, original: t.total, remaining: t.total });
-            }
-            if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
-                for (let i = 0; i < customers[cName].debts.length; i++) {
-                    if (customers[cName].debts[i].remaining > 0) {
-                        if (deduction >= customers[cName].debts[i].remaining) {
-                            deduction -= customers[cName].debts[i].remaining;
-                            customers[cName].debts[i].remaining = 0;
-                        } else {
-                            customers[cName].debts[i].remaining -= deduction;
-                            deduction = 0;
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        
-        const results = { RED: [], YELLOW: [], GREEN: [], totalValue: 0, totalOverdue: 0 };
-        
-        Object.values(customers).forEach(c => {
-            const active = c.debts.filter(d => d.remaining > 0.01);
-            if (active.length > 0) {
-                const total = active.reduce((s, d) => s + d.remaining, 0);
-                const oldestDate = new Date(active[0].date);
-                oldestDate.setHours(0,0,0,0);
-                
-                const ageDays = Math.floor((today - oldestDate) / (1000 * 60 * 60 * 24));
-                
-                let status = 'GREEN';
-                if (ageDays >= 14) { status = 'RED'; results.totalOverdue += total; }
-                else if (ageDays >= 8) status = 'YELLOW';
-
-                results.totalValue += total;
-                results[status].push({ name: c.name, total, ageDays, oldestDate: active[0].date, phone: c.phone });
-            }
-        });
-        
-        results.RED.sort((a,b) => b.ageDays - a.ageDays);
-        results.YELLOW.sort((a,b) => b.ageDays - a.ageDays);
-        results.GREEN.sort((a,b) => b.ageDays - a.ageDays);
-        
-        return results;
-    }, [transactions]);
-
-    const handleSendWA = (cust) => {
-        const text = `*PEMBERITAHUAN JATUH TEMPO*\n\nHalo ${cust.name},\nKami dari KPM Inventory menginformasikan bahwa terdapat tagihan Titip/Konsinyasi yang belum diselesaikan sebesar *Rp ${new Intl.NumberFormat('id-ID').format(cust.total)}* sejak tanggal ${cust.oldestDate} (${cust.ageDays} hari yang lalu).\n\nMohon kerjasamanya untuk segera diselesaikan agar pengiriman barang selanjutnya dapat diproses.\n\nTerima kasih.`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    };
-
-    const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass }) => (
-        <div className={`flex flex-col rounded-2xl border ${borderClass} ${bgClass} overflow-hidden shadow-lg`}>
-            <div className={`p-4 border-b ${borderClass} flex justify-between items-center bg-black/20`}>
-                <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${colorClass}`}>{icon} {title}</h3>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full border ${borderClass} ${colorClass}`}>{data.length} Toko</span>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto max-h-[500px] space-y-3 custom-scrollbar">
-                {data.length === 0 ? (
-                    <p className="text-center text-[10px] text-slate-500 uppercase tracking-widest py-8">No records</p>
-                ) : data.map((c, i) => (
-                    <div key={i} className="bg-black/40 p-4 rounded-xl border border-white/5 relative overflow-hidden group">
-                        {title.includes('JATUH') && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse"></div>}
-                        <h4 className="font-bold text-white text-base truncate pr-8">{c.name}</h4>
-                        <div className="flex justify-between items-end mt-2">
-                            <div>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Sisa Tagihan</p>
-                                <p className={`font-black text-lg ${colorClass}`}>Rp {new Intl.NumberFormat('id-ID').format(c.total)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Umur Hutang</p>
-                                <p className="font-bold text-white">{c.ageDays} Hari</p>
-                                <p className="text-[9px] text-slate-500">{c.oldestDate}</p>
-                            </div>
-                        </div>
-                        <button onClick={() => handleSendWA(c)} className={`w-full mt-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${colorClass} ${borderClass} hover:bg-white/10 active:scale-95`}>
-                            <MessageSquare size={12}/> Tagih via WA
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="animate-fade-in space-y-6 max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
-                <div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <FileSpreadsheet className="text-orange-500" size={32}/> Piutang / A.R.
-                    </h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">Automated First-In-First-Out Debt Aging Engine</p>
-                </div>
-                <div className="flex gap-4">
-                    <div className="text-right">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Total Uang di Luar</p>
-                        <p className="text-2xl font-black text-orange-500">Rp {new Intl.NumberFormat('id-ID').format(debtData.totalValue)}</p>
-                    </div>
-                    <div className="w-px bg-white/20"></div>
-                    <div className="text-right">
-                        <p className="text-[10px] text-red-500 uppercase tracking-widest mb-1 animate-pulse">Total Jatuh Tempo</p>
-                        <p className="text-2xl font-black text-red-500">Rp {new Intl.NumberFormat('id-ID').format(debtData.totalOverdue)}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatusCard title="Aman (0-7 Hari)" data={debtData.GREEN} colorClass="text-emerald-500" borderClass="border-emerald-500/30" bgClass="bg-emerald-950/10" icon={<ShieldCheck size={18}/>} />
-                <StatusCard title="Warning (8-14 Hari)" data={debtData.YELLOW} colorClass="text-yellow-500" borderClass="border-yellow-500/30" bgClass="bg-yellow-950/10" icon={<AlertCircle size={18}/>} />
-                <StatusCard title="JATUH TEMPO (>14 Hari)" data={debtData.RED} colorClass="text-red-500" borderClass="border-red-500/50" bgClass="bg-red-950/20" icon={<XCircle size={18}/>} />
-            </div>
-        </div>
-    );
-};
-
 // --- NEW: CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
     const [benchmarks, setBenchmarks] = useState([]);
@@ -2661,8 +2530,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'agent_inventory', label: 'Agent Inventory' }, // <--- RENAMED
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
-        { id: 'consignment', label: 'Consignment' },
-        { id: 'piutang', label: 'A/R (Piutang)' }, // 🔥 NEW PIUTANG TAB
+        { id: 'receivables', label: 'Receivables & Consignment' }, // 🔥 NEW PIUTANG TAB
         { id: 'stock_opname', label: 'Stock Opname' },
         { id: 'customers', label: 'Customers' },
         { id: 'sampling', label: 'Sampling' },
@@ -2684,7 +2552,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             return ['map_war_room', 'journey', 'sales'].includes(item.id);
         }
         // Employees: Added 'transactions' so they can see their own history!
-        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'piutang'].includes(item.id);
+        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'receivables'].includes(item.id);
     });
 
     return (
@@ -6041,6 +5909,8 @@ const handleGitHubMirror = async () => {
               </div>
           )}
 
+          {activeTab === 'receivables' && <ConsignmentFinanceView transactions={transactions} inventory={inventory} />}
+
           {activeTab === 'piutang' && <PiutangDashboardView transactions={transactions} />}
 
 
@@ -6069,7 +5939,7 @@ const handleGitHubMirror = async () => {
               />
           )}
 
-          {activeTab === 'consignment' && <ConsignmentView transactions={transactions} inventory={inventory} onAddGoods={handleAddGoodsToCustomer} onPayment={handleConsignmentPayment} onReturn={handleConsignmentReturn} onDeleteConsignment={handleDeleteConsignmentData} isAdmin={isAdmin} />}
+        
           {activeTab === 'stock_opname' && (
               <StockOpnameView 
                   inventory={inventory} 
