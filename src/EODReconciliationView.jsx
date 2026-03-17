@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, ArrowRight, Store, DollarSign, Package } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
-const EODReconciliationView = ({ transactions, inventory, agentInventories, eodReports, user, onSubmitEOD, onVerifyEOD, isAdmin }) => {
+const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProfileId, eodReports, user, onSubmitEOD, onVerifyEOD, isAdmin }) => {
     
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
@@ -15,14 +15,11 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
         let expectedCash = 0;
         let expectedTransfer = 0;
         
-        // 1. Find all transactions done by this agent TODAY
+        // 1. Find all transactions done by this specific agent TODAY using their exact ID
         const todaysTrans = transactions.filter(t => {
-            if (t.agentName !== user?.name) return false;
-            if (t.timestamp && t.timestamp.seconds) {
-                const tDate = new Date(t.timestamp.seconds * 1000);
-                return tDate.toDateString() === today.toDateString();
-            }
-            return false; 
+            if (t.agentId !== agentProfileId) return false;
+            const tDate = t.timestamp ? new Date(t.timestamp.seconds * 1000) : new Date(t.date);
+            return tDate.toDateString() === today.toDateString();
         });
 
         // 2. Sum up the Cash and Transfers
@@ -31,37 +28,42 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
             const method = t.paymentType || t.method || 'Cash';
             
             if ((t.type === 'SALE' && method !== 'Titip') || t.type === 'CONSIGNMENT_PAYMENT') {
-                if (method === 'Transfer') expectedTransfer += amount;
+                if (method === 'Transfer' || method === 'QRIS') expectedTransfer += amount;
                 else expectedCash += amount;
             }
         });
 
-        // 3. Get remaining van stock
-        const myVanStock = agentInventories?.[user?.name] || {};
-        const activeStock = Object.entries(myVanStock).filter(([id, qty]) => qty > 0);
-
-        // 4. Check if already submitted today
+        // 3. Check if already submitted today
         const hasSubmittedToday = eodReports.some(r => {
-            if (r.agentName !== user?.name) return false;
-            const rDate = new Date(r.timestamp);
+            if (r.agentId !== agentProfileId) return false;
+            const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : new Date(r.timestamp);
             return rDate.toDateString() === today.toDateString();
         });
 
-        const pendingReport = eodReports.find(r => r.agentName === user?.name && r.status === 'PENDING');
+        const pendingReport = eodReports.find(r => r.agentId === agentProfileId && r.status === 'PENDING');
 
-        return { expectedCash, expectedTransfer, activeStock, hasSubmittedToday, pendingReport };
-    }, [transactions, user, agentInventories, eodReports, isAdmin]);
+        // 4. Return the Live Agent Canvas
+        return { expectedCash, expectedTransfer, activeStock: agentCanvas || [], hasSubmittedToday, pendingReport };
+    }, [transactions, agentProfileId, agentCanvas, eodReports, isAdmin]);
 
 
     // --- ADMIN LOGIC: View Pending Reports ---
     const pendingReports = useMemo(() => {
         if (!isAdmin) return [];
-        return eodReports.filter(r => r.status === 'PENDING').sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+        return eodReports.filter(r => r.status === 'PENDING').sort((a,b) => {
+            const timeA = a.timestamp?.seconds || 0;
+            const timeB = b.timestamp?.seconds || 0;
+            return timeB - timeA;
+        });
     }, [eodReports, isAdmin]);
 
     const verifiedReports = useMemo(() => {
         if (!isAdmin) return [];
-        return eodReports.filter(r => r.status === 'VERIFIED').sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+        return eodReports.filter(r => r.status === 'VERIFIED').sort((a,b) => {
+            const timeA = a.verifiedAt?.seconds || 0;
+            const timeB = b.verifiedAt?.seconds || 0;
+            return timeB - timeA;
+        }).slice(0, 10);
     }, [eodReports, isAdmin]);
 
 
@@ -86,13 +88,13 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                         <div className="bg-orange-950/30 border border-orange-500/50 p-8 rounded-2xl text-center shadow-xl relative overflow-hidden">
                             <Clock className="mx-auto text-orange-500 mb-4 animate-pulse" size={48}/>
                             <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Report Submitted</h3>
-                            <p className="text-orange-200 text-sm">Waiting for Admin to verify your cash and clear your van's inventory.</p>
+                            <p className="text-orange-200 text-sm">Waiting for Admin to verify your cash and clear your inventory.</p>
                         </div>
                     ) : agentData.hasSubmittedToday ? (
                         <div className="bg-emerald-950/30 border border-emerald-500/50 p-8 rounded-2xl text-center shadow-xl">
                             <CheckCircle className="mx-auto text-emerald-500 mb-4" size={48}/>
                             <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Shift Closed</h3>
-                            <p className="text-emerald-200 text-sm">Your EOD report was verified. Your van is clear and ready for tomorrow.</p>
+                            <p className="text-emerald-200 text-sm">Your EOD report was verified. Your inventory is clear and ready for tomorrow.</p>
                         </div>
                     ) : (
                         <div className="bg-black/20 border border-white/10 rounded-2xl p-6 shadow-xl">
@@ -111,32 +113,29 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                                 </div>
                             </div>
 
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Truck className="text-orange-500"/> Goods Remaining in Van</h3>
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Truck className="text-orange-500"/> Goods Remaining in Inventory</h3>
                             <div className="bg-black/40 border border-white/5 rounded-xl overflow-hidden mb-8">
                                 {agentData.activeStock.length === 0 ? (
-                                    <p className="text-center p-6 text-slate-500 text-xs uppercase tracking-widest">Van is empty.</p>
+                                    <p className="text-center p-6 text-slate-500 text-xs uppercase tracking-widest">Inventory is empty.</p>
                                 ) : (
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-white/5 text-slate-400 text-[10px] uppercase tracking-widest">
                                             <tr><th className="p-3">Product</th><th className="p-3 text-right">Qty to Return</th></tr>
                                         </thead>
                                         <tbody>
-                                            {agentData.activeStock.map(([productId, qty]) => {
-                                                const prod = inventory.find(p => p.id === productId);
-                                                return (
-                                                    <tr key={productId} className="border-t border-white/5">
-                                                        <td className="p-3 font-bold text-white">{prod?.name || 'Unknown Item'}</td>
-                                                        <td className="p-3 text-right font-black text-orange-400">{qty} Bks</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                            {agentData.activeStock.map((item, idx) => (
+                                                <tr key={idx} className="border-t border-white/5">
+                                                    <td className="p-3 font-bold text-white">{item.name}</td>
+                                                    <td className="p-3 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 )}
                             </div>
 
                             <button 
-                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, remainingStock: agentInventories[user.name] || {} })}
+                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, remainingStock: agentData.activeStock })}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                             >
                                 <Upload size={20}/> Submit EOD Report
@@ -163,7 +162,9 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                                     <div className="p-4 bg-orange-950/20 flex justify-between items-center border-b border-orange-500/20">
                                         <div>
                                             <h4 className="font-black text-white text-lg">{report.agentName}</h4>
-                                            <p className="text-[10px] text-slate-400">{new Date(report.timestamp).toLocaleTimeString()}</p>
+                                            <p className="text-[10px] text-slate-400">
+                                                {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
+                                            </p>
                                         </div>
                                         <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-widest animate-pulse">Action Required</span>
                                     </div>
@@ -178,17 +179,13 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                                         </div>
                                         
                                         <div className="pt-2">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Van Stock to Vault</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
                                             <div className="flex flex-wrap gap-2">
-                                                {Object.entries(report.remainingStock || {}).filter(([id, qty]) => qty > 0).map(([id, qty]) => {
-                                                    const prod = inventory.find(p => p.id === id);
-                                                    return (
-                                                        <span key={id} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-white/10">
-                                                            {prod?.name || 'Item'}: <strong className="text-orange-400">{qty} Bks</strong>
-                                                        </span>
-                                                    );
-                                                })}
-                                                {Object.values(report.remainingStock || {}).every(qty => qty === 0) && <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
+                                                {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => (
+                                                    <span key={idx} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-white/10">
+                                                        {item.name}: <strong className="text-orange-400">{item.qty} {item.unit}</strong>
+                                                    </span>
+                                                )) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
                                             </div>
                                         </div>
 
@@ -196,7 +193,7 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                                             onClick={() => onVerifyEOD(report)}
                                             className="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-transform active:scale-95"
                                         >
-                                            <CheckCircle size={18}/> Verify & Clear Agent Van
+                                            <CheckCircle size={18}/> Verify & Return Stock
                                         </button>
                                     </div>
                                 </div>
@@ -214,7 +211,9 @@ const EODReconciliationView = ({ transactions, inventory, agentInventories, eodR
                                 <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70">
                                     <div>
                                         <h4 className="font-bold text-white">{report.agentName}</h4>
-                                        <p className="text-[9px] text-slate-500">{new Date(report.verifiedAt).toLocaleString()}</p>
+                                        <p className="text-[9px] text-slate-500">
+                                            {report.verifiedAt?.seconds ? new Date(report.verifiedAt.seconds * 1000).toLocaleString() : ''}
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>

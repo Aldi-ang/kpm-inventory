@@ -3956,39 +3956,54 @@ const handleGitHubMirror = async () => {
   }, [userRole, agentProfileId, db, appId, userId]);
 
   // 🚀 EOD HANDLERS 🚀
-  const handleSubmitEOD = (reportData) => {
-      setEodReports(prev => [...prev, { 
-          id: Date.now().toString(), 
-          agentName: user.displayName || user.email.split('@')[0], 
-          timestamp: new Date().toISOString(),
-          status: 'PENDING',
-          ...reportData 
-      }]);
-      alert("EOD Report submitted successfully! Waiting for Admin verification.");
+  const handleSubmitEOD = async (reportData) => {
+      try {
+          await addDoc(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`), {
+              agentName: user.displayName || user.email.split('@')[0], 
+              agentId: agentProfileId || 'ADMIN',
+              timestamp: serverTimestamp(),
+              status: 'PENDING',
+              ...reportData 
+          });
+          triggerCapy("EOD Report submitted to database! Waiting for Admin.");
+      } catch (e) { console.error(e); alert("Failed to submit EOD: " + e.message); }
   };
 
-  const handleVerifyEOD = (report) => {
-      // 1. Move Agent's remaining stock back to the Master Vault
-      setInventory(prevInv => {
-          const newInv = [...prevInv];
-          Object.entries(report.remainingStock || {}).forEach(([productId, qtyInBks]) => {
-              if (qtyInBks > 0) {
-                  const pIndex = newInv.findIndex(p => p.id === productId);
-                  if (pIndex >= 0) {
-                      newInv[pIndex] = { ...newInv[pIndex], stock: (newInv[pIndex].stock || 0) + qtyInBks };
+  const handleVerifyEOD = async (report) => {
+      if(!window.confirm(`Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`)) return;
+      try {
+          await runTransaction(db, async (t) => {
+              // 1. Calculate & Return stock to Master Vault
+              for (const item of (report.remainingStock || [])) {
+                  if (item.qty > 0) {
+                      const pRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId);
+                      const pSnap = await t.get(pRef);
+                      if (pSnap.exists()) {
+                          const pData = pSnap.data();
+                          let mult = 1;
+                          if (item.unit === 'Slop') mult = pData.packsPerSlop || 10;
+                          if (item.unit === 'Bal') mult = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                          if (item.unit === 'Karton') mult = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                          const bksToReturn = item.qty * mult;
+                          t.update(pRef, { stock: pData.stock + bksToReturn });
+                      }
                   }
               }
+              
+              // 2. Clear agent's Canvas
+              if (report.agentId && report.agentId !== 'ADMIN') {
+                  const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
+                  t.update(agentRef, { activeCanvas: [] });
+              }
+
+              // 3. Mark EOD as Verified
+              const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
+              t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
-          return newInv;
-      });
-
-      // 2. Clear the Agent's Van entirely so they start fresh tomorrow
-      setAgentInventories(prev => ({ ...prev, [report.agentName]: {} }));
-
-      // 3. Mark the EOD Report as Verified
-      setEodReports(prev => prev.map(r => r.id === report.id ? { ...r, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : r));
-      
-      logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}. Cleared Van stock.`);
+          
+          await logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}. Cleared inventory.`);
+          triggerCapy("EOD Verified & Stock Returned!");
+      } catch(e) { console.error(e); alert("Verification failed: " + e.message); }
   };
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
@@ -4118,8 +4133,11 @@ const handleGitHubMirror = async () => {
     // 7. Procurement Ledger
     const unsubProc = onSnapshot(query(collection(db, basePath, 'procurement'), orderBy('timestamp', 'desc')), (snap) => setProcurements(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
-    // 8. ALL MOTORISTS (For Global Asset Tracking)
+   // 8. ALL MOTORISTS (For Global Asset Tracking)
     const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+    // 🚀 NEW: LIVE EOD DATABASE SYNC 🚀
+    const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
     // 9. BOSS VEHICLE CANVAS
     const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
@@ -5978,7 +5996,8 @@ const handleGitHubMirror = async () => {
               <EODReconciliationView 
                   transactions={transactions} 
                   inventory={inventory} 
-                  agentInventories={agentInventories}
+                  agentCanvas={agentCanvas}
+                  agentProfileId={agentProfileId}
                   eodReports={eodReports}
                   user={user}
                   onSubmitEOD={handleSubmitEOD}
