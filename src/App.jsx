@@ -5909,7 +5909,7 @@ const handleGitHubMirror = async () => {
               </div>
           )}
 
-          {activeTab === 'receivables' && <ConsignmentFinanceView transactions={transactions} inventory={inventory} />}
+         {activeTab === 'receivables' && <ConsignmentFinanceView transactions={transactions} inventory={inventory} onPayment={handleProcessPayment} onReturn={handleProcessReturn} isAdmin={isAdmin} />}
 
           {activeTab === 'piutang' && <PiutangDashboardView transactions={transactions} />}
 
