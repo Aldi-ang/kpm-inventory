@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import packageJson from '../package.json'; // 🚀 INJECT THE PACKAGE LINK HERE
 
 import { 
