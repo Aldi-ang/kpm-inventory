@@ -2553,8 +2553,15 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             // security fix: 'fleet' removed from locked view!
             return ['map_war_room', 'journey', 'sales'].includes(item.id);
         }
-        // Employees: Added 'transactions' so they can see their own history!
-        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'receivables', 'eod'].includes(item.id);
+        // Employees: Base tabs for all field agents
+        let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
+        
+        // 🚀 smart menu hiding: only show receivables & consignment if agent has grosir access 🚀
+        if (agentsettings?.allowedtiers?.includes('grosir') || agentsettings?.allowedtiers?.includes('distributor')) {
+            allowedtabs.push('receivables');
+        }
+        
+        return allowedtabs.includes(item.id);
     });
 
     return (
