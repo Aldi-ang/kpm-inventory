@@ -24,7 +24,8 @@ import MusicPlayer from './MusicPlayer';
 import RestockVaultView from './RestockVaultView';
 import AgentInventoryView from './AgentInventoryView';
 import FleetCanvasManager from './FleetCanvasManager';
-import ConsignmentFinanceView from './ConsignmentFinanceView'; // 🚀 IMPORT THE NEW COMPONENT
+import ConsignmentFinanceView from './ConsignmentFinanceView'; 
+import EODReconciliationView from './EODReconciliationView'; // 🚀 IMPORT EOD HERE
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -2530,7 +2531,8 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'agent_inventory', label: 'Agent Inventory' }, // <--- RENAMED
         { id: 'restock_vault', label: 'Restock Vault' },
         { id: 'sales', label: 'Sales Terminal' },
-        { id: 'receivables', label: 'Receivables & Consignment' }, // 🔥 NEW PIUTANG TAB
+        { id: 'receivables', label: 'Receivables & Consignment' },
+        { id: 'eod', label: 'EOD Setoran' }, // 🚀 NEW EOD TAB
         { id: 'stock_opname', label: 'Stock Opname' },
         { id: 'customers', label: 'Customers' },
         { id: 'sampling', label: 'Sampling' },
@@ -2552,7 +2554,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             return ['map_war_room', 'journey', 'sales'].includes(item.id);
         }
         // Employees: Added 'transactions' so they can see their own history!
-        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'receivables'].includes(item.id);
+        return ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'receivables', 'eod'].includes(item.id);
     });
 
     return (
@@ -3697,6 +3699,11 @@ const handleGitHubMirror = async () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [procurements, setProcurements] = useState([]); 
   const [motorists, setMotorists] = useState([]); // <--- NEW: GLOBAL FLEET TRACKER
+  
+  // 🚀 REQUIRED FOR EOD SETORAN 🚀
+  const [agentInventories, setAgentInventories] = useState({}); 
+  const [eodReports, setEodReports] = useState([]); 
+
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
@@ -3939,6 +3946,42 @@ const handleGitHubMirror = async () => {
           setAgentSettings({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
       }
   }, [userRole, agentProfileId, db, appId, userId]);
+
+  // 🚀 EOD HANDLERS 🚀
+  const handleSubmitEOD = (reportData) => {
+      setEodReports(prev => [...prev, { 
+          id: Date.now().toString(), 
+          agentName: user.displayName || user.email.split('@')[0], 
+          timestamp: new Date().toISOString(),
+          status: 'PENDING',
+          ...reportData 
+      }]);
+      alert("EOD Report submitted successfully! Waiting for Admin verification.");
+  };
+
+  const handleVerifyEOD = (report) => {
+      // 1. Move Agent's remaining stock back to the Master Vault
+      setInventory(prevInv => {
+          const newInv = [...prevInv];
+          Object.entries(report.remainingStock || {}).forEach(([productId, qtyInBks]) => {
+              if (qtyInBks > 0) {
+                  const pIndex = newInv.findIndex(p => p.id === productId);
+                  if (pIndex >= 0) {
+                      newInv[pIndex] = { ...newInv[pIndex], stock: (newInv[pIndex].stock || 0) + qtyInBks };
+                  }
+              }
+          });
+          return newInv;
+      });
+
+      // 2. Clear the Agent's Van entirely so they start fresh tomorrow
+      setAgentInventories(prev => ({ ...prev, [report.agentName]: {} }));
+
+      // 3. Mark the EOD Report as Verified
+      setEodReports(prev => prev.map(r => r.id === report.id ? { ...r, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : r));
+      
+      logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}. Cleared Van stock.`);
+  };
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
   useEffect(() => {
@@ -5918,6 +5961,20 @@ const handleGitHubMirror = async () => {
                   onAddGoods={handleAddGoodsToCustomer}
                   onDeleteConsignment={handleDeleteConsignmentData}
                   isAdmin={isAdmin} 
+              />
+          )}
+
+          {/* 🚀 NEW EOD ROUTER 🚀 */}
+          {activeTab === 'eod' && (
+              <EODReconciliationView 
+                  transactions={transactions} 
+                  inventory={inventory} 
+                  agentInventories={agentInventories}
+                  eodReports={eodReports}
+                  user={user}
+                  onSubmitEOD={handleSubmitEOD}
+                  onVerifyEOD={handleVerifyEOD}
+                  isAdmin={isAdmin}
               />
           )}
 
