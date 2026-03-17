@@ -2513,7 +2513,7 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
 };
 
 // --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
-const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin }) => {
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     
     const handleLogout = () => {
@@ -2542,25 +2542,25 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'settings', label: 'Settings' }
     ];
 
-    // 🚀 BULLETPROOF MENU ENGINE 🚀
-    const isAdmin = userRole === 'ADMIN'; // Explicitly define admin state for safety
-
+    // 🚀 BULLETPROOF MENU ENGINE (CRASH FIXED) 🚀
     const visibleMenu = allMenuItems.filter(item => {
-        if (isAdmin) return true;
+        // 1. ADMIN LOGIC (Restores your lockscreen rules!)
+        if (userRole === 'ADMIN') {
+            if (isAdmin) {
+                if (item.id === 'agent_inventory') return false;
+                return true; 
+            }
+            return ['map_war_room', 'journey', 'sales'].includes(item.id);
+        }
         
-        // Base tabs for all field agents
+        // 2. AGENT LOGIC (Base Tabs)
         let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
         
-        // 🚀 SMART MENU HIDING (Crash-Proofed) 🚀
-        try {
-            // We use 'typeof' to prevent fatal ReferenceErrors if the state variable is named differently
-            if (typeof agentSettings !== 'undefined' && agentSettings && Array.isArray(agentSettings.allowedTiers)) {
-                if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
-                    allowedTabs.push('receivables');
-                }
+        // 3. SMART MENU HIDING
+        if (typeof agentSettings !== 'undefined' && agentSettings?.allowedTiers) {
+            if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
+                allowedTabs.push('receivables');
             }
-        } catch (error) {
-            console.warn("Permission check safely bypassed.");
         }
         
         return allowedTabs.includes(item.id);
@@ -5564,6 +5564,7 @@ const handleGitHubMirror = async () => {
         userRole={userRole}
         onLogin={handleLogin} 
         setShowAdminLogin={setShowAdminLogin}
+        agentSettings={agentSettings}
     >
       {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
       {activeTab === 'agent_inventory' && (
