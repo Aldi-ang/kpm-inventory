@@ -3710,7 +3710,10 @@ const handleGitHubMirror = async () => {
   
   // 🚀 REQUIRED FOR EOD SETORAN 🚀
   const [agentInventories, setAgentInventories] = useState({}); 
-  const [eodReports, setEodReports] = useState([]); 
+  const [eodReports, setEodReports] = useState([]);
+  
+  // 🚀 ACCOUNT TRANSFER STATE 🚀
+  const [transferRequests, setTransferRequests] = useState([]);
 
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
@@ -3955,6 +3958,60 @@ const handleGitHubMirror = async () => {
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
+
+  // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
+  const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
+      try {
+          await addDoc(collection(db, `artifacts/${appId}/users/${userId}/account_transfers`), {
+              storeName,
+              fromAgentId: agentProfileId,
+              fromAgentName: user.displayName || user.email.split('@')[0],
+              toAgentId,
+              toAgentName,
+              note,
+              status: 'PENDING_AGENT',
+              timestamp: serverTimestamp()
+          });
+          triggerCapy(`Transfer request for ${storeName} sent to ${toAgentName}!`);
+      } catch (e) { console.error(e); alert("Failed to request transfer: " + e.message); }
+  };
+
+  const handleAgentAcceptTransfer = async (requestId, isAccepted) => {
+      try {
+          const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, requestId);
+          await updateDoc(reqRef, { 
+              status: isAccepted ? 'PENDING_ADMIN' : 'REJECTED',
+              respondedAt: serverTimestamp()
+          });
+          triggerCapy(isAccepted ? "Transfer accepted! Waiting for Admin approval." : "Transfer rejected.");
+      } catch (e) { console.error(e); alert("Action failed: " + e.message); }
+  };
+
+  const handleAdminApproveTransfer = async (request, isApproved) => {
+      if (!window.confirm(`${isApproved ? 'Approve' : 'Reject'} the transfer of ${request.storeName} to ${request.toAgentName}?`)) return;
+      try {
+          const batch = writeBatch(db);
+          
+          // 1. Update the request ticket
+          const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, request.id);
+          batch.update(reqRef, { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() });
+
+          // 2. If approved, rewrite the entire history of this store to the new agent!
+          if (isApproved) {
+              const storeTx = transactions.filter(t => (t.customerName || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
+              storeTx.forEach(t => {
+                  const tRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id);
+                  batch.update(tRef, { agentId: request.toAgentId, agentName: request.toAgentName });
+              });
+          }
+
+          await batch.commit();
+          if (isApproved) await logAudit("TRANSFER_APPROVED", `Reassigned ${request.storeName} to ${request.toAgentName}`);
+          triggerCapy(isApproved ? "Transfer complete! Debt reassigned." : "Transfer declined.");
+      } catch(e) { console.error(e); alert("Failed: " + e.message); }
+  };
+
+
   // 🚀 EOD HANDLERS 🚀
   const handleSubmitEOD = async (reportData) => {
       try {
@@ -4138,6 +4195,9 @@ const handleGitHubMirror = async () => {
 
     // 🚀 NEW: LIVE EOD DATABASE SYNC 🚀
     const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+    // 🚀 NEW: LIVE ACCOUNT TRANSFER SYNC 🚀
+    const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))));
 
     // 9. BOSS VEHICLE CANVAS
     const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
@@ -5990,6 +6050,11 @@ const handleGitHubMirror = async () => {
                   isAdmin={isAdmin}
                   user={user}
                   agentProfileId={agentProfileId}
+                  motorists={motorists}
+                  transferRequests={transferRequests}
+                  onRequestTransfer={handleRequestTransfer}
+                  onAgentAcceptTransfer={handleAgentAcceptTransfer}
+                  onAdminApproveTransfer={handleAdminApproveTransfer}
               />
           )}
 
