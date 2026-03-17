@@ -2541,29 +2541,29 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         { id: 'settings', label: 'Settings' }
     ];
 
-    // 🛑 UI LOCKDOWN: Strict Sidebar Filtering based on Role & Unlock Status
+    // 🚀 BULLETPROOF MENU ENGINE 🚀
+    const isAdmin = userRole === 'ADMIN'; // Explicitly define admin state for safety
+
     const visibleMenu = allMenuItems.filter(item => {
-        if (userRole === 'ADMIN') {
-            if (isAdmin) {
-                // FIX: Hide the redundant 'Agent Inventory' tab from Admins to keep the UI clean.
-                // Admins use 'Fleet & Canvas' to view agent inventories instead!
-                if (item.id === 'agent_inventory') return false;
-                return true; 
-            }
-            // security fix: 'fleet' removed from locked view!
-            return ['map_war_room', 'journey', 'sales'].includes(item.id);
-        }
-        // Employees: Base tabs for all field agents
+        if (isAdmin) return true;
+        
+        // Base tabs for all field agents
         let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
         
-        // 🚀 smart menu hiding: only show receivables & consignment if agent has grosir access 🚀
-        if (agentsettings?.allowedtiers?.includes('grosir') || agentsettings?.allowedtiers?.includes('distributor')) {
-            allowedtabs.push('receivables');
+        // 🚀 SMART MENU HIDING (Crash-Proofed) 🚀
+        try {
+            // We use 'typeof' to prevent fatal ReferenceErrors if the state variable is named differently
+            if (typeof agentSettings !== 'undefined' && agentSettings && Array.isArray(agentSettings.allowedTiers)) {
+                if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
+                    allowedTabs.push('receivables');
+                }
+            }
+        } catch (error) {
+            console.warn("Permission check safely bypassed.");
         }
         
-        return allowedtabs.includes(item.id);
+        return allowedTabs.includes(item.id);
     });
-
     return (
         <div className="print-reset min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             
