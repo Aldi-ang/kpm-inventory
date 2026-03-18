@@ -9,7 +9,7 @@ import {
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
-  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database
+  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database, Bell
 
 } from 'lucide-react';
 import { 
@@ -2512,8 +2512,49 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
     );
 };
 
+// 🚀 NOTIFICATION BELL WIDGET 🚀
+const NotificationBell = ({ notifications = [], onNotificationClick }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    return (
+        <div className="relative">
+            <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 bg-black/40 hover:bg-white/10 rounded-full border border-white/10 transition-colors">
+                <Bell size={20} className="text-slate-300" />
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-bounce shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                        {unreadCount}
+                    </span>
+                )}
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[100] custom-scrollbar">
+                    <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80 sticky top-0 backdrop-blur-md z-10">
+                        <h3 className="font-black text-white uppercase tracking-widest text-sm">Inbox</h3>
+                        <button onClick={() => setIsOpen(false)}><X size={16} className="text-slate-400 hover:text-white"/></button>
+                    </div>
+                    <div className="p-2 space-y-1">
+                        {notifications.length === 0 ? (
+                            <p className="text-center text-xs text-slate-500 py-6 uppercase tracking-widest">All caught up!</p>
+                        ) : notifications.map(n => (
+                            <div key={n.id} onClick={() => { onNotificationClick(n); setIsOpen(false); }} className={`p-3 rounded-xl cursor-pointer transition-all border ${n.read ? 'bg-black/20 border-transparent opacity-60' : 'bg-slate-800 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] hover:bg-slate-700'}`}>
+                                <div className="flex justify-between items-start mb-1">
+                                    <h4 className={`text-xs font-bold ${n.read ? 'text-slate-400' : 'text-indigo-400'}`}>{n.title}</h4>
+                                    <span className="text-[9px] text-slate-500">{n.timestamp?.seconds ? new Date(n.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Now'}</span>
+                                </div>
+                                <p className={`text-[10px] ${n.read ? 'text-slate-500' : 'text-slate-300'}`}>{n.message}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
-const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings }) => {
+const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings, notifications, onNotificationClick }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     
     const handleLogout = () => {
@@ -2647,6 +2688,10 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                     {user ? (
                         <div className="flex items-center gap-2">
+                            
+                            {/* 🚀 INJECT BELL HERE 🚀 */}
+                            <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
+
                             <img 
                                 src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
                                 className="w-7 h-7 rounded border border-white/30 object-cover bg-black"
@@ -3715,6 +3760,9 @@ const handleGitHubMirror = async () => {
   // 🚀 ACCOUNT TRANSFER STATE 🚀
   const [transferRequests, setTransferRequests] = useState([]);
 
+  // 🚀 NOTIFICATION STATE 🚀
+  const [notifications, setNotifications] = useState([]);
+
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
   const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
@@ -3958,6 +4006,19 @@ const handleGitHubMirror = async () => {
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
+  // 🚀 NOTIFICATION CLICK HANDLER 🚀
+  const handleNotificationClick = async (notification) => {
+      // 1. Mark as Read in Database
+      if (!notification.read) {
+          try {
+              await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/notifications`, notification.id), { read: true });
+          } catch (e) { console.error("Error marking read", e); }
+      }
+      // 2. Jump straight to the relevant tab!
+      if (notification.linkToTab) {
+          setActiveTab(notification.linkToTab);
+      }
+  };
 
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
   const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
@@ -4198,6 +4259,17 @@ const handleGitHubMirror = async () => {
 
     // 🚀 NEW: LIVE ACCOUNT TRANSFER SYNC 🚀
     const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+    // 🚀 LIVE NOTIFICATION SYNC 🚀
+    const unsubNotifs = onSnapshot(query(collection(db, basePath, 'notifications'), orderBy('timestamp', 'desc')), (snap) => {
+        // We filter locally to bypass complex Firebase Index requirements!
+        const myNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(n => {
+            if (userRole === 'ADMIN' && n.targetRole === 'ADMIN') return true;
+            if (agentProfileId && n.targetId === agentProfileId) return true;
+            return false;
+        });
+        setNotifications(myNotifs);
+    });
 
     // 9. BOSS VEHICLE CANVAS
     const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
@@ -5643,6 +5715,8 @@ const handleGitHubMirror = async () => {
         onLogin={handleLogin} 
         setShowAdminLogin={setShowAdminLogin}
         agentSettings={agentSettings}
+        notifications={notifications}                   
+        onNotificationClick={handleNotificationClick}   
     >
       {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
       {activeTab === 'agent_inventory' && (
