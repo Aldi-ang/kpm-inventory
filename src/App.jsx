@@ -5818,20 +5818,16 @@ const handleGitHubMirror = async () => {
                         maxLength={6}
                     />
                     
-                    <div className="flex gap-3 mt-4">
+                    {/* 🚀 RESTORED BIOMETRIC BUTTON (SCI-FI STYLED) 🚀 */}
+                    {window.PublicKeyCredential && (
                         <button 
-                            onClick={() => setShowAdminLogin(false)} 
-                            className="flex-1 py-4 border border-white/10 text-gray-500 hover:text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest transition-all font-mono"
+                            onClick={handleBiometricUnlock}
+                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                         >
-                            Abort
+                            <ScanFace size={18} className="animate-pulse" />
+                            Biometric Override
                         </button>
-                        <button 
-                            onClick={handlePinLogin} 
-                            className="flex-1 py-4 bg-red-600/20 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.6)] transition-all font-mono"
-                        >
-                            Access
-                        </button>
-                    </div>
+                    )}
                     
                     <div className="pt-6 border-t border-white/5 mt-6">
                         <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-500 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
