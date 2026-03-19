@@ -2607,7 +2607,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
         return allowedTabs.includes(item.id);
     });
     return (
-        <div className="print-reset min-h-screen bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
+        <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             
             {/* BACKGROUND LAYERS */}
             <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
@@ -2717,7 +2717,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             </div>
 
             {/* RIGHT COLUMN: CONTENT AREA */}
-            <div className="print-reset relative z-10 flex-1 flex flex-col h-screen overflow-hidden bg-gradient-to-br from-transparent to-black/80">
+            <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (Restored to its original state) */}
                 <div className="hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
