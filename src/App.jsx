@@ -3777,7 +3777,7 @@ const handleGitHubMirror = async () => {
                   user: { id: userId, name: user?.email || "Admin", displayName: "Administrator" },
                   pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
                   authenticatorSelection: { 
-                      authenticatorAttachment: "platform", // 🚨 THIS FORCES WINDOWS HELLO / TOUCH ID
+                      // 🚨 REMOVED 'authenticatorAttachment' so Windows allows Fingerprint, Phone, AND USB Keys!
                       userVerification: "required" 
                   },
                   timeout: 60000
@@ -5621,18 +5621,35 @@ const handleGitHubMirror = async () => {
 
             {/* 3. USER PROFILE & SECURITY */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile</h3>
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile & Security</h3>
                 <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
                 <input type="email" className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white mb-4" value={currentUserEmail || ""} disabled/>
-                <div className="p-4 rounded-xl border flex justify-between items-center bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
-                    <div>
-                        <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
-                            Administrator Access Verified
-                        </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border flex flex-col justify-between bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
+                        <div className="mb-4">
+                            <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 mb-1">Vault PIN Status</p>
+                            <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-widest">Administrator Access Verified</p>
+                        </div>
+                        <div className="flex gap-2">
+                             <button onClick={handleChangePin} className="flex-1 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Change PIN</button>
+                             <button onClick={handleAdminLogout} className="flex-1 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">Lock Admin</button>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                         <button onClick={handleChangePin} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 rounded-lg text-xs font-bold">Change PIN</button>
-                         <button onClick={handleAdminLogout} className="px-4 py-2 bg-white dark:bg-slate-900 border border-emerald-200 rounded-lg text-xs font-bold text-red-500">Lock Admin</button>
+                    
+                    <div className="p-4 rounded-xl border flex flex-col justify-between bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                        <div className="mb-4">
+                            <p className="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-2">
+                                <ScanFace size={16}/> Biometric Passkeys
+                            </p>
+                            <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest">Register Fingerprints, Phones, or USBs</p>
+                        </div>
+                        <button 
+                            onClick={handleRegisterPasskey}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Plus size={14}/> Add New Device / Passkey
+                        </button>
                     </div>
                 </div>
             </div>
@@ -5874,25 +5891,15 @@ const handleGitHubMirror = async () => {
                         maxLength={6}
                     />
                     
-                    {/* 🚀 FIXED BIOMETRIC CONTROLS 🚀 */}
-                    {window.PublicKeyCredential && (
-                        <div className="flex flex-col gap-2 mt-4">
-                            <button 
-                                onClick={handleBiometricUnlock}
-                                className="w-full py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                            >
-                                <ScanFace size={18} className="animate-pulse" />
-                                Biometric Override
-                            </button>
-                            
-                            <button 
-                                onClick={handleRegisterPasskey}
-                                className="w-full py-2 text-slate-500 hover:text-blue-400 font-bold uppercase text-[9px] tracking-[0.1em] flex justify-center items-center gap-2 transition-all font-mono border border-transparent hover:border-blue-500/30 rounded"
-                            >
-                                <Save size={12} />
-                                Register New Device Fingerprint
-                            </button>
-                        </div>
+                    {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
+                    {window.PublicKeyCredential && hasPasskey && (
+                        <button 
+                            onClick={handleBiometricUnlock}
+                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                        >
+                            <ScanFace size={18} className="animate-pulse" />
+                            Biometric Override
+                        </button>
                     )}
                     
                     <div className="pt-6 border-t border-white/5 mt-6">
