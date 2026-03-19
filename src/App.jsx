@@ -5774,93 +5774,67 @@ const handleGitHubMirror = async () => {
       
       {/* --- PINPOINT: Improved Admin Modal (Fixed Fonts & Layout) --- */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 font-mono">
-          <div className={`bg-black border-2 ${isResetMode ? 'border-orange-500' : 'border-red-600/50'} p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 font-mono">
+          <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
             
             {/* Terminal Decoration */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent animate-pulse`}></div>
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             
-            <h2 className="text-xl font-black text-white mb-6 uppercase tracking-[0.2em]">
-                {isSetupMode ? "Initialize Security" : isResetMode ? "Identity Recovery" : "Security Check"}
+            <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-emerald-500' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
+
+            <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
+                {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
             </h2>
 
             {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
             {isSetupMode ? (
                 <div className="space-y-4">
                     <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest">Create Administrator Credentials</p>
-                    <input type="password" placeholder="CREATE PIN (4+ DIGITS)" id="setupPin" className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-xl outline-none focus:border-emerald-500 font-mono placeholder:text-white/20" maxLength={6}/>
-                    <input type="text" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono" />
-                    <button onClick={() => handleSetupSecurity(document.getElementById('setupPin').value, document.getElementById('setupWord').value)} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono">Save Credentials</button>
+                    <input type="password" placeholder="CREATE PIN (4+ DIGITS)" id="setupPin" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xl outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" maxLength={6}/>
+                    <input type="text" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" />
+                    <button onClick={() => handleSetupSecurity(document.getElementById('setupPin').value, document.getElementById('setupWord').value)} className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono">Save Credentials</button>
                 </div>
             ) : isResetMode ? (
                 /* CASE 2: RECOVERY MODE */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                    <input type="text" id="resetWord" placeholder="WATERMELON..." className="w-full bg-white/5 border border-orange-500/50 p-4 text-center text-white text-xl outline-none uppercase tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20" autoFocus />
-                    <div className="flex gap-3">
-                        <button onClick={() => setIsResetMode(false)} className="flex-1 py-3 border border-white/20 text-gray-400 text-xs font-bold uppercase hover:bg-white/10 font-mono tracking-widest">Cancel</button>
-                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} className="flex-1 py-3 bg-orange-600 text-white text-xs font-bold uppercase hover:bg-orange-500 font-mono tracking-widest">Verify</button>
+                    <input type="text" id="resetWord" placeholder="WATERMELON..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none uppercase tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus />
+                    <div className="flex gap-3 mt-4">
+                        <button onClick={() => setIsResetMode(false)} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} className="flex-1 py-3 bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-500 hover:text-white text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify</button>
                     </div>
                 </div>
             ) : (
-                /* CASE 3: STANDARD LOGIN (Fixed Buttons) */
+                /* CASE 3: STANDARD LOGIN */
                 <div className="space-y-4">
                     <input 
                         type="password" 
                         placeholder="ENTER PIN" 
-                        className="w-full bg-white/5 border border-white/20 p-4 text-center text-white text-3xl mb-4 outline-none font-mono tracking-[0.5em] focus:border-red-500 placeholder:text-white/10 placeholder:tracking-normal placeholder:text-sm transition-colors" 
+                        className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-3xl mb-2 outline-none font-mono tracking-[0.5em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-sm transition-colors" 
                         value={inputPin} 
                         onChange={(e) => setInputPin(e.target.value)} 
                         onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
                         autoFocus 
+                        maxLength={6}
                     />
-                    <div className="flex gap-3">
+                    
+                    <div className="flex gap-3 mt-4">
                         <button 
                             onClick={() => setShowAdminLogin(false)} 
-                            className="flex-1 py-4 border border-white/20 text-gray-500 hover:text-white hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-all font-mono"
+                            className="flex-1 py-4 border border-white/10 text-gray-500 hover:text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest transition-all font-mono"
                         >
                             Abort
                         </button>
                         <button 
                             onClick={handlePinLogin} 
-                            className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-mono"
-                        >
-                            Access<div className="flex gap-3">
-                        <button 
-                            onClick={() => setShowAdminLogin(false)} 
-                            className="flex-1 py-4 border border-white/20 text-gray-500 hover:text-white hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-all font-mono"
-                        >
-                            Abort
-                        </button>
-                        <button 
-                            onClick={handlePinLogin} 
-                            className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-mono"
+                            className="flex-1 py-4 bg-red-600/20 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.2)] hover:shadow-[0_0_20px_rgba(220,38,38,0.6)] transition-all font-mono"
                         >
                             Access
                         </button>
                     </div>
                     
-                    {/* 🚀 BIOMETRIC UNLOCK BUTTON 🚀 */}
-                    {window.PublicKeyCredential && (
-                        <button 
-                            onClick={handleBiometricUnlock}
-                            className="w-full mt-4 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-black uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-lg"
-                        >
-                            <ScanFace size={18} className="text-emerald-500" />
-                            Biometric Override
-                        </button>
-                    )}
-                    
-                    <div className="pt-4">
-                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-600 hover:text-slate-400 uppercase font-bold transition-colors tracking-widest font-mono">
-                            Lost Key? Use Recovery Protocol
-                        </button>
-                    </div>
-                        </button>
-                    </div>
-                    
-                    <div className="pt-4">
-                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-600 hover:text-slate-400 uppercase font-bold transition-colors tracking-widest font-mono">
+                    <div className="pt-6 border-t border-white/5 mt-6">
+                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-500 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
                             Lost Key? Use Recovery Protocol
                         </button>
                     </div>
