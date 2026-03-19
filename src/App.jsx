@@ -4138,19 +4138,19 @@ const handleGitHubMirror = async () => {
             setCurrentUserEmail(email);
 
             try {
-                // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? 🚀
+                // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? (SECURED) 🚀
                 const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
                 const sysAdminSnap = await getDoc(sysAdminRef);
 
                 if (sysAdminSnap.exists()) {
-                    console.log("GOD MODE UNLOCKED: System Architect Detected.");
+                    console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
-                    setUserRole('SYSTEM_OWNER'); // Super Admin Role
+                    setUserRole('SYSTEM_OWNER'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
-                    setIsAdmin(true); // Bypass PIN for System Architect
-                    return; // Stop checking, you own the building
+                    setIsAdmin(false); // <--- FORCES THE PIN SCREEN TO APPEAR
+                    return; 
                 }
 
                 setIsSystemOwner(false);
