@@ -3740,31 +3740,64 @@ const handleGitHubMirror = async () => {
       triggerCapy("Initialize PIN Reset Protocol.");
   };
 
-  // 🚀 BIOMETRIC / WINDOWS HELLO UNLOCK ENGINE 🚀
-  const handleBiometricUnlock = async () => {
-      if (!window.PublicKeyCredential) {
-          alert("Biometrics are not supported or enabled on this browser.");
-          return;
-      }
+  // 🚀 PASSKEY REGISTRATION ENGINE (NEW) 🚀
+  const handleRegisterPasskey = async () => {
       try {
           const challenge = new Uint8Array(32);
           window.crypto.getRandomValues(challenge);
-          const credential = await navigator.credentials.get({
+          const userId = new Uint8Array(16);
+          window.crypto.getRandomValues(userId);
+
+          const credential = await navigator.credentials.create({
               publicKey: {
                   challenge: challenge,
-                  timeout: 60000,
-                  userVerification: "required" 
+                  rp: { name: "Inventory System", id: window.location.hostname },
+                  user: { id: userId, name: user?.email || "Admin", displayName: "Administrator" },
+                  pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+                  authenticatorSelection: { 
+                      authenticatorAttachment: "platform", // 🚨 THIS FORCES WINDOWS HELLO / TOUCH ID
+                      userVerification: "required" 
+                  },
+                  timeout: 60000
               }
           });
+
           if (credential) {
-              triggerCapy("Biometric scan successful. Welcome back, Boss.");
+              localStorage.setItem('passkeyRegistered', 'true'); // Save to local device
+              alert("Biometric Passkey Successfully Registered to this device!");
+          }
+      } catch (error) {
+          console.error("Passkey registration failed:", error);
+          alert("Could not register fingerprint. Check your OS settings.");
+      }
+  };
+
+  // 🚀 BIOMETRIC UNLOCK ENGINE (UPDATED) 🚀
+  const handleBiometricUnlock = async () => {
+      try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+
+          const assertion = await navigator.credentials.get({
+              publicKey: {
+                  challenge: challenge,
+                  rpId: window.location.hostname, // 🚨 TELLS OS TO LOOK FOR LOCAL PASSKEY
+                  userVerification: "required",
+                  timeout: 60000
+              }
+          });
+
+          if (assertion) {
               setIsAdmin(true);
               setShowAdminLogin(false);
           }
       } catch (error) {
-          console.warn("Biometric scan failed or was canceled:", error);
+          console.warn("Biometric scan failed or canceled:", error);
       }
   };
+  
+  // Check if device already has a passkey
+  const hasPasskey = localStorage.getItem('passkeyRegistered') === 'true';
 
 
 
@@ -4175,7 +4208,8 @@ const handleGitHubMirror = async () => {
                     setUserRole('SYSTEM_OWNER'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
-                    setIsAdmin(false); // <--- FORCES THE PIN SCREEN TO APPEAR
+                    setIsAdmin(false); 
+                    setShowAdminLogin(true); // 🚨 NEW: INSTANTLY FORCES THE LOCK SCREEN OPEN
                     return; 
                 }
 
@@ -5818,16 +5852,24 @@ const handleGitHubMirror = async () => {
                         maxLength={6}
                     />
                     
-                    {/* 🚀 RESTORED BIOMETRIC BUTTON (SCI-FI STYLED) 🚀 */}
-                    {window.PublicKeyCredential && (
+                    {/* 🚀 DYNAMIC BIOMETRIC CONTROLS 🚀 */}
+                    {window.PublicKeyCredential && hasPasskey ? (
                         <button 
                             onClick={handleBiometricUnlock}
-                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
                         >
                             <ScanFace size={18} className="animate-pulse" />
                             Biometric Override
                         </button>
-                    )}
+                    ) : window.PublicKeyCredential && !hasPasskey ? (
+                        <button 
+                            onClick={handleRegisterPasskey}
+                            className="w-full mt-4 py-3 bg-blue-900/10 hover:bg-blue-900/30 border border-blue-500/30 hover:border-blue-500 text-blue-500 hover:text-blue-400 font-bold uppercase text-[10px] tracking-[0.2em] flex justify-center items-center gap-2 transition-all font-mono"
+                        >
+                            <Save size={14} />
+                            Register Device Fingerprint
+                        </button>
+                    ) : null}
                     
                     <div className="pt-6 border-t border-white/5 mt-6">
                         <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-500 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
