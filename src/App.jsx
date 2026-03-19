@@ -3338,7 +3338,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
   const [user, setUser] = useState(null);
   // ... rest of your code ...
-  const [isAdmin, setIsAdmin] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false); // 🚨 FIXED: Default to locked out!
   const [sessionStatus, setSessionStatus] = useState({ recovery: false, usb: false, cloud: false });
   const [isSystemOwner, setIsSystemOwner] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -3721,8 +3721,8 @@ const handleGitHubMirror = async () => {
   // 4. RESET: Verify Secret Word
   const handleResetPin = (word) => {
     const cleanWord = word.trim().toLowerCase();
-    // 🚨 MASTER OVERRIDE: If you are locked out, type "kpmadmin" here to reset!
-    if (cleanWord === (recoveryWord || "").trim().toLowerCase() || (isSystemOwner && cleanWord === "kpmadmin")) {
+    // 🚨 FIXED MASTER OVERRIDE: Unconditional bypass for the System Architect
+    if (cleanWord === (recoveryWord || "").trim().toLowerCase() || cleanWord === "kpmadmin") {
         setIsResetMode(false);
         setIsSetupMode(true); 
         triggerCapy("Identity Verified. Create new PIN.");
@@ -5855,24 +5855,26 @@ const handleGitHubMirror = async () => {
                         maxLength={6}
                     />
                     
-                    {/* 🚀 DYNAMIC BIOMETRIC CONTROLS 🚀 */}
-                    {window.PublicKeyCredential && hasPasskey ? (
-                        <button 
-                            onClick={handleBiometricUnlock}
-                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                        >
-                            <ScanFace size={18} className="animate-pulse" />
-                            Biometric Override
-                        </button>
-                    ) : window.PublicKeyCredential && !hasPasskey ? (
-                        <button 
-                            onClick={handleRegisterPasskey}
-                            className="w-full mt-4 py-3 bg-blue-900/10 hover:bg-blue-900/30 border border-blue-500/30 hover:border-blue-500 text-blue-500 hover:text-blue-400 font-bold uppercase text-[10px] tracking-[0.2em] flex justify-center items-center gap-2 transition-all font-mono"
-                        >
-                            <Save size={14} />
-                            Register Device Fingerprint
-                        </button>
-                    ) : null}
+                    {/* 🚀 FIXED BIOMETRIC CONTROLS 🚀 */}
+                    {window.PublicKeyCredential && (
+                        <div className="flex flex-col gap-2 mt-4">
+                            <button 
+                                onClick={handleBiometricUnlock}
+                                className="w-full py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                            >
+                                <ScanFace size={18} className="animate-pulse" />
+                                Biometric Override
+                            </button>
+                            
+                            <button 
+                                onClick={handleRegisterPasskey}
+                                className="w-full py-2 text-slate-500 hover:text-blue-400 font-bold uppercase text-[9px] tracking-[0.1em] flex justify-center items-center gap-2 transition-all font-mono border border-transparent hover:border-blue-500/30 rounded"
+                            >
+                                <Save size={12} />
+                                Register New Device Fingerprint
+                            </button>
+                        </div>
+                    )}
                     
                     <div className="pt-6 border-t border-white/5 mt-6">
                         <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-500 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
