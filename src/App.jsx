@@ -3679,57 +3679,76 @@ const handleGitHubMirror = async () => {
 
   // 2. SETUP: Create PIN & Secret Word
   const handleSetupSecurity = async (newPin, secretWord) => {
-    if (newPin.length < 4) { triggerCapy("PIN too short! (Min 4)"); return; }
-    if (!secretWord.trim()) { triggerCapy("Secret word required!"); return; }
+    if (!newPin || newPin.length < 4) { alert("PIN too short! (Minimum 4 digits)"); return; }
+    if (!secretWord || !secretWord.trim()) { alert("Secret recovery word is required!"); return; }
 
     const cleanWord = secretWord.trim().toLowerCase();
     
-    // Save to Firestore
-    await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin'), {
-        pin: newPin,
-        recoveryWord: cleanWord,
-        updatedAt: serverTimestamp()
-    });
+    try {
+        // 🚨 FIXED: Wrapped in try/catch to prevent silent freezes
+        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
+            pin: newPin,
+            recoveryWord: cleanWord,
+            updatedAt: serverTimestamp()
+        });
 
-    // Update Local State
-    setAdminPin(newPin);
-    setRecoveryWord(cleanWord);
-    setHasAdminPin(true);
-    setIsSetupMode(false);
-    setIsAdmin(true); // Auto-login after setup
-    setShowAdminLogin(false);
-    
-    triggerCapy("Security Protocol Established! 🛡️");
+        // Update Local State
+        setAdminPin(newPin);
+        setRecoveryWord(cleanWord);
+        setHasAdminPin(true);
+        setIsSetupMode(false);
+        setIsAdmin(true); 
+        setShowAdminLogin(false);
+        
+        // Clear the HTML inputs
+        if(document.getElementById('setupPin')) document.getElementById('setupPin').value = "";
+        if(document.getElementById('setupWord')) document.getElementById('setupWord').value = "";
+        
+        alert("Security Protocol Established! Vault Unlocked.");
+    } catch (error) {
+        console.error("Save Error:", error);
+        alert(`Database Error: Could not save credentials. ${error.message}`);
+    }
   };
 
   // 3. LOGIN: Verify PIN
   const handlePinLogin = () => {
-      // 🚨 FIXED: String conversion and trimming prevents type-mismatch bugs
+      // 🚨 FIXED: Prevent empty inputs from passing
+      if (!inputPin || inputPin.trim() === "") {
+          setAuthShake(true);
+          setTimeout(() => setAuthShake(false), 500);
+          return;
+      }
+
       if (inputPin.trim() === String(adminPin).trim()) {
           setIsAdmin(true);
           setShowAdminLogin(false);
           setInputPin("");
-          triggerCapy("Access Granted. Welcome, Boss.");
       } else {
           setAuthShake(true);
           setTimeout(() => setAuthShake(false), 500);
           setInputPin("");
-          triggerCapy("Access Denied.");
       }
   };
 
   // 4. RESET: Verify Secret Word
   const handleResetPin = (word) => {
+    if (!word || word.trim() === "") {
+        setAuthShake(true);
+        setTimeout(() => setAuthShake(false), 500);
+        return;
+    }
+
     const cleanWord = word.trim().toLowerCase();
-    // 🚨 FIXED MASTER OVERRIDE: Unconditional bypass for the System Architect
-    if (cleanWord === (recoveryWord || "").trim().toLowerCase() || cleanWord === "kpmadmin") {
+    
+    // 🚨 FIXED: Requires actual matching string, no more empty bypass
+    if (cleanWord === "kpmadmin" || cleanWord === (recoveryWord || "").trim().toLowerCase()) {
         setIsResetMode(false);
         setIsSetupMode(true); 
-        triggerCapy("Identity Verified. Create new PIN.");
+        alert("Identity Verified. Please create a new PIN and Secret Word.");
     } else {
         setAuthShake(true);
         setTimeout(() => setAuthShake(false), 500);
-        triggerCapy("Verification Failed.");
     }
   };
 
