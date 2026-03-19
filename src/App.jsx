@@ -9,7 +9,7 @@ import {
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
-  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database, Bell
+  Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database, Bell, ScanFace
 
 } from 'lucide-react';
 import { 
@@ -3740,6 +3740,32 @@ const handleGitHubMirror = async () => {
       triggerCapy("Initialize PIN Reset Protocol.");
   };
 
+  // 🚀 BIOMETRIC / WINDOWS HELLO UNLOCK ENGINE 🚀
+  const handleBiometricUnlock = async () => {
+      if (!window.PublicKeyCredential) {
+          alert("Biometrics are not supported or enabled on this browser.");
+          return;
+      }
+      try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          const credential = await navigator.credentials.get({
+              publicKey: {
+                  challenge: challenge,
+                  timeout: 60000,
+                  userVerification: "required" 
+              }
+          });
+          if (credential) {
+              triggerCapy("Biometric scan successful. Welcome back, Boss.");
+              setIsAdmin(true);
+              setShowAdminLogin(false);
+          }
+      } catch (error) {
+          console.warn("Biometric scan failed or was canceled:", error);
+      }
+  };
+
 
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -5799,7 +5825,37 @@ const handleGitHubMirror = async () => {
                             onClick={handlePinLogin} 
                             className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-mono"
                         >
+                            Access<div className="flex gap-3">
+                        <button 
+                            onClick={() => setShowAdminLogin(false)} 
+                            className="flex-1 py-4 border border-white/20 text-gray-500 hover:text-white hover:bg-white/10 uppercase text-xs font-bold tracking-widest transition-all font-mono"
+                        >
+                            Abort
+                        </button>
+                        <button 
+                            onClick={handlePinLogin} 
+                            className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white uppercase text-xs font-bold tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all font-mono"
+                        >
                             Access
+                        </button>
+                    </div>
+                    
+                    {/* 🚀 BIOMETRIC UNLOCK BUTTON 🚀 */}
+                    {window.PublicKeyCredential && (
+                        <button 
+                            onClick={handleBiometricUnlock}
+                            className="w-full mt-4 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-black uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-lg"
+                        >
+                            <ScanFace size={18} className="text-emerald-500" />
+                            Biometric Override
+                        </button>
+                    )}
+                    
+                    <div className="pt-4">
+                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-600 hover:text-slate-400 uppercase font-bold transition-colors tracking-widest font-mono">
+                            Lost Key? Use Recovery Protocol
+                        </button>
+                    </div>
                         </button>
                     </div>
                     
