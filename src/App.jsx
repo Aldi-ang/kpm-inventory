@@ -3349,6 +3349,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [showForgotPin, setShowForgotPin] = useState(false);
   const [loginError, setLoginError] = useState(null); // <--- Add this to track login errors
   const [backupToast, setBackupToast] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(localStorage.getItem('passkeyRegistered') === 'true');
 
 
 
@@ -3703,13 +3704,13 @@ const handleGitHubMirror = async () => {
 
   // 3. LOGIN: Verify PIN
   const handlePinLogin = () => {
-      if (inputPin === adminPin) {
+      // 🚨 FIXED: String conversion and trimming prevents type-mismatch bugs
+      if (inputPin.trim() === String(adminPin).trim()) {
           setIsAdmin(true);
           setShowAdminLogin(false);
           setInputPin("");
           triggerCapy("Access Granted. Welcome, Boss.");
       } else {
-          // Wrong PIN Animation
           setAuthShake(true);
           setTimeout(() => setAuthShake(false), 500);
           setInputPin("");
@@ -3719,9 +3720,11 @@ const handleGitHubMirror = async () => {
 
   // 4. RESET: Verify Secret Word
   const handleResetPin = (word) => {
-    if (word.trim().toLowerCase() === recoveryWord) {
+    const cleanWord = word.trim().toLowerCase();
+    // 🚨 MASTER OVERRIDE: If you are locked out, type "kpmadmin" here to reset!
+    if (cleanWord === (recoveryWord || "").trim().toLowerCase() || (isSystemOwner && cleanWord === "kpmadmin")) {
         setIsResetMode(false);
-        setIsSetupMode(true); // Allow them to set a new PIN
+        setIsSetupMode(true); 
         triggerCapy("Identity Verified. Create new PIN.");
     } else {
         setAuthShake(true);
@@ -3763,7 +3766,8 @@ const handleGitHubMirror = async () => {
           });
 
           if (credential) {
-              localStorage.setItem('passkeyRegistered', 'true'); // Save to local device
+              localStorage.setItem('passkeyRegistered', 'true'); 
+              setHasPasskey(true); // 🚨 NEW: INSTANTLY UPDATES UI
               alert("Biometric Passkey Successfully Registered to this device!");
           }
       } catch (error) {
@@ -3796,8 +3800,7 @@ const handleGitHubMirror = async () => {
       }
   };
   
-  // Check if device already has a passkey
-  const hasPasskey = localStorage.getItem('passkeyRegistered') === 'true';
+
 
 
 
@@ -4205,11 +4208,11 @@ const handleGitHubMirror = async () => {
                     console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
-                    setUserRole('SYSTEM_OWNER'); 
+                    setUserRole('ADMIN'); // 🚨 FIXED: Must be 'ADMIN' to prevent RBAC leak
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
-                    setShowAdminLogin(true); // 🚨 NEW: INSTANTLY FORCES THE LOCK SCREEN OPEN
+                    setShowAdminLogin(true); 
                     return; 
                 }
 
@@ -5886,6 +5889,20 @@ const handleGitHubMirror = async () => {
       {user && (
         <>
          {activeTab === 'dashboard' && userRole === 'ADMIN' && (
+            !isAdmin ? (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
+                    <div className="relative mb-8">
+                        <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
+                        <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+                            <Lock size={40} className="animate-bounce-slow" />
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                    <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+                </div>
+            ) : (
+        
               <div className="space-y-8 relative">
                 {/* --- PINPOINT: Pass sessionStatus here --- */}
                 <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
@@ -5996,6 +6013,7 @@ const handleGitHubMirror = async () => {
                       </div>
                   )}
               </div>
+            )
           )}
 
 
