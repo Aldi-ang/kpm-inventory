@@ -3340,6 +3340,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // ... rest of your code ...
   const [isAdmin, setIsAdmin] = useState(true);
   const [sessionStatus, setSessionStatus] = useState({ recovery: false, usb: false, cloud: false });
+  const [isSystemOwner, setIsSystemOwner] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPin, setAdminPin] = useState(null);       
   const [hasAdminPin, setHasAdminPin] = useState(false); 
@@ -4137,31 +4138,42 @@ const handleGitHubMirror = async () => {
             setCurrentUserEmail(email);
 
             try {
-                // TRAFFIC COP: Check global directory for this email
+                // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? 🚀
+                const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
+                const sysAdminSnap = await getDoc(sysAdminRef);
+
+                if (sysAdminSnap.exists()) {
+                    console.log("GOD MODE UNLOCKED: System Architect Detected.");
+                    setIsSystemOwner(true);
+                    setBossUid(null);
+                    setUserRole('SYSTEM_OWNER'); // Super Admin Role
+                    setAgentProfileId(null);
+                    setUser(currentUser);
+                    setIsAdmin(true); // Bypass PIN for System Architect
+                    return; // Stop checking, you own the building
+                }
+
+                setIsSystemOwner(false);
+
+                // 🏢 TIER 2-4 CHECK: NORMAL EMPLOYEES & CLIENTS 🏢
                 const directoryRef = doc(db, `artifacts/${appId}/employee_directory`, email);
                 const directorySnap = await getDoc(directoryRef);
 
                 if (directorySnap.exists()) {
                     const data = directorySnap.data();
                     
-                    // 🚨 ANTI-LOCKOUT: BOSS IMMUNITY 🚨
-                    // If the logged-in user is the actual owner of the database, IGNORE the employee tag!
                     if (currentUser.uid === data.bossUid) {
-                        console.log("Boss Immunity Activated: Restoring Admin Access.");
                         setBossUid(null);
-                        setUserRole('ADMIN');
+                        setUserRole('ADMIN'); // Company Owner Role
                         setAgentProfileId(null);
                         setUser(currentUser);
-                        setIsAdmin(false); // Still requires your PIN to fully unlock
+                        setIsAdmin(false); // Still requires PIN
                     } 
                     else if (data.status === 'Active') {
-                        
-                        // 1. UPDATE RBAC STATES
                         setBossUid(data.bossUid);
-                        setUserRole(data.role.toUpperCase());
+                        setUserRole(data.role.toUpperCase()); // Area Admin or Salesperson
                         setAgentProfileId(data.agentId);
 
-                        // 2. THE HIJACK: Create a clean Agent Object
                         const hijackedUser = {
                             uid: data.bossUid,            
                             email: currentUser.email,
@@ -4175,14 +4187,12 @@ const handleGitHubMirror = async () => {
                         setUser(hijackedUser);
                         setIsAdmin(false); 
                         setActiveTab('journey'); 
-                        console.log("Traffic Cop Success: Employee routed.");
                     } else {
                         alert("Your access has been revoked by the Administrator.");
                         signOut(auth);
                         setUser(null);
                     }
                 } else {
-                    // NO TICKET FOUND: Normal Admin/Owner Login
                     setBossUid(null);
                     setUserRole('ADMIN');
                     setAgentProfileId(null);
@@ -4195,6 +4205,7 @@ const handleGitHubMirror = async () => {
             }
         } else {
             setUser(null);
+            setIsSystemOwner(false);
         }
     });
     
