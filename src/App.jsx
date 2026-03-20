@@ -3739,24 +3739,62 @@ const handleGitHubMirror = async () => {
       }
   };
 
-  // 4. RESET: Verify Secret Word
-  const handleResetPin = (word) => {
+  // 4. RESET: The Zero-Trust Recovery Engine
+  const handleResetPin = async (word) => {
     if (!word || word.trim() === "") {
-        setAuthShake(true);
-        setTimeout(() => setAuthShake(false), 500);
-        return;
+        setAuthShake(true); setTimeout(() => setAuthShake(false), 500); return;
     }
 
     const cleanWord = word.trim().toLowerCase();
     
-    // 🚨 FIXED: Requires actual matching string, no more empty bypass
-    if (cleanWord === "kpmadmin" || cleanWord === (recoveryWord || "").trim().toLowerCase()) {
+    // 🚨 ABSOLUTE MASTER OVERRIDE: Bypasses the strike counter entirely so you never get permanently locked out.
+    if (cleanWord === "kpmadmin") {
         setIsResetMode(false);
         setIsSetupMode(true); 
-        alert("Identity Verified. Please create a new PIN and Secret Word.");
-    } else {
-        setAuthShake(true);
-        setTimeout(() => setAuthShake(false), 500);
+        alert("Master Override Accepted. Please create a new PIN and Secret Word.");
+        return;
+    }
+
+    try {
+        // 1. Fetch the Security Document from Firebase
+        const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+        const adminSnap = await getDoc(adminDocRef);
+        
+        if (!adminSnap.exists()) { alert("No security profile found."); return; }
+        const data = adminSnap.data();
+
+        // 2. CHECK LAYER 2: Is the account locked?
+        if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
+            alert("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+            return;
+        }
+
+        // 3. CHECK LAYER 1: Hash the guess and compare
+        const guessHash = await hashSecretWord(cleanWord);
+        
+        if (guessHash === data.recoveryHash) {
+            // SUCCESS! Reset strikes to 0.
+            await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
+            setIsResetMode(false);
+            setIsSetupMode(true); 
+            // NOTE: We will inject the Email OTP code right here next!
+            alert("Identity Verified. You may now reset your credentials.");
+        } else {
+            // FAILED! Add a strike.
+            const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
+            const newLockout = newStrikes >= 5 ? "PERMANENT" : "NONE";
+            
+            await updateDoc(adminDocRef, { 
+                failedRecoveryAttempts: newStrikes,
+                lockoutStatus: newLockout
+            });
+
+            setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+            alert(`Access Denied. Strike ${newStrikes}/5.`);
+        }
+    } catch (error) {
+        console.error("Recovery Engine Error:", error);
+        alert("System error during recovery verification.");
     }
   };
 
