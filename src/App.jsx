@@ -2608,6 +2608,18 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     });
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
+
+            {/* 🚀 RHYTHMIC BOOTUP ENGINE 🚀 */}
+            <style>{`
+                @keyframes sysBoot {
+                    0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(4px); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+                }
+                .boot-1 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+                .boot-2 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+                .boot-3 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
+                .boot-4 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards; opacity: 0; }
+            `}</style>
             
             {/* BACKGROUND LAYERS */}
             <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
@@ -2625,7 +2637,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className={`hide-on-print
                 fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-                lg:relative lg:translate-x-0
+                lg:relative lg:translate-x-0 ${userRole !== 'ADMIN' || isAdmin ? 'boot-1' : 'opacity-0'}
             `}>
                 
                 {/* BRANDING (Moved text beside burger button) */}
@@ -2720,7 +2732,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (Restored to its original state) */}
-                <div className="hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative">
+                <div className={`hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative ${userRole !== 'ADMIN' || isAdmin ? 'boot-2' : 'opacity-0'}`}>
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
@@ -2742,7 +2754,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div className="print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20">
+                <div className={`print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20 ${userRole !== 'ADMIN' || isAdmin ? 'boot-3' : 'opacity-0'}`}>
                     <div className="biohazard-content max-w-full mx-auto">
                         {children}
                     </div>
