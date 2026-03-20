@@ -3719,23 +3719,44 @@ const handleGitHubMirror = async () => {
     }
   };
 
-  // 3. LOGIN: Verify PIN
-  const handlePinLogin = () => {
-      // 🚨 FIXED: Prevent empty inputs from passing
+  // 3. LOGIN: Verify PIN (NOW WITH 5-STRIKE LOCKOUT)
+  const handlePinLogin = async () => {
       if (!inputPin || inputPin.trim() === "") {
-          setAuthShake(true);
-          setTimeout(() => setAuthShake(false), 500);
-          return;
+          setAuthShake(true); setTimeout(() => setAuthShake(false), 500); return;
       }
 
-      if (inputPin.trim() === String(adminPin).trim()) {
-          setIsAdmin(true);
-          setShowAdminLogin(false);
-          setInputPin("");
-      } else {
-          setAuthShake(true);
-          setTimeout(() => setAuthShake(false), 500);
-          setInputPin("");
+      try {
+          // Fetch the live security profile
+          const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+          const adminSnap = await getDoc(adminDocRef);
+          if (!adminSnap.exists()) return;
+          const data = adminSnap.data();
+
+          // Check if already locked out
+          if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
+              alert("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+              setInputPin("");
+              return;
+          }
+
+          if (inputPin.trim() === String(adminPin).trim()) {
+              // SUCCESS: Reset strikes to 0
+              await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
+              setIsAdmin(true);
+              setShowAdminLogin(false);
+              setInputPin("");
+          } else {
+              // FAILED: Add a strike to the database
+              const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
+              const newLockout = newStrikes >= 5 ? "PERMANENT" : "NONE";
+              await updateDoc(adminDocRef, { failedRecoveryAttempts: newStrikes, lockoutStatus: newLockout });
+              
+              setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+              setInputPin("");
+              alert(`Incorrect PIN. Strike ${newStrikes}/5.`);
+          }
+      } catch (error) {
+          console.error("Login Error:", error);
       }
   };
 
