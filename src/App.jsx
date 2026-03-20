@@ -2637,7 +2637,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className={`hide-on-print
                 fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-                lg:relative lg:translate-x-0 ${userRole !== 'ADMIN' || isAdmin ? 'boot-1' : 'opacity-0'}
+                lg:relative lg:translate-x-0
             `}>
                 
                 {/* BRANDING (Moved text beside burger button) */}
@@ -2732,7 +2732,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
 
                 {/* HEADER (Restored to its original state) */}
-                <div className={`hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative ${userRole !== 'ADMIN' || isAdmin ? 'boot-2' : 'opacity-0'}`}>
+                <div className={`hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative`}>
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
@@ -2754,7 +2754,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div className={`print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20 ${userRole !== 'ADMIN' || isAdmin ? 'boot-3' : 'opacity-0'}`}>
+                <div className={`print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20`}>
                     <div className="biohazard-content max-w-full mx-auto">
                         {children}
                     </div>
@@ -6130,7 +6130,7 @@ const handleGitHubMirror = async () => {
                   
                   {/* Summary Cards Grid */}
                   {/* FIX: Changed md: to lg: so they stack vertically on landscape phones */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-1">
                       <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
                           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
                           <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
@@ -6203,7 +6203,7 @@ const handleGitHubMirror = async () => {
 
 
                   {/* Performance Graph Area */}
-                  <div className="bg-black/40 border border-white/10 p-6 h-96">
+                  <div className="bg-black/40 border border-white/10 p-6 h-96 boot-2">
                       <h3 className="text-white mb-4 uppercase text-xs font-bold tracking-widest border-b border-white/10 pb-2">Performance Graph</h3>
                       <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <BarChart data={chartData.data}>
