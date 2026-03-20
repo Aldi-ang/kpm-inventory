@@ -3677,30 +3677,38 @@ const handleGitHubMirror = async () => {
     checkAdminStatus();
   }, [user]);
 
-  // 2. SETUP: Create PIN & Secret Word
+  // 🔐 CRYPTOGRAPHIC ENGINE: SHA-256 Hash Generator
+  const hashSecretWord = async (word) => {
+      const msgBuffer = new TextEncoder().encode(word.toLowerCase().trim());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  // 2. SETUP: Create PIN & Secret Word (HASHED)
   const handleSetupSecurity = async (newPin, secretWord) => {
     if (!newPin || newPin.length < 4) { alert("PIN too short! (Minimum 4 digits)"); return; }
     if (!secretWord || !secretWord.trim()) { alert("Secret recovery word is required!"); return; }
 
-    const cleanWord = secretWord.trim().toLowerCase();
-    
     try {
-        // 🚨 FIXED: Wrapped in try/catch to prevent silent freezes
+        // 1. Scramble the secret word before it ever touches the database
+        const scrambledHash = await hashSecretWord(secretWord);
+        
+        // 2. Save the Hash and Initialize the Strike Counter
         await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
             pin: newPin,
-            recoveryWord: cleanWord,
+            recoveryHash: scrambledHash, // 🚨 SAVING THE HASH, NOT THE WORD
+            failedRecoveryAttempts: 0,   // 🚨 STARTING AT 0 STRIKES
+            lockoutStatus: "NONE",
             updatedAt: serverTimestamp()
         });
 
-        // Update Local State
         setAdminPin(newPin);
-        setRecoveryWord(cleanWord);
         setHasAdminPin(true);
         setIsSetupMode(false);
         setIsAdmin(true); 
         setShowAdminLogin(false);
         
-        // Clear the HTML inputs
         if(document.getElementById('setupPin')) document.getElementById('setupPin').value = "";
         if(document.getElementById('setupWord')) document.getElementById('setupWord').value = "";
         
