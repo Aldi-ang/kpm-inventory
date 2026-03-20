@@ -3655,6 +3655,7 @@ const handleGitHubMirror = async () => {
   const [recoveryWord, setRecoveryWord] = useState("");
   const [isResetMode, setIsResetMode] = useState(false);
   const [authShake, setAuthShake] = useState(false); // For visual "Wrong Password" feedback
+  const [isUnlocking, setIsUnlocking] = useState(false); // 🎬 NEW: Cinematic Unlock State
 
   // 🔐 NEW: Real-time Password Strength State
   const [setupPassword, setSetupPassword] = useState("");
@@ -3769,12 +3770,19 @@ const handleGitHubMirror = async () => {
           // 🚨 CRITICAL: Hash the inputted PIN to compare against the database hash
           const hashedInput = await hashSecretWord(inputPin.trim());
 
-          if (hashedInput === data.pin) {
-              // SUCCESS: Reset strikes to 0
+        
+              if (hashedInput === data.pin) {
+              // SUCCESS: Reset strikes & Trigger Cinematic Unlock
               await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
-              setIsAdmin(true);
-              setShowAdminLogin(false);
-              setInputPin("");
+              setIsUnlocking(true);
+              
+              // Wait 2.5 seconds for the animation to finish before revealing dashboard
+              setTimeout(() => {
+                  setIsAdmin(true);
+                  setShowAdminLogin(false);
+                  setIsUnlocking(false);
+                  setInputPin("");
+              }, 2500);
           } else {
               // FAILED: Add a strike to the database
               const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
@@ -3907,9 +3915,14 @@ const handleGitHubMirror = async () => {
               }
           });
 
+         // 🎬 THE NEW CINEMATIC BIOMETRIC UNLOCK
           if (assertion) {
-              setIsAdmin(true);
-              setShowAdminLogin(false);
+              setIsUnlocking(true);
+              setTimeout(() => {
+                  setIsAdmin(true);
+                  setShowAdminLogin(false);
+                  setIsUnlocking(false);
+              }, 2500);
           }
       } catch (error) {
           console.warn("Biometric scan failed or canceled:", error);
@@ -5948,13 +5961,37 @@ const handleGitHubMirror = async () => {
           <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
             
             {/* Terminal Decoration */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking || isSetupMode ? 'via-emerald-500' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             
-            <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-emerald-500' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
+            {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
+            {isUnlocking ? (
+                <div className="space-y-6 text-center py-6 animate-fade-in">
+                    <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                        {/* Mechanical Spinning Rings */}
+                        <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full border-t-emerald-500 animate-spin"></div>
+                        <div className="absolute inset-2 border-4 border-emerald-500/20 rounded-full border-b-emerald-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                        <Unlock size={32} className="text-emerald-500 animate-pulse" />
+                    </div>
+                    <div>
+                        <h3 className="text-emerald-500 font-black text-2xl uppercase tracking-[0.3em] mb-2 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">Access Granted</h3>
+                        <p className="text-emerald-400/80 font-mono text-[10px] uppercase tracking-[0.2em] animate-pulse">Decrypting Master Vault...</p>
+                    </div>
+                    {/* Stuttering Progress Bar */}
+                    <div className="w-full bg-black border border-emerald-500/30 h-1.5 rounded-full overflow-hidden relative">
+                        <div className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ animation: 'fillBar 2.4s ease-in-out forwards' }}></div>
+                    </div>
+                    {/* Custom Keyframe for the stuttering decrypt effect */}
+                    <style>{`
+                        @keyframes fillBar { 0% { width: 0%; } 20% { width: 15%; } 40% { width: 45%; } 60% { width: 45%; } 80% { width: 90%; } 100% { width: 100%; } }
+                    `}</style>
+                </div>
+            ) : (
+                <>
+                    <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-emerald-500' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
 
-            <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
-                {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
-            </h2>
+                    <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
+                        {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
+                    </h2>
 
             {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
             {isSetupMode ? (
@@ -6048,6 +6085,8 @@ const handleGitHubMirror = async () => {
                         </button>
                     </div>
                 </div>
+            )}
+                </>
             )}
           </div>
         </div>
