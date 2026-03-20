@@ -3656,6 +3656,24 @@ const handleGitHubMirror = async () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const [authShake, setAuthShake] = useState(false); // For visual "Wrong Password" feedback
 
+  // 🔐 NEW: Real-time Password Strength State
+  const [setupPassword, setSetupPassword] = useState("");
+  const [setupSecret, setSetupSecret] = useState("");
+
+  const calculateStrength = (pass) => {
+      let score = 0;
+      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-slate-500", bar: "bg-slate-800" };
+      if (pass.length >= 8) score++;
+      if (/[a-z]/.test(pass)) score++;
+      if (/[A-Z]/.test(pass)) score++;
+      if (/\d/.test(pass)) score++;
+      if (/[@$!%*?&#\-_]/.test(pass)) score++;
+
+      if (score <= 2) return { score, label: "CRITICAL VULNERABILITY (WEAK)", color: "text-red-500", bar: "bg-red-600 shadow-[0_0_10px_red]" };
+      if (score <= 4) return { score, label: "SUB-OPTIMAL (MODERATE)", color: "text-orange-500", bar: "bg-orange-500 shadow-[0_0_10px_orange]" };
+      return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-emerald-500", bar: "bg-emerald-500 shadow-[0_0_10px_emerald]" };
+  };
+
   // 1. INITIAL CHECK: Does a PIN exist?
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -3685,20 +3703,29 @@ const handleGitHubMirror = async () => {
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  // 2. SETUP: Create PIN & Secret Word (HASHED)
-  const handleSetupSecurity = async (newPin, secretWord) => {
-    if (!newPin || newPin.length < 4) { alert("PIN too short! (Minimum 4 digits)"); return; }
-    if (!secretWord || !secretWord.trim()) { alert("Secret recovery word is required!"); return; }
+  // 2. SETUP: Create MASTER PASSWORD & Secret Word (FULLY HASHED)
+  const handleSetupSecurity = async () => {
+    const strength = calculateStrength(setupPassword);
+    
+    // 🚨 ABSOLUTE HARD LOCK: Blocks "password" or anything under level 5
+    if (strength.score < 5) { 
+        setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+        alert("Encryption Failed: Password must reach Level 5 security (8+ chars, Upper, Lower, Number, Symbol)."); 
+        return; 
+    }
+    if (!setupSecret || !setupSecret.trim()) { 
+        setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+        alert("Secret recovery word is required!"); 
+        return; 
+    }
 
     try {
-        // 1. Scramble BOTH the secret word AND the PIN before saving
-        const scrambledWordHash = await hashSecretWord(secretWord);
-        const scrambledPinHash = await hashSecretWord(newPin);
+        const scrambledWordHash = await hashSecretWord(setupSecret);
+        const scrambledPinHash = await hashSecretWord(setupPassword);
         
-        // 2. Save the Hashes and Initialize the Strike Counter
         await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
-            pin: scrambledPinHash,           // 🚨 NOW SAVING HASHED PIN
-            recoveryHash: scrambledWordHash, // 🚨 SAVING HASHED WORD
+            pin: scrambledPinHash,           
+            recoveryHash: scrambledWordHash, 
             failedRecoveryAttempts: 0,   
             lockoutStatus: "NONE",
             updatedAt: serverTimestamp()
@@ -3709,14 +3736,13 @@ const handleGitHubMirror = async () => {
         setIsSetupMode(false);
         setIsAdmin(true); 
         setShowAdminLogin(false);
-        
-        if(document.getElementById('setupPin')) document.getElementById('setupPin').value = "";
-        if(document.getElementById('setupWord')) document.getElementById('setupWord').value = "";
+        setSetupPassword("");
+        setSetupSecret("");
         
         alert("Security Protocol Established! Vault Unlocked.");
     } catch (error) {
         console.error("Save Error:", error);
-        alert(`Database Error: Could not save credentials. ${error.message}`);
+        alert(`Database Error: Could not save credentials.`);
     }
   };
 
@@ -5932,13 +5958,56 @@ const handleGitHubMirror = async () => {
 
             {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
             {isSetupMode ? (
-                <div className="space-y-4">
-                    <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest">Create Administrator Credentials</p>
-                    <input type="password" placeholder="CREATE MASTER PASSWORD" id="setupPin" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-lg outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" maxLength={15}/>
-                    <input type="password" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 tracking-widest placeholder:text-white/20 font-mono transition-colors" />
-                    <button onClick={() => handleSetupSecurity(document.getElementById('setupPin').value, document.getElementById('setupWord').value)} className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono">Save Credentials</button>
+                <div className="space-y-4 text-left">
+                    <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
+                    
+                    <div className="relative">
+                        <input 
+                            type="password" 
+                            placeholder="CREATE MASTER PASSWORD" 
+                            value={setupPassword}
+                            onChange={(e) => setSetupPassword(e.target.value)}
+                            className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-lg outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" 
+                            maxLength={25}
+                        />
+                        
+                        {/* 🚀 RESIDENT EVIL STRENGTH METER 🚀 */}
+                        <div className="mt-3">
+                            <div className="flex justify-between items-end mb-1">
+                                <span className={`text-[9px] font-black tracking-widest uppercase ${calculateStrength(setupPassword).color}`}>
+                                    {calculateStrength(setupPassword).label}
+                                </span>
+                                <span className="text-[9px] text-slate-500 font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
+                            </div>
+                            <div className="flex gap-1 h-1.5">
+                                {[1, 2, 3, 4, 5].map(level => (
+                                    <div 
+                                        key={level} 
+                                        className={`flex-1 rounded-[1px] transition-all duration-300 ${calculateStrength(setupPassword).score >= level ? calculateStrength(setupPassword).bar : 'bg-white/10'}`}
+                                    ></div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <input 
+                        type="password" 
+                        placeholder="SECRET RECOVERY WORD" 
+                        value={setupSecret}
+                        onChange={(e) => setSetupSecret(e.target.value)}
+                        className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" 
+                    />
+                    
+                    <button 
+                        onClick={handleSetupSecurity} 
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-emerald-600/20 hover:bg-emerald-600 border-emerald-500/50 text-emerald-500 hover:text-white cursor-pointer' : 'bg-black border-slate-700 text-slate-600 cursor-not-allowed opacity-50'}`}
+                        disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
+                    >
+                        Save Credentials
+                    </button>
                 </div>
             ) : isResetMode ? (
+            
                 /* CASE 2: RECOVERY MODE */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
