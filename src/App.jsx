@@ -3685,7 +3685,7 @@ const handleGitHubMirror = async () => {
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  // 2. SETUP: Create PIN & Secret Word (FULLY HASHED)
+  // 2. SETUP: Create PIN & Secret Word (HASHED)
   const handleSetupSecurity = async (newPin, secretWord) => {
     if (!newPin || newPin.length < 4) { alert("PIN too short! (Minimum 4 digits)"); return; }
     if (!secretWord || !secretWord.trim()) { alert("Secret recovery word is required!"); return; }
@@ -5934,15 +5934,15 @@ const handleGitHubMirror = async () => {
             {isSetupMode ? (
                 <div className="space-y-4">
                     <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest">Create Administrator Credentials</p>
-                    <input type="password" placeholder="CREATE PIN (4+ DIGITS)" id="setupPin" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xl outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" maxLength={6}/>
-                    <input type="text" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" />
+                    <input type="password" placeholder="CREATE MASTER PASSWORD" id="setupPin" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-lg outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" maxLength={15}/>
+                    <input type="password" placeholder="SECRET RECOVERY WORD" id="setupWord" className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 tracking-widest placeholder:text-white/20 font-mono transition-colors" />
                     <button onClick={() => handleSetupSecurity(document.getElementById('setupPin').value, document.getElementById('setupWord').value)} className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono">Save Credentials</button>
                 </div>
             ) : isResetMode ? (
                 /* CASE 2: RECOVERY MODE */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                    <input type="text" id="resetWord" placeholder="WATERMELON..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none uppercase tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus />
+                    <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus />
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => setIsResetMode(false)} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} className="flex-1 py-3 bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-500 hover:text-white text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify</button>
@@ -5953,13 +5953,13 @@ const handleGitHubMirror = async () => {
                 <div className="space-y-4">
                     <input 
                         type="password" 
-                        placeholder="ENTER PIN" 
-                        className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-3xl mb-2 outline-none font-mono tracking-[0.5em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-sm transition-colors" 
+                        placeholder="ENTER MASTER PASSWORD" 
+                        className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-xl mb-2 outline-none font-mono tracking-[0.2em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-xs transition-colors" 
                         value={inputPin} 
                         onChange={(e) => setInputPin(e.target.value)} 
                         onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
                         autoFocus 
-                        maxLength={6}
+                        maxLength={15}
                     />
                     
                     {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
