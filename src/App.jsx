@@ -3685,25 +3685,26 @@ const handleGitHubMirror = async () => {
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  // 2. SETUP: Create PIN & Secret Word (HASHED)
+  // 2. SETUP: Create PIN & Secret Word (FULLY HASHED)
   const handleSetupSecurity = async (newPin, secretWord) => {
     if (!newPin || newPin.length < 4) { alert("PIN too short! (Minimum 4 digits)"); return; }
     if (!secretWord || !secretWord.trim()) { alert("Secret recovery word is required!"); return; }
 
     try {
-        // 1. Scramble the secret word before it ever touches the database
-        const scrambledHash = await hashSecretWord(secretWord);
+        // 1. Scramble BOTH the secret word AND the PIN before saving
+        const scrambledWordHash = await hashSecretWord(secretWord);
+        const scrambledPinHash = await hashSecretWord(newPin);
         
-        // 2. Save the Hash and Initialize the Strike Counter
+        // 2. Save the Hashes and Initialize the Strike Counter
         await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
-            pin: newPin,
-            recoveryHash: scrambledHash, // 🚨 SAVING THE HASH, NOT THE WORD
-            failedRecoveryAttempts: 0,   // 🚨 STARTING AT 0 STRIKES
+            pin: scrambledPinHash,           // 🚨 NOW SAVING HASHED PIN
+            recoveryHash: scrambledWordHash, // 🚨 SAVING HASHED WORD
+            failedRecoveryAttempts: 0,   
             lockoutStatus: "NONE",
             updatedAt: serverTimestamp()
         });
 
-        setAdminPin(newPin);
+        setAdminPin(scrambledPinHash);
         setHasAdminPin(true);
         setIsSetupMode(false);
         setIsAdmin(true); 
@@ -3719,7 +3720,7 @@ const handleGitHubMirror = async () => {
     }
   };
 
-  // 3. LOGIN: Verify PIN (NOW WITH 5-STRIKE LOCKOUT)
+  // 3. LOGIN: Verify PIN (NOW WITH HASH & 5-STRIKE LOCKOUT)
   const handlePinLogin = async () => {
       if (!inputPin || inputPin.trim() === "") {
           setAuthShake(true); setTimeout(() => setAuthShake(false), 500); return;
@@ -3739,7 +3740,10 @@ const handleGitHubMirror = async () => {
               return;
           }
 
-          if (inputPin.trim() === String(adminPin).trim()) {
+          // 🚨 CRITICAL: Hash the inputted PIN to compare against the database hash
+          const hashedInput = await hashSecretWord(inputPin.trim());
+
+          if (hashedInput === data.pin) {
               // SUCCESS: Reset strikes to 0
               await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
               setIsAdmin(true);
