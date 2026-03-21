@@ -3855,7 +3855,7 @@ const handleGitHubMirror = async () => {
                     'service_b564nlp',
                     'template_89lgavp',
                     { otp_code: newOtp }, 
-                    'JHKtLEcPg8t3-D4oK'  // 🚨 SWITCHED TO PUBLIC KEY
+                    'veSkmuEcR5qSImMSq'  // 🔐 BRAND NEW SECURE PUBLIC KEY
                 );
                 setIsResetMode(false);
                 setIsOtpMode(true); 
