@@ -12,8 +12,16 @@ import {
 import L from 'leaflet';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
-// 🚀 TACTICAL COLOR PINS (INJECTED)
+// 🚀 TACTICAL COLOR PINS (INJECTED & STABILIZED)
 delete L.Icon.Default.prototype._getIconUrl;
+
+// RESTORED: This prevents Leaflet from crashing when calculating bounding boxes
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 const createPin = (color) => new L.Icon({
     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -1344,6 +1352,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 {/* 🚀 STREET LEVEL ROUTING (Snaps to roads) */}
                 {streetRoute && (
                     <Polyline 
+                        key={`route-${activeAgentFilter}`} 
                         positions={streetRoute} 
                         pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
                     />
