@@ -22,20 +22,13 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const createPin = (color) => new L.Icon({
-    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34]
+// 🚀 FIX: Converted Agent Pin to pure HTML DivIcon to prevent Leaflet DOM diffing crashes
+const agentPin = L.divIcon({
+    className: 'custom-icon',
+    html: `<div style="position:relative;"><div class="marker-inner" style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(59,130,246,0.8); display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden;">🕵️</div></div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
 });
-
-const PINS = {
-    pending: createPin('red'),
-    success: createPin('green'),
-    nosale: createPin('yellow'),
-    agent: createPin('blue')
-};
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -172,12 +165,16 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments, activeAgentFilter }) => {
     const map = useMap();
     
-    // 🚀 RESTORED: This calculates the tooltip data and prevents the map control crash!
+    // 🚀 RESTORED: Calculates the tooltip data
     const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
     
     // If an agent is selected in the dispatch table, highlight ONLY their assigned pins in Blue
     const isAssignedToActive = activeAgentFilter !== 'All' && assignments[store.id] === activeAgentFilter;
-    const finalIcon = isAssignedToActive ? PINS.agent : getIcon(store, activeTiers);
+
+    // 🚀 FIX: Memoized the icon engine to prevent React-Leaflet from crashing the DOM during re-renders
+    const finalIcon = useMemo(() => {
+        return isAssignedToActive ? agentPin : getIcon(store, activeTiers);
+    }, [isAssignedToActive, store, activeTiers]);
 
     return (
         <Marker 
