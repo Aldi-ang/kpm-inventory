@@ -1265,13 +1265,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                {/* 🚀 STREET LEVEL ROUTING (Snaps to actual roads) */}
-                    {streetRoute && (
-                        <Polyline 
-                            positions={streetRoute} 
-                            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
-                        />
-                    )}
+             
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
