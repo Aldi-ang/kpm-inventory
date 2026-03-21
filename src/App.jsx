@@ -2643,7 +2643,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             `}>
                 
                 {/* BRANDING (Moved text beside burger button) */}
-                <div className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0">
+                <div className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0 boot-1">
                     <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>
@@ -2653,7 +2653,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                 {/* MENU */}
                 {user ? (
-                    <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide">
+                    <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
                         {visibleMenu.map(item => (
                             <button
                                 key={item.id}
@@ -2680,7 +2680,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 )}
 
                 {/* BOTTOM SECTION */}
-                <div className="mt-auto mb-2 border-t border-white/10 pt-3">
+                <div className="mt-auto mb-2 border-t border-white/10 pt-3 boot-3">
                     
                     {/* NEW: UNLOCK BUTTON FOR ADMIN SAFE MODE */}
                     {userRole === 'ADMIN' && !isAdmin && (
