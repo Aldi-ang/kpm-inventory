@@ -3855,7 +3855,7 @@ const handleGitHubMirror = async () => {
                     'service_b564nlp',
                     'template_89lgavp',
                     { otp_code: newOtp }, 
-                    'g4rkjlaeSv7QA0udMOCT7'
+                    'JHKtLEcPg8t3-D4oK'  // 🚨 SWITCHED TO PUBLIC KEY
                 );
                 setIsResetMode(false);
                 setIsOtpMode(true); 
@@ -6092,7 +6092,7 @@ const handleGitHubMirror = async () => {
                 /* CASE 2: RECOVERY MODE (Now with Loading State) */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                    <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus disabled={isSendingEmail}/>
+                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-white'}`}>
