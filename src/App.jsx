@@ -2610,21 +2610,25 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
 
-            {/* 🚀 RHYTHMIC BOOTUP ENGINE (RESIDENT EVIL GLITCH DECRYPT) 🚀 */}
+           {/* 🚀 RHYTHMIC BOOTUP ENGINE (RE REQUIEM TERMINAL) 🚀 */}
             <style>{`
-                @keyframes reDecrypt {
-                    0% { opacity: 0; filter: contrast(300%) brightness(200%); transform: scale(0.95); text-shadow: -3px 0 red, 3px 0 cyan; }
-                    15% { opacity: 1; filter: contrast(100%) brightness(100%); transform: scale(1); text-shadow: none; }
-                    16% { opacity: 0.1; transform: translateX(-4px) skewX(-10deg); }
-                    19% { opacity: 1; transform: translateX(4px) skewX(10deg); text-shadow: -2px 0 red, 2px 0 cyan; }
-                    22% { opacity: 0.3; transform: translateX(0) skewX(0); text-shadow: none; }
-                    25% { opacity: 1; }
-                    100% { opacity: 1; }
+                @keyframes reRequiem {
+                    0% { 
+                        opacity: 0; 
+                        transform: scale(0.98) translateY(10px); 
+                        filter: blur(3px); 
+                    }
+                    100% { 
+                        opacity: 1; 
+                        transform: scale(1) translateY(0); 
+                        filter: blur(0px); 
+                    }
                 }
-                .boot-1 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.1s forwards; opacity: 0; }
-                .boot-2 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.4s forwards; opacity: 0; }
-                .boot-3 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.7s forwards; opacity: 0; }
-                .boot-4 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 1.0s forwards; opacity: 0; }
+                /* Ultra-fast, fluid easing curve like RE Remake menus */
+                .boot-1 { animation: reRequiem 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.05s forwards; opacity: 0; }
+                .boot-2 { animation: reRequiem 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.15s forwards; opacity: 0; }
+                .boot-3 { animation: reRequiem 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.25s forwards; opacity: 0; }
+                .boot-4 { animation: reRequiem 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.35s forwards; opacity: 0; }
             `}</style>
             
             {/* BACKGROUND LAYERS */}
