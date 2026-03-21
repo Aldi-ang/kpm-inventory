@@ -161,25 +161,19 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
     return null;
 };
 
-const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, routeStops = [], toggleRadarTarget }) => {
+const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments, activeAgentFilter }) => {
     const map = useMap();
-    const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
     
-    // 🚀 Determine icon based on tactical radar status
-    const isTarget = routeStops.find(s => s.id === store.id);
-    const radarIcon = store.status === 'success' ? PINS.success : 
-                      store.status === 'nosale' ? PINS.nosale : 
-                      isTarget ? PINS.pending : getIcon(store, activeTiers); // Defaults back to your normal icon!
+    // If an agent is selected in the dispatch table, highlight ONLY their assigned pins in Blue
+    const isAssignedToActive = activeAgentFilter !== 'All' && assignments[store.id] === activeAgentFilter;
+    const finalIcon = isAssignedToActive ? PINS.agent : getIcon(store, activeTiers);
 
     return (
         <Marker 
             position={[store.latitude, store.longitude]} 
-            icon={radarIcon} 
+            icon={finalIcon} 
             eventHandlers={{ 
-                click: () => {
-                    if (toggleRadarTarget) toggleRadarTarget(store); // Adds it to the route sequence
-                    handlePinClick(store, map); // Keeps your existing click features working!
-                } 
+                click: () => handlePinClick(store, map) // Reverted back to purely opening the details panel!
             }} 
             riseOnHover={true}
         >
@@ -866,17 +860,34 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
 // --- MAIN WRAPPER ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
 
-    // 🚀 TACTICAL TRACKING ENGINE & OSRM
-    const [routeStops, setRouteStops] = useState([]);
+    // 🚀 DISPATCH ASSIGNMENT ENGINE & OSRM
+    const [assignments, setAssignments] = useState({}); // Stores { storeId: 'AgentName' }
+    const [activeAgentFilter, setActiveAgentFilter] = useState('All');
     const [streetRoute, setStreetRoute] = useState(null);
+
+    // Mock Sales Team (You can link this to your Firebase users later)
+    const agentsList = ['Aldi', 'Budi', 'Citra']; 
+
+    const handleAssignAgent = (storeId, agentName) => {
+        setAssignments(prev => {
+            if (agentName === 'Unassigned') {
+                const newObj = { ...prev };
+                delete newObj[storeId];
+                return newObj;
+            }
+            return { ...prev, [storeId]: agentName };
+        });
+    };
 
     useEffect(() => {
         const fetchStreetRoute = async () => {
-            if (routeStops.length < 2) {
-                setStreetRoute(null);
-                return;
-            }
-            const coordsString = routeStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
+            if (activeAgentFilter === 'All') return setStreetRoute(null);
+            
+            // Get all map points assigned to the selected agent
+            const agentStores = mapPoints.filter(s => assignments[s.id] === activeAgentFilter);
+            if (agentStores.length < 2) return setStreetRoute(null);
+
+            const coordsString = agentStores.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
             try {
                 const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
                 const data = await response.json();
@@ -889,16 +900,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             }
         };
         fetchStreetRoute();
-    }, [routeStops]);
-
-    // Function to click a store and add it to the radar
-    const toggleRadarTarget = (merchant) => {
-        setRouteStops(prev => {
-            const exists = prev.find(stop => stop.id === merchant.id);
-            if (exists) return prev.filter(stop => stop.id !== merchant.id);
-            return [...prev, merchant];
-        });
-    };
+    }, [assignments, activeAgentFilter, mapPoints]);
 
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
@@ -1184,22 +1186,59 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
-            {/* 🚀 FLOATING TACTICAL HUD */}
-            {routeStops.length > 0 && (
-                <div className="absolute top-4 right-16 z-[400] w-72 bg-black/90 border border-emerald-500/30 p-4 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.2)] font-mono">
-                    <h3 className="text-emerald-500 font-bold tracking-widest uppercase mb-3 text-xs flex justify-between items-center">
-                        Live Radar <span className="text-white">{routeStops.length} Targets</span>
+            {/* 🚀 DISPATCH ASSIGNMENT TABLE (Moved to left to avoid map control collisions) */}
+            <div className="absolute top-4 left-16 z-[400] w-[350px] bg-slate-900/95 border border-slate-700 rounded-xl shadow-2xl flex flex-col max-h-[60vh] font-mono text-white backdrop-blur-md overflow-hidden">
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50">
+                    <h3 className="text-emerald-500 font-bold uppercase mb-3 flex justify-between items-center text-sm">
+                        Mission Dispatch
+                        <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-600">{mapPoints.length} Targets</span>
                     </h3>
-                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ width: '0%' }}></div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1 text-[9px] uppercase tracking-wider text-center font-bold">
-                        <div className="text-red-500 bg-red-500/10 py-1 border border-red-500/20">Pending</div>
-                        <div className="text-green-500 bg-green-500/10 py-1 border border-green-500/20">Success</div>
-                        <div className="text-yellow-500 bg-yellow-500/10 py-1 border border-yellow-500/20">No Sale</div>
+                    
+                    <div className="flex gap-2 items-center text-xs justify-between">
+                        <span className="text-slate-400">View Route:</span>
+                        <select 
+                            className="bg-black border border-slate-600 text-white rounded p-1.5 outline-none flex-1 ml-2"
+                            value={activeAgentFilter}
+                            onChange={(e) => setActiveAgentFilter(e.target.value)}
+                        >
+                            <option value="All">All Stores (Hide Routes)</option>
+                            {agentsList.map(agent => (
+                                <option key={agent} value={agent}>{agent}'s Route</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
-            )}
+
+                <div className="overflow-y-auto flex-1 p-2 scrollbar-hide">
+                    <table className="w-full text-left text-xs">
+                        <thead className="text-slate-500 sticky top-0 bg-slate-900 z-10">
+                            <tr>
+                                <th className="p-2 font-normal uppercase tracking-wider">Store</th>
+                                <th className="p-2 font-normal uppercase tracking-wider text-right">Assign Agent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {mapPoints.map(store => (
+                                <tr key={store.id} className="border-b border-slate-800/50 hover:bg-white/5 transition-colors">
+                                    <td className="p-2 truncate max-w-[140px]" title={store.name}>{store.name}</td>
+                                    <td className="p-2 text-right">
+                                        <select 
+                                            className={`bg-black border rounded p-1 outline-none text-[10px] uppercase font-bold tracking-wider cursor-pointer ${assignments[store.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-700 text-slate-500'}`}
+                                            value={assignments[store.id] || 'Unassigned'}
+                                            onChange={(e) => handleAssignAgent(store.id, e.target.value)}
+                                        >
+                                            <option value="Unassigned">Unassigned</option>
+                                            {agentsList.map(agent => (
+                                                <option key={agent} value={agent}>{agent}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
@@ -1313,7 +1352,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     />
                 )}
 
-                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} routeStops={routeStops} toggleRadarTarget={toggleRadarTarget}/>)}
+                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} assignments={assignments} activeAgentFilter={activeAgentFilter}/>)}
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
