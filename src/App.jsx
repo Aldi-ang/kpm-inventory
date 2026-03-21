@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import * as XLSX from 'xlsx';
+import emailjs from '@emailjs/browser';
 
 import MapMissionControl from './MapMissionControl';
 import JourneyView from './JourneyView';
@@ -3669,6 +3670,12 @@ const handleGitHubMirror = async () => {
   const [authShake, setAuthShake] = useState(false); // For visual "Wrong Password" feedback
   const [isUnlocking, setIsUnlocking] = useState(false); // 🎬 NEW: Cinematic Unlock State
 
+  // 📧 NEW: Email OTP Recovery States
+  const [isOtpMode, setIsOtpMode] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState(null);
+  const [inputOtp, setInputOtp] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
   // 🔐 NEW: Real-time Password Strength State
   const [setupPassword, setSetupPassword] = useState("");
   const [setupSecret, setSetupSecret] = useState("");
@@ -3810,63 +3817,78 @@ const handleGitHubMirror = async () => {
       }
   };
 
-  // 4. RESET: The Zero-Trust Recovery Engine
+  // 4. RESET: Layer 1 (Verify Secret Word) & Layer 2 (Send OTP)
   const handleResetPin = async (word) => {
     if (!word || word.trim() === "") {
         setAuthShake(true); setTimeout(() => setAuthShake(false), 500); return;
     }
 
     const cleanWord = word.trim().toLowerCase();
-    
-    // 🚨 ABSOLUTE MASTER OVERRIDE: Bypasses the strike counter entirely so you never get permanently locked out.
-    if (cleanWord === "kpmadmin") {
-        setIsResetMode(false);
-        setIsSetupMode(true); 
-        alert("Master Override Accepted. Please create a new PIN and Secret Word.");
-        return;
-    }
+
+    // 🚨 KPMADMIN BACKDOOR PERMANENTLY DELETED 🚨
 
     try {
-        // 1. Fetch the Security Document from Firebase
+        setIsSendingEmail(true); // Trigger UI loading state
+
         const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
         const adminSnap = await getDoc(adminDocRef);
         
-        if (!adminSnap.exists()) { alert("No security profile found."); return; }
+        if (!adminSnap.exists()) { alert("No security profile found."); setIsSendingEmail(false); return; }
         const data = adminSnap.data();
 
-        // 2. CHECK LAYER 2: Is the account locked?
         if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
             alert("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
-            return;
+            setIsSendingEmail(false); return;
         }
 
-        // 3. CHECK LAYER 1: Hash the guess and compare
         const guessHash = await hashSecretWord(cleanWord);
         
         if (guessHash === data.recoveryHash) {
-            // SUCCESS! Reset strikes to 0.
             await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
-            setIsResetMode(false);
-            setIsSetupMode(true); 
-            // NOTE: We will inject the Email OTP code right here next!
-            alert("Identity Verified. You may now reset your credentials.");
+            
+            // 📧 LAYER 3: GENERATE & SEND EMAIL OTP
+            const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            setGeneratedOtp(newOtp);
+
+            try {
+                await emailjs.send(
+                    'service_b564nlp',
+                    'template_89lgavp',
+                    { otp_code: newOtp }, 
+                    'g4rkjlaeSv7QA0udMOCT7'
+                );
+                setIsResetMode(false);
+                setIsOtpMode(true); 
+            } catch (emailErr) {
+                console.error("EmailJS Error:", emailErr);
+                alert("Identity verified, but failed to send OTP email. Check your internet or EmailJS account limits.");
+            }
         } else {
-            // FAILED! Add a strike.
             const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
             const newLockout = newStrikes >= 5 ? "PERMANENT" : "NONE";
+            await updateDoc(adminDocRef, { failedRecoveryAttempts: newStrikes, lockoutStatus: newLockout });
             
-            await updateDoc(adminDocRef, { 
-                failedRecoveryAttempts: newStrikes,
-                lockoutStatus: newLockout
-            });
-
             setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
             alert(`Access Denied. Strike ${newStrikes}/5.`);
         }
     } catch (error) {
-        console.error("Recovery Engine Error:", error);
+        console.error("Recovery Error:", error);
         alert("System error during recovery verification.");
     }
+    setIsSendingEmail(false);
+  };
+
+  // 5. OTP VERIFICATION: Layer 3
+  const handleVerifyOtp = () => {
+      if (inputOtp === generatedOtp) {
+          setIsOtpMode(false);
+          setIsSetupMode(true);
+          setInputOtp("");
+          alert("Authorization Code Accepted. You may now create new Master Credentials.");
+      } else {
+          setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+          setInputOtp("");
+      }
   };
 
 // --- PINPOINT: Line 1830 (Add this missing function to fix the crash) ---
@@ -6055,15 +6077,27 @@ const handleGitHubMirror = async () => {
                         Save Credentials
                     </button>
                 </div>
+            ) : isOtpMode ? (
+                /* CASE 2.5: OTP VERIFICATION */
+                <div className="space-y-4 animate-fade-in">
+                    <p className="text-[10px] text-blue-400 uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
+                    <p className="text-xs text-slate-400 mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
+                    <input type="number" placeholder="• • • • • •" className="w-full bg-black border border-blue-500/30 p-4 text-center text-blue-400 text-2xl outline-none tracking-[0.5em] focus:border-blue-500 font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
+                    <div className="flex gap-3 mt-4">
+                        <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/50 text-blue-500 hover:text-white text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
+                    </div>
+                </div>
             ) : isResetMode ? (
-            
-                /* CASE 2: RECOVERY MODE */
+                /* CASE 2: RECOVERY MODE (Now with Loading State) */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                    <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus />
+                    <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus disabled={isSendingEmail}/>
                     <div className="flex gap-3 mt-4">
-                        <button onClick={() => setIsResetMode(false)} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
-                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} className="flex-1 py-3 bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-500 hover:text-white text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify</button>
+                        <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-white'}`}>
+                            {isSendingEmail ? 'Authorizing...' : 'Verify'}
+                        </button>
                     </div>
                 </div>
             ) : (
