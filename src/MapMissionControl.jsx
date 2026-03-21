@@ -12,6 +12,23 @@ import {
 import L from 'leaflet';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
+// 🚀 TACTICAL COLOR PINS (INJECTED)
+delete L.Icon.Default.prototype._getIconUrl;
+const createPin = (color) => new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
+});
+
+const PINS = {
+    pending: createPin('red'),
+    success: createPin('green'),
+    nosale: createPin('yellow'),
+    agent: createPin('blue')
+};
+
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -144,11 +161,28 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
     return null;
 };
 
-const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick }) => {
+const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, routeStops = [], toggleRadarTarget }) => {
     const map = useMap();
     const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
+    
+    // 🚀 Determine icon based on tactical radar status
+    const isTarget = routeStops.find(s => s.id === store.id);
+    const radarIcon = store.status === 'success' ? PINS.success : 
+                      store.status === 'nosale' ? PINS.nosale : 
+                      isTarget ? PINS.pending : getIcon(store, activeTiers); // Defaults back to your normal icon!
+
     return (
-        <Marker position={[store.latitude, store.longitude]} icon={getIcon(store, activeTiers)} eventHandlers={{ click: () => handlePinClick(store, map) }} riseOnHover={true}>
+        <Marker 
+            position={[store.latitude, store.longitude]} 
+            icon={radarIcon} 
+            eventHandlers={{ 
+                click: () => {
+                    if (toggleRadarTarget) toggleRadarTarget(store); // Adds it to the route sequence
+                    handlePinClick(store, map); // Keeps your existing click features working!
+                } 
+            }} 
+            riseOnHover={true}
+        >
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -40]} opacity={1} className="custom-leaflet-tooltip">
                     <div className="store-3d-card w-48 bg-slate-900 text-white rounded-xl border-2 border-slate-600 overflow-hidden relative">
@@ -831,6 +865,41 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
 
 // --- MAIN WRAPPER ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
+
+    // 🚀 TACTICAL TRACKING ENGINE & OSRM
+    const [routeStops, setRouteStops] = useState([]);
+    const [streetRoute, setStreetRoute] = useState(null);
+
+    useEffect(() => {
+        const fetchStreetRoute = async () => {
+            if (routeStops.length < 2) {
+                setStreetRoute(null);
+                return;
+            }
+            const coordsString = routeStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
+            try {
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
+                const data = await response.json();
+                if (data.routes && data.routes[0]) {
+                    const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                    setStreetRoute(flippedCoords);
+                }
+            } catch (error) {
+                console.error("OSRM Routing failed:", error);
+            }
+        };
+        fetchStreetRoute();
+    }, [routeStops]);
+
+    // Function to click a store and add it to the radar
+    const toggleRadarTarget = (merchant) => {
+        setRouteStops(prev => {
+            const exists = prev.find(stop => stop.id === merchant.id);
+            if (exists) return prev.filter(stop => stop.id !== merchant.id);
+            return [...prev, merchant];
+        });
+    };
+
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
@@ -1115,6 +1184,23 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
+            {/* 🚀 FLOATING TACTICAL HUD */}
+            {routeStops.length > 0 && (
+                <div className="absolute top-4 right-16 z-[400] w-72 bg-black/90 border border-emerald-500/30 p-4 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.2)] font-mono">
+                    <h3 className="text-emerald-500 font-bold tracking-widest uppercase mb-3 text-xs flex justify-between items-center">
+                        Live Radar <span className="text-white">{routeStops.length} Targets</span>
+                    </h3>
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
+                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ width: '0%' }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-[9px] uppercase tracking-wider text-center font-bold">
+                        <div className="text-red-500 bg-red-500/10 py-1 border border-red-500/20">Pending</div>
+                        <div className="text-green-500 bg-green-500/10 py-1 border border-green-500/20">Success</div>
+                        <div className="text-yellow-500 bg-yellow-500/10 py-1 border border-yellow-500/20">No Sale</div>
+                    </div>
+                </div>
+            )}
+
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
@@ -1136,6 +1222,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
+
+                {/* 🚀 STREET LEVEL ROUTING (Snaps to actual roads) */}
+                    {streetRoute && (
+                        <Polyline 
+                            positions={streetRoute} 
+                            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
+                        />
+                    )}
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
@@ -1210,7 +1304,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>
                     );
                 })}
-                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick}/>)}
+
+                {/* 🚀 STREET LEVEL ROUTING (Snaps to roads) */}
+                {streetRoute && (
+                    <Polyline 
+                        positions={streetRoute} 
+                        pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
+                    />
+                )}
+
+                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} routeStops={routeStops} toggleRadarTarget={toggleRadarTarget}/>)}
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
