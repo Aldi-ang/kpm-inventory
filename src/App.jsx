@@ -2610,17 +2610,21 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
 
-            {/* 🚀 RHYTHMIC BOOTUP ENGINE (HEAVY CINEMATIC TIMING) 🚀 */}
+            {/* 🚀 RHYTHMIC BOOTUP ENGINE (RESIDENT EVIL GLITCH DECRYPT) 🚀 */}
             <style>{`
-                @keyframes sysBoot {
-                    0% { opacity: 0; transform: translateY(30px) scale(0.96); filter: blur(8px); }
-                    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+                @keyframes reDecrypt {
+                    0% { opacity: 0; filter: contrast(300%) brightness(200%); transform: scale(0.95); text-shadow: -3px 0 red, 3px 0 cyan; }
+                    15% { opacity: 1; filter: contrast(100%) brightness(100%); transform: scale(1); text-shadow: none; }
+                    16% { opacity: 0.1; transform: translateX(-4px) skewX(-10deg); }
+                    19% { opacity: 1; transform: translateX(4px) skewX(10deg); text-shadow: -2px 0 red, 2px 0 cyan; }
+                    22% { opacity: 0.3; transform: translateX(0) skewX(0); text-shadow: none; }
+                    25% { opacity: 1; }
+                    100% { opacity: 1; }
                 }
-                /* 1.5s duration, wider 0.4s stagger gaps, smooth glide-in curve */
-                .boot-1 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards; opacity: 0; }
-                .boot-2 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards; opacity: 0; }
-                .boot-3 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 1.0s forwards; opacity: 0; }
-                .boot-4 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards; opacity: 0; }
+                .boot-1 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.1s forwards; opacity: 0; }
+                .boot-2 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.4s forwards; opacity: 0; }
+                .boot-3 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 0.7s forwards; opacity: 0; }
+                .boot-4 { animation: reDecrypt 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) 1.0s forwards; opacity: 0; }
             `}</style>
             
             {/* BACKGROUND LAYERS */}
@@ -2643,7 +2647,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
             `}>
                 
                 {/* BRANDING (Moved text beside burger button) */}
-                <div className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0 boot-1">
+                <div key={`brand-${isAdmin}`} className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0 boot-1">
                     <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>
@@ -2653,7 +2657,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
                 {/* MENU */}
                 {user ? (
-                    <nav className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
+                    <nav key={`nav-${isAdmin}`} className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
                         {visibleMenu.map(item => (
                             <button
                                 key={item.id}
@@ -2680,7 +2684,7 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
                 )}
 
                 {/* BOTTOM SECTION */}
-                <div className="mt-auto mb-2 border-t border-white/10 pt-3 boot-3">
+                <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-white/10 pt-3 boot-3">
                     
                     {/* NEW: UNLOCK BUTTON FOR ADMIN SAFE MODE */}
                     {userRole === 'ADMIN' && !isAdmin && (
@@ -6165,7 +6169,7 @@ const handleGitHubMirror = async () => {
                   
                   {/* Summary Cards Grid */}
                   {/* FIX: Changed md: to lg: so they stack vertically on landscape phones */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-1">
+                  <div key={`cards-${isAdmin}`} className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-1">
                       <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
                           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
                           <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
@@ -6238,7 +6242,7 @@ const handleGitHubMirror = async () => {
 
 
                   {/* Performance Graph Area */}
-                  <div className="bg-black/40 border border-white/10 p-6 h-96 boot-2">
+                  <div key={`graph-${isAdmin}`} className="bg-black/40 border border-white/10 p-6 h-96 boot-2">
                       <h3 className="text-white mb-4 uppercase text-xs font-bold tracking-widest border-b border-white/10 pb-2">Performance Graph</h3>
                       <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <BarChart data={chartData.data}>
