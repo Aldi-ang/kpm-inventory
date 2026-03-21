@@ -164,6 +164,9 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments, activeAgentFilter }) => {
     const map = useMap();
     
+    // 🚀 RESTORED: This calculates the tooltip data and prevents the map control crash!
+    const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
+    
     // If an agent is selected in the dispatch table, highlight ONLY their assigned pins in Blue
     const isAssignedToActive = activeAgentFilter !== 'All' && assignments[store.id] === activeAgentFilter;
     const finalIcon = isAssignedToActive ? PINS.agent : getIcon(store, activeTiers);
@@ -173,7 +176,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assi
             position={[store.latitude, store.longitude]} 
             icon={finalIcon} 
             eventHandlers={{ 
-                click: () => handlePinClick(store, map) // Reverted back to purely opening the details panel!
+                click: () => handlePinClick(store, map) 
             }} 
             riseOnHover={true}
         >
