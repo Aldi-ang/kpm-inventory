@@ -2610,16 +2610,17 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
 
-            {/* 🚀 RHYTHMIC BOOTUP ENGINE 🚀 */}
+            {/* 🚀 RHYTHMIC BOOTUP ENGINE (HEAVY CINEMATIC TIMING) 🚀 */}
             <style>{`
                 @keyframes sysBoot {
-                    0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(4px); }
+                    0% { opacity: 0; transform: translateY(30px) scale(0.96); filter: blur(8px); }
                     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
                 }
-                .boot-1 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
-                .boot-2 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
-                .boot-3 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
-                .boot-4 { animation: sysBoot 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards; opacity: 0; }
+                /* 1.5s duration, wider 0.4s stagger gaps, smooth glide-in curve */
+                .boot-1 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards; opacity: 0; }
+                .boot-2 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards; opacity: 0; }
+                .boot-3 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 1.0s forwards; opacity: 0; }
+                .boot-4 { animation: sysBoot 1.5s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards; opacity: 0; }
             `}</style>
             
             {/* BACKGROUND LAYERS */}
