@@ -35,10 +35,22 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     useEffect(() => {
         const fetchAgents = async () => {
             if (!user || !appId) return;
+            const userId = user?.uid || user?.id || 'default';
+            
             try {
-                const snapshot = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/agents`));
-                const loadedAgents = snapshot.docs.map(doc => doc.data().name).filter(Boolean);
-                setAgentsList(loadedAgents);
+                // 🚀 FIX: Fetch both Motorists and Canvas teams simultaneously
+                const [motoristsSnap, canvasSnap] = await Promise.all([
+                    getDocs(collection(db, `artifacts/${appId}/users/${userId}/motorists`)),
+                    getDocs(collection(db, `artifacts/${appId}/users/${userId}/canvas`))
+                ]);
+                
+                const loadedMotorists = motoristsSnap.docs.map(doc => doc.data().name).filter(Boolean);
+                const loadedCanvas = canvasSnap.docs.map(doc => doc.data().name).filter(Boolean);
+                
+                // Combine them into one master list and sort alphabetically
+                const allAgents = [...loadedMotorists, ...loadedCanvas].sort();
+                
+                setAgentsList(allAgents);
             } catch (error) {
                 console.error("Failed to load Fleet Personnel:", error);
             }
@@ -284,9 +296,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                                     <button onClick={() => moveStore(idx, 'down')} disabled={idx === orderedRoute.length - 1} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↓</button>
                                 </div>
                                 <select 
-                                    className={`bg-black text-xs font-bold uppercase p-1.5 rounded outline-none cursor-pointer border ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'}`}
+                                    className={`bg-slate-900 text-xs font-bold uppercase p-1.5 rounded outline-none cursor-pointer border ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'}`}
                                     value={assignments[customer.id] || 'Unassigned'}
                                     onChange={(e) => setAssignments(prev => ({...prev, [customer.id]: e.target.value}))}
+                                    style={{ colorScheme: 'dark' }}
                                 >
                                     <option value="Unassigned" className="bg-slate-900 text-white">Unassigned</option>
                                     {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
