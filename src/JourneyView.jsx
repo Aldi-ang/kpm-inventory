@@ -13,7 +13,8 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
+// 🚀 FIX: Added `isAdmin` prop to enforce security
+const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
     // --- CHECK-IN STATE ---
@@ -30,6 +31,34 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     const [selectedAgent, setSelectedAgent] = useState('All');
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
+
+    // 🚀 NEW: Load saved assignments from Firebase into local state
+    useEffect(() => {
+        const initialAssignments = {};
+        (customers || []).forEach(c => {
+            if (c.assignedAgent) initialAssignments[c.id] = c.assignedAgent;
+        });
+        setAssignments(initialAssignments);
+    }, [customers]);
+
+    // 🚀 NEW: Permanently save Agent Assignment to Firebase (Admin Only)
+    const handleAssignAgent = async (customerId, agentName) => {
+        if (!isAdmin) return; // Hard security block
+        
+        // Optimistic UI update for speed
+        setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
+
+        try {
+            const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, customerId);
+            await updateDoc(customerRef, {
+                assignedAgent: agentName === 'Unassigned' ? deleteField() : agentName,
+                updatedAt: serverTimestamp()
+            });
+            if (logAudit) logAudit("AGENT_ASSIGNED", `Assigned ${agentName} to store.`);
+        } catch (error) {
+            console.error("Failed to save assignment to Firebase:", error);
+        }
+    };
 
     // Fetch actual Fleet Personnel from Database
     useEffect(() => {
@@ -214,14 +243,41 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                     {/* 🚀 NEW AGENT FILTER */}
                     <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
                         <span className="text-xs text-slate-400 pl-2 font-bold uppercase">Fleet:</span>
-                        <select 
-                            value={selectedAgent} 
+                        <select
+                            value={selectedAgent}
                             onChange={(e) => setSelectedAgent(e.target.value)}
-                            className="bg-transparent text-emerald-400 font-bold text-sm outline-none cursor-pointer"
+                            className="bg-slate-800 text-emerald-400 font-bold text-sm outline-none cursor-pointer border-none"
+                            style={{ colorScheme: 'dark' }}
                         >
                             <option value="All" className="bg-slate-900 text-white">All Unassigned & Assigned</option>
                             {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Route</option>)}
                         </select>
+                  
+
+                    <Calendar size={16} className="text-slate-400 ml-2"/>
+                    <select
+                        value={selectedDay}
+                        onChange={(e) => setSelectedDay(e.target.value)}
+                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
+                        style={{ colorScheme: 'dark' }}
+                    >
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+                        ))}
+                    </select>
+                   
+
+                    <Calendar size={16} className="text-slate-400 ml-2"/>
+                    <select
+                        value={selectedDay}
+                        onChange={(e) => setSelectedDay(e.target.value)}
+                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
+                        style={{ colorScheme: 'dark' }}
+                    >
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+                        ))}
+                    </select>
                     </div>
 
                     <Calendar size={16} className="text-slate-400 ml-2"/>
