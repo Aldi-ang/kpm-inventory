@@ -48,6 +48,13 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         // Optimistic UI update for speed
         setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
 
+        // 🚀 FIX: "The Amnesia Bug" - Update the parent's cached memory so it survives tab switching!
+        const targetCustomer = customers.find(c => c.id === customerId);
+        if (targetCustomer) {
+            if (agentName === 'Unassigned') delete targetCustomer.assignedAgent;
+            else targetCustomer.assignedAgent = agentName;
+        }
+
         try {
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, customerId);
             await updateDoc(customerRef, {
@@ -252,42 +259,17 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             <option value="All" className="bg-slate-900 text-white">All Unassigned & Assigned</option>
                             {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Route</option>)}
                         </select>
-                  
-
-                    <Calendar size={16} className="text-slate-400 ml-2"/>
-                    <select
-                        value={selectedDay}
-                        onChange={(e) => setSelectedDay(e.target.value)}
-                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
-                        style={{ colorScheme: 'dark' }}
-                    >
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
-                        ))}
-                    </select>
-                   
-
-                    <Calendar size={16} className="text-slate-400 ml-2"/>
-                    <select
-                        value={selectedDay}
-                        onChange={(e) => setSelectedDay(e.target.value)}
-                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
-                        style={{ colorScheme: 'dark' }}
-                    >
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
-                        ))}
-                    </select>
                     </div>
 
                     <Calendar size={16} className="text-slate-400 ml-2"/>
-                    <select 
-                        value={selectedDay} 
+                    <select
+                        value={selectedDay}
                         onChange={(e) => setSelectedDay(e.target.value)}
-                        className="bg-white dark:bg-slate-800 border dark:border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500"
+                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
+                        style={{ colorScheme: 'dark' }}
                     >
                         {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                            <option key={d} value={d}>{d}</option>
+                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
                         ))}
                     </select>
                 </div>
