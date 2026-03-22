@@ -93,12 +93,12 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     const isFirstRun = useRef(true);
 
     useEffect(() => {
-        if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
-            try { map.flyTo(uploadedFocus, 10, { duration: 1.5 }); } catch(e) {}
+        if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2) { 
+            const lat = Number(uploadedFocus[0]); const lng = Number(uploadedFocus[1]);
+            if (!isNaN(lat) && !isNaN(lng)) { try { map.flyTo([lat, lng], 10, { duration: 1.5 }); } catch(e) {} }
         }
     }, [uploadedFocus, map]);
 
-    // FIX: Smart Camera Math Engine prevents Leaflet from crashing on small screens
     useEffect(() => {
         if (selectedZone && selectedZone.geometry) {
             try {
@@ -116,12 +116,13 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     useEffect(() => {
         if (isFirstRun.current) {
             try {
-                // IRONCLAD: Strictly check that lat/lng exist and are numbers before moving camera
-                if (savedHome && typeof savedHome.lat !== 'undefined' && typeof savedHome.lng !== 'undefined') {
-                    map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
+                const homeLat = savedHome?.lat ? Number(savedHome.lat) : null;
+                const homeLng = savedHome?.lng ? Number(savedHome.lng) : null;
+                if (homeLat !== null && homeLng !== null && !isNaN(homeLat) && !isNaN(homeLng)) {
+                    map.setView([homeLat, homeLng], savedHome.zoom || 13);
                 } else {
                     map.locate().on("locationfound", (e) => {
-                        if (e && e.latlng) map.flyTo(e.latlng, 13);
+                        if (e && e.latlng && e.latlng.lat) map.flyTo([e.latlng.lat, e.latlng.lng], 13);
                     });
                 }
             } catch(e) {}
@@ -132,9 +133,12 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     useEffect(() => {
         if (!uploadedFocus && !selectedZone && selectedRegion !== "All" && mapPoints.length > 0) {
             try {
-                let latSum = 0, lngSum = 0;
-                mapPoints.forEach(p => { latSum += (p.latitude || 0); lngSum += (p.longitude || 0); });
-                map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
+                let latSum = 0, lngSum = 0, count = 0;
+                mapPoints.forEach(p => { 
+                    const lat = Number(p.latitude); const lng = Number(p.longitude);
+                    if (!isNaN(lat) && !isNaN(lng)) { latSum += lat; lngSum += lng; count++; }
+                });
+                if (count > 0) map.flyTo([latSum / count, lngSum / count], 12, { duration: 1.5 });
             } catch(e) {}
         }
     }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints, selectedZone]); 
@@ -171,30 +175,27 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
 
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments = {}, activeAgentFilter = 'All' }) => {
     const map = useMap();
+    
+    // 🚀 THE ULTIMATE UPDATE FAILSAFE: Force strict math types before React-Leaflet ever reads it.
+    const safeLat = store?.latitude ? Number(store.latitude) : 0;
+    const safeLng = store?.longitude ? Number(store.longitude) : 0;
+    const isValid = store && safeLat !== 0 && safeLng !== 0 && !isNaN(safeLat) && !isNaN(safeLng);
 
-    // 🚀 ULTIMATE IRONCLAD FAILSAFE: Kill the render before Leaflet even sees a bad coordinate!
-    if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude) || isNaN(store.longitude)) {
-        return null;
-    }
-    
-    // 🚀 RESTORED: Calculates the tooltip data
+    // Securely abort rendering BEFORE the Leaflet layer is generated if data is bad
+    if (!isValid) return null; 
+
     const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
-    
-    // If an agent is selected in the dispatch table, highlight ONLY their assigned pins in Blue
     const isAssignedToActive = activeAgentFilter !== 'All' && assignments[store.id] === activeAgentFilter;
 
-    // 🚀 FIX: Memoized the icon engine to prevent React-Leaflet from crashing the DOM during re-renders
     const finalIcon = useMemo(() => {
         return isAssignedToActive ? agentPin : getIcon(store, activeTiers);
     }, [isAssignedToActive, store, activeTiers]);
 
     return (
         <Marker 
-            position={[store.latitude, store.longitude]} 
+            position={[safeLat, safeLng]} 
             icon={finalIcon} 
-            eventHandlers={{ 
-                click: () => handlePinClick(store, map) 
-            }} 
+            eventHandlers={{ click: () => handlePinClick(store, map) }} 
             riseOnHover={true}
         >
             {!conquestMode && (
