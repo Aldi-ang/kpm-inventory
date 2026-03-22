@@ -169,8 +169,13 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
     return null;
 };
 
-const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments, activeAgentFilter }) => {
+const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments = {}, activeAgentFilter = 'All' }) => {
     const map = useMap();
+
+    // 🚀 ULTIMATE IRONCLAD FAILSAFE: Kill the render before Leaflet even sees a bad coordinate!
+    if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude) || isNaN(store.longitude)) {
+        return null;
+    }
     
     // 🚀 RESTORED: Calculates the tooltip data
     const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
