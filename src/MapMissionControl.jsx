@@ -1342,6 +1342,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
 
                 {conquestMode && mapPoints.map(store => {
+                    // 🚀 IRONCLAD FAILSAFE: If the coordinate is missing, corrupted, or not a number, skip drawing the circle entirely.
+                    if (!store || isNaN(store.latitude) || isNaN(store.longitude) || store.latitude === null || store.longitude === null) {
+                        return null; 
+                    }
+
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
                     else if (store.tier === 'Platinum') baseRadius = 1500;
@@ -1358,7 +1363,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 })}
 
                 {/* 🚀 STREET LEVEL ROUTING (Snaps to roads) */}
-                {streetRoute && (
+                {streetRoute && Array.isArray(streetRoute) && streetRoute.length > 0 && (
                     <Polyline 
                         key={`route-${activeAgentFilter}`} 
                         positions={streetRoute} 
@@ -1366,7 +1371,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     />
                 )}
 
-                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} assignments={assignments} activeAgentFilter={activeAgentFilter}/>)}
+                {mapPoints.map(store => {
+                    // 🚀 IRONCLAD FAILSAFE: Skip drawing the marker if the coordinate is corrupted
+                    if (!store || isNaN(store.latitude) || isNaN(store.longitude) || store.latitude === null || store.longitude === null) {
+                        return null;
+                    }
+                    return <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} assignments={assignments} activeAgentFilter={activeAgentFilter}/>
+                })}
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
