@@ -32,31 +32,46 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
-    // 🚀 NEW: Load saved assignments from Firebase into local state
+    // 🚀 IRONCLAD MEMORY: Load assignments from Firebase, with a LocalStorage fallback for stale parent data
     useEffect(() => {
         const initialAssignments = {};
+        const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
+        
         (customers || []).forEach(c => {
-            if (c.assignedAgent) initialAssignments[c.id] = c.assignedAgent;
+            // If Firebase has it, use it. If Firebase is stale, force our local cache memory.
+            if (c.assignedAgent) {
+                initialAssignments[c.id] = c.assignedAgent;
+            } else if (localCache[c.id] && localCache[c.id] !== 'Unassigned') {
+                initialAssignments[c.id] = localCache[c.id];
+            }
         });
         setAssignments(initialAssignments);
     }, [customers]);
 
-    // 🚀 NEW: Permanently save Agent Assignment to Firebase (Admin Only)
+    // 🚀 IRONCLAD MEMORY: Permanently save to Firebase AND LocalStorage cache
     const handleAssignAgent = async (customerId, agentName) => {
         if (!isAdmin) return; // Hard security block
+        const userId = user?.uid || user?.id || 'default'; // Failsafe ID extraction
         
-        // Optimistic UI update for speed
+        // 1. Instant UI Update
         setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
 
-        // 🚀 FIX: "The Amnesia Bug" - Update the parent's cached memory so it survives tab switching!
+        // 2. LocalStorage Cache (Survives tab switching and stale parent re-renders)
+        const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
+        if (agentName === 'Unassigned') delete localCache[customerId];
+        else localCache[customerId] = agentName;
+        localStorage.setItem('tripBuilderCache', JSON.stringify(localCache));
+
+        // 3. Mutate Parent Array (Double redundancy)
         const targetCustomer = customers.find(c => c.id === customerId);
         if (targetCustomer) {
             if (agentName === 'Unassigned') delete targetCustomer.assignedAgent;
             else targetCustomer.assignedAgent = agentName;
         }
 
+        // 4. Firebase Database Update
         try {
-            const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, customerId);
+            const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, customerId);
             await updateDoc(customerRef, {
                 assignedAgent: agentName === 'Unassigned' ? deleteField() : agentName,
                 updatedAt: serverTimestamp()
