@@ -12,23 +12,22 @@ import {
 import L from 'leaflet';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
-// 🚀 TACTICAL COLOR PINS (INJECTED & STABILIZED)
+// 🚀 TACTICAL COLOR PINS (INJECTED)
 delete L.Icon.Default.prototype._getIconUrl;
-
-// RESTORED: This prevents Leaflet from crashing when calculating bounding boxes
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+const createPin = (color) => new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
 });
 
-// 🚀 FIX: Converted Agent Pin to pure HTML DivIcon to prevent Leaflet DOM diffing crashes
-const agentPin = L.divIcon({
-    className: 'custom-icon',
-    html: `<div style="position:relative;"><div class="marker-inner" style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(59,130,246,0.8); display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden;">🕵️</div></div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17]
-});
+const PINS = {
+    pending: createPin('red'),
+    success: createPin('green'),
+    nosale: createPin('yellow'),
+    agent: createPin('blue')
+};
 
 // --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -93,56 +92,45 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     const isFirstRun = useRef(true);
 
     useEffect(() => {
-        if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2) { 
-            const lat = Number(uploadedFocus[0]); const lng = Number(uploadedFocus[1]);
-            if (!isNaN(lat) && !isNaN(lng)) { try { map.flyTo([lat, lng], 10, { duration: 1.5 }); } catch(e) {} }
+        if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
+            map.flyTo(uploadedFocus, 10, { duration: 1.5 }); 
         }
     }, [uploadedFocus, map]);
 
+    // FIX: Smart Camera Math Engine prevents Leaflet from crashing on small screens
     useEffect(() => {
         if (selectedZone && selectedZone.geometry) {
             try {
                 const layer = L.geoJSON(selectedZone.geometry);
                 const bounds = layer.getBounds();
-                if (bounds && bounds.isValid()) {
-                    const mapWidth = map.getSize().x;
-                    const leftPad = mapWidth > 650 ? 400 : 20; 
-                    map.fitBounds(bounds, { paddingTopLeft: [leftPad, 20], paddingBottomRight: [20, 20], maxZoom: 13, duration: 1.2 });
-                }
+                const mapWidth = map.getSize().x;
+                // If screen is wide, shift map 400px right. If mobile/small, center it.
+                const leftPad = mapWidth > 650 ? 400 : 20; 
+                map.fitBounds(bounds, { 
+                    paddingTopLeft: [leftPad, 20], 
+                    paddingBottomRight: [20, 20], 
+                    maxZoom: 13, 
+                    duration: 1.2 
+                });
             } catch(e) {}
         }
     }, [selectedZone, map]);
 
     useEffect(() => {
         if (isFirstRun.current) {
-            try {
-                const homeLat = savedHome?.lat ? Number(savedHome.lat) : null;
-                const homeLng = savedHome?.lng ? Number(savedHome.lng) : null;
-                if (homeLat !== null && homeLng !== null && !isNaN(homeLat) && !isNaN(homeLng)) {
-                    map.setView([homeLat, homeLng], savedHome.zoom || 13);
-                } else {
-                    map.locate().on("locationfound", (e) => {
-                        if (e && e.latlng && e.latlng.lat) map.flyTo([e.latlng.lat, e.latlng.lng], 13);
-                    });
-                }
-            } catch(e) {}
+            if (savedHome && savedHome.lat && savedHome.lng) map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
+            else map.locate().on("locationfound", (e) => map.flyTo(e.latlng, 13));
             isFirstRun.current = false;
         }
     }, [map, savedHome]);
     
     useEffect(() => {
         if (!uploadedFocus && !selectedZone && selectedRegion !== "All" && mapPoints.length > 0) {
-            try {
-                let latSum = 0, lngSum = 0, count = 0;
-                mapPoints.forEach(p => { 
-                    const lat = Number(p.latitude); const lng = Number(p.longitude);
-                    if (!isNaN(lat) && !isNaN(lng)) { latSum += lat; lngSum += lng; count++; }
-                });
-                if (count > 0) map.flyTo([latSum / count, lngSum / count], 12, { duration: 1.5 });
-            } catch(e) {}
+            let latSum = 0, lngSum = 0;
+            mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
+            map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
         }
     }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints, selectedZone]); 
-    
     return null;
 };
 
@@ -173,29 +161,26 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
     return null;
 };
 
-const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, assignments = {}, activeAgentFilter = 'All' }) => {
+const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, routeStops = [], toggleRadarTarget }) => {
     const map = useMap();
-    
-    // 🚀 THE ULTIMATE UPDATE FAILSAFE: Force strict math types before React-Leaflet ever reads it.
-    const safeLat = store?.latitude ? Number(store.latitude) : 0;
-    const safeLng = store?.longitude ? Number(store.longitude) : 0;
-    const isValid = store && safeLat !== 0 && safeLng !== 0 && !isNaN(safeLat) && !isNaN(safeLng);
-
-    // Securely abort rendering BEFORE the Leaflet layer is generated if data is bad
-    if (!isValid) return null; 
-
     const tierDef = activeTiers.find(t => t.id === store.tier) || { label: store.tier || 'Silver', value: '📍', iconType: 'emoji' };
-    const isAssignedToActive = activeAgentFilter !== 'All' && assignments[store.id] === activeAgentFilter;
-
-    const finalIcon = useMemo(() => {
-        return isAssignedToActive ? agentPin : getIcon(store, activeTiers);
-    }, [isAssignedToActive, store, activeTiers]);
+    
+    // 🚀 Determine icon based on tactical radar status
+    const isTarget = routeStops.find(s => s.id === store.id);
+    const radarIcon = store.status === 'success' ? PINS.success : 
+                      store.status === 'nosale' ? PINS.nosale : 
+                      isTarget ? PINS.pending : getIcon(store, activeTiers); // Defaults back to your normal icon!
 
     return (
         <Marker 
-            position={[safeLat, safeLng]} 
-            icon={finalIcon} 
-            eventHandlers={{ click: () => handlePinClick(store, map) }} 
+            position={[store.latitude, store.longitude]} 
+            icon={radarIcon} 
+            eventHandlers={{ 
+                click: () => {
+                    if (toggleRadarTarget) toggleRadarTarget(store); // Adds it to the route sequence
+                    handlePinClick(store, map); // Keeps your existing click features working!
+                } 
+            }} 
             riseOnHover={true}
         >
             {!conquestMode && (
@@ -881,34 +866,17 @@ const StoreHUD = ({ store, mapPoints, transactions, inventory, db, appId, user, 
 // --- MAIN WRAPPER ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
 
-    // 🚀 DISPATCH ASSIGNMENT ENGINE & OSRM
-    const [assignments, setAssignments] = useState({}); // Stores { storeId: 'AgentName' }
-    const [activeAgentFilter, setActiveAgentFilter] = useState('All');
+    // 🚀 TACTICAL TRACKING ENGINE & OSRM
+    const [routeStops, setRouteStops] = useState([]);
     const [streetRoute, setStreetRoute] = useState(null);
-
-    // Mock Sales Team (You can link this to your Firebase users later)
-    const agentsList = ['Aldi', 'Budi', 'Citra']; 
-
-    const handleAssignAgent = (storeId, agentName) => {
-        setAssignments(prev => {
-            if (agentName === 'Unassigned') {
-                const newObj = { ...prev };
-                delete newObj[storeId];
-                return newObj;
-            }
-            return { ...prev, [storeId]: agentName };
-        });
-    };
 
     useEffect(() => {
         const fetchStreetRoute = async () => {
-            if (activeAgentFilter === 'All') return setStreetRoute(null);
-            
-            // Get all map points assigned to the selected agent
-            const agentStores = mapPoints.filter(s => assignments[s.id] === activeAgentFilter);
-            if (agentStores.length < 2) return setStreetRoute(null);
-
-            const coordsString = agentStores.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
+            if (routeStops.length < 2) {
+                setStreetRoute(null);
+                return;
+            }
+            const coordsString = routeStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
             try {
                 const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
                 const data = await response.json();
@@ -921,7 +889,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             }
         };
         fetchStreetRoute();
-    }, [assignments, activeAgentFilter, mapPoints]);
+    }, [routeStops]);
+
+    // Function to click a store and add it to the radar
+    const toggleRadarTarget = (merchant) => {
+        setRouteStops(prev => {
+            const exists = prev.find(stop => stop.id === merchant.id);
+            if (exists) return prev.filter(stop => stop.id !== merchant.id);
+            return [...prev, merchant];
+        });
+    };
 
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
@@ -1006,13 +983,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = (customers || [])
-            // IRONCLAD: Strictly check that latitude and longitude exist before attempting to map them
-            .filter(c => c && typeof c.latitude !== 'undefined' && typeof c.longitude !== 'undefined')
+            .filter(c => c && c.latitude && c.longitude)
             .map(c => {
-                const lat = parseFloat(c.latitude); 
-                const lng = parseFloat(c.longitude);
-                
-                // If the coordinate cannot be parsed into a clean number, kill it immediately to protect Leaflet
+                const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
                 if (isNaN(lat) || isNaN(lng)) return null;
 
                 let reg = c.region || "Uncategorized"; let cit = c.city || "Uncategorized";
@@ -1211,59 +1184,22 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
-            {/* 🚀 DISPATCH ASSIGNMENT TABLE (Moved to left to avoid map control collisions) */}
-            <div className="absolute top-4 left-16 z-[400] w-[350px] bg-slate-900/95 border border-slate-700 rounded-xl shadow-2xl flex flex-col max-h-[60vh] font-mono text-white backdrop-blur-md overflow-hidden">
-                <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-                    <h3 className="text-emerald-500 font-bold uppercase mb-3 flex justify-between items-center text-sm">
-                        Mission Dispatch
-                        <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-600">{mapPoints.length} Targets</span>
+            {/* 🚀 FLOATING TACTICAL HUD */}
+            {routeStops.length > 0 && (
+                <div className="absolute top-4 right-16 z-[400] w-72 bg-black/90 border border-emerald-500/30 p-4 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.2)] font-mono">
+                    <h3 className="text-emerald-500 font-bold tracking-widest uppercase mb-3 text-xs flex justify-between items-center">
+                        Live Radar <span className="text-white">{routeStops.length} Targets</span>
                     </h3>
-                    
-                    <div className="flex gap-2 items-center text-xs justify-between">
-                        <span className="text-slate-400">View Route:</span>
-                        <select 
-                            className="bg-black border border-slate-600 text-white rounded p-1.5 outline-none flex-1 ml-2"
-                            value={activeAgentFilter}
-                            onChange={(e) => setActiveAgentFilter(e.target.value)}
-                        >
-                            <option value="All">All Stores (Hide Routes)</option>
-                            {agentsList.map(agent => (
-                                <option key={agent} value={agent}>{agent}'s Route</option>
-                            ))}
-                        </select>
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
+                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ width: '0%' }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-[9px] uppercase tracking-wider text-center font-bold">
+                        <div className="text-red-500 bg-red-500/10 py-1 border border-red-500/20">Pending</div>
+                        <div className="text-green-500 bg-green-500/10 py-1 border border-green-500/20">Success</div>
+                        <div className="text-yellow-500 bg-yellow-500/10 py-1 border border-yellow-500/20">No Sale</div>
                     </div>
                 </div>
-
-                <div className="overflow-y-auto flex-1 p-2 scrollbar-hide">
-                    <table className="w-full text-left text-xs">
-                        <thead className="text-slate-500 sticky top-0 bg-slate-900 z-10">
-                            <tr>
-                                <th className="p-2 font-normal uppercase tracking-wider">Store</th>
-                                <th className="p-2 font-normal uppercase tracking-wider text-right">Assign Agent</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {mapPoints.map(store => (
-                                <tr key={store.id} className="border-b border-slate-800/50 hover:bg-white/5 transition-colors">
-                                    <td className="p-2 truncate max-w-[140px]" title={store.name}>{store.name}</td>
-                                    <td className="p-2 text-right">
-                                        <select 
-                                            className={`bg-black border rounded p-1 outline-none text-[10px] uppercase font-bold tracking-wider cursor-pointer ${assignments[store.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-700 text-slate-500'}`}
-                                            value={assignments[store.id] || 'Unassigned'}
-                                            onChange={(e) => handleAssignAgent(store.id, e.target.value)}
-                                        >
-                                            <option value="Unassigned">Unassigned</option>
-                                            {agentsList.map(agent => (
-                                                <option key={agent} value={agent}>{agent}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            )}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topleft" />
@@ -1287,7 +1223,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-             
+                {/* 🚀 STREET LEVEL ROUTING (Snaps to actual roads) */}
+                    {streetRoute && (
+                        <Polyline 
+                            positions={streetRoute} 
+                            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
+                        />
+                    )}
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
@@ -1348,11 +1290,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
 
                 {conquestMode && mapPoints.map(store => {
-                    // 🚀 IRONCLAD FAILSAFE: If the coordinate is missing, corrupted, or not a number, skip drawing the circle entirely.
-                    if (!store || isNaN(store.latitude) || isNaN(store.longitude) || store.latitude === null || store.longitude === null) {
-                        return null; 
-                    }
-
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
                     else if (store.tier === 'Platinum') baseRadius = 1500;
@@ -1369,21 +1306,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 })}
 
                 {/* 🚀 STREET LEVEL ROUTING (Snaps to roads) */}
-                {streetRoute && Array.isArray(streetRoute) && streetRoute.length > 0 && (
+                {streetRoute && (
                     <Polyline 
-                        key={`route-${activeAgentFilter}`} 
                         positions={streetRoute} 
                         pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
                     />
                 )}
 
-                {mapPoints.map(store => {
-                    // 🚀 IRONCLAD FAILSAFE: Skip drawing the marker if the coordinate is corrupted
-                    if (!store || isNaN(store.latitude) || isNaN(store.longitude) || store.latitude === null || store.longitude === null) {
-                        return null;
-                    }
-                    return <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} assignments={assignments} activeAgentFilter={activeAgentFilter}/>
-                })}
+                {mapPoints.map(store => <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} routeStops={routeStops} toggleRadarTarget={toggleRadarTarget}/>)}
             </MapContainer>
 
             {activeStore && <StoreHUD store={activeStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} isAdmin={isAdmin} setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} />}
