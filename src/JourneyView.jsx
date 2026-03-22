@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, deleteField } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,10 +26,25 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     const todayDate = new Date().toISOString().split('T')[0];
 
     // 🚀 TRIP PLANNER: ASSIGNMENT & SEQUENCE ENGINE
-    const agentsList = ['Aldi', 'Budi', 'Citra']; // Mock Fleet
+    const [agentsList, setAgentsList] = useState([]);
     const [selectedAgent, setSelectedAgent] = useState('All');
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
+
+    // Fetch actual Fleet Personnel from Database
+    useEffect(() => {
+        const fetchAgents = async () => {
+            if (!user || !appId) return;
+            try {
+                const snapshot = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/agents`));
+                const loadedAgents = snapshot.docs.map(doc => doc.data().name).filter(Boolean);
+                setAgentsList(loadedAgents);
+            } catch (error) {
+                console.error("Failed to load Fleet Personnel:", error);
+            }
+        };
+        fetchAgents();
+    }, [db, appId, user]);
 
     // Build the initial route and filter by assigned agent
     useEffect(() => {
@@ -192,8 +207,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                             onChange={(e) => setSelectedAgent(e.target.value)}
                             className="bg-transparent text-emerald-400 font-bold text-sm outline-none cursor-pointer"
                         >
-                            <option value="All">All Unassigned & Assigned</option>
-                            {agentsList.map(a => <option key={a} value={a}>{a}'s Route</option>)}
+                            <option value="All" className="bg-slate-900 text-white">All Unassigned & Assigned</option>
+                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Route</option>)}
                         </select>
                     </div>
 
@@ -273,8 +288,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                                     value={assignments[customer.id] || 'Unassigned'}
                                     onChange={(e) => setAssignments(prev => ({...prev, [customer.id]: e.target.value}))}
                                 >
-                                    <option value="Unassigned">Unassigned</option>
-                                    {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
+                                    <option value="Unassigned" className="bg-slate-900 text-white">Unassigned</option>
+                                    {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
                                 </select>
                             </div>
 
