@@ -94,7 +94,7 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
 
     useEffect(() => {
         if (uploadedFocus && Array.isArray(uploadedFocus) && uploadedFocus.length === 2 && !isNaN(uploadedFocus[0])) { 
-            map.flyTo(uploadedFocus, 10, { duration: 1.5 }); 
+            try { map.flyTo(uploadedFocus, 10, { duration: 1.5 }); } catch(e) {}
         }
     }, [uploadedFocus, map]);
 
@@ -104,34 +104,41 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
             try {
                 const layer = L.geoJSON(selectedZone.geometry);
                 const bounds = layer.getBounds();
-                const mapWidth = map.getSize().x;
-                // If screen is wide, shift map 400px right. If mobile/small, center it.
-                const leftPad = mapWidth > 650 ? 400 : 20; 
-                map.fitBounds(bounds, { 
-                    paddingTopLeft: [leftPad, 20], 
-                    paddingBottomRight: [20, 20], 
-                    maxZoom: 13, 
-                    duration: 1.2 
-                });
+                if (bounds && bounds.isValid()) {
+                    const mapWidth = map.getSize().x;
+                    const leftPad = mapWidth > 650 ? 400 : 20; 
+                    map.fitBounds(bounds, { paddingTopLeft: [leftPad, 20], paddingBottomRight: [20, 20], maxZoom: 13, duration: 1.2 });
+                }
             } catch(e) {}
         }
     }, [selectedZone, map]);
 
     useEffect(() => {
         if (isFirstRun.current) {
-            if (savedHome && savedHome.lat && savedHome.lng) map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
-            else map.locate().on("locationfound", (e) => map.flyTo(e.latlng, 13));
+            try {
+                // IRONCLAD: Strictly check that lat/lng exist and are numbers before moving camera
+                if (savedHome && typeof savedHome.lat !== 'undefined' && typeof savedHome.lng !== 'undefined') {
+                    map.setView([savedHome.lat, savedHome.lng], savedHome.zoom || 13);
+                } else {
+                    map.locate().on("locationfound", (e) => {
+                        if (e && e.latlng) map.flyTo(e.latlng, 13);
+                    });
+                }
+            } catch(e) {}
             isFirstRun.current = false;
         }
     }, [map, savedHome]);
     
     useEffect(() => {
         if (!uploadedFocus && !selectedZone && selectedRegion !== "All" && mapPoints.length > 0) {
-            let latSum = 0, lngSum = 0;
-            mapPoints.forEach(p => { latSum += p.latitude; lngSum += p.longitude; });
-            map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
+            try {
+                let latSum = 0, lngSum = 0;
+                mapPoints.forEach(p => { latSum += (p.latitude || 0); lngSum += (p.longitude || 0); });
+                map.flyTo([latSum / mapPoints.length, lngSum / mapPoints.length], 12, { duration: 1.5 });
+            } catch(e) {}
         }
     }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints, selectedZone]); 
+    
     return null;
 };
 
@@ -993,9 +1000,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = (customers || [])
-            .filter(c => c && c.latitude && c.longitude)
+            // IRONCLAD: Strictly check that latitude and longitude exist before attempting to map them
+            .filter(c => c && typeof c.latitude !== 'undefined' && typeof c.longitude !== 'undefined')
             .map(c => {
-                const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
+                const lat = parseFloat(c.latitude); 
+                const lng = parseFloat(c.longitude);
+                
+                // If the coordinate cannot be parsed into a clean number, kill it immediately to protect Leaflet
                 if (isNaN(lat) || isNaN(lng)) return null;
 
                 let reg = c.region || "Uncategorized"; let cit = c.city || "Uncategorized";
