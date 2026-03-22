@@ -23,13 +23,39 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [streetRoute, setStreetRoute] = useState(null);
 
-    const todaysRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
     const todayDate = new Date().toISOString().split('T')[0];
+
+    // 🚀 TRIP PLANNER: ASSIGNMENT & SEQUENCE ENGINE
+    const agentsList = ['Aldi', 'Budi', 'Citra']; // Mock Fleet
+    const [selectedAgent, setSelectedAgent] = useState('All');
+    const [orderedRoute, setOrderedRoute] = useState([]);
+    const [assignments, setAssignments] = useState({});
+
+    // Build the initial route and filter by assigned agent
+    useEffect(() => {
+        let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
+        if (selectedAgent !== 'All') {
+            baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
+        }
+        setOrderedRoute(baseRoute);
+    }, [customers, selectedDay, selectedAgent, assignments]);
+
+    // Function to swap sequence order
+    const moveStore = (index, direction) => {
+        const newRoute = [...orderedRoute];
+        if (direction === 'up' && index > 0) {
+            [newRoute[index - 1], newRoute[index]] = [newRoute[index], newRoute[index - 1]];
+        } else if (direction === 'down' && index < newRoute.length - 1) {
+            [newRoute[index + 1], newRoute[index]] = [newRoute[index], newRoute[index + 1]];
+        }
+        setOrderedRoute(newRoute);
+    };
 
     // 🚀 OSRM ROUTING ENGINE FOR JOURNEY PLAN
     useEffect(() => {
         const fetchRoute = async () => {
-            const validStops = todaysRoute.filter(c => c && typeof c.latitude === 'number' && typeof c.longitude === 'number' && !isNaN(c.latitude) && !isNaN(c.longitude));
+            // Must use orderedRoute so the map draws the lines in the exact sequence!
+            const validStops = orderedRoute.filter(c => c && typeof c.latitude === 'number' && typeof c.longitude === 'number' && !isNaN(c.latitude) && !isNaN(c.longitude));
             if (validStops.length < 2) return setStreetRoute(null);
             
             const coordsString = validStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
@@ -47,8 +73,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
         fetchRoute();
     }, [todaysRoute]);
     
-    // Determine map center based on the first valid store of the day
-    const validStore = todaysRoute.find(c => c.latitude && c.longitude && !isNaN(c.latitude));
+    // Determine map center based on the first valid store of the sequence
+    const validStore = orderedRoute.find(c => c.latitude && c.longitude && !isNaN(c.latitude));
     const mapCenter = validStore ? [validStore.latitude, validStore.longitude] : [-7.6145, 110.7122];
 
     const handleOpenLocation = (customer) => {
@@ -150,14 +176,28 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/10">
                 <div>
                     <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
-                        <Truck size={24} className="text-orange-500"/> Journey Plan
+                        <Truck size={24} className="text-orange-500"/> Journey Builder
                     </h2>
                     <p className="text-xs text-slate-500 font-mono mt-1">
-                        {todaysRoute.length} STOPS SCHEDULED FOR TODAY
+                        {orderedRoute.length} STOPS IN CURRENT SEQUENCE
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-slate-400"/>
+                <div className="flex items-center gap-3">
+                    
+                    {/* 🚀 NEW AGENT FILTER */}
+                    <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
+                        <span className="text-xs text-slate-400 pl-2 font-bold uppercase">Fleet:</span>
+                        <select 
+                            value={selectedAgent} 
+                            onChange={(e) => setSelectedAgent(e.target.value)}
+                            className="bg-transparent text-emerald-400 font-bold text-sm outline-none cursor-pointer"
+                        >
+                            <option value="All">All Unassigned & Assigned</option>
+                            {agentsList.map(a => <option key={a} value={a}>{a}'s Route</option>)}
+                        </select>
+                    </div>
+
+                    <Calendar size={16} className="text-slate-400 ml-2"/>
                     <select 
                         value={selectedDay} 
                         onChange={(e) => setSelectedDay(e.target.value)}
@@ -183,7 +223,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
                         />
                     )}
 
-                    {todaysRoute.map((store, idx) => {
+                    {orderedRoute.map((store, idx) => {
                         if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude)) return null;
                         
                         // Change pin color if already visited
@@ -216,12 +256,28 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
 
             {/* CARDS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {todaysRoute.map((customer, idx) => {
+                {orderedRoute.map((customer, idx) => {
                     const isVisited = customer.lastVisit === todayDate;
 
                     return (
                         <div key={customer.id} className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden group hover:shadow-lg transition-all flex flex-col ${isVisited ? 'border-emerald-500/50 dark:border-emerald-500/30' : 'dark:border-slate-700 hover:border-orange-500'}`}>
                             
+                            {/* 🚀 TRIP BUILDER CONTROLS */}
+                            <div className="bg-slate-900 border-b border-slate-700 p-2 flex justify-between items-center z-10">
+                                <div className="flex gap-1">
+                                    <button onClick={() => moveStore(idx, 'up')} disabled={idx === 0} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↑</button>
+                                    <button onClick={() => moveStore(idx, 'down')} disabled={idx === orderedRoute.length - 1} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↓</button>
+                                </div>
+                                <select 
+                                    className={`bg-black text-xs font-bold uppercase p-1.5 rounded outline-none cursor-pointer border ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'}`}
+                                    value={assignments[customer.id] || 'Unassigned'}
+                                    onChange={(e) => setAssignments(prev => ({...prev, [customer.id]: e.target.value}))}
+                                >
+                                    <option value="Unassigned">Unassigned</option>
+                                    {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                            </div>
+
                             {/* IMAGE & BADGE HEADER */}
                             <div className="h-32 bg-slate-200 dark:bg-slate-700 relative">
                                 {customer.storeImage ? (
