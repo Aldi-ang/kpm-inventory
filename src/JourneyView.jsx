@@ -71,7 +71,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy }) => {
             }
         };
         fetchRoute();
-    }, [todaysRoute]);
+    }, [orderedRoute]); // 🚀 FIX: Updated to the new Trip Builder array to prevent ReferenceError crashes!
     
     // Determine map center based on the first valid store of the sequence
     const validStore = orderedRoute.find(c => c.latitude && c.longitude && !isNaN(c.latitude));
