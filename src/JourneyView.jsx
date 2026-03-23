@@ -349,16 +349,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     <button onClick={() => moveStore(idx, 'down')} disabled={idx === orderedRoute.length - 1} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↓</button>
                                 </div>
                                 <select 
-                                    className={`bg-slate-900 text-xs font-bold uppercase p-1.5 rounded outline-none border ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'} ${isAdmin ? 'cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
+                                    className={`bg-slate-900 text-xs font-bold uppercase p-1.5 rounded outline-none border transition-all ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed bg-slate-950'}`}
                                     value={assignments[customer.id] || 'Unassigned'}
                                     onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                     style={{ colorScheme: 'dark' }}
                                     disabled={!isAdmin}
-                                    title={isAdmin ? "Assign Agent" : "Admin Only"}
+                                    title={isAdmin ? "Assign Agent" : "Access Denied: Admin Only"}
                                 >
                                     <option value="Unassigned" className="bg-slate-900 text-white">Unassigned</option>
                                     {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
-                                </select>\
+                                </select>
                             </div>
 
                             {/* IMAGE & BADGE HEADER */}
