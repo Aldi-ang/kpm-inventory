@@ -14,10 +14,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
+    // 🚀 UPGRADE: Added userRole to manage System Access Levels
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
         allowedPayments: ['Cash'], 
-        allowedTiers: ['Retail', 'Ecer']
+        allowedTiers: ['Retail', 'Ecer'],
+        userRole: 'AGENT' 
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -454,9 +456,25 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                             </select>
 
                             <input type="text" placeholder="Agent Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
-                            <input type="email" placeholder="Google Account Email (Required for Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="w-full bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-mono"/>
+                            
+                            {/* 🚀 ADMIN ONLY: SYSTEM ACCESS CONTROL INJECTED NEXT TO EMAIL */}
+                            <div className="flex gap-2 mb-2">
+                                <input type="email" placeholder="Google Account Email (Required for Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
+                                {isAdmin && (
+                                    <select 
+                                        className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : 'border-slate-700 text-white focus:border-blue-500'}`}
+                                        value={newAgent.userRole || 'AGENT'} 
+                                        onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
+                                        style={{ colorScheme: 'dark' }}
+                                    >
+                                        <option value="AGENT" className="bg-slate-900 text-white">Salesman</option>
+                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Master Admin</option>
+                                    </select>
+                                )}
+                            </div>
+                            
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
-                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
+                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>\
                             
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
