@@ -86,7 +86,10 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
                     allowedPayments: newAgent.allowedPayments,
-                    allowedTiers: newAgent.allowedTiers        
+                    allowedTiers: newAgent.allowedTiers,
+                    // 🚀 UPGRADE: Force Firebase to permanently save the new fields!
+                    userRole: newAgent.userRole || 'AGENT',
+                    location: newAgent.location || 'Headquarters'
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) {
@@ -131,10 +134,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
     const handleEditClick = (e, agent) => {
         e.stopPropagation();
-        setNewAgent({ 
+        setNewAgent({
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'],
-            allowedTiers: agent.allowedTiers || ['Retail', 'Ecer']
+            allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
+            // 🚀 UPGRADE: Ensure the form loads their Location and Admin Access!
+            userRole: agent.userRole || 'AGENT',
+            location: agent.location || 'Headquarters'
         });
         setEditingAgentId(agent.id);
         setIsAddingAgent(true);
