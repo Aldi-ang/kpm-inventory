@@ -549,20 +549,34 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                             <div className="space-y-2 pl-2 border-l-2 border-slate-800">
                                                 {locAgents.sort((a, b) => (b.userRole === 'ADMIN' ? 1 : 0) - (a.userRole === 'ADMIN' ? 1 : 0)).map(m => (
                                                     <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
-                                                         className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center gap-3 ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
+                                                         className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
                                                         
-                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.role === 'Canvas' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                            {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
-                                                        </div>
-                                                        
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : 'text-white'}`}>{m.name}</h3>
+                                                        {/* LEFT SIDE: Avatar & Info */}
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.role === 'Canvas' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                                {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
                                                             </div>
-                                                            <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Head of Distribution</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
-                                                            </p>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : 'text-white'}`}>{m.name}</h3>
+                                                                <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                    {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Head of Distribution</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
+                                                                </p>
+                                                            </div>
                                                         </div>
+
+                                                        {/* 🚀 RESTORED RIGHT SIDE: Status Badge & Edit/Delete Buttons */}
+                                                        <div className="flex flex-col items-end gap-2 shrink-0">
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>
+                                                                {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
+                                                            </span>
+                                                            {isAdmin && (
+                                                                <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, m); }} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteAgent(e, m); }} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
                                                     </div>
                                                 ))}
                                             </div>
