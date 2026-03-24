@@ -14,12 +14,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
-    // 🚀 UPGRADE: Added userRole to manage System Access Levels
+    // 🚀 UPGRADE: Added Location and userRole to manage Hierarchy
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
         allowedPayments: ['Cash'], 
         allowedTiers: ['Retail', 'Ecer'],
-        userRole: 'AGENT' 
+        userRole: 'AGENT',
+        location: 'Headquarters' // Default distribution area
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -473,6 +474,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 )}
                             </div>
                             
+                            {/* 🚀 HIERARCHY: Distribution Area Input */}
+                            <input type="text" placeholder="Distribution Area (e.g., Solo, Jakarta, HQ)" value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="w-full bg-slate-900 border border-orange-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-orange-500"/>
+                            
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>\
                             
@@ -509,44 +513,56 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                     {isLoading ? (
                         <div className="text-center p-10 text-slate-500 animate-pulse">Loading Fleet Data...</div>
+
+
                     ) : agents.length === 0 && !isAddingAgent ? (
-                        <div className="text-center p-10 text-slate-500 opacity-50 flex flex-col items-center">
-                            <Truck size={32} className="mb-3"/>
-                            <p className="text-xs uppercase tracking-widest">No Fleet Deployed</p>
-                        </div>
-                    ) : (
-                        agents.map(m => (
-                            <div 
-                                key={m.id} 
-                                onClick={() => setSelectedAgent(m)}
-                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${selectedAgent?.id === m.id ? 'bg-blue-900/30 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-slate-800 border-slate-700 hover:border-slate-500'}`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-full ${selectedAgent?.id === m.id ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400 group-hover:bg-slate-600'}`}><User size={16}/></div>
-                                    <div>
-                                        <h4 className="font-bold text-sm text-white leading-tight">{m.name}</h4>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${m.role === 'Canvas' ? 'bg-purple-900/50 text-purple-400 border border-purple-500/30' : 'bg-blue-900/50 text-blue-400 border border-blue-500/30'}`}>
-                                                {m.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}
-                                            </span>
-                                            <span className="text-[9px] text-slate-400 font-mono truncate max-w-[120px]">{m.email || 'No Email'}</span>
-                                        </div>
+                                    <div className="text-center py-10">
+                                        <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
+                                        <p className="text-slate-500 text-sm">No personnel found.</p>
+                                        <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
                                     </div>
-                                </div>
-                                <div className="text-right shrink-0 flex flex-col items-end gap-2">
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>
-                                        {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
-                                    </span>
-                                    {isAdmin && (
-                                        <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400"><Pencil size={14}/></button>
-                                            <button onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                                ) : (
+                                    // 🚀 HIERARCHY ENGINE: Group by Location, Sort Admins to the top
+                                    Object.entries(
+                                        agents.reduce((acc, agent) => {
+                                            const loc = agent.location || 'Unassigned / Headquarters';
+                                            if (!acc[loc]) acc[loc] = [];
+                                            acc[loc].push(agent);
+                                            return acc;
+                                        }, {})
+                                    ).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
+                                        <div key={location} className="mb-5">
+                                            {/* Location Header */}
+                                            <div className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1">
+                                                <MapPin size={14} className="text-orange-500"/>
+                                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
+                                                <span className="text-[9px] text-slate-600 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
+                                            </div>
+                                            
+                                            {/* Area Roster */}
+                                            <div className="space-y-2 pl-2 border-l-2 border-slate-800">
+                                                {locAgents.sort((a, b) => (b.userRole === 'ADMIN' ? 1 : 0) - (a.userRole === 'ADMIN' ? 1 : 0)).map(m => (
+                                                    <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
+                                                         className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center gap-3 ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
+                                                        
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.role === 'Canvas' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                            {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
+                                                        </div>
+                                                        
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : 'text-white'}`}>{m.name}</h3>
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Head of Distribution</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))
-                    )}
+                                    ))
+                                )}
                 </div>
             </div>
 
