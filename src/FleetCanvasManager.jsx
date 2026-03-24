@@ -484,7 +484,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                             <input type="text" placeholder="Distribution Area (e.g., Solo, Jakarta, HQ)" value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="w-full bg-slate-900 border border-orange-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-orange-500"/>
                             
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
-                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>\
+                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
                             
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
@@ -539,19 +539,20 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                             return acc;
                                         }, {})
                                     ).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
-                                        <div key={location} className="mb-5">
-                                            {/* Location Header */}
-                                            <div className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1">
+                                        <details key={location} className="mb-5 group" open>
+                                            {/* 🚀 UPGRADE: Clickable Accordion Header */}
+                                            <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
                                                 <MapPin size={14} className="text-orange-500"/>
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
                                                 <span className="text-[9px] text-slate-600 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
-                                            </div>
-                                            
+                                                <ChevronDown size={14} className="text-slate-500 transition-transform group-open:rotate-180" />
+                                            </summary>
+
                                             {/* Area Roster */}
-                                            <div className="space-y-2 pl-2 border-l-2 border-slate-800">
+                                            <div className="space-y-2 pl-2 border-l-2 border-slate-800 mt-2">
                                                 {locAgents.sort((a, b) => (b.userRole === 'ADMIN' ? 1 : 0) - (a.userRole === 'ADMIN' ? 1 : 0)).map(m => (
                                                     <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
-                                                         className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
+                                                         className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
                                                         
                                                         {/* LEFT SIDE: Avatar & Info */}
                                                         <div className="flex items-center gap-3 min-w-0">
@@ -572,7 +573,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                                 {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                                             </span>
                                                             {isAdmin && (
-                                                                <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
                                                                     <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, m); }} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
                                                                     <button onClick={(e) => { e.stopPropagation(); handleDeleteAgent(e, m); }} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
                                                                 </div>
@@ -582,7 +583,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
+                                        </details>
                                     ))
                                 )}
                 </div>
