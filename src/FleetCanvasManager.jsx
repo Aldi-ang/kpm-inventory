@@ -528,10 +528,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
                                     </div>
                                 ) : (
-                                    // 🚀 HIERARCHY ENGINE: Group by Location, Sort Admins to the top
+                                    // 🚀 HIERARCHY ENGINE: Group by Location (Case & Space Insensitive), Sort Admins to the top
                                     Object.entries(
                                         agents.reduce((acc, agent) => {
-                                            const loc = agent.location || 'Unassigned / Headquarters';
+                                            // 🚀 FIX: Sanitize the text! Remove extra spaces and make uppercase so "Solo", "solo ", and " SOLO" merge perfectly.
+                                            let loc = (agent.location || 'UNASSIGNED / HEADQUARTERS').trim().toUpperCase();
+                                            
                                             if (!acc[loc]) acc[loc] = [];
                                             acc[loc].push(agent);
                                             return acc;
