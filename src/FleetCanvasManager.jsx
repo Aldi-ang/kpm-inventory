@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Truck, UserPlus, PackagePlus, Save, Archive, 
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare
+    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
@@ -535,9 +535,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                     // 🚀 HIERARCHY ENGINE: Group by Province -> Location, Sort Admins to the top
                                     Object.entries(
                                         agents.reduce((acc, agent) => {
-                                            // 🚀 FIX: Sanitize text to merge typos (e.g., "Solo " becomes "SOLO")
-                                            let prov = (agent.province || 'CENTRAL JAVA').trim().toUpperCase();
-                                            let loc = (agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
+                                            // 🚀 FIX: Safely force to String, then sanitize text to merge typos 
+                                            let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
+                                            let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
                                             
                                             if (!acc[prov]) acc[prov] = {};
                                             if (!acc[prov][loc]) acc[prov][loc] = [];
