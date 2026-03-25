@@ -552,7 +552,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                 <Globe size={16} className="text-purple-500"/>
                                                 <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">{province}</h2>
                                                 <span className="text-[10px] text-slate-400 ml-auto bg-black/50 px-2 py-0.5 rounded-md border border-slate-700">
-                                                    {Object.values(areas).flat().length} Staff
+                                                    {Object.values(areas).reduce((sum, arr) => sum + arr.length, 0)} Staff
                                                 </span>
                                                 <ChevronDown size={14} className="text-slate-400 transition-transform group-open/prov:rotate-180" />
                                             </summary>
