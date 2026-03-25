@@ -12,6 +12,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [merchantMood, setMerchantMood] = useState("idle");
     const [doorsOpen, setDoorsOpen] = useState(false);
 
+    // 🚀 RETUR ENGINE: Track if we are processing Bad Stock
+    const [isReturMode, setIsReturMode] = useState(false);
+
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState("");
     const [paymentMethod, setPaymentMethod] = useState(allowedPayments[0] || "Cash");
@@ -364,7 +367,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto) return;
         
         const finalCust = customerName.trim();
-        const finalMethod = paymentMethod;
+        // 🚀 RETUR ENGINE: Force payment method if in Retur Mode
+        const finalMethod = isReturMode ? 'Retur/BS' : paymentMethod;
         const finalCart = [...cart];
         const finalTotal = cartTotal;
 
@@ -378,7 +382,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 latitude: agentLocation?.latitude || 0,
                 longitude: agentLocation?.longitude || 0,
                 timestamp: new Date().toISOString(),
-                tempoDays: paymentMethod === 'Titip' ? tempoDays : null
+                tempoDays: paymentMethod === 'Titip' ? tempoDays : null,
+                // 🚀 RETUR ENGINE: Add the quarantine flags!
+                isRetur: isReturMode,
+                type: isReturMode ? 'RETUR' : 'SALE'
             };
 
             // Pass proofPayload as the 5th argument
@@ -457,6 +464,22 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 )}
                 
+                {/* 🚀 RETUR ENGINE: The Red Toggle Switch */}
+                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-inner ${isReturMode ? 'bg-red-900/20 border-red-500/50' : 'bg-[#1a1815] border-[#3e3226]'}`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${isReturMode ? 'bg-red-500/20 text-red-500' : 'bg-[#26211c] text-[#8b7256]'}`}>
+                            <AlertCircle size={16} />
+                        </div>
+                        <div>
+                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" : "text-[#8b7256]"}`}>Retur / Bad Stock</h4>
+                            <p className={`text-[9px] ${isReturMode ? "text-red-400/80" : "text-[#5c4b3a]"}`}>Take back damaged goods & reduce Piutang</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setIsReturMode(!isReturMode)} className={`w-12 h-6 rounded-full transition-colors relative shadow-inner cursor-pointer ${isReturMode ? 'bg-red-600' : 'bg-[#26211c] border border-[#3e3226]'}`}>
+                        <div className={`w-4 h-4 rounded-full absolute top-1 transition-all shadow-md ${isReturMode ? 'bg-white left-7' : 'bg-[#5c4b3a] left-1'}`}></div>
+                    </button>
+                </div>
+
                 <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
                     <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
                     
@@ -673,15 +696,15 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                     
                     {/* BUTTON DISABLED IF NO PHOTO */}
-                    <button 
-                        onClick={handleFinalDeal} 
-                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking' || !txProofPhoto} 
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' && txProofPhoto ? 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]' : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                    <button
+                        onClick={handleFinalDeal}
+                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking' || !txProofPhoto}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' && txProofPhoto ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
-                        {gpsStatus === 'checking' ? 'Awaiting GPS...' : 
+                        {gpsStatus === 'checking' ? 'Awaiting GPS...' :
                          gpsStatus === 'too_far' ? 'Return to Store' :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
-                         customerName.trim() ? <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</> : "SIGN MANIFEST >"}
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> QUARANTINE BS</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
