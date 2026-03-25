@@ -465,18 +465,18 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 )}
                 
                 {/* 🚀 RETUR ENGINE: The Red Toggle Switch */}
-                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-inner ${isReturMode ? 'bg-red-900/20 border-red-500/50' : 'bg-[#1a1815] border-[#3e3226]'}`}>
+                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-lg ${isReturMode ? 'bg-red-900/40 border-red-500' : 'bg-[#2a241e] border-[#8b7256]'}`}>
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isReturMode ? 'bg-red-500/20 text-red-500' : 'bg-[#26211c] text-[#8b7256]'}`}>
+                        <div className={`p-2 rounded-lg shadow-sm ${isReturMode ? 'bg-red-500/20 text-red-400' : 'bg-[#3e3226] text-[#ffca28]'}`}>
                             <AlertCircle size={16} />
                         </div>
                         <div>
-                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" : "text-[#8b7256]"}`}>Retur / Bad Stock</h4>
-                            <p className={`text-[9px] ${isReturMode ? "text-red-400/80" : "text-[#5c4b3a]"}`}>Take back damaged goods & reduce Piutang</p>
+                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]" : "text-[#ffca28]"}`}>Retur / Bad Stock</h4>
+                            <p className={`text-[9px] font-bold tracking-wider ${isReturMode ? "text-red-300" : "text-[#d4c5a3]"}`}>Take back damaged goods & reduce Piutang</p>
                         </div>
                     </div>
-                    <button onClick={() => setIsReturMode(!isReturMode)} className={`w-12 h-6 rounded-full transition-colors relative shadow-inner cursor-pointer ${isReturMode ? 'bg-red-600' : 'bg-[#26211c] border border-[#3e3226]'}`}>
-                        <div className={`w-4 h-4 rounded-full absolute top-1 transition-all shadow-md ${isReturMode ? 'bg-white left-7' : 'bg-[#5c4b3a] left-1'}`}></div>
+                    <button onClick={() => setIsReturMode(!isReturMode)} className={`w-12 h-6 rounded-full transition-all relative shadow-inner cursor-pointer border-2 ${isReturMode ? 'bg-red-500 border-red-400' : 'bg-[#1a1815] border-[#8b7256]'}`}>
+                        <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all shadow-md ${isReturMode ? 'bg-white left-6' : 'bg-[#ffca28] left-0.5'}`}></div>
                     </button>
                 </div>
 
