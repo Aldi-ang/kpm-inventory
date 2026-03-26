@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -13,9 +13,24 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// 🚀 SMART MAP CONTROLLER: Forces map to recenter dynamically
+const MapRecenter = ({ center, trigger }) => {
+    const map = useMap();
+    React.useEffect(() => {
+        if (center && center.length === 2) {
+            // Flies smoothly back to your route
+            map.flyTo(center, 12, { duration: 1.2 }); 
+        }
+    }, [center, trigger, map]);
+    return null;
+};
+
 // 🚀 FIX: Added `isAdmin` prop to enforce security
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+    
+    // 🚀 MAP STATE: Trigger for the Home Button
+    const [recenterTrigger, setRecenterTrigger] = useState(0);
     
     // --- CHECK-IN STATE ---
     const [checkInCustomer, setCheckInCustomer] = useState(null); 
@@ -292,7 +307,19 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
             {/* 🚀 JOURNEY MAP RADAR (Injected between Header and Cards) */}
             <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl mb-2 relative z-0">
+                
+                {/* 🚀 THE HOME / RECENTER BUTTON */}
+                <button 
+                    onClick={() => setRecenterTrigger(prev => prev + 1)}
+                    className="absolute top-4 right-4 z-[400] bg-slate-800/80 p-2.5 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group"
+                    title="Recenter Map on Route"
+                >
+                    <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
+                </button>
+
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
+                    {/* 🚀 INJECT RECENTER ENGINE */}
+                    <MapRecenter center={mapCenter} trigger={recenterTrigger} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
                     {streetRoute && (
