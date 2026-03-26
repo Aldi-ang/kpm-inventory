@@ -85,14 +85,17 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
-        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, and Name
+        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, Name, and Plate Number
         const isDupEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         const isDupPhone = agents.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
         const isDupName = agents.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
+        // 🚀 UPGRADE: Check Plate Number (but ignore it if the input is left blank)
+        const isDupPlate = newAgent.vehicle?.trim() && agents.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
         if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
         if (isDupPhone) return alert(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
         if (isDupName) return alert(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered. Please use a unique name (e.g., "Budi Solo").`);
+        if (isDupPlate) return alert(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned to another active personnel.`);
 
         try {
             const batch = writeBatch(db);
