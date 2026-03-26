@@ -187,9 +187,37 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
+    // 🚀 MULTI-AGENT COLOR & SEQUENCE ENGINE
+    const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
+    
+    // Calculates per-agent stop numbers and colors dynamically
+    const storeMetrics = React.useMemo(() => {
+        const counters = {};
+        const metrics = {};
+        
+        orderedRoute.forEach(store => {
+            const agent = assignments[store.id] || 'Unassigned';
+            if (!counters[agent]) counters[agent] = 0;
+            counters[agent]++; // Count up specifically for this agent
+            
+            let color = '#64748b'; // Default Slate Gray for Unassigned
+            if (agent !== 'Unassigned') {
+                const agentIdx = agentsList.indexOf(agent);
+                color = AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
+            }
+            
+            metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
+        });
+        return metrics;
+    }, [orderedRoute, assignments, agentsList]);
+
     // 🚀 OSRM ROUTING ENGINE FOR JOURNEY PLAN
     useEffect(() => {
         const fetchRoute = async () => {
+            // 🚀 UPGRADE: Only draw route lines if viewing a SINGLE agent.
+            // Drawing one continuous line across 5 different trucks creates a chaotic spiderweb!
+            if (selectedAgent === 'All') return setStreetRoute(null);
+
             // Must use orderedRoute so the map draws the lines in the exact sequence!
             const validStops = orderedRoute.filter(c => c && typeof c.latitude === 'number' && typeof c.longitude === 'number' && !isNaN(c.latitude) && !isNaN(c.longitude));
             if (validStops.length < 2) return setStreetRoute(null);
@@ -380,20 +408,26 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         <Polyline positions={streetRoute} pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
                     )}
 
-                    {orderedRoute.map((store, idx) => {
+                    {orderedRoute.map((store) => {
                         if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude)) return null;
                         
                         const isVisited = store.lastVisit === todayDate;
                         const iconHtml = isVisited ? '✅' : '📍';
-                        const ringColor = isVisited ? '#10b981' : '#f97316';
                         
+                        // 🚀 GET PER-AGENT DATA (Multi-Color Engine)
+                        const metric = storeMetrics[store.id];
+                        const ringColor = isVisited ? '#10b981' : metric.color;
+                        const stopNum = metric.stopNumber;
+                        const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
+                        
+                        // 🚀 UPGRADE: Custom Icon with Dark Frosted Glass Text Label
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
                                 <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; pointer-events: none;">
                                     <div style="background-color: #1e293b; width: 30px; height: 30px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px ${ringColor}80; flex-shrink: 0; pointer-events: auto;">${iconHtml}</div>
                                     <div style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid ${ringColor}; color: white; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 0.05em; pointer-events: auto;">
-                                        <span style="color: ${ringColor}; margin-right: 4px;">#${idx + 1}</span> ${store.name}
+                                        <span style="color: ${ringColor}; margin-right: 4px;">#${stopNum}</span> ${store.name}
                                     </div>
                                 </div>
                             `,
@@ -408,23 +442,26 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     <div className="bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-600 w-[220px]">
                                         <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
                                             <p className="font-bold text-white text-sm leading-tight pr-2">{store.name}</p>
-                                            <span className={`text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 ${isVisited ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                                {isVisited ? 'DONE' : `Stop #${idx + 1}`}
+                                            <span 
+                                                className="text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 uppercase tracking-widest"
+                                                style={{ backgroundColor: `${ringColor}33`, color: ringColor }}
+                                            >
+                                                {isVisited ? 'DONE' : `${metric.agentName === 'Unassigned' ? 'Unassigned' : metric.agentName.split(' ')[0]} #${stopNum}`}
                                             </span>
                                         </div>
                                         
                                         <div className="space-y-3">
                                             {/* Sequence Jump Dropdown */}
                                             <div>
-                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Change Position:</label>
+                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Global Position:</label>
                                                 <select
                                                     className="w-full bg-slate-900 text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
-                                                    value={idx}
-                                                    onChange={(e) => jumpToSequence(idx, Number(e.target.value))}
+                                                    value={globalIdx}
+                                                    onChange={(e) => jumpToSequence(globalIdx, Number(e.target.value))}
                                                     style={{ colorScheme: 'dark' }}
                                                 >
                                                     {orderedRoute.map((_, i) => (
-                                                        <option key={i} value={i} className="bg-slate-900 text-white">Stop #{i + 1}</option>
+                                                        <option key={i} value={i} className="bg-slate-900 text-white">Global Stop #{i + 1}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -496,8 +533,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                         <Store size={32} opacity={0.5}/>
                                     </div>
                                 )}
-                                <div className={`absolute top-2 left-2 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 ${isVisited ? 'bg-emerald-600/80' : 'bg-black/60'}`}>
-                                    {isVisited ? 'VISITED' : `STOP #${idx + 1}`}
+                                <div 
+                                    className={`absolute top-2 left-2 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 uppercase tracking-widest shadow-lg`}
+                                    style={{ backgroundColor: isVisited ? 'rgba(16, 185, 129, 0.9)' : `${storeMetrics[customer.id]?.color}F0` }}
+                                >
+                                    {isVisited ? 'VISITED' : `${storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} #${storeMetrics[customer.id]?.stopNumber}`}
                                 </div>
                                 
                                 {customer.lastVisitNote && !isVisited && (
