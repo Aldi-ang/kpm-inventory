@@ -15,19 +15,38 @@ L.Icon.Default.mergeOptions({
 
 
 
-// 🚀 SMART MAP CONTROLLER: Manual Override Only (No auto-panning)
-const MapRecenter = ({ center, trigger }) => {
+// 🚀 SMART MAP CONTROLLER: Home Memory & Manual Override
+const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
 
+    // Initial Load: Try saved home, otherwise fallback to route center
     React.useEffect(() => {
-        if (isFirstRun.current) { isFirstRun.current = false; return; } // Ignore first load
-        
-        // 🚀 ONLY fires when the physical Home button is clicked
-        if (trigger > 0 && center && center.length === 2) {
-            map.flyTo(center, 12, { duration: 1.2 });
+        if (isFirstRun.current) { 
+            isFirstRun.current = false;
+            if (savedHome) map.setView(savedHome.center, savedHome.zoom);
+            else if (defaultCenter) map.setView(defaultCenter, 12);
+            return; 
         }
-    }, [trigger]); // Strictly ignores day/center changes to keep your view locked
+    }, [map, savedHome, defaultCenter]);
+    
+    // 🚀 Fly to Home (Recenter Trigger)
+    React.useEffect(() => {
+        if (trigger > 0) {
+            if (savedHome) map.flyTo(savedHome.center, savedHome.zoom, { duration: 1.2 });
+            else if (defaultCenter) map.flyTo(defaultCenter, 12, { duration: 1.2 });
+        }
+    }, [trigger]);
+
+    // 🚀 Save Current View as Home (Save Trigger)
+    React.useEffect(() => {
+        if (saveTrigger > 0) {
+            const center = [map.getCenter().lat, map.getCenter().lng];
+            const zoom = map.getZoom();
+            onSaveHome({ center, zoom });
+        }
+    }, [saveTrigger]);
+
     return null;
 };
 
@@ -36,8 +55,16 @@ const MapRecenter = ({ center, trigger }) => {
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 MAP STATE: Trigger for the Home Button
+    // 🚀 MAP STATE: Triggers & Home Memory Engine
     const [recenterTrigger, setRecenterTrigger] = useState(0);
+    const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
+    const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
+
+    const handleSaveHome = (viewData) => {
+        setSavedHome(viewData);
+        localStorage.setItem('journeyHomeView', JSON.stringify(viewData));
+        if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
+    };
     
     // --- CHECK-IN STATE ---
     const [checkInCustomer, setCheckInCustomer] = useState(null); 
@@ -315,18 +342,29 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl mb-2 relative z-0">
                 
-                {/* 🚀 THE MANUAL HOME BUTTON */}
-                <button 
-                    onClick={() => setRecenterTrigger(prev => prev + 1)}
-                    className="absolute top-4 right-4 z-[400] bg-slate-800/80 p-2.5 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group"
-                    title="Recenter Map on Active Route"
-                >
-                    <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
-                </button>
+                {/* 🚀 MAP CONTROLS: Boosted z-[1000] to stay visibly above Leaflet layers */}
+                <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-3 pointer-events-auto">
+                    <button 
+                        onClick={() => setSaveHomeTrigger(prev => prev + 1)}
+                        className="bg-slate-800/90 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2 backdrop-blur-sm"
+                        title="Save Current Map View as Default Home"
+                    >
+                        <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
+                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Set Home</span>
+                    </button>
+                    <button 
+                        onClick={() => setRecenterTrigger(prev => prev + 1)}
+                        className="bg-slate-800/90 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2 backdrop-blur-sm"
+                        title="Return to Saved Home View"
+                    >
+                        <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
+                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Fly Home</span>
+                    </button>
+                </div>
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
                     {/* 🚀 INJECT LOCKED CAMERA ENGINE */}
-                    <MapRecenter center={mapCenter} trigger={recenterTrigger} />
+                    <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
                     {streetRoute && (
@@ -340,10 +378,18 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const iconHtml = isVisited ? '✅' : '📍';
                         const ringColor = isVisited ? '#10b981' : '#f97316';
                         
+                        // 🚀 UPGRADE: Custom Icon with Dark Frosted Glass Text Label
                         const customIcon = L.divIcon({
-                            className: 'custom-icon',
-                            html: `<div style="background-color: #1e293b; width: 30px; height: 30px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px ${ringColor}80;">${iconHtml}</div>`,
-                            iconSize: [30, 30],
+                            className: 'bg-transparent border-none',
+                            html: `
+                                <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; pointer-events: none;">
+                                    <div style="background-color: #1e293b; width: 30px; height: 30px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px ${ringColor}80; flex-shrink: 0; pointer-events: auto;">${iconHtml}</div>
+                                    <div style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid ${ringColor}; color: white; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 0.05em; pointer-events: auto;">
+                                        <span style="color: ${ringColor}; margin-right: 4px;">#${idx + 1}</span> ${store.name}
+                                    </div>
+                                </div>
+                            `,
+                            iconSize: [200, 30],
                             iconAnchor: [15, 15]
                         });
 
