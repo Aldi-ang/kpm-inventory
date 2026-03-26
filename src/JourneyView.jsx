@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -13,17 +13,24 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// 🚀 SMART MAP CONTROLLER: Forces map to recenter dynamically
+
+
+// 🚀 SMART MAP CONTROLLER: Manual Override Only (No auto-panning)
 const MapRecenter = ({ center, trigger }) => {
     const map = useMap();
+    const isFirstRun = React.useRef(true);
+
     React.useEffect(() => {
-        if (center && center.length === 2) {
-            // Flies smoothly back to your route
-            map.flyTo(center, 12, { duration: 1.2 }); 
+        if (isFirstRun.current) { isFirstRun.current = false; return; } // Ignore first load
+        
+        // 🚀 ONLY fires when the physical Home button is clicked
+        if (trigger > 0 && center && center.length === 2) {
+            map.flyTo(center, 12, { duration: 1.2 });
         }
-    }, [center, trigger, map]);
+    }, [trigger]); // Strictly ignores day/center changes to keep your view locked
     return null;
 };
+
 
 // 🚀 FIX: Added `isAdmin` prop to enforce security
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
@@ -305,35 +312,30 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </div>
             </div>
 
-            {/* 🚀 JOURNEY MAP RADAR (Injected between Header and Cards) */}
+            {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl mb-2 relative z-0">
                 
-                {/* 🚀 THE HOME / RECENTER BUTTON */}
+                {/* 🚀 THE MANUAL HOME BUTTON */}
                 <button 
                     onClick={() => setRecenterTrigger(prev => prev + 1)}
                     className="absolute top-4 right-4 z-[400] bg-slate-800/80 p-2.5 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group"
-                    title="Recenter Map on Route"
+                    title="Recenter Map on Active Route"
                 >
                     <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
                 </button>
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
-                    {/* 🚀 INJECT RECENTER ENGINE */}
+                    {/* 🚀 INJECT LOCKED CAMERA ENGINE */}
                     <MapRecenter center={mapCenter} trigger={recenterTrigger} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
                     {streetRoute && (
-                        <Polyline 
-                            positions={streetRoute} 
-                            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15' }} 
-                            className="animate-pulse"
-                        />
+                        <Polyline positions={streetRoute} pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
                     )}
 
                     {orderedRoute.map((store, idx) => {
                         if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude)) return null;
                         
-                        // Change pin color if already visited
                         const isVisited = store.lastVisit === todayDate;
                         const iconHtml = isVisited ? '✅' : '📍';
                         const ringColor = isVisited ? '#10b981' : '#f97316';
@@ -347,14 +349,28 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
-                                <LeafletTooltip direction="top" opacity={1}>
-                                    <div className="bg-slate-900 text-white p-2 rounded border border-emerald-500 font-mono text-xs shadow-lg">
-                                        <span className={isVisited ? "text-emerald-500 font-bold" : "text-orange-500 font-bold"}>
-                                            {isVisited ? 'COMPLETED' : `Target ${idx + 1}`}
-                                        </span><br/>
-                                        {store.name}
+                                {/* 🚀 UPGRADE: Interactive Popup for Direct Map Assignment */}
+                                <Popup closeButton={false} className="custom-popup">
+                                    <div className="p-1 min-w-[160px]">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <p className="font-bold text-slate-800 text-sm leading-tight">{store.name}</p>
+                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 ${isVisited ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                {isVisited ? 'DONE' : `#${idx + 1}`}
+                                            </span>
+                                        </div>
+                                        
+                                        <p className="text-[9px] text-slate-500 mb-1.5 uppercase tracking-widest font-bold">Assign Fleet Vehicle:</p>
+                                        <select 
+                                            className={`w-full bg-slate-100 text-xs font-bold uppercase p-2 rounded outline-none border transition-all shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-700' : 'border-slate-300 text-slate-600'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                            value={assignments[store.id] || 'Unassigned'}
+                                            onChange={(e) => handleAssignAgent(store.id, e.target.value)}
+                                            disabled={!isAdmin}
+                                        >
+                                            <option value="Unassigned">-- UNASSIGNED --</option>
+                                            {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
+                                        </select>
                                     </div>
-                                </LeafletTooltip>
+                                </Popup>
                             </Marker>
                         );
                     })}
