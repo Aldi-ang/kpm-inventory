@@ -76,6 +76,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
+        // 🚀 NEW SECURITY LOCK: Scan roster for duplicate emails before allowing save
+        const isDuplicateEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
+        if (isDuplicateEmail) {
+            return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel. Each agent must have a unique Google Account Email.`);
+        }
+
         try {
             const batch = writeBatch(db);
 
