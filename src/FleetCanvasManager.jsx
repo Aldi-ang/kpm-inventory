@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Truck, UserPlus, PackagePlus, Save, Archive, 
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe
+    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 

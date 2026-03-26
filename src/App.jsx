@@ -363,7 +363,6 @@ const ImageCropper = ({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChan
 
         {/* SIDEBAR */}
 
-        <span className="text-slate-500 text-[10px]">v{packageJson.version}</span>
         <div className="w-full md:w-80 bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 border-l dark:border-slate-700 overflow-y-auto z-40">
             <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
