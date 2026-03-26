@@ -178,6 +178,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
+    // 🚀 ROUTING UPGRADE: Jump a store directly to a specific position number
+    const jumpToSequence = (oldIndex, newIndex) => {
+        if (oldIndex === newIndex) return;
+        const newRoute = [...orderedRoute];
+        const [movedStore] = newRoute.splice(oldIndex, 1);
+        newRoute.splice(newIndex, 0, movedStore);
+        setOrderedRoute(newRoute);
+    };
+
     // 🚀 OSRM ROUTING ENGINE FOR JOURNEY PLAN
     useEffect(() => {
         const fetchRoute = async () => {
@@ -342,11 +351,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl mb-2 relative z-0">
                 
-                {/* 🚀 MAP CONTROLS: Boosted z-[1000] to stay visibly above Leaflet layers */}
-                <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-3 pointer-events-auto">
+                {/* 🚀 MAP CONTROLS: Ultimate z-[9999] force to pierce through Leaflet's engine */}
+                <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
-                        className="bg-slate-800/90 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2 backdrop-blur-sm"
+                        className="bg-slate-800 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
                         title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
@@ -354,7 +363,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </button>
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
-                        className="bg-slate-800/90 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2 backdrop-blur-sm"
+                        className="bg-slate-800 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
                         title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
@@ -378,7 +387,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const iconHtml = isVisited ? '✅' : '📍';
                         const ringColor = isVisited ? '#10b981' : '#f97316';
                         
-                        // 🚀 UPGRADE: Custom Icon with Dark Frosted Glass Text Label
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
@@ -395,26 +403,47 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
-                                {/* 🚀 UPGRADE: Interactive Popup for Direct Map Assignment */}
-                                <Popup closeButton={false} className="custom-popup">
-                                    <div className="p-1 min-w-[160px]">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <p className="font-bold text-slate-800 text-sm leading-tight">{store.name}</p>
-                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 ${isVisited ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                {isVisited ? 'DONE' : `#${idx + 1}`}
+                                {/* 🚀 UPGRADE: Solid Background & Interactive Map Routing */}
+                                <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
+                                    <div className="bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-600 w-[220px]">
+                                        <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
+                                            <p className="font-bold text-white text-sm leading-tight pr-2">{store.name}</p>
+                                            <span className={`text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 ${isVisited ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                                {isVisited ? 'DONE' : `Stop #${idx + 1}`}
                                             </span>
                                         </div>
                                         
-                                        <p className="text-[9px] text-slate-500 mb-1.5 uppercase tracking-widest font-bold">Assign Fleet Vehicle:</p>
-                                        <select 
-                                            className={`w-full bg-slate-100 text-xs font-bold uppercase p-2 rounded outline-none border transition-all shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-700' : 'border-slate-300 text-slate-600'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                                            value={assignments[store.id] || 'Unassigned'}
-                                            onChange={(e) => handleAssignAgent(store.id, e.target.value)}
-                                            disabled={!isAdmin}
-                                        >
-                                            <option value="Unassigned">-- UNASSIGNED --</option>
-                                            {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
-                                        </select>
+                                        <div className="space-y-3">
+                                            {/* Sequence Jump Dropdown */}
+                                            <div>
+                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Change Position:</label>
+                                                <select
+                                                    className="w-full bg-slate-900 text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
+                                                    value={idx}
+                                                    onChange={(e) => jumpToSequence(idx, Number(e.target.value))}
+                                                    style={{ colorScheme: 'dark' }}
+                                                >
+                                                    {orderedRoute.map((_, i) => (
+                                                        <option key={i} value={i} className="bg-slate-900 text-white">Stop #{i + 1}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Fleet Assignment Dropdown */}
+                                            <div>
+                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
+                                                <select 
+                                                    className={`w-full bg-slate-900 text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400 focus:border-emerald-400' : 'border-slate-700 text-slate-300 focus:border-orange-500'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                    value={assignments[store.id] || 'Unassigned'}
+                                                    onChange={(e) => handleAssignAgent(store.id, e.target.value)}
+                                                    style={{ colorScheme: 'dark' }}
+                                                    disabled={!isAdmin}
+                                                >
+                                                    <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
+                                                    {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                 </Popup>
                             </Marker>
