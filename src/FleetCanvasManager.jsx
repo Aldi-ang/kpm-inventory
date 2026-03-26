@@ -207,11 +207,13 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         if (!product) return;
 
         const qtyToLoad = Number(loadQty);
-        const unitToLoad = product.unit || 'Slop';
-        const loadInBks = convertToBks(qtyToLoad, unitToLoad, product);
+        
+        // 🚀 FIX: Force quantity transfer to strictly use Bungkus to perfectly match Vault records
+        const unitToLoad = 'Bungkus';
+        const loadInBks = qtyToLoad; // Bypass math conversion since input is already raw Bungkus
 
         if ((product.stock || 0) < loadInBks) {
-            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks (${qtyToLoad} ${unitToLoad}), but the Master Vault only has ${product.stock || 0} Bks available.`);
+            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bungkus, but the Master Vault only has ${product.stock || 0} Bungkus available.`);
         }
 
         try {
@@ -759,8 +761,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         </select>
                                     </div>
                                     <div className="w-full lg:w-32">
-                                        <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 block">Quantity</label>
-                                        <input type="number" min="1" value={loadQty} onChange={(e) => setLoadQty(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 text-center" placeholder="0"/>
+                                        {/* 🚀 FIX: Update label to explicitly ask for Bungkus */}
+                                        <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1 block">Qty (Bungkus)</label>
+                                        <input type="number" min="1" value={loadQty} onChange={(e) => setLoadQty(e.target.value)} className="w-full bg-slate-900 border border-emerald-500/50 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 text-center" placeholder="0"/>
                                     </div>
                                     <button onClick={handleLoadCanvas} className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors uppercase tracking-widest text-xs h-[46px] shrink-0 shadow-lg shadow-emerald-900/20">
                                         Load <ArrowRight size={16}/>
