@@ -25,6 +25,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
+    // 🚀 UPGRADE: Search Bar & Smart Location Dropdown States
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isNewProv, setIsNewProv] = useState(false);
+    const [isNewLoc, setIsNewLoc] = useState(false);
+
+    // Automatically extract all unique locations from your existing database
+    const existingProvinces = useMemo(() => [...new Set(agents.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [agents]);
+    const existingLocations = useMemo(() => [...new Set(agents.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [agents]);
+
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
     
@@ -76,11 +85,14 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
-        // 🚀 NEW SECURITY LOCK: Scan roster for duplicate emails before allowing save
-        const isDuplicateEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
-        if (isDuplicateEmail) {
-            return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel. Each agent must have a unique Google Account Email.`);
-        }
+        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, and Name
+        const isDupEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
+        const isDupPhone = agents.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
+        const isDupName = agents.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
+
+        if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
+        if (isDupPhone) return alert(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
+        if (isDupName) return alert(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered. Please use a unique name (e.g., "Budi Solo").`);
 
         try {
             const batch = writeBatch(db);
@@ -489,9 +501,38 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 )}
                             </div>
                             
-                           {/* 🚀 HIERARCHY: Province & Distribution Area Input */}
-                            <input type="text" placeholder="Province (e.g., Central Java, West Java)" value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="w-full bg-slate-900 border border-purple-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-purple-500"/>
-                            <input type="text" placeholder="Distribution Area (e.g., Solo, Jakarta, HQ)" value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="w-full bg-slate-900 border border-orange-500/50 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-orange-500"/>
+                           {/* 🚀 HIERARCHY: Smart Dropdowns for Province & Area */}
+                            <div className="flex gap-2 mb-2">
+                                {isNewProv || existingProvinces.length === 0 ? (
+                                    <div className="flex-1 flex gap-2">
+                                        <input type="text" placeholder="Type New Province..." value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="flex-1 bg-slate-900 border border-purple-500 rounded p-2.5 text-xs text-white outline-none focus:border-purple-400"/>
+                                        {existingProvinces.length > 0 && <button onClick={() => setIsNewProv(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex gap-2">
+                                        <select value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="flex-1 bg-slate-900 border border-purple-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-purple-500 uppercase">
+                                            {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                        <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-2 mb-2">
+                                {isNewLoc || existingLocations.length === 0 ? (
+                                    <div className="flex-1 flex gap-2">
+                                        <input type="text" placeholder="Type New Area..." value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="flex-1 bg-slate-900 border border-orange-500 rounded p-2.5 text-xs text-white outline-none focus:border-orange-400"/>
+                                        {existingLocations.length > 0 && <button onClick={() => setIsNewLoc(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex gap-2">
+                                        <select value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="flex-1 bg-slate-900 border border-orange-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-orange-500 uppercase">
+                                            {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
+                                        </select>
+                                        <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-orange-900/50 border border-orange-500/50 text-orange-400 p-2.5 rounded hover:bg-orange-400 transition-colors" title="Add New Area"><Plus size={14}/></button>
+                                    </div>
+                                )}
+                            </div>
 
                             <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
@@ -538,11 +579,28 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
                                     </div>
                                 ) : (
-                                    // 🚀 HIERARCHY ENGINE: Group by Province -> Location, Sort Admins to the top
-                                    Object.entries(
-                                        agents.reduce((acc, agent) => {
-                                            // 🚀 FIX: Safely force to String, then sanitize text to merge typos 
-                                            let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
+                                    <>
+                                        {/* 🚀 SEARCH BAR INJECTED ABOVE ROSTER */}
+                                        <div className="mb-4 relative">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search Name, Plate, Area, Email..." 
+                                                value={searchTerm} 
+                                                onChange={e => setSearchTerm(e.target.value)} 
+                                                className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"
+                                            />
+                                        </div>
+
+                                        {/* 🚀 HIERARCHY ENGINE: Filtered & Grouped */}
+                                        {Object.entries(
+                                            agents.filter(a => {
+                                                if (!searchTerm) return true;
+                                                const term = searchTerm.toLowerCase();
+                                                return (a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.phone?.toLowerCase().includes(term) || a.vehicle?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
+                                            }).reduce((acc, agent) => {
+                                                // 🚀 FIX: Safely force to String, then sanitize text to merge typos
+                                                let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
                                             let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
                                             
                                             if (!acc[prov]) acc[prov] = {};
@@ -614,7 +672,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                 ))}
                                             </div>
                                         </details>
-                                    ))
+                                    ))}
+                                    </>
                                 )}
                 </div>
             </div>
