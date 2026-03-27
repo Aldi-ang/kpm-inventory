@@ -878,16 +878,28 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
     }, [transactions, rangeType, targetDate, isAdmin, user, userRole, agentProfileId, selectedAgent]);
 
     const stats = useMemo(() => {
-        const totalRev = filteredTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
-        const totalProfit = filteredTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0); 
+        // 🚀 ADMIN DASHBOARD FIX: Subtract RETUR values from total cash revenue
+        const totalRev = filteredTransactions.reduce((sum, t) => {
+            if (t.type === 'RETUR') return sum - Math.abs(t.total || 0);
+            return sum + (t.total || t.amountPaid || 0);
+        }, 0);
+        
+        const totalProfit = filteredTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0);
         const count = filteredTransactions.length;
         const items = {};
         const payments = { Cash: 0, QRIS: 0, Transfer: 0, Titip: 0 };
 
         filteredTransactions.forEach(t => {
             const method = t.paymentType || 'Cash';
-            if (payments[method] !== undefined) payments[method] += (t.total || t.amountPaid || 0);
-            else payments['Cash'] += (t.total || t.amountPaid || 0);
+            const value = t.total || t.amountPaid || 0;
+            
+            // 🚀 RETUR DEDUCTION FOR PAYMENT PIE CHART
+            if (t.type === 'RETUR') {
+                payments['Cash'] -= Math.abs(value);
+            } else {
+                if (payments[method] !== undefined) payments[method] += value;
+                else payments['Cash'] += value;
+            }
 
             if(t.items) t.items.forEach(i => {
                 const product = inventory.find(p => p.id === i.productId);
@@ -1417,6 +1429,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                 if (!g[m]) g[m] = []; g[m].push(t); return g; 
                             }, {});
 
+
+
                             return (
                                 <>
                                     <div className="bg-slate-900 text-white p-6 md:p-8">
@@ -1453,6 +1467,8 @@ const HistoryReportView = ({ transactions, inventory, onDeleteFolder, onDeleteTr
                                                                     <td className={`p-3 text-right font-bold ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</td>
                                                                     <td className="p-3 text-center">
                                                                         <div className="flex justify-center gap-2">
+
+
                                                                             {/* NEW DEDICATED PHOTO BUTTON */}
                                                                             {t.deliveryProof && (
                                                                                 <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded transition-colors" title="View Delivery Photo"><Camera size={14}/></button>
@@ -4988,10 +5004,14 @@ const handleGitHubMirror = async () => {
                   const qtyToDeduct = item.qty * mult; 
                   
                   // 🚨 CRITICAL FIX: Only deduct from Master Vault if Admin is selling directly from the Vault.
-                  // If it's a vehicle, the stock was ALREADY deducted when they loaded the car!
-                  if (!currentAgentProfileId) {
-                      if(prodData.stock < qtyToDeduct) throw `Not enough stock in Vault for ${item.name}`; 
+                  if (!currentAgentProfileId && !proofPayload?.isRetur) {
+                      if(prodData.stock < qtyToDeduct) throw `Not enough stock in Vault for ${item.name}`;
                       updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                  }
+
+                  // 🚀 RETUR ENGINE: Send Damaged Goods directly to Master Vault Bad Stock
+                  if (proofPayload?.isRetur) {
+                      updatesToPerform.push({ ref: prodRef, newStock: (prodData.badStock || 0) + qtyToDeduct, isReturUpdate: true });
                   }
                   
                   const distributorPrice = prodData.priceDistributor || 0; 
@@ -5011,9 +5031,13 @@ const handleGitHubMirror = async () => {
                   agentDoc = await firestoreTrans.get(agentRef);
               }
 
-              // 2. NOW DO ALL DATABASE WRITES
-              for (const update of updatesToPerform) { 
-                  firestoreTrans.update(update.ref, { stock: update.newStock }); 
+              // 2. NOW DO ALL DATABASE WRITES (Upgraded for Bad Stock)
+              for (const update of updatesToPerform) {
+                  if (update.isReturUpdate) {
+                      firestoreTrans.update(update.ref, { badStock: update.newStock });
+                  } else {
+                      firestoreTrans.update(update.ref, { stock: update.newStock });
+                  }
               }
               
               if (agentDoc && agentDoc.exists()) {
@@ -5028,6 +5052,9 @@ const handleGitHubMirror = async () => {
                           const soldBks = soldItem.qty * mSold;
                           const currentCanvasBks = (c.qty * mCanvas) - soldBks;
                           
+                          // 🚀 RETUR ENGINE: Do NOT deduct bad stock from the agent's vehicle canvas
+                          if (proofPayload?.isRetur) return c;
+
                           // 🚨 2nd VALIDATION: Stop "Phantom Sales" from vehicles
                           if (currentCanvasBks < 0) throw `Vehicle doesn't have enough ${soldItem.name} left!`;
 

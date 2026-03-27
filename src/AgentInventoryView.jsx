@@ -51,15 +51,20 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // --- FINANCIAL MATH ENGINE ---
     const todayDate = getCurrentDate();
     
-    // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY
-    const todayTransactions = transactions.filter(t => 
-        t.agentId === agentProfileId && 
-        t.date === todayDate && 
-        (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT')
+   // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY (Upgraded to catch Retur)
+    const todayTransactions = transactions.filter(t =>
+        t.agentId === agentProfileId &&
+        t.date === todayDate &&
+        (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETUR')
     );
 
-    // 2. SUM TOTAL REVENUE
-    const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.total || t.amountPaid || 0), 0);
+    // 2. SUM TOTAL REVENUE & CALCULATE RETUR
+    const totalRetur = todayTransactions.filter(t => t.type === 'RETUR').reduce((sum, t) => sum + Math.abs(t.total || 0), 0);
+    const todayRevenue = todayTransactions.reduce((sum, t) => {
+        // 🚀 SALESMAN DASHBOARD FIX: Deduct Retur cash so they don't pay for damaged goods
+        if (t.type === 'RETUR') return sum - Math.abs(t.total || 0);
+        return sum + (t.total || t.amountPaid || 0);
+    }, 0);
 
     // 3. CALCULATE INVENTORY VALUE & MULTI-TIER POTENTIAL REVENUE
     let invValue = 0;
@@ -119,8 +124,14 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
                         
                         <div className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Sales</span>
+                            <span className="text-[9px] md:text-xs text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash Sales</span>
                             <span className="text-sm md:text-xl font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
+                            {/* 🚀 NEW RETUR DEDUCTION DISPLAY */}
+                            {totalRetur > 0 && (
+                                <span className="text-[9px] text-red-400 font-bold mt-1 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/50">
+                                    - {formatRupiah(totalRetur)} Retur
+                                </span>
+                            )}
                         </div>
                     </div>
 
