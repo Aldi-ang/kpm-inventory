@@ -4396,7 +4396,7 @@ const handleGitHubMirror = async () => {
                     console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
-                    setUserRole('ADMIN'); // 🚨 FIXED: Must be 'ADMIN' to prevent RBAC leak
+                    setUserRole('ADMIN'); // 🚨 Architect is ADMIN
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
@@ -4414,8 +4414,9 @@ const handleGitHubMirror = async () => {
                     const data = directorySnap.data();
                     
                     if (currentUser.uid === data.bossUid) {
+                        // 🚨 THIS IS THE BOSS: They MUST be ADMIN
                         setBossUid(null);
-                        setUserRole('ADMIN'); // Company Owner Role
+                        setUserRole('ADMIN'); // <--- Kept as ADMIN
                         setAgentProfileId(null);
                         setUser(currentUser);
                         setIsAdmin(false); // Still requires PIN
@@ -4444,19 +4445,23 @@ const handleGitHubMirror = async () => {
                         setUser(null);
                     }
                 } else {
+                    // 🚨 THE FIX: UNKNOWN LOGINS ARE LOCKED OUT 🚨
                     setBossUid(null);
-                    setUserRole('ADMIN');
+                    setUserRole('UNAUTHORIZED'); // <--- CHANGED FROM 'ADMIN'
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
                 }
             } catch (error) {
                 console.error("Traffic Cop Error:", error);
+                // 🚨 SECURE FALLBACK ON ERROR 🚨
+                setUserRole('UNAUTHORIZED'); 
                 setUser(currentUser);
             }
         } else {
             setUser(null);
             setIsSystemOwner(false);
+            setUserRole('UNAUTHORIZED'); // 🚨 CLEAR ROLE ON LOGOUT
         }
     });
     
