@@ -79,74 +79,9 @@ import {
   enableIndexedDbPersistence // <--- ADD THIS FOR OFFLINE MODE
 } from "firebase/firestore";
 
-// --- FIREBASE CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyC9Qr2w0K_RbygNvrzVW1ALE8SmLH6qK_4",
-  authDomain: "cello-inventory-manager.firebaseapp.com",
-  projectId: "cello-inventory-manager",
-  storageBucket: "cello-inventory-manager.firebasestorage.app",
-  messagingSenderId: "168352992942",
-  appId: "1:168352992942:web:3702ffb579bec0a93ea73f",
-  measurementId: "G-CM3Z2Q412T"
-};
-// Pinpoint: Add to your existing firebase/auth or firestore imports
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
-
-// ... imports ...
-
-const app = initializeApp(firebaseConfig);
-let analytics;
-try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const storage = getStorage(app);
-
-// --- NEW: FIREBASE OFFLINE PERSISTENCE ---
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.warn("Offline Mode: Multiple tabs open, persistence enabled in first tab only.");
-    } else if (err.code == 'unimplemented') {
-        console.warn("Offline Mode: Browser doesn't support local caching.");
-    }
-});
-
-const googleProvider = new GoogleAuthProvider();
-const appId = "cello-inventory-manager"; 
-
-// 🚀 MASTER AUTO-VERSION TRACKER 🚀
-const APP_VERSION = `v${packageJson.version}`; 
-
-
-// --- UTILITIES ---
-const formatRupiah = (number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(number);
-};
-
-const getCurrentDate = () => new Date().toISOString().split('T')[0];
-
-const getRandomColor = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
-    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-    return '#' + "00000".substring(0, 6 - c.length) + c;
-};
-
-const convertToBks = (qty, unit, product) => {
-    if (!product) return qty;
-    const packsPerSlop = product.packsPerSlop || 10;
-    const slopsPerBal = product.slopsPerBal || 20;
-    const balsPerCarton = product.balsPerCarton || 4;
-
-    if (unit === 'Slop') return qty * packsPerSlop;
-    if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
-    if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-    return qty; 
-};
+// --- CONFIG & UTILITIES IMPORTS ---
+import { auth, db, storage, googleProvider, appId } from './config/firebase';
+import { formatRupiah, getCurrentDate, getRandomColor, convertToBks } from './utils/helpers';
 
 // --- GLOBAL COMPONENTS (MOVED UP TO PREVENT CRASH) ---
 
