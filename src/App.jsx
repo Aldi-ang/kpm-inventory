@@ -84,7 +84,6 @@ import { auth, db, storage, googleProvider, appId } from './config/firebase';
 import { formatRupiah, getCurrentDate, getRandomColor, convertToBks } from './utils/helpers';
 
 const APP_VERSION = packageJson.version;
-const ADMIN_PASS = "123456"; // Legacy fallback
 
 // --- GLOBAL COMPONENTS (MOVED UP TO PREVENT CRASH) ---
 
