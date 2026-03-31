@@ -36,7 +36,8 @@ import SafetyStatus from './components/SafetyStatus';
 import CapybaraMascot from './components/CapybaraMascot';
 import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
-import ResidentEvilInventory from './components/ResidentEvilInventory'; // 🚀 Added
+import ResidentEvilInventory from './components/ResidentEvilInventory'; 
+import LandlordDashboard from './components/LandlordDashboard'; // 🚀 ADDED
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -3439,11 +3440,24 @@ const handleGitHubMirror = async () => {
 
                 if (directorySnap.exists()) {
                     const data = directorySnap.data();
-                    
-                    if (currentUser.uid === data.bossUid) {
+
+                    // 🚨 KILL SWITCH: Instantly reject suspended Tenants & Salesmen
+                    if (data.subscriptionStatus === 'SUSPENDED' || data.status === 'SUSPENDED') {
+                        alert("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
+                        signOut(auth);
+                        setUser(null);
+                        return;
+                    }
+
+                    // 🚨 AUTO-CLAIM: Translate pre-registered Email to permanent Google UID
+                    if (currentUser.uid === data.bossUid || currentUser.email === data.bossUid) {
+                        if (currentUser.email === data.bossUid) {
+                            await updateDoc(directoryRef, { bossUid: currentUser.uid });
+                        }
+
                         // 🚨 THIS IS THE BOSS: They MUST be ADMIN
                         setBossUid(null);
-                        setUserRole('ADMIN'); // <--- Kept as ADMIN
+                        setUserRole('ADMIN'); 
                         setAgentProfileId(null);
                         setUser(currentUser);
                         setIsAdmin(false); // Still requires PIN
@@ -4685,6 +4699,12 @@ const handleGitHubMirror = async () => {
 
       return (
         <div className="animate-fade-in max-w-2xl mx-auto pb-20">
+            
+            {/* 👑 TIER 1 ONLY: LANDLORD DASHBOARD */}
+            {isSystemOwner && (
+                <LandlordDashboard db={db} appId={appId} user={user} />
+            )}
+
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
                 <div>
                     <h2 className="text-2xl font-bold text-white uppercase tracking-tighter">System Configuration</h2>
