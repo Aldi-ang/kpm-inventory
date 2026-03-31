@@ -30,6 +30,11 @@ import FleetCanvasManager from './FleetCanvasManager';
 import ConsignmentFinanceView from './ConsignmentFinanceView'; 
 import EODReconciliationView from './EODReconciliationView'; // 🚀 IMPORT EOD HERE
 
+// --- REUSABLE UI COMPONENTS ---
+import NotificationBell from './components/NotificationBell';
+import SafetyStatus from './components/SafetyStatus';
+import CapybaraMascot from './components/CapybaraMascot';
+
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -351,185 +356,7 @@ const AdminAuthModal = ({ onClose, onSuccess }) => {
     );
 };
 
-const CapybaraMascot = ({ isDiscoMode, message, messages = [], onClick, staticImageSrc, user, scale }) => {
-    // --- LOCAL ASSETS (PUBLIC FOLDER) ---
-    const NORMAL_IMAGE_URL = "/mr capy.png"; 
-    const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
-    const DISCO_MUSIC_URL = "/disco_music.mp3";
 
-    useEffect(() => {
-        const lastBackup = localStorage.getItem('last_usb_backup');
-        const now = new Date().getTime();
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
-        if (!lastBackup || (now - lastBackup) > sevenDays) {
-            setInternalMsg("⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!");
-            setIsPeeking(true);
-        }
-    }, []);
-
-    const LOGGED_IN_MESSAGES = [
-        "Welcome back, Boss!",
-        "Stock looks good today.",
-        "Don't forget to record samples!",
-        "Sales are looking up! 📈",
-        "I love organization. And watermelons. 🍉",
-        "Did you know Capybaras are the largest rodents?",
-        "Remember to hydrate while you work! 💧",
-        "System systems go! 🚀",
-        "Any new products to add?",
-        "You are doing great today! ⭐"
-    ];
-
-    const LOCKED_MESSAGES = [
-        "System Locked. 🔒",
-        "Please identify yourself.",
-        "I cannot let you in without a badge.",
-        "Access Denied. 🛑",
-        "Who goes there?"
-    ];
-
-    const DEFAULT_MESSAGES = user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES;
-    const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
-
-    const [isPeeking, setIsPeeking] = useState(false);
-    const [isHiding, setIsHiding] = useState(false); 
-    const [internalMsg, setInternalMsg] = useState(""); 
-    const msgIndexRef = useRef(0);
-
-    // 1. HANDLE MUSIC
-    useEffect(() => {
-        let audio = null;
-        if (isDiscoMode) {
-            audio = new Audio(DISCO_MUSIC_URL);
-            audio.volume = 0.6; 
-            audio.loop = true;  
-            audio.play().catch(e => console.log("Audio blocked:", e));
-        }
-        return () => { if (audio) { audio.pause(); audio.currentTime = 0; } };
-    }, [isDiscoMode]);
-
-    // 2. SEQUENTIAL PEEKING LOGIC
-    useEffect(() => {
-        if (isDiscoMode) return; 
-
-        let peekTimer;
-        let hideTimer;
-
-        const scheduleNextPeek = () => {
-            // FIX: Increased delay! Now appears randomly between 1.5 and 3.5 minutes
-            const nextPeekTime = Math.random() * 120000 + 90000; 
-            
-            peekTimer = setTimeout(() => {
-                const currentIndex = msgIndexRef.current;
-                const nextText = dialogueList[currentIndex];
-                
-                setInternalMsg(nextText);
-                msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
-
-                setIsPeeking(true);
-                setIsHiding(false);
-
-                hideTimer = setTimeout(() => {
-                    handleHide();
-                }, 6000); 
-
-            }, nextPeekTime);
-        };
-
-        const handleHide = () => {
-            setIsHiding(true); 
-            setTimeout(() => {
-                setIsPeeking(false);
-                setIsHiding(false);
-                setInternalMsg(""); 
-                scheduleNextPeek(); 
-            }, 1000);
-        };
-
-        scheduleNextPeek();
-        return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); };
-    }, [isDiscoMode, dialogueList]); 
-
-    // 3. SMART CLICK LOGIC
-    const onMascotClick = () => {
-        if (message || internalMsg) {
-            setIsHiding(true);
-            setTimeout(() => {
-                setIsPeeking(false);
-                setInternalMsg("");
-            }, 500); 
-        } else {
-            if (onClick) onClick(); 
-            setIsHiding(false);     
-        }
-    };
-
-    // --- RENDER: DISCO MODE ---
-    if (isDiscoMode) {
-        return (
-            <>
-                <div className="fixed inset-0 z-[100] pointer-events-none animate-disco-lights mix-blend-overlay opacity-60"></div>
-                <div className="fixed bottom-0 right-4 z-[102] cursor-pointer animate-bounce-high" onClick={onClick}>
-                    <div className="relative w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden border-4 border-pink-500 shadow-[0_0_50px_#ec4899]">
-                        <video src={DISCO_VIDEO_URL} autoPlay loop muted className="w-full h-full object-cover"/>
-                    </div>
-                </div>
-                <style>{`
-                    @keyframes disco-lights { 0% { background: linear-gradient(45deg, red, blue); } 50% { background: linear-gradient(45deg, lime, yellow); } 100% { background: linear-gradient(45deg, purple, red); } }
-                    @keyframes bounce-high { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-                    .animate-disco-lights { animation: disco-lights 2s infinite linear alternate; }
-                    .animate-bounce-high { animation: bounce-high 0.8s infinite ease-in-out; }
-                `}</style>
-            </>
-        );
-    }
-
-    // --- RENDER: NORMAL MODE ---
-    const activeMessage = message || internalMsg; 
-    const showMascot = isPeeking || message; 
-    // FIX: Changed from 120% to 200% to ensure the wide text box is completely yanked off-screen
-    const slideClass = isHiding ? 'translate-x-[200%]' : 'translate-x-0'; 
-    const initialClass = 'translate-x-[200%]';
-
-    return (
-        <div 
-            className={`hide-on-print fixed bottom-0 right-0 z-[9999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
-            onClick={onMascotClick}
-            style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
-        >
-            <div 
-                className="relative w-32 h-32 md:w-48 md:h-48 transition-transform duration-300 origin-bottom-right"
-                style={{ transform: `scale(${scale || 1})` }}
-            > 
-                {activeMessage && (
-                    <div className="absolute bottom-[85%] right-[20%] z-20 animate-pop-in pointer-events-none">
-                        <div 
-                            className="relative border-4 border-green-600 p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(0,100,0,0.5)]"
-                            style={{ backgroundColor: '#ffffff', color: '#000000' }} 
-                        >
-                            <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>
-                                {activeMessage}
-                            </p>
-                            <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-green-600 rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
-                        </div>
-                    </div>
-                )}
-
-                <img 
-                    src={NORMAL_IMAGE_URL} 
-                    alt="Mascot" 
-                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right"
-                    onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}
-                />
-            </div>
-            <style>{`
-                @keyframes pop-in { 0% { transform: scale(0) translateY(20px); opacity: 0; } 80% { transform: scale(1.1) translateY(-5px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-                .animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-            `}</style>
-        </div>
-    );
-}
 
 // --- FIXED: EXAMINE MODAL (RESIDENT EVIL STYLE AUTO-ROTATION) ---
 const ExamineModal = ({ product, onClose, onUpdateProduct, isAdmin }) => {
@@ -2466,46 +2293,7 @@ const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory })
     );
 };
 
-// 🚀 NOTIFICATION BELL WIDGET 🚀
-const NotificationBell = ({ notifications = [], onNotificationClick }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const unreadCount = notifications.filter(n => !n.read).length;
 
-    return (
-        <div className="relative">
-            <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 bg-black/40 hover:bg-white/10 rounded-full border border-white/10 transition-colors">
-                <Bell size={20} className="text-slate-300" />
-                {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-bounce shadow-[0_0_10px_rgba(239,68,68,0.6)]">
-                        {unreadCount}
-                    </span>
-                )}
-            </button>
-
-            {isOpen && (
-                <div className="absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[100] custom-scrollbar">
-                    <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80 sticky top-0 backdrop-blur-md z-10">
-                        <h3 className="font-black text-white uppercase tracking-widest text-sm">Inbox</h3>
-                        <button onClick={() => setIsOpen(false)}><X size={16} className="text-slate-400 hover:text-white"/></button>
-                    </div>
-                    <div className="p-2 space-y-1">
-                        {notifications.length === 0 ? (
-                            <p className="text-center text-xs text-slate-500 py-6 uppercase tracking-widest">All caught up!</p>
-                        ) : notifications.map(n => (
-                            <div key={n.id} onClick={() => { onNotificationClick(n); setIsOpen(false); }} className={`p-3 rounded-xl cursor-pointer transition-all border ${n.read ? 'bg-black/20 border-transparent opacity-60' : 'bg-slate-800 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] hover:bg-slate-700'}`}>
-                                <div className="flex justify-between items-start mb-1">
-                                    <h4 className={`text-xs font-bold ${n.read ? 'text-slate-400' : 'text-indigo-400'}`}>{n.title}</h4>
-                                    <span className="text-[9px] text-slate-500">{n.timestamp?.seconds ? new Date(n.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Now'}</span>
-                                </div>
-                                <p className={`text-[10px] ${n.read ? 'text-slate-500' : 'text-slate-300'}`}>{n.message}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 // --- UPDATED: BIOHAZARD THEME (MOBILE STABILITY FIXES) ---
 const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings, notifications, onNotificationClick }) => {
@@ -3238,74 +3026,6 @@ const AuditVaultExplorer = ({ db, storage, appId, user, isAdmin, logAudit, setBa
 };
 
 
-// --- SIMPLIFIED: STABLE SAFETY STATUS WIDGET ---
-// --- UPDATED: SAFETY STATUS (SYNCED WITH SETTINGS) ---
-const SafetyStatus = ({ auditLogs = [], sessionStatus }) => {
-    // 1. Get Limits
-    const resetThreshold = parseInt(localStorage.getItem('indicator_reset_time') || '0');
-    const now = new Date();
-    const todayStr = now.toLocaleDateString();
-
-    // 2. CLOUD SYNC LOGIC (Matches Settings)
-    const confirmedMirror = auditLogs.find(log => 
-        (log.action === "DATABASE_MIRROR" || log.action === "MASTER_BACKUP") && 
-        log.timestamp && 
-        (log.timestamp.seconds * 1000 > resetThreshold)
-    );
-    // If we clicked the button (sessionStatus.cloud) OR we found a valid log -> GREEN
-    const isCloudSecure = sessionStatus?.cloud || !!confirmedMirror;
-
-    // 3. USB SAFE LOGIC (Matches Settings)
-    const lastUSB = parseInt(localStorage.getItem('last_usb_backup') || '0');
-    const isUsbValidInDb = lastUSB > resetThreshold && (now.getTime() - lastUSB) < (7 * 24 * 60 * 60 * 1000);
-    const isUsbSecure = sessionStatus?.usb || isUsbValidInDb;
-
-    // 4. SNAPSHOT LOGIC
-    const todaySnapshots = auditLogs.filter(log => {
-        if (!log.isSavePoint || !log.timestamp || !log.timestamp.seconds) return false;
-        try {
-            const logDate = new Date(log.timestamp.seconds * 1000).toLocaleDateString();
-            return logDate === todayStr;
-        } catch (e) { return false; }
-    }).length;
-    // If manual recovery button pressed OR we have logs -> GREEN
-    const isRecoverySecure = sessionStatus?.recovery || todaySnapshots > 0;
-
-    return (
-        <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm flex gap-6 shadow-lg mb-6">
-            {/* CLOUD INDICATOR */}
-            <div className="flex-1">
-                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">Cloud Sync</p>
-                <div className={`text-sm font-black flex items-center gap-2 ${isCloudSecure ? 'text-emerald-500' : 'text-red-500'}`}>
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${isCloudSecure ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                    {isCloudSecure ? 'SECURE' : 'REQUIRED'}
-                </div>
-            </div>
-            
-            <div className="w-[1px] bg-white/10"></div>
-            
-            {/* USB INDICATOR */}
-            <div className="flex-1 text-center">
-                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">USB Safe</p>
-                <div className={`text-sm font-black flex justify-center items-center gap-2 ${isUsbSecure ? 'text-emerald-500' : 'text-orange-500'}`}>
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${isUsbSecure ? 'bg-emerald-500' : 'bg-orange-500'}`}></div>
-                    {isUsbSecure ? 'SECURE' : 'OUTDATED'}
-                </div>
-            </div>
-            
-            <div className="w-[1px] bg-white/10"></div>
-            
-            {/* SNAPSHOT COUNTER */}
-            <div className="flex-1 text-right">
-                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-widest">Save Points</p>
-                <div className={`text-sm font-black flex justify-end items-center gap-2 font-mono ${isRecoverySecure ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    <History size={14} className={isRecoverySecure ? "animate-pulse" : "opacity-30"}/>
-                    {todaySnapshots.toString().padStart(2, '0')} <span className="text-[8px] text-slate-600">TODAY</span>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 
 // --- MAIN APP COMPONENT ---
