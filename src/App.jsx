@@ -37,7 +37,8 @@ import CapybaraMascot from './components/CapybaraMascot';
 import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
 import ResidentEvilInventory from './components/ResidentEvilInventory'; 
-import LandlordDashboard from './components/LandlordDashboard'; // 🚀 ADDED
+import LandlordDashboard from './components/LandlordDashboard'; 
+import CrownTransferProtocol from './components/CrownTransferProtocol'; // 🚀 ADDED // 🚀 ADDED
 
 // --- MAP ENGINE IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, Tooltip as LeafletTooltip, useMap, useMapEvents, Rectangle, LayersControl, ZoomControl } from 'react-leaflet';
@@ -2408,6 +2409,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [sessionStatus, setSessionStatus] = useState({ recovery: false, usb: false, cloud: false });
   const [isSystemOwner, setIsSystemOwner] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showCrownTransfer, setShowCrownTransfer] = useState(false); // 🚀 ADD THIS
   const [adminPin, setAdminPin] = useState(null);       
   const [hasAdminPin, setHasAdminPin] = useState(false); 
   const [inputPin, setInputPin] = useState("");         
@@ -3419,8 +3421,19 @@ const handleGitHubMirror = async () => {
                 // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? (SECURED) 🚀
                 const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
                 const sysAdminSnap = await getDoc(sysAdminRef);
+                
+                // 🚀 CROWN CLAIM CHECK: Did this user just receive the Crown?
+                const inviteRef = doc(db, 'system_admins_invites', email);
+                const inviteSnap = await getDoc(inviteRef);
 
-                if (sysAdminSnap.exists()) {
+                if (inviteSnap.exists()) {
+                    // Claim the Crown: Promote them to System Admin and delete the invite
+                    await setDoc(sysAdminRef, { email: email, claimedAt: serverTimestamp() });
+                    await deleteDoc(inviteRef);
+                    // Continue to log them in as Admin
+                }
+
+                if (sysAdminSnap.exists() || inviteSnap.exists()) {
                     console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
@@ -4702,7 +4715,28 @@ const handleGitHubMirror = async () => {
             
             {/* 👑 TIER 1 ONLY: LANDLORD DASHBOARD */}
             {isSystemOwner && (
-                <LandlordDashboard db={db} appId={appId} user={user} />
+                <>
+                    <LandlordDashboard db={db} appId={appId} user={user} />
+                    
+                    <div className="mb-8 bg-red-950/20 border border-red-500/30 p-6 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <h3 className="text-red-500 font-black uppercase tracking-widest">Danger Zone</h3>
+                            <p className="text-[10px] font-mono text-slate-400 mt-1">Permanently transfer ownership of this software.</p>
+                        </div>
+                        <button onClick={() => setShowCrownTransfer(true)} className="bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white border border-red-500 px-4 py-2 rounded text-xs font-bold uppercase tracking-widest transition-all">
+                            Initiate Transfer
+                        </button>
+                    </div>
+
+                    {showCrownTransfer && (
+                        <CrownTransferProtocol 
+                            db={db} 
+                            user={user} 
+                            onClose={() => setShowCrownTransfer(false)} 
+                            triggerCapy={triggerCapy} 
+                        />
+                    )}
+                </>
             )}
 
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
