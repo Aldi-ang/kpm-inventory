@@ -76,45 +76,70 @@ export default function LandlordDashboard({ db, appId, user }) {
         }
     };
 
-    return (
-        <div className="bg-gradient-to-br from-blue-900 to-black p-6 md:p-8 rounded-2xl shadow-2xl border-2 border-blue-500/50 mb-8 animate-fade-in relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Building2 size={150} /></div>
+   return (
+        <div className="bg-black/95 border border-red-900/50 p-6 md:p-8 rounded-xl shadow-[0_0_40px_rgba(220,38,38,0.1)] mb-8 animate-fade-in relative overflow-hidden">
+            {/* BACKGROUND TEXTURE */}
+            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #fff 2px, #fff 4px)', backgroundSize: '100% 4px' }}></div>
             
             <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6 border-b border-blue-500/30 pb-4">
-                    <Building2 className="text-blue-400" size={28} />
+                <div className="flex items-center gap-4 mb-6 border-b border-red-900/50 pb-4">
+                    <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-full">
+                        <ShieldAlert className="text-red-500" size={28} />
+                    </div>
                     <div>
-                        <h2 className="text-xl font-black text-white uppercase tracking-widest">SaaS Landlord Dashboard</h2>
-                        <p className="text-[10px] text-blue-300 font-mono uppercase tracking-widest">Tier 1 Super Admin Controls</p>
+                        <h2 className="text-xl md:text-2xl font-serif text-red-500 uppercase tracking-[0.2em] drop-shadow-lg">Architect Terminal</h2>
+                        <p className="text-[10px] text-orange-400 font-mono uppercase tracking-widest mt-1">Tier 1 // Global Overseer Override</p>
                     </div>
                 </div>
 
-                <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-black/50 p-4 rounded-xl border border-blue-500/20">
-                    <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Company / Boss Name" className="flex-1 bg-black border border-blue-500/30 p-3 rounded-lg text-white outline-none focus:border-blue-500 text-sm" required />
-                    <input type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Boss Google Email" className="flex-1 bg-black border border-blue-500/30 p-3 rounded-lg text-white outline-none focus:border-blue-500 text-sm" required />
-                    <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"><UserPlus size={18}/> Provision Tenant</button>
+                <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-black/60 p-5 rounded-lg border border-white/10 shadow-inner">
+                    <input 
+                        value={newName} onChange={e=>setNewName(e.target.value)} 
+                        placeholder="TENANT DESIGNATION" 
+                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" 
+                        required 
+                    />
+                    <input 
+                        type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} 
+                        placeholder="ADMINISTRATOR IDENTIFIER (EMAIL)" 
+                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" 
+                        required 
+                    />
+                    <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2">
+                        <UserPlus size={16}/> Provision
+                    </button>
                 </form>
 
                 <div className="space-y-3">
                     {tenants.map(t => (
-                        <div key={t.id} className={`p-4 rounded-xl flex flex-col md:flex-row justify-between items-center border transition-all ${t.subscriptionStatus === 'ACTIVE' ? 'bg-blue-900/20 border-blue-500/30 hover:border-blue-400' : 'bg-red-900/20 border-red-500/30 hover:border-red-400'}`}>
-                            <div className="text-center md:text-left mb-3 md:mb-0">
-                                <h3 className="font-bold text-white text-lg">{t.name}</h3>
-                                <p className="text-[10px] text-slate-400 font-mono">{t.email} <br/> ID: {t.bossUid}</p>
+                        <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-black/80 border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-emerald-900/50 border-l-4 border-l-emerald-500 hover:bg-emerald-900/10' : 'border-red-900/50 border-l-4 border-l-red-500 hover:bg-red-900/10'}`}>
+                            <div className="text-center md:text-left mb-4 md:mb-0">
+                                <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
+                                <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-1 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
+                                    ID: <span className="text-slate-400">{t.bossUid}</span>
+                                </p>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-6">
                                 {t.subscriptionStatus === 'ACTIVE' ? (
-                                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold uppercase tracking-widest bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-500/50"><CheckCircle size={14}/> Active</span>
+                                    <span className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
                                 ) : (
-                                    <span className="flex items-center gap-1 text-red-400 text-xs font-bold uppercase tracking-widest bg-red-900/30 px-3 py-1 rounded-full border border-red-500/50"><ShieldAlert size={14}/> Suspended</span>
+                                    <span className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
                                 )}
-                                <button onClick={() => toggleSubscription(t)} className={`p-3 rounded-lg font-bold transition-all hover:scale-105 shadow-lg ${t.subscriptionStatus === 'ACTIVE' ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}>
-                                    <Power size={18} />
+                                <button 
+                                    onClick={() => toggleSubscription(t)} 
+                                    className={`p-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-red-900/20 text-red-500 border-red-500/50 hover:bg-red-600 hover:text-white' : 'bg-emerald-900/20 text-emerald-500 border-emerald-500/50 hover:bg-emerald-600 hover:text-white'}`}
+                                >
+                                    <Power size={14} />
+                                    {t.subscriptionStatus === 'ACTIVE' ? 'TERMINATE' : 'RESTORE'}
                                 </button>
                             </div>
                         </div>
                     ))}
-                    {tenants.length === 0 && <p className="text-center text-blue-400/50 italic py-4 font-mono text-sm">No active tenants. Provision one above.</p>}
+                    {tenants.length === 0 && (
+                        <div className="text-center py-8 border border-white/5 bg-black/50">
+                            <p className="text-orange-500/50 font-mono text-[10px] uppercase tracking-widest animate-pulse">Waiting for database population...</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
