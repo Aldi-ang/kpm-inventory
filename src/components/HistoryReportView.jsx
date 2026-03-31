@@ -440,9 +440,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                     </div>
                 );
             })()}
-            
-            {/* HIDE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
-            <div className="hide-on-print w-full">
 
             {/* --- ANALYTICS DASHBOARD --- */}
             {reportView && (
@@ -513,6 +510,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                      </div>
                 </div>
             )}
+
+            {/* HIDE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
+            <div className="hide-on-print w-full">
 
             {/* --- LEVEL 0: AGENT SELECTION --- */}
             {!reportView && !selectedAgent && userRole === 'ADMIN' && (
