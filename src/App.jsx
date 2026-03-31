@@ -4731,6 +4731,8 @@ const handleGitHubMirror = async () => {
                     {showCrownTransfer && (
                         <CrownTransferProtocol 
                             db={db} 
+                            appId={appId} 
+                            userId={userId} 
                             user={user} 
                             onClose={() => setShowCrownTransfer(false)} 
                             triggerCapy={triggerCapy} 

@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firest
 import emailjs from '@emailjs/browser';
 import { ShieldAlert, Key, Fingerprint, Mail, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 
-export default function CrownTransferProtocol({ db, user, onClose, triggerCapy }) {
+export default function CrownTransferProtocol({ db, appId, userId, user, onClose, triggerCapy }) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -20,17 +20,26 @@ export default function CrownTransferProtocol({ db, user, onClose, triggerCapy }
         setTimeout(() => setError(''), 3000);
     };
 
-    // STEP 1: Verify PIN against database
+    // 🔐 CRYPTOGRAPHIC ENGINE: SHA-256 Hash Generator
+    const hashSecretWord = async (word) => {
+        const msgBuffer = new TextEncoder().encode(word.toLowerCase().trim());
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
+    // STEP 1: Verify PIN against encrypted database hash
     const handleVerifyPin = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // Fetch the secure settings document where your hashed PIN/Phrase is stored
-            const secRef = doc(db, 'settings', 'security');
-            const secSnap = await getDoc(secRef);
+            const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+            const adminSnap = await getDoc(adminDocRef);
             
-            // In a real app, compare hashes. For this MVP, we assume a plain or simple match
-            if (secSnap.exists() && secSnap.data().masterPin === pin) {
+            // Hash the typed PIN to compare with the database
+            const hashedInput = await hashSecretWord(pin.trim());
+            
+            if (adminSnap.exists() && adminSnap.data().pin === hashedInput) {
                 setStep(2);
                 triggerCapy("Security Level 1 Cleared.");
             } else {
@@ -42,21 +51,22 @@ export default function CrownTransferProtocol({ db, user, onClose, triggerCapy }
         setLoading(false);
     };
 
-    // STEP 2: Verify Secret Phrase
+    // STEP 2: Verify Secret Phrase against encrypted database hash
     const handleVerifyPhrase = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const secRef = doc(db, 'settings', 'security');
-            const secSnap = await getDoc(secRef);
+            const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+            const adminSnap = await getDoc(adminDocRef);
             
-            if (secSnap.exists() && secSnap.data().secretPhrase === phrase) {
+            const hashedInput = await hashSecretWord(phrase.trim());
+            
+            if (adminSnap.exists() && adminSnap.data().recoveryHash === hashedInput) {
                 // Generate a random 6 digit OTP
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);
                 
                 // --- EMAIL JS TRIGGER ---
-                // NOTE: Replace these with your actual EmailJS Service ID, Template ID, and Public Key
                 await emailjs.send(
                     'service_b564nlp', 
                     'template_89lgavp', 
@@ -78,6 +88,7 @@ export default function CrownTransferProtocol({ db, user, onClose, triggerCapy }
         }
         setLoading(false);
     };
+
 
     // STEP 3: Verify OTP
     const handleVerifyOtp = (e) => {
