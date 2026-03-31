@@ -5986,6 +5986,7 @@ const handleGitHubMirror = async () => {
                 logAudit={logAudit} 
                 triggerCapy={triggerCapy} 
                 isAdmin={isAdmin} 
+                motorists={motorists} // 🚀 FIXED: Inject the live, real-time database sync
             />
           )}
           

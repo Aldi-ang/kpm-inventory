@@ -6,9 +6,10 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin }) => {
-    const [agents, setAgents] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) => {
+    // 🚀 UPGRADE: We now use the Live Global Database Sync (motorists) instead of fetching locally.
+    const agents = motorists;
+    const isLoading = false; 
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
@@ -45,24 +46,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
-    const fetchAgents = async () => {
-        if (!db || !appId || !userId) return;
-        setIsLoading(true);
-        try {
-            const snap = await getDocs(collection(db, collPath));
-            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAgents(data);
-            if (selectedAgent) {
-                const updated = data.find(m => m.id === selectedAgent.id);
-                if (updated) setSelectedAgent(updated);
-            }
-        } catch (error) {
-            console.error("Error fetching fleet:", error);
+    // 🚀 Keep the selected agent's activeCanvas up to date automatically!
+    useEffect(() => {
+        if (selectedAgent) {
+            const updated = agents.find(m => m.id === selectedAgent.id);
+            if (updated) setSelectedAgent(updated);
         }
-        setIsLoading(false);
-    };
+    }, [agents, selectedAgent]);
 
-    useEffect(() => { fetchAgents(); }, [db, appId, userId]);
+    const fetchAgents = () => {}; // 🚀 LEGACY BYPASS: Keeps old save buttons from crashing
 
     const togglePayment = (method) => {
         setNewAgent(prev => ({
