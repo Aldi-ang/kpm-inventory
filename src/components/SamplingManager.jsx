@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, RefreshCcw, Save, Store, Pencil, Trash2, MapPin, Folder, X, Edit, TrendingUp } from 'lucide-react';
+import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, RefreshCcw, Save, Store, Pencil, Trash2, MapPin, Folder, X, Edit, TrendingUp, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { getCurrentDate } from '../utils/helpers';
 
@@ -248,20 +248,23 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
     );
 };
 
-// --- SAMPLING FOLDER VIEW ---
+// --- SAMPLING FOLDER VIEW (BUG FIXED) ---
 export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder, onShowAnalytics }) => {
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
 
+    // 🚨 FIX: Hardcoded English months prevents the silent browser crash caused by Indonesian Locale translations 🚨
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
     const folderStructure = useMemo(() => {
         const structure = {};
         samplings.forEach(s => {
             if (!s.date) return;
             const d = new Date(s.date);
-            const year = d.getFullYear();
-            const month = d.toLocaleString('default', { month: 'long' });
+            const year = isNaN(d.getFullYear()) ? "Unknown" : d.getFullYear().toString();
+            const month = isNaN(d.getMonth()) ? "Unknown" : monthNames[d.getMonth()];
             
             if (!structure[year]) structure[year] = {};
             if (!structure[year][month]) structure[year][month] = {};
@@ -315,8 +318,8 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                                                 <td className="p-3 text-right flex justify-end gap-2 pr-4">
                                                     {isAdmin && (
                                                         <>
-                                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="p-1.5 text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded transition-colors"><Pencil size={14}/></button>
-                                                            <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 rounded transition-colors"><Trash2 size={14}/></button>
+                                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="p-1.5 text-blue-400 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-blue-900/40 rounded transition-colors"><Pencil size={14}/></button>
+                                                            <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 dark:bg-slate-800 dark:hover:bg-red-900/40 rounded transition-colors"><Trash2 size={14}/></button>
                                                         </>
                                                     )}
                                                 </td>
@@ -337,15 +340,15 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
         return (
             <div className="animate-fade-in">
                 <button onClick={() => setSelectedDate(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to {selectedMonth}</button>
-                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Calendar size={24} className="text-orange-500"/> {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Calendar size={24} className="text-orange-500"/> {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {locations.map(loc => (
-                        <div key={loc} onClick={() => setSelectedLocation(loc)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
+                        <button key={loc} onClick={() => setSelectedLocation(loc)} className="w-full text-left bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-indigo-100 dark:bg-slate-700 rounded-lg text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
                                 <div><h3 className="font-bold text-lg dark:text-white group-hover:text-orange-500 transition-colors">{loc}</h3><p className="text-xs text-slate-500">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p></div>
                             </div>
-                        </div>
+                        </button>
                     ))}
                 </div>
             </div>
@@ -360,15 +363,37 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                 <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Folder size={24} className="text-orange-500"/> {selectedMonth} {selectedYear}</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {dates.map(date => {
-                        const locCount = Object.keys(folderStructure[selectedYear][selectedMonth][date]).length;
+                        const locCount = Object.keys(folderStructure[selectedYear][selectedMonth][date] || {}).length;
                         return (
-                            <div key={date} onClick={() => setSelectedDate(date)} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all text-center">
+                            <button key={date} onClick={() => setSelectedDate(date)} className="w-full text-center bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
                                 <div className="w-12 h-12 mx-auto bg-orange-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors mb-3"><span className="font-bold text-lg">{new Date(date).getDate()}</span></div>
-                                <h3 className="font-bold text-sm dark:text-white">{new Date(date).toLocaleDateString(undefined, {weekday:'short'})}</h3>
+                                <h3 className="font-bold text-sm dark:text-white">{new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</h3>
                                 <p className="text-[10px] text-slate-500 mt-1">{locCount} Locations</p>
-                            </div>
+                            </button>
                         );
                     })}
+                </div>
+            </div>
+        );
+    }
+
+    if (selectedYear) {
+        const months = Object.keys(folderStructure[selectedYear] || {});
+        // 🚨 FIX: Safe sort using indexOf on our predefined English array
+        months.sort((a, b) => monthNames.indexOf(a) - monthNames.indexOf(b));
+        return (
+            <div className="animate-fade-in">
+                <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Years</button>
+                <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-2"><Folder size={24} className="text-blue-500"/> {selectedYear} Archives</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {months.map(month => (
+                        <button key={month} onClick={() => setSelectedMonth(month)} className="w-full text-left bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 group transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 dark:bg-slate-700 rounded-lg text-blue-500 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                <div><h3 className="font-bold text-lg dark:text-white">{month}</h3><p className="text-xs text-slate-500">{Object.keys(folderStructure[selectedYear][month] || {}).length} Dates Recorded</p></div>
+                            </div>
+                        </button>
+                    ))}
                 </div>
             </div>
         );
@@ -379,17 +404,26 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
         <div className="animate-fade-in space-y-6">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Folder size={24} className="text-orange-500"/> Sampling Archives</h2>
-                <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
+                <div className="flex gap-2">
+                    {/* 🚨 FIX: Restored the missing New Sample button! */}
+                    {isAdmin && (
+                        <button onClick={onRecordSample} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
+                            <Plus size={18}/> New Sample
+                        </button>
+                    )}
+                    <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
+                </div>
             </div>
             {years.length === 0 ? (
                  <div className="text-center py-20 text-slate-400"><Folder size={48} className="mx-auto mb-4 opacity-20"/><p>No sampling records found.</p></div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {years.map(year => (
-                        <div key={year} onClick={() => setSelectedYear(year)} className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
-                            <Folder size={100} className="absolute -right-6 -bottom-6 text-white opacity-5 group-hover:opacity-10 transition-opacity"/>
-                            <div className="relative z-10"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-orange-500 rounded mb-3"></div><p className="text-sm text-slate-400 font-mono">{Object.keys(folderStructure[year]).length} Months Active</p></div>
-                        </div>
+                        // 🚨 FIX: Converted Divs to Buttons for guaranteed tap-registration on all mobile browsers
+                        <button key={year} onClick={() => setSelectedYear(year)} className="w-full text-left block bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
+                            <Folder size={100} className="absolute -right-6 -bottom-6 text-white opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none"/>
+                            <div className="relative z-10 pointer-events-none"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-orange-500 rounded mb-3"></div><p className="text-sm text-slate-400 font-mono">{Object.keys(folderStructure[year] || {}).length} Months Active</p></div>
+                        </button>
                     ))}
                 </div>
             )}
