@@ -14,6 +14,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [viewingReceipt, setViewingReceipt] = useState(null); 
     const [viewingPhoto, setViewingPhoto] = useState(null); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
+    const [printScale, setPrintScale] = useState(100); // 🚀 NEW: Dynamic Print Scaling
 
     // 1. RBAC & FOLDER STRUCTURE ENGINE
     const reportData = useMemo(() => {
@@ -453,11 +454,29 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 ))}
                             </div>
                             <div className="flex items-center gap-3">
+                                {/* 🚀 NEW: DYNAMIC SCALE SLIDER */}
+                                <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border dark:border-slate-700 shadow-sm print:hidden">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scale</span>
+                                    <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
+                                    <span className="text-[10px] font-mono text-slate-400 w-8 text-right">{printScale}%</span>
+                                </div>
+
                                 <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
                                 <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
                             </div>
                         </div>
                      </div>
+
+                     {/* 🚀 MAGIC CSS INJECTION: Listens to the slider and scales the print view */}
+                     <style>{`
+                         @media print {
+                             .print-container {
+                                 zoom: ${printScale / 100} !important;
+                                 -moz-transform: scale(${printScale / 100});
+                                 -moz-transform-origin: top left;
+                             }
+                         }
+                     `}</style>
 
                      <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
                          
