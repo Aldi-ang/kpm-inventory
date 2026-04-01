@@ -460,47 +460,52 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                      </div>
 
                      <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
-                         <div className="flex justify-between items-end mb-8 border-b-2 border-orange-500 pb-4">
+                         
+                         {/* HEADER (Compressed for Print) */}
+                         <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
-                                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
+                                 <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
                                      {userRole === 'ADMIN' ? (selectedAgent ? `${selectedAgent}'s Analytics` : 'Master Sales Analytics') : 'My Analytics'}
                                  </h1>
-                                 <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
+                                 <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
                              </div>
-                             <div className="text-right"><p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
+                             <div className="text-right"><p className="text-xs print:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
                          </div>
                          
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Transactions</p><p className="text-2xl font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
-                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Items Moved (Bks)</p><p className="text-2xl font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                             <div className="p-4 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs uppercase text-slate-500 font-bold mb-1">Net Profit (Cuan)</p><p className="text-2xl font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
+                         {/* MAIN STATS (Forced 3-columns and reduced padding on print) */}
+                         <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
                          </div>
 
-                         <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
-                            <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Wallet size={20} className="text-emerald-500"/> Money Breakdown</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                         {/* MONEY BREAKDOWN (Forced 4-columns to prevent vertical stacking on print) */}
+                         <div className="mb-8 print:mb-4 p-6 print:p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
+                            <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Wallet size={20} className="print:w-4 print:h-4 text-emerald-500"/> Money Breakdown</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-4 print:grid-cols-4 gap-4 print:gap-2">
                                 {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                                    <div key={method} className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                                        <p className="text-xs uppercase font-bold text-slate-400 mb-1">{method}</p>
-                                        <p className={`text-lg font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>{formatRupiah(stats.payments[method])}</p>
+                                    <div key={method} className="bg-white dark:bg-slate-800 p-3 print:p-2 rounded-xl border dark:border-slate-700 shadow-sm">
+                                        <p className="text-xs print:text-[9px] uppercase font-bold text-slate-400 mb-1 print:mb-0">{method}</p>
+                                        <p className={`text-lg print:text-sm font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>{formatRupiah(stats.payments[method])}</p>
                                     </div>
                                 ))}
                             </div>
                          </div>
 
-                         <div className="mb-8">
-                             <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="text-orange-500"/> Product Performance</h3>
+                         {/* PRODUCT TABLE (Tightened row heights and scaled down text) */}
+                         <div className="mb-8 print:mb-0">
+                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-orange-500"/> Product Performance</h3>
                              <div className="overflow-x-auto pb-2">
-                                 <table className="w-full text-sm text-left border-collapse min-w-[450px]">
+                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse min-w-[450px]">
                                     <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
-                                        <tr><th className="py-2 w-1/2">Product Name</th><th className="py-2 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 text-right w-1/4">Revenue</th></tr>
+                                        <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
                                         {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
                                             <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                                <td className="py-3 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
-                                                <td className="py-3 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
-                                                <td className="py-3 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
+                                                <td className="py-3 print:py-1.5 font-medium text-slate-700 dark:text-slate-200 dark:print:text-black">{name}</td>
+                                                <td className="py-3 print:py-1.5 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
+                                                <td className="py-3 print:py-1.5 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
