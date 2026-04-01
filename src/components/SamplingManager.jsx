@@ -21,7 +21,7 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
                             <span className="font-mono dark:text-slate-300">
                                 {entry.name.includes('Cost') || entry.name.includes('Value') || entry.name.includes('Rp')
                                     ? formatRp(entry.value) 
-                                    : `${entry.value} Bks`} 
+                                    : entry.value} 
                             </span>
                         </div>
                     ))}
@@ -47,7 +47,8 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
             return false;
         });
 
-        let totalQty = 0;
+        let totalQtyBks = 0;
+        let totalQtyBatang = 0;
         let totalValueDistributor = 0; 
         let totalValueRetail = 0;      
         let totalValueGrosir = 0;
@@ -58,36 +59,43 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
 
         filtered.forEach(s => {
             const product = inventory.find(p => p.id === s.productId) || {};
+            const sticksPerPack = s.sticksPerPack || product.sticksPerPack || 16;
+            
+            // 🚀 SMART FRACTIONAL MATH 🚀
+            const bksEq = s.unit === 'Batang' ? (s.qty / sticksPerPack) : s.qty;
+            
+            if (s.unit === 'Batang') totalQtyBatang += s.qty;
+            else totalQtyBks += s.qty;
+
             const cost = product.priceDistributor || 0;
             const retail = product.priceRetail || 0;
             const grosir = product.priceGrosir || 0;
             const ecer = product.priceEcer || 0;
             
-            totalQty += s.qty;
-            totalValueDistributor += (s.qty * cost);
-            totalValueRetail += (s.qty * retail);
-            totalValueGrosir += (s.qty * grosir);
-            totalValueEcer += (s.qty * ecer);
+            totalValueDistributor += (bksEq * cost);
+            totalValueRetail += (bksEq * retail);
+            totalValueGrosir += (bksEq * grosir);
+            totalValueEcer += (bksEq * ecer);
 
             if (!productBreakdown[s.productName]) productBreakdown[s.productName] = { qty: 0, val: 0 };
-            productBreakdown[s.productName].qty += s.qty;
-            productBreakdown[s.productName].val += (s.qty * cost); 
+            productBreakdown[s.productName].qty += bksEq; // Track by pack eq for graph
+            productBreakdown[s.productName].val += (bksEq * cost); 
 
             const loc = s.reason || 'Unknown';
             if (!locationBreakdown[loc]) locationBreakdown[loc] = { qty: 0, val: 0 };
-            locationBreakdown[loc].qty += s.qty;
-            locationBreakdown[loc].val += (s.qty * cost);
+            locationBreakdown[loc].qty += bksEq;
+            locationBreakdown[loc].val += (bksEq * cost);
         });
 
         const chartData = Object.entries(productBreakdown)
-            .map(([name, data]) => ({ name, qty: data.qty, val: data.val }))
+            .map(([name, data]) => ({ name, qty: Math.round(data.qty * 100)/100 + " Bks", val: data.val }))
             .sort((a, b) => b.val - a.val) 
             .slice(0, 5);
 
         const topLocation = Object.entries(locationBreakdown).sort((a,b) => b[1].val - a[1].val)[0];
 
         return { 
-            totalQty, totalValueDistributor, totalValueRetail, totalValueGrosir, totalValueEcer,
+            totalQtyBks, totalQtyBatang, totalValueDistributor, totalValueRetail, totalValueGrosir, totalValueEcer,
             filtered, topLocation: topLocation ? { name: topLocation[0], val: topLocation[1].val } : null, chartData 
         };
     }, [samplings, rangeType, targetDate, inventory]);
@@ -114,9 +122,13 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
                     <h3 className="text-3xl font-bold">{formatRp(stats.totalValueDistributor)}</h3>
                     <p className="text-[10px] opacity-70 mt-1">Real Cost (Distributor Price)</p>
                 </div>
-                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
+                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col justify-center">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Items Distributed</p>
-                    <h3 className="text-3xl font-bold dark:text-white">{stats.totalQty} <span className="text-lg opacity-50">Bks</span></h3>
+                    <div className="flex items-end gap-2">
+                        {stats.totalQtyBks > 0 && <h3 className="text-3xl font-bold dark:text-white leading-none">{stats.totalQtyBks} <span className="text-lg opacity-50">Bks</span></h3>}
+                        {stats.totalQtyBatang > 0 && <h3 className="text-3xl font-bold dark:text-white leading-none">{stats.totalQtyBatang} <span className="text-lg opacity-50">Btg</span></h3>}
+                        {stats.totalQtyBks === 0 && stats.totalQtyBatang === 0 && <h3 className="text-3xl font-bold dark:text-slate-600">0</h3>}
+                    </div>
                 </div>
                 <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Top Location (By Spend)</p>
@@ -171,11 +183,13 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
         setCart(prev => {
             const existing = prev.find(i => i.id === item.id);
             if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
-            return [...prev, { id: item.id, name: item.name, qty: 1 }];
+            // 🚀 NEW: Defaults to Bks
+            return [...prev, { id: item.id, name: item.name, qty: 1, unit: 'Bks' }];
         });
     };
 
     const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+    const updateUnit = (id, newUnit) => setCart(prev => prev.map(i => i.id === id ? { ...i, unit: newUnit } : i));
     const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
 
     const handleFinalSubmit = async () => {
@@ -198,7 +212,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                         {filteredInventory.map(item => (
                             <div key={item.id} onClick={() => addToCart(item)} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border dark:border-slate-700 cursor-pointer hover:border-orange-500 group transition-all">
                                 <h4 className="font-bold text-sm dark:text-white truncate">{item.name}</h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">{item.stock} in stock</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{item.stock} in Vault</p>
                             </div>
                         ))}
                     </div>
@@ -225,13 +239,23 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50"><Truck size={48} className="mb-2"/><p className="text-sm font-bold">Basket is empty</p></div>
                     ) : (
                         cart.map(item => (
-                            <div key={item.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 animate-fade-in-up flex items-center justify-between">
-                                <div className="flex-1"><h4 className="font-bold text-sm dark:text-white">{item.name}</h4><p className="text-xs text-orange-500 font-bold">{item.qty} Bks</p></div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">-</button>
-                                    <span className="w-6 text-center text-sm font-bold dark:text-white">{item.qty}</span>
-                                    <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">+</button>
-                                    <button onClick={() => removeFromCart(item.id)} className="ml-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                            <div key={item.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 animate-fade-in-up flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-sm dark:text-white flex-1 pr-2">{item.name}</h4>
+                                    <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    {/* 🚀 UNIT TOGGLE BUTTON */}
+                                    <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-1">
+                                        <button onClick={() => updateUnit(item.id, 'Bks')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${item.unit === 'Bks' ? 'bg-orange-500 text-white' : 'text-slate-500 dark:text-slate-400'}`}>Bks</button>
+                                        <button onClick={() => updateUnit(item.id, 'Batang')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${item.unit === 'Batang' ? 'bg-blue-500 text-white' : 'text-slate-500 dark:text-slate-400'}`}>Batang</button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">-</button>
+                                        <span className="w-6 text-center text-sm font-bold dark:text-white">{item.qty}</span>
+                                        <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">+</button>
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -255,7 +279,6 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
 
-    // 🚨 FIX: Hardcoded English months prevents the silent browser crash caused by Indonesian Locale translations 🚨
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     const folderStructure = useMemo(() => {
@@ -314,7 +337,10 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                                         {groupItems.map(s => (
                                             <tr key={s.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                                 <td className="p-3 font-medium dark:text-white pl-4">{s.productName}</td>
-                                                <td className="p-3 text-right text-red-500 font-bold">-{s.qty}</td>
+                                                {/* 🚀 NOW DISPLAYS BKS OR BATANG */}
+                                                <td className={`p-3 text-right font-bold ${s.unit === 'Batang' ? 'text-blue-500' : 'text-red-500'}`}>
+                                                    -{s.qty} <span className="text-[10px]">{s.unit || 'Bks'}</span>
+                                                </td>
                                                 <td className="p-3 text-right flex justify-end gap-2 pr-4">
                                                     {isAdmin && (
                                                         <>
@@ -379,7 +405,6 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
 
     if (selectedYear) {
         const months = Object.keys(folderStructure[selectedYear] || {});
-        // 🚨 FIX: Safe sort using indexOf on our predefined English array
         months.sort((a, b) => monthNames.indexOf(a) - monthNames.indexOf(b));
         return (
             <div className="animate-fade-in">
@@ -405,7 +430,6 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Folder size={24} className="text-orange-500"/> Sampling Archives</h2>
                 <div className="flex gap-2">
-                    {/* 🚨 FIX: Restored the missing New Sample button! */}
                     {isAdmin && (
                         <button onClick={onRecordSample} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
                             <Plus size={18}/> New Sample
@@ -419,7 +443,6 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {years.map(year => (
-                        // 🚨 FIX: Converted Divs to Buttons for guaranteed tap-registration on all mobile browsers
                         <button key={year} onClick={() => setSelectedYear(year)} className="w-full text-left block bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
                             <Folder size={100} className="absolute -right-6 -bottom-6 text-white opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none"/>
                             <div className="relative z-10 pointer-events-none"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-orange-500 rounded mb-3"></div><p className="text-sm text-slate-400 font-mono">{Object.keys(folderStructure[year] || {}).length} Months Active</p></div>
@@ -433,11 +456,11 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
 
 // --- SAMPLE ENTRY MODAL ---
 export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory }) => {
-    const [formData, setFormData] = useState({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, note: '' });
+    const [formData, setFormData] = useState({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
 
     useEffect(() => {
-        if (initialData && !initialData.isNew) setFormData({ ...initialData, date: initialData.date || getCurrentDate() });
-        else setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, note: '' });
+        if (initialData && !initialData.isNew) setFormData({ ...initialData, unit: initialData.unit || 'Bks', date: initialData.date || getCurrentDate() });
+        else setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
     }, [initialData]);
 
     if (!isOpen) return null;
@@ -455,21 +478,53 @@ export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inven
                 <h2 className="text-xl font-bold mb-4 dark:text-white">{initialData?.isNew ? 'New Sample Entry' : 'Edit Sample Details'}</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="text-xs font-bold text-slate-500">Date</label><input type="date" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
-                        <div><label className="text-xs font-bold text-slate-500">Qty</label><input type="number" min="1" value={formData.qty} onChange={e=>setFormData({...formData, qty: parseInt(e.target.value)})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-1">
+                            <label className="text-xs font-bold text-slate-500">Date</label>
+                            <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                        </div>
+                        <div className="col-span-1">
+                            <label className="text-xs font-bold text-slate-500">Qty</label>
+                            <input type="number" min="1" value={formData.qty} onChange={e=>setFormData({...formData, qty: parseInt(e.target.value)})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                        </div>
+                        {/* 🚀 UNIT SELECTOR IN THE MODAL */}
+                        <div className="col-span-1">
+                            <label className="text-xs font-bold text-slate-500">Unit</label>
+                            <select value={formData.unit} onChange={e=>setFormData({...formData, unit: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold text-orange-500">
+                                <option value="Bks">Bungkus</option>
+                                <option value="Batang">Batang</option>
+                            </select>
+                        </div>
                     </div>
+
                     <div>
                         <label className="text-xs font-bold text-slate-500">Product</label>
-                        <select value={formData.productId} onChange={e=>setFormData({...formData, productId: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required>
+                        <select 
+                            value={formData.productId} 
+                            onChange={e=>setFormData({...formData, productId: e.target.value})} 
+                            className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" 
+                            required
+                        >
                             <option value="">Select Product...</option>
-                            {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            {inventory.map(p => (
+                                <option key={p.id} value={p.id}>{p.name} {p.sticksPerPack ? `(${p.sticksPerPack} Btg)` : ''}</option>
+                            ))}
                         </select>
                     </div>
-                    <div><label className="text-xs font-bold text-slate-500">Location / Store Name</label><input value={formData.reason} onChange={e=>setFormData({...formData, reason: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Berkah" required/></div>
-                    <div><label className="text-xs font-bold text-slate-500">Notes (Folder Group)</label><input value={formData.note} onChange={e=>setFormData({...formData, note: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Area 1"/></div>
+
+                    <div>
+                        <label className="text-xs font-bold text-slate-500">Location / Store Name</label>
+                        <input value={formData.reason} onChange={e=>setFormData({...formData, reason: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Toko Berkah" required/>
+                    </div>
                     
-                    <button className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl mt-2">{initialData?.isNew ? 'Add to Folder' : 'Save Changes'}</button>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500">Notes (Folder Group)</label>
+                        <input value={formData.note} onChange={e=>setFormData({...formData, note: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="e.g. Area 1"/>
+                    </div>
+                    
+                    <button className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl mt-2 shadow-lg">
+                        {initialData?.isNew ? 'Add to Folder' : 'Save Changes'}
+                    </button>
                 </form>
             </div>
         </div>

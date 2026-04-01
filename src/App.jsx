@@ -2611,7 +2611,8 @@ const handleGitHubMirror = async () => {
       try { 
           const formData = new FormData(e.target); 
           const data = Object.fromEntries(formData.entries());
-          const numFields = ['stock', 'minStock', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; 
+          // 🚀 ADDED 'sticksPerPack' TO THE NUMBER CONVERSION ARRAY
+          const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; 
           numFields.forEach(field => data[field] = Number(data[field]) || 0); 
           
           data.images = { ...(editingProduct?.images || {}), ...tempImages }; 
@@ -2935,39 +2936,79 @@ const handleGitHubMirror = async () => {
   const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { try { await runTransaction(db, async (t) => { for(const item of itemsReturned) { const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId); const prodDoc = await t.get(prodRef); if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + (item.qty * 1) }); } const returnRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/transactions`)); t.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); }); triggerCapy("Return Processed!"); } catch (err) { console.error(err); } };
   const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
   
- // --- NEW: HANDLE BATCH SAMPLING (GLOBAL NOTE) ---
+ // --- UPGRADED: SAMPLING ENGINE (VEHICLE DEDUCTION & BATANG SUPPORT) ---
   const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
       if (!user) return;
+      
+      let currentAgentProfileId = agentProfileId;
+      if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
+      else if (userRole === 'ADMIN') currentAgentProfileId = null;
+
       try {
           await runTransaction(db, async (transaction) => {
               const writes = [];
+              let agentRef = null;
+              let updatedCanvas = [];
+              
+              if (currentAgentProfileId) {
+                  agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, currentAgentProfileId);
+                  const agentDoc = await transaction.get(agentRef);
+                  if (agentDoc.exists()) updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+              }
+
               for (const item of cartItems) {
-                  const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
+                  const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.productId || item.id);
                   const prodDoc = await transaction.get(prodRef);
                   if (!prodDoc.exists()) throw `Product ${item.name} not found!`;
                   
-                  const currentStock = prodDoc.data().stock || 0;
-                  const newStock = currentStock - item.qty;
-                  if (newStock < 0) throw `Not enough stock for ${item.name} (Has: ${currentStock})`;
+                  const pData = prodDoc.data();
+                  const sticksPerPack = pData.sticksPerPack || 16;
+                  const qtyInBks = item.unit === 'Batang' ? (item.qty / sticksPerPack) : item.qty;
 
-                  writes.push({ type: 'update', ref: prodRef, data: { stock: newStock } });
+                  if (currentAgentProfileId) {
+                      // DEDUCT FROM VEHICLE CANVAS
+                      const canvasIdx = updatedCanvas.findIndex(c => c.productId === (item.productId || item.id));
+                      if (canvasIdx === -1) throw `${item.name} is not in your vehicle!`;
+                      
+                      let cItem = updatedCanvas[canvasIdx];
+                      let mCanvas = cItem.unit === 'Slop' ? (pData.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : cItem.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+                      
+                      const currentCanvasBks = cItem.qty * mCanvas;
+                      const newCanvasBks = currentCanvasBks - qtyInBks;
+                      
+                      if (newCanvasBks < 0) throw `Not enough ${item.name} in vehicle!`;
+                      updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
+                  } else {
+                      // DEDUCT FROM MASTER VAULT
+                      const currentStock = pData.stock || 0;
+                      const newStock = currentStock - qtyInBks;
+                      if (newStock < 0) throw `Not enough stock in Vault for ${item.name}`;
+                      writes.push({ type: 'update', ref: prodRef, data: { stock: newStock } });
+                  }
+
                   const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/samplings`));
-                  
-                  // NEW: Save the GLOBAL note to every item
                   writes.push({ 
                       type: 'set', 
                       ref: newSampleRef, 
                       data: {
                           date: date,
-                          productId: item.id,
+                          productId: item.productId || item.id,
                           productName: item.name,
                           qty: item.qty,
+                          unit: item.unit || 'Bks',
+                          sticksPerPack: sticksPerPack,
                           reason: location, 
                           note: note || '', 
+                          sourceId: currentAgentProfileId || 'VAULT',
                           timestamp: serverTimestamp()
                       } 
                   });
               }
+              
+              if (currentAgentProfileId && agentRef) {
+                  writes.push({ type: 'update', ref: agentRef, data: { activeCanvas: updatedCanvas.filter(c => c.qty > 0) } });
+              }
+
               for (const w of writes) {
                   if (w.type === 'update') transaction.update(w.ref, w.data);
                   if (w.type === 'set') transaction.set(w.ref, w.data);
@@ -2979,62 +3020,125 @@ const handleGitHubMirror = async () => {
       } catch (err) { console.error(err); alert("Failed to save batch: " + err); }
   };
 
- // --- NEW: DELETE SAMPLING RECORD ---
   const handleDeleteSampling = async (sample) => {
-      if(!window.confirm("Delete this sample record? Stock will be RESTORED to inventory.")) return;
+      if(!window.confirm("Delete this sample record? Stock will be RESTORED to its original source.")) return;
       try {
           await runTransaction(db, async (t) => {
               const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, sample.productId);
               const prodDoc = await t.get(prodRef);
+              const pData = prodDoc.exists() ? prodDoc.data() : {};
               
-              // 1. Restore Stock
-              if(prodDoc.exists()) {
-                  const currentStock = prodDoc.data().stock || 0;
-                  t.update(prodRef, { stock: currentStock + sample.qty });
+              const sticksPerPack = sample.sticksPerPack || pData.sticksPerPack || 16;
+              const qtyInBks = sample.unit === 'Batang' ? (sample.qty / sticksPerPack) : sample.qty;
+
+              if (sample.sourceId && sample.sourceId !== 'VAULT') {
+                  const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, sample.sourceId);
+                  const agentDoc = await t.get(agentRef);
+                  if (agentDoc.exists()) {
+                      let updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+                      const canvasIdx = updatedCanvas.findIndex(c => c.productId === sample.productId);
+                      
+                      if (canvasIdx > -1) {
+                          let cItem = updatedCanvas[canvasIdx];
+                          let mCanvas = cItem.unit === 'Slop' ? (pData.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : cItem.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+                          const currentCanvasBks = cItem.qty * mCanvas;
+                          updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + qtyInBks) / mCanvas };
+                      } else {
+                          updatedCanvas.push({ productId: sample.productId, name: sample.productName, qty: qtyInBks, unit: 'Bks', priceTier: 'Retail', calculatedPrice: pData.priceRetail || 0 });
+                      }
+                      t.update(agentRef, { activeCanvas: updatedCanvas });
+                  }
+              } else if (prodDoc.exists()) {
+                  t.update(prodRef, { stock: (pData.stock || 0) + qtyInBks });
               }
               
-              // 2. Delete Record
               t.delete(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, sample.id));
           });
-          
           logAudit("SAMPLING_DELETE", `Deleted sample: ${sample.productName}`);
           triggerCapy("Sample deleted & stock restored.");
-      } catch(err) {
-          console.error(err);
-          alert("Failed to delete: " + err.message);
-      }
+      } catch(err) { console.error(err); alert("Failed to delete: " + err.message); }
   };
 
-// --- 3. UPDATE SINGLE SAMPLING LOGIC ---
   const handleUpdateSampling = async (updatedData) => {
       if (!user || !editingSample) return;
       
       const newQty = parseInt(updatedData.qty);
-      const newDate = updatedData.date;
-      const newReason = updatedData.reason;
-      const newNote = updatedData.note;
-
+      const newUnit = updatedData.unit || 'Bks';
+      const newProductId = updatedData.productId;
+      const newProductName = updatedData.productName;
+      
       try {
           await runTransaction(db, async (t) => {
-              const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingSample.productId);
-              const prodDoc = await t.get(prodRef);
-              
-              // Adjust stock difference
-              // (If you change qty from 5 to 8, we need to deduct 3 more from stock)
-              const oldQty = editingSample.qty;
-              const diff = newQty - oldQty;
-              
-              if (prodDoc.exists() && diff !== 0) {
-                  const currentStock = prodDoc.data().stock || 0;
-                  if (currentStock < diff) throw `Not enough stock to increase sample! (Need ${diff}, Has ${currentStock})`;
-                  t.update(prodRef, { stock: currentStock - diff });
+              // 1. Fetch old product data
+              const oldProdRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingSample.productId);
+              const oldProdDoc = await t.get(oldProdRef);
+              const oldPData = oldProdDoc.exists() ? oldProdDoc.data() : {};
+              const oldSticksPerPack = editingSample.sticksPerPack || oldPData.sticksPerPack || 16;
+              const oldQtyInBks = editingSample.unit === 'Batang' ? (editingSample.qty / oldSticksPerPack) : editingSample.qty;
+
+              // 2. Fetch new product data
+              const newProdRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, newProductId);
+              const newProdDoc = newProductId === editingSample.productId ? oldProdDoc : await t.get(newProdRef);
+              if (!newProdDoc.exists()) throw `New Product not found!`;
+              const newPData = newProdDoc.data();
+              const newSticksPerPack = newPData.sticksPerPack || 16;
+              const newQtyInBks = newUnit === 'Batang' ? (newQty / newSticksPerPack) : newQty;
+
+              const sourceId = editingSample.sourceId || 'VAULT';
+
+              if (sourceId !== 'VAULT') {
+                  // VEHICLE CANVAS UPDATE
+                  const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, sourceId);
+                  const agentDoc = await t.get(agentRef);
+                  if (agentDoc.exists()) {
+                      let updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+
+                      // A. Restore Old Qty
+                      const oldCanvasIdx = updatedCanvas.findIndex(c => c.productId === editingSample.productId);
+                      if (oldCanvasIdx > -1) {
+                          let cItem = updatedCanvas[oldCanvasIdx];
+                          let mCanvas = cItem.unit === 'Slop' ? (oldPData.packsPerSlop || 10) : 1;
+                          updatedCanvas[oldCanvasIdx] = { ...cItem, qty: cItem.qty + (oldQtyInBks / mCanvas) };
+                      } else {
+                          updatedCanvas.push({ productId: editingSample.productId, name: editingSample.productName, qty: oldQtyInBks, unit: 'Bks' });
+                      }
+
+                      // B. Deduct New Qty
+                      const newCanvasIdx = updatedCanvas.findIndex(c => c.productId === newProductId);
+                      if (newCanvasIdx > -1) {
+                          let cItem = updatedCanvas[newCanvasIdx];
+                          let mCanvas = cItem.unit === 'Slop' ? (newPData.packsPerSlop || 10) : 1;
+                          const currentBks = cItem.qty * mCanvas;
+                          if (currentBks < newQtyInBks) throw `Not enough ${newProductName} in vehicle!`;
+                          updatedCanvas[newCanvasIdx] = { ...cItem, qty: (currentBks - newQtyInBks) / mCanvas };
+                      } else {
+                          throw `${newProductName} is not in the vehicle!`;
+                      }
+                      t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
+                  }
+              } else {
+                  // VAULT UPDATE
+                  if (newProductId === editingSample.productId) {
+                      const diffInBks = newQtyInBks - oldQtyInBks;
+                      if (diffInBks > 0 && (oldPData.stock || 0) < diffInBks) throw `Not enough stock in Vault!`;
+                      t.update(oldProdRef, { stock: (oldPData.stock || 0) - diffInBks });
+                  } else {
+                      t.update(oldProdRef, { stock: (oldPData.stock || 0) + oldQtyInBks });
+                      if ((newPData.stock || 0) < newQtyInBks) throw `Not enough stock of ${newProductName} in Vault!`;
+                      t.update(newProdRef, { stock: (newPData.stock || 0) - newQtyInBks });
+                  }
               }
 
+              // 3. Update Sample Record
               t.update(doc(db, `artifacts/${appId}/users/${user.uid}/samplings`, editingSample.id), {
-                  date: newDate,
+                  date: updatedData.date,
                   qty: newQty,
-                  reason: newReason,
-                  note: newNote,
+                  unit: newUnit,
+                  productId: newProductId,
+                  productName: newProductName,
+                  sticksPerPack: newSticksPerPack,
+                  reason: updatedData.reason,
+                  note: updatedData.note,
                   updatedAt: serverTimestamp()
               });
           });
@@ -3043,7 +3147,7 @@ const handleGitHubMirror = async () => {
           setEditingSample(null);
       } catch (err) { alert(err.message || err); }
   };
-
+  
   // --- NEW: OPEN FOLDER EDIT MODAL ---
   const handleBatchFolderEdit = (oldDate, oldReason) => {
       setEditingFolder({ oldDate, oldReason }); // Just open the modal
@@ -4179,9 +4283,11 @@ const handleGitHubMirror = async () => {
                                     <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-orange-500 outline-none"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-4 gap-2">
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-emerald-500/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" defaultValue={editingProduct.minStock || 5} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                        {/* 🚀 NEW: STICKS PER PACK INPUT */}
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-blue-500/50 text-blue-400 focus:border-blue-500 outline-none"/></div>
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
                                     </div>
                                     
