@@ -3,6 +3,18 @@ import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, Refr
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { getCurrentDate } from '../utils/helpers';
 
+// 🚀 HELPER: Safely formats decimal Bks back into "X Bks Y Btg"
+export const formatSampleQty = (qtyDecimal, sticksPerPack) => {
+    const sp = sticksPerPack || 16;
+    const bks = Math.floor(qtyDecimal);
+    const btg = Math.round((qtyDecimal - bks) * sp);
+    let str = '';
+    if (bks > 0) str += `${bks} Bks `;
+    if (btg > 0) str += `${btg} Btg`;
+    if (str === '') return '0 Bks';
+    return str.trim();
+};
+
 // --- SAMPLING ANALYTICS VIEW ---
 export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
     const [rangeType, setRangeType] = useState('monthly');
@@ -61,11 +73,11 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
             const product = inventory.find(p => p.id === s.productId) || {};
             const sticksPerPack = s.sticksPerPack || product.sticksPerPack || 16;
             
-            // 🚀 SMART FRACTIONAL MATH 🚀
+            // Decimal quantity conversion (handles legacy 'Batang' records too)
             const bksEq = s.unit === 'Batang' ? (s.qty / sticksPerPack) : s.qty;
             
-            if (s.unit === 'Batang') totalQtyBatang += s.qty;
-            else totalQtyBks += s.qty;
+            totalQtyBks += Math.floor(bksEq);
+            totalQtyBatang += Math.round((bksEq - Math.floor(bksEq)) * sticksPerPack);
 
             const cost = product.priceDistributor || 0;
             const retail = product.priceRetail || 0;
@@ -78,7 +90,7 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
             totalValueEcer += (bksEq * ecer);
 
             if (!productBreakdown[s.productName]) productBreakdown[s.productName] = { qty: 0, val: 0 };
-            productBreakdown[s.productName].qty += bksEq; // Track by pack eq for graph
+            productBreakdown[s.productName].qty += bksEq; 
             productBreakdown[s.productName].val += (bksEq * cost); 
 
             const loc = s.reason || 'Unknown';
@@ -182,21 +194,47 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
     const addToCart = (item) => {
         setCart(prev => {
             const existing = prev.find(i => i.id === item.id);
-            if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
-            // 🚀 NEW: Defaults to Bks
-            return [...prev, { id: item.id, name: item.name, qty: 1, unit: 'Bks' }];
+            if (existing) return prev.map(i => i.id === item.id ? { ...i, qtyBks: i.qtyBks + 1 } : i);
+            // 🚀 DUAL INPUT STATE SETUP
+            return [...prev, { id: item.id, name: item.name, qtyBks: 1, qtyBatang: 0, sticksPerPack: item.sticksPerPack || 16 }];
         });
     };
 
-    const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
-    const updateUnit = (id, newUnit) => setCart(prev => prev.map(i => i.id === id ? { ...i, unit: newUnit } : i));
+    const updateCartQty = (id, field, delta) => setCart(prev => prev.map(i => {
+        if (i.id === id) {
+            let newVal = i[field] + delta;
+            if (newVal < 0) newVal = 0;
+            
+            // Smart rollover math (e.g. 16 Batang -> 1 Bks)
+            if (field === 'qtyBatang' && newVal >= i.sticksPerPack) {
+                return { ...i, qtyBks: i.qtyBks + 1, qtyBatang: newVal - i.sticksPerPack };
+            }
+            if (field === 'qtyBatang' && newVal < 0 && i.qtyBks > 0) {
+                return { ...i, qtyBks: i.qtyBks - 1, qtyBatang: i.sticksPerPack - 1 };
+            }
+            return { ...i, [field]: Math.max(0, newVal) };
+        }
+        return i;
+    }));
+
+    const handleDirectQtyInput = (id, field, val) => setCart(prev => prev.map(i => i.id === id ? { ...i, [field]: parseInt(val) || 0 } : i));
     const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
 
     const handleFinalSubmit = async () => {
         if (!location.trim()) { alert("Please enter a Folder/Location name!"); return; }
         if (cart.length === 0) return;
         setIsSubmitting(true);
-        await onSubmit(cart, location, targetDate, note);
+        
+        // 🚀 COMBINE BKS AND BATANG INTO A SINGLE DECIMAL BKS FOR DATABASE
+        const finalCart = cart.map(i => ({
+            id: i.id,
+            name: i.name,
+            qty: i.qtyBks + (i.qtyBatang / i.sticksPerPack), // fractional math
+            unit: 'Bks', // always send as Bks so App.jsx handles it flawlessly
+            sticksPerPack: i.sticksPerPack
+        }));
+        
+        await onSubmit(finalCart, location, targetDate, note);
         setIsSubmitting(false);
     };
 
@@ -240,21 +278,29 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                     ) : (
                         cart.map(item => (
                             <div key={item.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 animate-fade-in-up flex flex-col gap-3">
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start border-b dark:border-slate-700 pb-2">
                                     <h4 className="font-bold text-sm dark:text-white flex-1 pr-2">{item.name}</h4>
                                     <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    {/* 🚀 UNIT TOGGLE BUTTON */}
-                                    <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-1">
-                                        <button onClick={() => updateUnit(item.id, 'Bks')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${item.unit === 'Bks' ? 'bg-orange-500 text-white' : 'text-slate-500 dark:text-slate-400'}`}>Bks</button>
-                                        <button onClick={() => updateUnit(item.id, 'Batang')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${item.unit === 'Batang' ? 'bg-blue-500 text-white' : 'text-slate-500 dark:text-slate-400'}`}>Batang</button>
+                                    {/* 🚀 BKS INPUT */}
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[9px] text-slate-500 uppercase font-bold mb-1">Bungkus</span>
+                                        <div className="flex items-center bg-slate-200 dark:bg-slate-800 rounded-lg p-1 border dark:border-slate-600">
+                                            <button onClick={() => updateCartQty(item.id, 'qtyBks', -1)} className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-slate-600 dark:text-white font-bold hover:bg-slate-50 transition-colors">-</button>
+                                            <input type="number" min="0" value={item.qtyBks} onChange={e => handleDirectQtyInput(item.id, 'qtyBks', e.target.value)} className="w-10 bg-transparent text-center text-sm font-bold text-slate-800 dark:text-white outline-none appearance-none" />
+                                            <button onClick={() => updateCartQty(item.id, 'qtyBks', 1)} className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-slate-600 dark:text-white font-bold hover:bg-slate-50 transition-colors">+</button>
+                                        </div>
                                     </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">-</button>
-                                        <span className="w-6 text-center text-sm font-bold dark:text-white">{item.qty}</span>
-                                        <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow border dark:border-slate-600 hover:bg-slate-100 dark:text-white">+</button>
+                                    <span className="text-xl text-slate-300 font-black">+</span>
+                                    {/* 🚀 BATANG INPUT */}
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[9px] text-slate-500 uppercase font-bold mb-1">Batang</span>
+                                        <div className="flex items-center bg-slate-200 dark:bg-slate-800 rounded-lg p-1 border dark:border-slate-600">
+                                            <button onClick={() => updateCartQty(item.id, 'qtyBatang', -1)} className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-slate-600 dark:text-white font-bold hover:bg-slate-50 transition-colors">-</button>
+                                            <input type="number" min="0" max={item.sticksPerPack} value={item.qtyBatang} onChange={e => handleDirectQtyInput(item.id, 'qtyBatang', e.target.value)} className="w-10 bg-transparent text-center text-sm font-bold text-slate-800 dark:text-white outline-none appearance-none" />
+                                            <button onClick={() => updateCartQty(item.id, 'qtyBatang', 1)} className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-700 rounded shadow-sm text-slate-600 dark:text-white font-bold hover:bg-slate-50 transition-colors">+</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -264,7 +310,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                 <div className="p-4 border-t dark:border-slate-700">
                     <button onClick={handleFinalSubmit} disabled={isSubmitting || cart.length === 0} className={`w-full py-4 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 ${isSubmitting ? 'bg-slate-400' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'}`}>
                         {isSubmitting ? <RefreshCcw className="animate-spin"/> : <Save size={20}/>}
-                        {isSubmitting ? 'Saving...' : `Save ${cart.reduce((a,b)=>a+b.qty,0)} Items`}
+                        {isSubmitting ? 'Saving...' : `Save ${cart.length} Products`}
                     </button>
                 </div>
             </div>
@@ -337,9 +383,9 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                                         {groupItems.map(s => (
                                             <tr key={s.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                                 <td className="p-3 font-medium dark:text-white pl-4">{s.productName}</td>
-                                                {/* 🚀 NOW DISPLAYS BKS OR BATANG */}
-                                                <td className={`p-3 text-right font-bold ${s.unit === 'Batang' ? 'text-blue-500' : 'text-red-500'}`}>
-                                                    -{s.qty} <span className="text-[10px]">{s.unit || 'Bks'}</span>
+                                                {/* 🚀 NEW FORMATTED OUTPUT */}
+                                                <td className="p-3 text-right font-bold text-blue-500">
+                                                    -{formatSampleQty(s.unit === 'Batang' ? (s.qty / (s.sticksPerPack||16)) : s.qty, s.sticksPerPack)}
                                                 </td>
                                                 <td className="p-3 text-right flex justify-end gap-2 pr-4">
                                                     {isAdmin && (
@@ -456,21 +502,26 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
 
 // --- SAMPLE ENTRY MODAL ---
 export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inventory }) => {
-    const [formData, setFormData] = useState({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
+    const [formData, setFormData] = useState({ date: getCurrentDate(), reason: '', productId: '', productName: '', qtyBks: 1, qtyBatang: 0, note: '' });
 
     useEffect(() => {
         if (initialData && !initialData.isNew) {
-            // EDIT MODE: Safely load existing data with fallbacks for legacy records
+            const sp = initialData.sticksPerPack || 16;
+            // Decode legacy 'Batang' tags into fractional math, just in case
+            const totalDecimalBks = initialData.unit === 'Batang' ? (initialData.qty / sp) : initialData.qty;
+            const bks = Math.floor(totalDecimalBks);
+            const btg = Math.round((totalDecimalBks - bks) * sp);
+
             setFormData({
                 ...initialData,
-                unit: initialData.unit || 'Bks',
+                qtyBks: bks,
+                qtyBatang: btg,
                 date: initialData.date || getCurrentDate(),
-                note: initialData.note || '',     // 🚀 FIX: Prevents React uncontrolled input warning
+                note: initialData.note || '',
                 reason: initialData.reason || ''
             });
         } else {
-            // NEW MODE: Reset form
-            setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
+            setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qtyBks: 1, qtyBatang: 0, note: '' });
         }
     }, [initialData]);
 
@@ -479,7 +530,18 @@ export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inven
     const handleSubmit = (e) => {
         e.preventDefault();
         const product = inventory.find(p => p.id === formData.productId);
-        onSubmit({ ...formData, productName: product ? product.name : formData.productName });
+        const sp = product ? (product.sticksPerPack || 16) : (initialData?.sticksPerPack || 16);
+        
+        // Encode into the universal fractional Bks engine
+        const totalQty = formData.qtyBks + (formData.qtyBatang / sp);
+
+        onSubmit({ 
+            ...formData, 
+            qty: totalQty,
+            unit: 'Bks', // Forces backend to use the Bks deduction
+            sticksPerPack: sp,
+            productName: product ? product.name : formData.productName 
+        });
     };
 
     return (
@@ -489,22 +551,21 @@ export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inven
                 <h2 className="text-xl font-bold mb-4 dark:text-white">{initialData?.isNew ? 'New Sample Entry' : 'Edit Sample Details'}</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="col-span-1">
-                            <label className="text-xs font-bold text-slate-500">Date</label>
-                            <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                    
+                    <div className="grid grid-cols-1 gap-2 mb-2">
+                        <label className="text-xs font-bold text-slate-500">Date</label>
+                        <input type="date" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
+                    </div>
+
+                    {/* 🚀 NEW: DUAL INPUT BUNGKUS & BATANG UI */}
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
+                            <input type="number" min="0" value={formData.qtyBks} onChange={e=>setFormData({...formData, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-center font-bold text-lg" required/>
                         </div>
-                        <div className="col-span-1">
-                            <label className="text-xs font-bold text-slate-500">Qty</label>
-                            <input type="number" min="1" value={formData.qty} onChange={e=>setFormData({...formData, qty: parseInt(e.target.value)})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/>
-                        </div>
-                        {/* 🚀 UNIT SELECTOR IN THE MODAL */}
-                        <div className="col-span-1">
-                            <label className="text-xs font-bold text-slate-500">Unit</label>
-                            <select value={formData.unit} onChange={e=>setFormData({...formData, unit: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white font-bold text-orange-500">
-                                <option value="Bks">Bungkus</option>
-                                <option value="Batang">Batang</option>
-                            </select>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Batang</label>
+                            <input type="number" min="0" value={formData.qtyBatang} onChange={e=>setFormData({...formData, qtyBatang: parseInt(e.target.value)||0})} className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-center font-bold text-lg text-blue-500" required/>
                         </div>
                     </div>
 

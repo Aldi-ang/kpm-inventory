@@ -2,6 +2,27 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2 } from 'lucide-react';
 import { formatRupiah, convertToBks } from '../utils/helpers';
 
+// 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
+export const formatAdvancedStock = (stock, item) => {
+    if (typeof stock !== 'number') return { bks: '0 Bks', slop: '0 Slop', bal: '0 Bal' };
+    const sp = item.sticksPerPack || 16;
+    const ps = item.packsPerSlop || 10;
+    const sb = item.slopsPerBal || 20;
+
+    const bks = Math.floor(stock);
+    const fractional = stock - bks;
+    const btg = Math.round(fractional * sp);
+    
+    let bksStr = `${bks} Bks`;
+    if (btg > 0) bksStr += ` + ${btg} Btg`;
+    else if (bks === 0 && btg === 0) bksStr = `0 Bks`;
+
+    const slopDec = (stock / ps).toFixed(1);
+    const balDec = (stock / (ps * sb)).toFixed(2);
+
+    return { bks: bksStr, slop: `${slopDec} Slop`, bal: `${balDec} Bal` };
+};
+
 // --- HELPER: SLIDER COMPONENT ---
 export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => (
     <div className="flex items-center gap-2 mb-2">
@@ -124,7 +145,10 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <h2 className="text-xl md:text-3xl text-white font-serif tracking-widest uppercase mb-2">{product.name}</h2>
                         <div className="flex items-center gap-3">
                             <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-sm md:text-base font-mono font-bold tracking-widest">
-                                STOCK: {isAdmin ? product.stock : "**"}
+                                STOCK: {isAdmin ? (() => {
+                                    const info = formatAdvancedStock(product.stock, product);
+                                    return `${info.bks} / ${info.slop} / ${info.bal}`;
+                                })() : "**"}
                             </span>
                             <span className="text-[10px] text-slate-500 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
@@ -231,9 +255,11 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                             const startBks = item.stock + fieldBks + soldBks;
 
                                             return (
-                                                <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono font-bold w-full">
-                                                    <span className={isLowStock ? 'text-red-500' : 'text-slate-300'}>VAULT: {item.stock}</span>
-                                                    <span className="text-slate-500 border-l border-white/20 pl-2">START: {startBks}</span>
+                                                <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono font-bold w-full overflow-x-auto custom-scrollbar pb-1">
+                                                    <span className={`whitespace-nowrap ${isLowStock ? 'text-red-500' : 'text-slate-300'}`}>
+                                                        VAULT: {formatAdvancedStock(item.stock, item).bks} ({formatAdvancedStock(item.stock, item).slop})
+                                                    </span>
+                                                    <span className="text-slate-500 border-l border-white/20 pl-2 whitespace-nowrap">START: {startBks}</span>
                                                     <span className="text-orange-400 border-l border-white/20 pl-2">FIELD: {fieldBks}</span>
                                                     <span className="text-emerald-400 border-l border-white/20 pl-2">SOLD: {soldBks}</span>
                                                 </div>
