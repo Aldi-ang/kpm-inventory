@@ -459,8 +459,19 @@ export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inven
     const [formData, setFormData] = useState({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
 
     useEffect(() => {
-        if (initialData && !initialData.isNew) setFormData({ ...initialData, unit: initialData.unit || 'Bks', date: initialData.date || getCurrentDate() });
-        else setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
+        if (initialData && !initialData.isNew) {
+            // EDIT MODE: Safely load existing data with fallbacks for legacy records
+            setFormData({
+                ...initialData,
+                unit: initialData.unit || 'Bks',
+                date: initialData.date || getCurrentDate(),
+                note: initialData.note || '',     // 🚀 FIX: Prevents React uncontrolled input warning
+                reason: initialData.reason || ''
+            });
+        } else {
+            // NEW MODE: Reset form
+            setFormData({ date: getCurrentDate(), reason: '', productId: '', productName: '', qty: 1, unit: 'Bks', note: '' });
+        }
     }, [initialData]);
 
     if (!isOpen) return null;

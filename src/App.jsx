@@ -3137,8 +3137,8 @@ const handleGitHubMirror = async () => {
                   productId: newProductId,
                   productName: newProductName,
                   sticksPerPack: newSticksPerPack,
-                  reason: updatedData.reason,
-                  note: updatedData.note,
+                  reason: updatedData.reason || '', // 🚀 FIX: Fallback to prevent undefined
+                  note: updatedData.note || '',     // 🚀 FIX: Fallback to prevent undefined crash
                   updatedAt: serverTimestamp()
               });
           });
