@@ -19,6 +19,7 @@ import {
 
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
+import useDatabaseSync from './hooks/useDatabaseSync'; // 🚀 FIX 1: ADD THIS IMPORT!
 import MapMissionControl from './MapMissionControl';
 import JourneyView from './JourneyView';
 import StockOpnameView from './StockOpnameView';
@@ -957,13 +958,14 @@ const handleGitHubMirror = async () => {
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
 
+ 
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       inventory, setInventory, customers, setCustomers, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests, notifications, setNotifications,
-      adminCanvas, setAdminCanvas, // 🚀 FIXED!
+      adminCanvas, setAdminCanvas, // 🚀 FIX 2: CORRECTED THE NAMING!
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
