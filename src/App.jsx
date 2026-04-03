@@ -213,6 +213,19 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       };
   };
 
+// --- NEW: SAVE EXECUTIVE DASHBOARD TARGETS ---
+  const handleSaveDashboardTargets = async (newTargets) => {
+      if (!user || !isAdmin) return;
+      try {
+          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/general`), newTargets, {merge: true});
+          await logAudit("SETTINGS_UPDATE", "Executive Dashboard Targets modified.");
+          triggerCapy("Executive Targets Updated! 🎯");
+      } catch (err) {
+          console.error(err);
+          alert("Failed to save targets.");
+      }
+  };
+
   // --- UPDATED: MASTER PROTOCOL (Forces Green Indicators) ---
   const handleMasterProtocol = async () => {
     if (!user || !isAdmin) return;
@@ -2388,6 +2401,8 @@ const handleGitHubMirror = async () => {
                     handleBackupData={handleBackupData} lowStockItems={lowStockItems}
                     setActiveTab={setActiveTab} chartData={chartData} backupToast={backupToast}
                     sessionStatus={sessionStatus} auditLogs={auditLogs}
+                    appSettings={appSettings}                                  // 🚀 ADDED
+                    handleSaveDashboardTargets={handleSaveDashboardTargets}    // 🚀 ADDED
                 />
             )
           )}

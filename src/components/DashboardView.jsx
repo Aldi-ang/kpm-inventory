@@ -3,6 +3,7 @@ import { ShieldAlert, AlertCircle, ShieldCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SafetyStatus from './SafetyStatus';
 import { formatRupiah, getRandomColor } from '../utils/helpers';
+import DashboardBenchmarks from './DashboardBenchmarks';
 
 // --- CUSTOM TOOLTIP FOR GRAPH ---
 const CustomTooltip = ({ active, payload, label }) => {
@@ -30,11 +31,24 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function DashboardView({ 
     isAdmin, userRole, totalStockValue, transactions, isUsbSecure, 
     handleBackupData, lowStockItems, setActiveTab, chartData, 
-    backupToast, sessionStatus, auditLogs 
+    backupToast, sessionStatus, auditLogs,
+    appSettings, handleSaveDashboardTargets // 🚀 Added these two
 }) {
     return (
         <div className="space-y-8 relative">
             <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
+
+            {/* 🚀 INJECT THE NORTH STAR ROW HERE 🚀 */}
+            {isAdmin && (
+                <DashboardBenchmarks 
+                    transactions={transactions} 
+                    inventory={inventory} 
+                    appSettings={appSettings}
+                    onSaveTargets={handleSaveDashboardTargets}
+                    canEditGoals={isAdmin} // 🔒 HARD LOCK: Only the Boss can edit this
+                />
+            )}
+
             
             {/* Summary Cards Grid */}
             <div key={`cards-${isAdmin}`} className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-1">
