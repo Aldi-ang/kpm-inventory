@@ -40,7 +40,8 @@ import ResidentEvilInventory from './components/ResidentEvilInventory';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
 import HistoryReportView from './components/HistoryReportView'; 
-import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; // 🚀 ADDED // 🚀 ADDED
+import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; 
+import { CustomerManagement, CustomerDetailView } from './components/CustomerManager'; // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED
 
 
 
