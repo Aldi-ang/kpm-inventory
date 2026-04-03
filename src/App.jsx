@@ -132,7 +132,30 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [backupToast, setBackupToast] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(localStorage.getItem('passkeyRegistered') === 'true');
 
+// --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
+  const [userRole, setUserRole] = useState('ADMIN'); 
+  const [bossUid, setBossUid] = useState(null);
+  const [agentProfileId, setAgentProfileId] = useState(null);
+  const [agentCanvas, setAgentCanvas] = useState([]);
+ 
+  const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
+  
+  // NEW: Agent Permissions State
+  const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
 
+  // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
+  const userId = bossUid || user?.uid || user?.id || 'default';
+
+ 
+  // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
+  const {
+      inventory, setInventory, customers, setCustomers, transactions, setTransactions,
+      samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
+      motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
+      transferRequests, setTransferRequests, notifications, setNotifications,
+      adminCanvas, setAdminCanvas, // 🚀 FIX 2: CORRECTED THE NAMING!
+      appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
+  } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
 
 
@@ -944,30 +967,7 @@ const handleGitHubMirror = async () => {
   const [showSamplingAnalytics, setShowSamplingAnalytics] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
 
-  // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
-  const [userRole, setUserRole] = useState('ADMIN'); 
-  const [bossUid, setBossUid] = useState(null);
-  const [agentProfileId, setAgentProfileId] = useState(null);
-  const [agentCanvas, setAgentCanvas] = useState([]);
- 
-  const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
   
-  // NEW: Agent Permissions State
-  const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
-
-  // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
-  const userId = bossUid || user?.uid || user?.id || 'default';
-
- 
-  // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
-  const {
-      inventory, setInventory, customers, setCustomers, transactions, setTransactions,
-      samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
-      motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
-      transferRequests, setTransferRequests, notifications, setNotifications,
-      adminCanvas, setAdminCanvas, // 🚀 FIX 2: CORRECTED THE NAMING!
-      appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
-  } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
   // --- NEW: FETCH AGENT CANVAS & PERMISSIONS FOR SALES TERMINAL ---
   useEffect(() => {
