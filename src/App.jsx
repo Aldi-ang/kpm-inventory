@@ -2342,19 +2342,27 @@ const handleGitHubMirror = async () => {
                 </div>
             ) : (
                 /* CASE 3: STANDARD LOGIN */
-                <div className="space-y-4">
-                    <input 
-                        type="password" 
-                        placeholder="ENTER MASTER PASSWORD" 
-                        className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-xl mb-2 outline-none font-mono tracking-[0.2em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-xs transition-colors" 
-                        value={inputPin} 
-                        onChange={(e) => setInputPin(e.target.value)} 
-                        onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
-                        autoFocus 
-                        maxLength={15}
-                    />
-                    
-                    {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
+            <div className="space-y-4">
+                <input 
+                    type="password" 
+                    placeholder="ENTER MASTER PASSWORD" 
+                    className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-xl mb-2 outline-none font-mono tracking-[0.2em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-xs transition-colors" 
+                    value={inputPin} 
+                    onChange={(e) => setInputPin(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
+                    autoFocus 
+                    maxLength={15}
+                />
+                
+                {/* 🚀 THE NEW SUBMIT BUTTON 🚀 */}
+                <button 
+                    onClick={handlePinLogin}
+                    className="w-full py-4 bg-red-900/20 hover:bg-red-900/60 border border-red-600/50 text-red-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] transition-all font-mono"
+                >
+                    Access Vault
+                </button>
+                
+                {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
                     {window.PublicKeyCredential && hasPasskey && (
                         <button 
                             onClick={handleBiometricUnlock}
