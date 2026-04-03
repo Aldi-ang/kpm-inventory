@@ -2396,17 +2396,24 @@ const handleGitHubMirror = async () => {
                 </div>
             ) : (
                 <DashboardView 
-                    isAdmin={isAdmin} userRole={userRole} totalStockValue={totalStockValue}
-                    transactions={transactions} isUsbSecure={isUsbSecure}
-                    handleBackupData={handleBackupData} lowStockItems={lowStockItems}
-                    setActiveTab={setActiveTab} chartData={chartData} backupToast={backupToast}
-                    sessionStatus={sessionStatus} auditLogs={auditLogs}
-                    appSettings={appSettings}                                  
-                    handleSaveDashboardTargets={handleSaveDashboardTargets}    
-                    inventory={inventory}  
-                    motorists={motorists}  
-                    customers={customers}  
-                />
+    isAdmin={isAdmin} 
+    userRole={userRole} 
+    totalStockValue={totalStockValue}
+    transactions={transactions} 
+    isUsbSecure={isUsbSecure}
+    handleBackupData={handleBackupData} 
+    lowStockItems={lowStockItems}
+    setActiveTab={setActiveTab} 
+    chartData={chartData} 
+    backupToast={backupToast}
+    sessionStatus={sessionStatus} 
+    auditLogs={auditLogs}
+    appSettings={appSettings}                                  
+    handleSaveDashboardTargets={handleSaveDashboardTargets}    
+    inventory={inventory} // 🚀 REQUIRED FOR ANALYTICS
+    motorists={motorists}  // 🚀 REQUIRED FOR LEADERBOARD
+    customers={customers}  // 🚀 REQUIRED FOR BENCHMARKS
+/>
             )
           )}
 

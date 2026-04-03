@@ -32,7 +32,7 @@ export default function DashboardView({
     handleBackupData, lowStockItems, setActiveTab, chartData, 
     backupToast, sessionStatus, auditLogs,
     appSettings, handleSaveDashboardTargets,
-    inventory, motorists, customers // 🚀 FIX: Now receiving these properly!
+    inventory, motorists, customers // 🚀 NOW RECEIVING THESE
 }) {
 
     // --- AGENT LEADERBOARD ---
