@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ShieldAlert, AlertCircle, ShieldCheck, Users, Box, Activity, TrendingDown } from 'lucide-react';
+import { ShieldAlert, AlertCircle, ShieldCheck, Users, Box, Activity, TrendingDown, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SafetyStatus from './SafetyStatus';
 import { formatRupiah, getRandomColor } from '../utils/helpers';
