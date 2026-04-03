@@ -42,7 +42,9 @@ import CrownTransferProtocol from './components/CrownTransferProtocol';
 import HistoryReportView from './components/HistoryReportView'; 
 import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; 
 import { CustomerManagement, CustomerDetailView } from './components/CustomerManager'; 
-import SettingsView from './components/SettingsView'; // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED
+import SettingsView from './components/SettingsView'; 
+import DashboardView from './components/DashboardView'; // 🚀 ADDED
+import AuditVaultView from './components/AuditVaultView'; // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED
 
 
 
@@ -103,47 +105,7 @@ const APP_VERSION = packageJson.version;
 
 // --- GLOBAL COMPONENTS (MOVED UP TO PREVENT CRASH) ---
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    const total = payload.reduce((sum, entry) => sum + entry.value, 0);
-    return (
-      <div className="bg-white dark:bg-slate-800 p-4 border dark:border-slate-600 shadow-xl rounded-xl text-sm">
-        <p className="font-bold mb-2 border-b pb-1 dark:border-slate-600 dark:text-white">{label}</p>
-        {payload.map((entry, index) => (
-          <div key={index} className="flex justify-between items-center gap-4 mb-1">
-             <span style={{ color: entry.color }} className="font-medium">{entry.name}:</span>
-             <span className="font-mono dark:text-slate-300">{formatRupiah(entry.value)}</span>
-          </div>
-        ))}
-        <div className="mt-2 pt-2 border-t dark:border-slate-600 flex justify-between font-bold dark:text-white">
-            <span>Total Sales:</span>
-            <span>{formatRupiah(total)}</span>
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
 
-const DatabaseBackupIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>;
-
-
-
-
-const AdminAuthModal = ({ onClose, onSuccess }) => {
-    const [pass, setPass] = useState("");
-    const [error, setError] = useState(false);
-    const handleSubmit = (e) => { e.preventDefault(); if (pass === ADMIN_PASS) { onSuccess(); } else { setError(true); setTimeout(() => setError(false), 500); } };
-    return (
-        <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className={`bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center ${error ? 'animate-shake' : ''}`}>
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400"><Lock size={32} /></div>
-                <h2 className="text-xl font-bold dark:text-white mb-1">Admin Access</h2>
-                <form onSubmit={handleSubmit} className="w-full mt-4"><input type="password" autoFocus value={pass} onChange={(e) => setPass(e.target.value)} className={`w-full p-3 rounded-xl border outline-none dark:bg-slate-800 dark:text-white font-mono ${error ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'}`} placeholder="Password" /><div className="flex gap-3 mt-4"><button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-500">Cancel</button><button type="submit" className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold">Unlock</button></div></form>
-            </div>
-        </div>
-    );
-};
 
 
 
@@ -432,149 +394,6 @@ const BiohazardTheme = ({ activeTab, setActiveTab, children, user, appSettings, 
 
 
 
-// --- MODIFIED: AUDIT VAULT EXPLORER (SPLIT-PACKET VERSION) ---
-
-const AuditVaultExplorer = ({ db, storage, appId, user, isAdmin, logAudit, setBackupToast }) => {
-    // ... rest of the code ...
-    const [path, setPath] = useState({ year: null, month: null, day: null });
-    const [logs, setLogs] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    const years = ["2025", "2026"];
-    const months = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const days = Array.from({length: 31}, (_, i) => (i + 1).toString().padStart(2, '0'));
-
-    // --- REVERSAL LOGIC: FETCH EXTERNAL SNAPSHOT & RESTORE ---
-    const handleRestoreFromSnapshot = async (logEntry) => {
-        if (!isAdmin || !logEntry.snapshotPath) return;
-        
-        const confirmMsg = `[RE TERMINAL]: DOWNLOADING CLOUD ARCHIVE...\n\nTarget: ${logEntry.action}\n\nProceed with reconstruction?`;
-        
-        if (window.confirm(confirmMsg)) {
-            try {
-                setLoading(true);
-                // 1. FETCH THE EXTERNAL FILE FROM STORAGE
-                const fileRef = storageRef(storage, logEntry.snapshotPath);
-                const downloadUrl = await getDownloadURL(fileRef);
-                const response = await fetch(downloadUrl);
-                const snapshot = await response.json();
-
-                // 2. AUTO-SAVE SAFETY SNAPSHOT
-                await logAudit("PRE_REVERT_SAFETY", `Auto-archived before reverting to ${logEntry.action}`, true);
-
-                const batch = writeBatch(db);
-                
-                if (snapshot.inventory) {
-                    snapshot.inventory.forEach(item => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
-                    });
-                }
-                if (snapshot.customers) {
-                    snapshot.customers.forEach(c => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), c);
-                    });
-                }
-
-                await batch.commit();
-                setBackupToast(true); 
-                setTimeout(() => window.location.reload(), 2000);
-                
-            } catch (err) {
-                console.error("CLOUD_REVERSION_FAILURE:", err);
-                setLoading(false);
-                alert("SYSTEM ERROR: Cloud data packet corrupted.");
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (path.year && path.month && path.day && user?.uid) {
-            setLoading(true);
-            const dateKey = `${path.year}-${path.month}-${path.day}`;
-            const vaultPath = `artifacts/${appId}/users/${user.uid}/audit_vault/${dateKey}/logs`;
-            
-            const q = query(collection(db, vaultPath), orderBy('timestamp', 'desc'));
-            const unsub = onSnapshot(q, (snap) => {
-                setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                setLoading(false);
-            }, (err) => {
-                console.error("Vault Error:", err);
-                setLoading(false);
-            });
-            return () => unsub();
-        }
-    }, [path, db, appId, user?.uid]);
-
-    const formatM = (m) => new Date(2000, parseInt(m) - 1).toLocaleString('default', { month: 'long' });
-
-    return (
-        <div className="bg-black/20 border border-white/10 rounded-2xl p-6 min-h-[400px] font-mono text-xs">
-            {/* Breadcrumbs */}
-            <div className="flex gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-6 border-b border-white/5 pb-2">
-                <button onClick={() => setPath({year:null, month:null, day:null})} className="hover:text-white">VAULT</button>
-                {path.year && <><span>/</span><button onClick={() => setPath({...path, month:null, day:null})} className="text-orange-500">{path.year}</button></>}
-                {path.month && <><span>/</span><button onClick={() => setPath({...path, day:null})} className="text-orange-500">{formatM(path.month)}</button></>}
-                {path.day && <><span>/</span><span className="text-white">{path.day}</span></>}
-            </div>
-
-            {/* Folder Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {!path.year && years.map(y => (
-                    <button key={y} onClick={() => setPath({...path, year: y})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-orange-500 group transition-all">
-                        <Folder size={24} className="text-orange-500 mb-2 group-hover:scale-110 transition-transform"/>
-                        <span className="text-white font-bold">{y}</span>
-                    </button>
-                ))}
-                {path.year && !path.month && months.map(m => (
-                    <button key={m} onClick={() => setPath({...path, month: m})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-blue-500 group transition-all">
-                        <Calendar size={24} className="text-blue-500 mb-2"/>
-                        <span className="text-white">{formatM(m)}</span>
-                    </button>
-                ))}
-                {path.month && !path.day && days.map(d => (
-                    <button key={d} onClick={() => setPath({...path, day: d})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-emerald-500 group transition-all">
-                        <div className="text-lg font-black text-white/20 group-hover:text-emerald-500">{d}</div>
-                        <span className="text-[8px] text-slate-500 uppercase">DAY</span>
-                    </button>
-                ))}
-            </div>
-
-            {/* Log List */}
-            {path.day && (
-                <div className="mt-4 space-y-2 animate-fade-in">
-                    {loading ? <p className="text-orange-500 animate-pulse text-center py-10 uppercase tracking-widest">/// Decrypting Sector ///</p> : logs.map(log => (
-                        <div key={log.id} className="p-3 bg-white/5 border-l-2 border-orange-500 flex justify-between items-center group">
-                            <div className="flex-1">
-                                <p className="text-white font-bold uppercase flex items-center gap-2">
-                                    {log.action}
-                                    {log.snapshotId && (
-                                        <span className="text-[7px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded tracking-tighter animate-pulse">
-                                            REMOTE SNAPSHOT LOADED
-                                        </span>
-                                    )}
-                                </p>
-                                <p className="text-slate-400 text-[10px]">{log.details}</p>
-                            </div>
-                            
-                            <div className="flex items-center gap-4">
-                                {log.snapshotId && isAdmin && (
-                                    <button 
-                                        onClick={() => handleRestoreFromSnapshot(log)}
-                                        className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                                    >
-                                        <RotateCcw size={10}/> Revert
-                                    </button>
-                                )}
-                                <span className="text-slate-600 text-[9px]">{log.timeStr}</span>
-                            </div>
-                        </div>
-                    ))}
-                    {!loading && logs.length === 0 && <p className="text-slate-600 italic py-10 text-center uppercase tracking-widest">/// Sector Empty ///</p>}
-                </div>
-            )}
-        </div>
-    );
-};
 
 
 
@@ -3124,7 +2943,7 @@ const handleGitHubMirror = async () => {
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
-         {activeTab === 'dashboard' && userRole === 'ADMIN' && (
+        {activeTab === 'dashboard' && userRole === 'ADMIN' && (
             !isAdmin ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
                     <div className="relative mb-8">
@@ -3138,117 +2957,13 @@ const handleGitHubMirror = async () => {
                     <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
-        
-              <div className="space-y-8 relative">
-                {/* --- PINPOINT: Pass sessionStatus here --- */}
-                <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
-                  
-                
-                  
-                  {/* Summary Cards Grid */}
-                  {/* FIX: Changed md: to lg: so they stack vertically on landscape phones */}
-                  <div key={`cards-${isAdmin}`} className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-1">
-                      <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm">
-                          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Assets</h3>
-                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
-                      </div>
-                      <div className="border-l-4 border-orange-500 bg-white/5 p-6 backdrop-blur-sm">
-                          <h3 className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-1">Revenue</h3>
-                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').reduce((acc, t) => acc + (t.total || 0), 0)) : "****"}</p>
-                      </div>
-                      <div className="border-l-4 border-emerald-500 bg-white/5 p-6 backdrop-blur-sm">
-                          <h3 className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-1">Net Profit</h3>
-                          <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "****"}</p>
-                      </div>
-                  </div>
-
-                  {/* --- MODIFIED PHYSICAL SECURITY BLOCK: ADMIN ONLY + HIDE IF SECURE --- */}
-                  {isAdmin && !isUsbSecure && (
-                      <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-2xl flex justify-between items-center animate-pulse">
-                          <div className="flex items-center gap-3">
-                              <ShieldAlert className="text-orange-500" size={20}/>
-                              <p className="text-xs text-orange-200 font-bold uppercase tracking-wider">
-                                  Physical Security Protocol Required?
-                              </p>
-                          </div>
-                          <button 
-                              onClick={handleBackupData} 
-                              className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded-xl font-bold text-xs shadow-lg transition-all active:scale-95"
-                          >
-                              Run USB Safe Backup
-                          </button>
-                      </div>
-                  )}
-
-
-                  {/* --- PINPOINT: Dashboard Alert Widget (Line 2330) --- */}
-                  {/* CRITICAL STOCK ALERT WIDGET */}
-                  {isAdmin && lowStockItems.length > 0 && (
-                      <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-2xl shadow-lg relative overflow-hidden mb-6">
-                          <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse"></div>
-                          <div className="flex items-center gap-3 mb-4">
-                              <AlertCircle className="text-red-500 animate-pulse" size={24}/>
-                              <h3 className="text-red-400 font-bold uppercase tracking-widest text-sm">Critical Stock Alerts</h3>
-                              <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStockItems.length} Items</span>
-                          </div>
-
-                          {/* FIX: Use lg: for 4 columns, default to 1 for landscape phones to prevent crushing */}
-                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-
-                              {lowStockItems.slice(0, 6).map(item => ( 
-                                  <div key={item.id} className="bg-black/50 border border-red-500/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-red-900/30 transition-colors" onClick={() => { setActiveTab('inventory'); }}>
-                                      <div className="min-w-0 flex-1">
-                                          <p className="text-white text-xs font-bold truncate">{item.name}</p>
-                                          <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wider">Threshold: {item.minStock || 5}</p>
-                                      </div>
-                                      <div className="text-right ml-2 shrink-0 bg-red-950/50 p-2 rounded-lg border border-red-900/50">
-                                          <p className="text-red-500 font-black text-lg leading-none">{item.stock}</p>
-                                          <p className="text-[8px] text-red-400 uppercase tracking-widest mt-1">Left</p>
-                                      </div>
-                                  </div>
-                              ))}
-                          </div>
-                          {lowStockItems.length > 6 && (
-                              <button onClick={() => setActiveTab('inventory')} className="w-full mt-3 py-3 bg-red-900/20 hover:bg-red-900/40 text-red-400 text-xs font-bold rounded-lg border border-red-900/50 transition-colors uppercase tracking-widest">
-                                  View All {lowStockItems.length} Depleted Items
-                              </button>
-                          )}
-                      </div>
-                  )}
-
-
-
-
-                  {/* Performance Graph Area */}
-                  <div key={`graph-${isAdmin}`} className="bg-black/40 border border-white/10 p-6 h-96 boot-2">
-                      <h3 className="text-white mb-4 uppercase text-xs font-bold tracking-widest border-b border-white/10 pb-2">Performance Graph</h3>
-                      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                            <BarChart data={chartData.data}>
-                                <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff"/>
-                                <XAxis dataKey="date" stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
-                                <YAxis stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
-                                <Tooltip contentStyle={{backgroundColor: '#000', border: '1px solid #fff', color: '#fff'}} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
-                                <Legend />
-                                {chartData.keys.map((key) => (
-                                    <Bar key={key} dataKey={key} stackId="a" fill={getRandomColor(key)} />
-                                ))}
-                            </BarChart>
-                      </ResponsiveContainer>
-                  </div>
-
-                  {/* RE TERMINAL TOAST (Kept here to ensure it works) */}
-                  {backupToast && (
-                      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1000] bg-black/90 border-2 border-emerald-500 text-emerald-500 px-10 py-5 rounded-none shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono flex flex-col items-center gap-2 animate-terminal-flicker">
-                          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
-                          <div className="flex items-center gap-3">
-                              <ShieldCheck size={28} className="animate-pulse" />
-                              <div className="text-lg font-black uppercase tracking-[0.3em]">Backup Initialized</div>
-                          </div>
-                          <div className="h-[1px] w-full bg-emerald-500/30"></div>
-                          <div className="text-[10px] uppercase tracking-widest opacity-70">Physical Data Integrity Confirmed</div>
-                      </div>
-                  )}
-              </div>
+                <DashboardView 
+                    isAdmin={isAdmin} userRole={userRole} totalStockValue={totalStockValue}
+                    transactions={transactions} isUsbSecure={isUsbSecure}
+                    handleBackupData={handleBackupData} lowStockItems={lowStockItems}
+                    setActiveTab={setActiveTab} chartData={chartData} backupToast={backupToast}
+                    sessionStatus={sessionStatus} auditLogs={auditLogs}
+                />
             )
           )}
 
@@ -3566,50 +3281,8 @@ const handleGitHubMirror = async () => {
           {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} />}
           
          {activeTab === 'audit' && (
-    <div className="space-y-6 max-w-5xl mx-auto p-4">
-        <div className="flex justify-between items-end border-b border-white/10 pb-4">
-            <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <ShieldCheck className="text-orange-500"/> Audit Vault
-                </h2>
-                <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">Immutable Operation Archive</p>
-            </div>
-        </div>
-        
-        {/* --- FULLY OPTIMIZED EXPLORER --- */}
-        <AuditVaultExplorer 
-    db={db} 
-    storage={storage} // <--- ADD THIS LINE HERE
-    appId={appId} 
-    user={user} 
-    isAdmin={isAdmin} 
-    logAudit={logAudit} 
-    setBackupToast={setBackupToast} 
-/>
-        
-        <div className="mt-10">
-            <h3 className="text-xs font-bold text-slate-500 uppercase mb-4 opacity-50">Recent System Activity</h3>
-            <div className="bg-black/50 border border-white/10 rounded-xl overflow-hidden font-mono text-[10px]">
-                <table className="w-full text-left">
-                    <thead className="bg-white/5 text-slate-500">
-                        <tr><th className="p-3">Action</th><th className="p-3">Details</th><th className="p-3 text-right">Time</th></tr>
-                    </thead>
-                    <tbody>
-                        {auditLogs.slice(0, 8).map(log => (
-                            <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
-                                <td className="p-3 text-orange-500 font-bold">{log.action}</td>
-                                <td className="p-3 text-slate-300">{log.details}</td>
-                                <td className="p-3 text-right text-slate-500">
-                                    {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : 'Just now'}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-)}
+             <AuditVaultView db={db} storage={storage} appId={appId} user={user} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />
+         )}
 
 
           {activeTab === 'settings' && (
