@@ -2401,8 +2401,9 @@ const handleGitHubMirror = async () => {
                     handleBackupData={handleBackupData} lowStockItems={lowStockItems}
                     setActiveTab={setActiveTab} chartData={chartData} backupToast={backupToast}
                     sessionStatus={sessionStatus} auditLogs={auditLogs}
-                    appSettings={appSettings}                                  // 🚀 ADDED
-                    handleSaveDashboardTargets={handleSaveDashboardTargets}    // 🚀 ADDED
+                    appSettings={appSettings}                                  
+                    handleSaveDashboardTargets={handleSaveDashboardTargets}    
+                    inventory={inventory} // 🚀 FIX 2: Pass it down!
                 />
             )
           )}

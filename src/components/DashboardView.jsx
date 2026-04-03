@@ -32,7 +32,8 @@ export default function DashboardView({
     isAdmin, userRole, totalStockValue, transactions, isUsbSecure, 
     handleBackupData, lowStockItems, setActiveTab, chartData, 
     backupToast, sessionStatus, auditLogs,
-    appSettings, handleSaveDashboardTargets // 🚀 Added these two
+    appSettings, handleSaveDashboardTargets,
+    inventory // 🚀 FIX 1: Add inventory here!
 }) {
     return (
         <div className="space-y-8 relative">
