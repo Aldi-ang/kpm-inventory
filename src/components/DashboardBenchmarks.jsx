@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Target, TrendingUp, Flame, Settings, X, Save } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatRupiah } from '../utils/helpers';
@@ -17,6 +17,17 @@ export default function DashboardBenchmarks({ transactions, inventory, appSettin
         targetDailyBal: TARGET_DAILY_BAL,
         targetFilterRatio: TARGET_FILTER_RATIO
     });
+
+    // 🚀 THE FIX: Force the form to wake up and sync with the latest database values when opened!
+    useEffect(() => {
+        if (isEditing) {
+            setEditForm({
+                targetMonthlyRevenue: appSettings?.targetMonthlyRevenue || 500000000,
+                targetDailyBal: appSettings?.targetDailyBal || 50,
+                targetFilterRatio: appSettings?.targetFilterRatio || 60
+            });
+        }
+    }, [isEditing, appSettings]);
 
     const handleSave = (e) => {
         e.preventDefault();
@@ -185,15 +196,16 @@ export default function DashboardBenchmarks({ transactions, inventory, appSettin
                         <form onSubmit={handleSave} className="space-y-5">
                             <div>
                                 <label className="text-[10px] text-emerald-500 font-bold block mb-2 uppercase tracking-widest">Target Monthly Revenue (Rp)</label>
-                                <input type="number" value={editForm.targetMonthlyRevenue} onChange={(e) => setEditForm({...editForm, targetMonthlyRevenue: e.target.value})} className="w-full p-3 bg-black border border-emerald-500/30 text-white rounded outline-none focus:border-emerald-500" required/>
+                                {/* 🚀 FIX: Changed to text type to bypass HTML number formatting bugs */}
+                                <input type="text" value={editForm.targetMonthlyRevenue} onChange={(e) => setEditForm({...editForm, targetMonthlyRevenue: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-emerald-500/30 text-white rounded outline-none focus:border-emerald-500" required/>
                             </div>
                             <div>
                                 <label className="text-[10px] text-orange-500 font-bold block mb-2 uppercase tracking-widest">Target Daily Volume (Bal)</label>
-                                <input type="number" step="any" value={editForm.targetDailyBal} onChange={(e) => setEditForm({...editForm, targetDailyBal: e.target.value})} className="w-full p-3 bg-black border border-orange-500/30 text-white rounded outline-none focus:border-orange-500" required/>
+                                <input type="text" value={editForm.targetDailyBal} onChange={(e) => setEditForm({...editForm, targetDailyBal: e.target.value.replace(/[^0-9.]/g, '')})} className="w-full p-3 bg-black border border-orange-500/30 text-white rounded outline-none focus:border-orange-500" required/>
                             </div>
                             <div>
                                 <label className="text-[10px] text-blue-500 font-bold block mb-2 uppercase tracking-widest">Target Filter Proportion (%)</label>
-                                <input type="number" min="0" max="100" value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value})} className="w-full p-3 bg-black border border-blue-500/30 text-white rounded outline-none focus:border-blue-500" required/>
+                                <input type="text" maxLength={3} value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-blue-500/30 text-white rounded outline-none focus:border-blue-500" required/>
                                 <p className="text-[9px] text-slate-500 mt-2">Example: 60 = Aiming for 60% Filter / 40% Kretek.</p>
                             </div>
 
