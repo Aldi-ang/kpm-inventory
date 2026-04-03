@@ -16,7 +16,6 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
         targetFilterRatio: TARGET_FILTER_RATIO
     });
 
-    // 🚀 FIX: Sync state when modal opens
     useEffect(() => {
         if (isEditing) {
             setEditForm({
@@ -100,79 +99,83 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
     ];
 
     return (
-        <div className="relative mb-8 boot-1">
-            <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
-                <div>
-                    <h2 className="text-lg font-bold text-white uppercase tracking-widest">Executive Targets</h2>
-                    <p className="text-[10px] text-slate-500 font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
-                </div>
-                {canEditGoals && (
-                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-white/10">
-                        <Settings size={14}/> Adjust Goals
-                    </button>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp size={80}/></div>
-                    <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Monthly Trajectory</h3>
-                    <p className="text-2xl font-black text-white mb-4">{formatRupiah(metrics.monthlyRevenue)}</p>
-                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
-                        <div className="bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100, 100)}%` }}></div>
+        <>
+            {/* --- DASHBOARD WIDGETS --- */}
+            <div className="relative mb-8 boot-1">
+                <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+                    <div>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-widest">Executive Targets</h2>
+                        <p className="text-[10px] text-slate-500 font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
-                        <span>{Math.round((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100)}% to Goal</span>
-                        <span>Target: {formatRupiah(TARGET_MONTHLY_REVENUE)}</span>
-                    </div>
+                    {canEditGoals && (
+                        <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-white/10">
+                            <Settings size={14}/> Adjust Goals
+                        </button>
+                    )}
                 </div>
 
-                <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={80}/></div>
-                    <h3 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Daily Volume (Bal)</h3>
-                    <div className="flex items-baseline gap-2 mb-4">
-                        <p className="text-3xl font-black text-white leading-none">{metrics.dailyBalSold}</p>
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
-                    </div>
-                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
-                        <div className="bg-orange-500 h-full shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.dailyBalSold / TARGET_DAILY_BAL) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
-                        <span>Pace: {metrics.dailyBalSold >= TARGET_DAILY_BAL ? 'Target Met!' : 'Behind Schedule'}</span>
-                        <span>{Math.max(0, TARGET_DAILY_BAL - metrics.dailyBalSold).toFixed(1)} Bal Remaining</span>
-                    </div>
-                </div>
-
-                <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
-                    <div className="flex-1">
-                        <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Flame size={12}/> Product Shift</h3>
-                        <div className="space-y-2">
-                            <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-blue-400">Filter (SKM)</span><span className="text-white">{metrics.filterPercent}%</span></div>
-                                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-blue-500 h-full" style={{ width: `${metrics.filterPercent}%` }}></div></div>
-                            </div>
-                            <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange-400">Kretek (SKT)</span><span className="text-white">{metrics.kretekPercent}%</span></div>
-                                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
-                            </div>
-                            <p className="text-[8px] font-mono text-slate-500 uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp size={80}/></div>
+                        <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Monthly Trajectory</h3>
+                        <p className="text-2xl font-black text-white mb-4">{formatRupiah(metrics.monthlyRevenue)}</p>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100, 100)}%` }}></div>
+                        </div>
+                        <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
+                            <span>{Math.round((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100)}% to Goal</span>
+                            <span>Target: {formatRupiah(TARGET_MONTHLY_REVENUE)}</span>
                         </div>
                     </div>
-                    <div className="w-24 h-24 shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={pieData} innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
-                                    {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
-                                </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} />
-                            </PieChart>
-                        </ResponsiveContainer>
+
+                    <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={80}/></div>
+                        <h3 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Daily Volume (Bal)</h3>
+                        <div className="flex items-baseline gap-2 mb-4">
+                            <p className="text-3xl font-black text-white leading-none">{metrics.dailyBalSold}</p>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
+                        </div>
+                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-orange-500 h-full shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.dailyBalSold / TARGET_DAILY_BAL) * 100, 100)}%` }}></div>
+                        </div>
+                        <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
+                            <span>Pace: {metrics.dailyBalSold >= TARGET_DAILY_BAL ? 'Target Met!' : 'Behind Schedule'}</span>
+                            <span>{Math.max(0, TARGET_DAILY_BAL - metrics.dailyBalSold).toFixed(1)} Bal Remaining</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
+                        <div className="flex-1">
+                            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Flame size={12}/> Product Shift</h3>
+                            <div className="space-y-2">
+                                <div>
+                                    <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-blue-400">Filter (SKM)</span><span className="text-white">{metrics.filterPercent}%</span></div>
+                                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-blue-500 h-full" style={{ width: `${metrics.filterPercent}%` }}></div></div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange-400">Kretek (SKT)</span><span className="text-white">{metrics.kretekPercent}%</span></div>
+                                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
+                                </div>
+                                <p className="text-[8px] font-mono text-slate-500 uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
+                            </div>
+                        </div>
+                        <div className="w-24 h-24 shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={pieData} innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
+                                        {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* --- MODAL (FREED FROM STACKING CONTEXT) --- */}
             {isEditing && (
-                <div className="fixed inset-0 z-[999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                <div className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
                     <div className="bg-[#0a0a0a] border border-white/20 p-8 rounded-2xl w-full max-w-md shadow-2xl relative font-mono">
                         <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-slate-500 hover:text-red-500 transition-colors"><X size={24}/></button>
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-widest"><Settings className="text-orange-500"/> Edit Goals</h2>
@@ -197,6 +200,6 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }
