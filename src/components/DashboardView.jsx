@@ -5,7 +5,6 @@ import SafetyStatus from './SafetyStatus';
 import { formatRupiah, getRandomColor } from '../utils/helpers';
 import DashboardBenchmarks from './DashboardBenchmarks';
 
-// --- CUSTOM TOOLTIP FOR GRAPH ---
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const total = payload.reduce((sum, entry) => sum + entry.value, 0);
@@ -33,16 +32,15 @@ export default function DashboardView({
     handleBackupData, lowStockItems, setActiveTab, chartData, 
     backupToast, sessionStatus, auditLogs,
     appSettings, handleSaveDashboardTargets,
-    inventory, motorists, customers
+    inventory, motorists, customers // 🚀 FIX: Now receiving these properly!
 }) {
 
-    // --- ROW 3 ENGINE: AGENT LEADERBOARD (TODAY'S PERFORMANCE) ---
+    // --- AGENT LEADERBOARD ---
     const agentPerformance = useMemo(() => {
         const todayStr = new Date().toLocaleDateString();
         const perf = {};
         
         transactions.forEach(t => {
-            // Only count sales from today
             if (t.type === 'SALE' && new Date(t.timestamp?.seconds ? t.timestamp.seconds * 1000 : t.date).toLocaleDateString() === todayStr) {
                 const agent = t.agentName || 'Admin / Unknown';
                 if (!perf[agent]) perf[agent] = { revenue: 0, profit: 0, count: 0 };
@@ -51,17 +49,15 @@ export default function DashboardView({
                 perf[agent].count += 1;
             }
         });
-        // Sort by highest revenue
         return Object.entries(perf).map(([name, data]) => ({ name, ...data })).sort((a,b) => b.revenue - a.revenue);
     }, [transactions]);
 
-
-    // --- ROW 4 ENGINE: VAULT INTELLIGENCE (30-DAY VELOCITY) ---
+    // --- VAULT VELOCITY ---
     const vaultVelocity = useMemo(() => {
+        if (!inventory) return { fastest: [], slowest: [] }; // Safety check
         const salesCount = {};
         inventory.forEach(i => salesCount[i.id] = { name: i.name, soldBks: 0, stock: i.stock, isLow: i.stock <= (i.minStock || 5) });
         
-        // Calculate sales over the last 30 days
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -71,7 +67,6 @@ export default function DashboardView({
                 if (tDate >= thirtyDaysAgo) {
                     (t.items || []).forEach(item => {
                         if (salesCount[item.productId]) {
-                            // Standardize to Bks for velocity comparison
                             let bksQty = item.qty;
                             const pData = inventory.find(p => p.id === item.productId) || {};
                             if (item.unit === 'Batang') bksQty = item.qty / (pData.sticksPerPack || 16);
@@ -88,8 +83,7 @@ export default function DashboardView({
         
         const sorted = Object.values(salesCount).sort((a,b) => b.soldBks - a.soldBks);
         return {
-            fastest: sorted.slice(0, 5), // Top 5
-            // Slowest: Items that HAVE stock, but haven't sold much
+            fastest: sorted.slice(0, 5),
             slowest: sorted.filter(item => item.stock > 0).reverse().slice(0, 5) 
         };
     }, [transactions, inventory]);
@@ -175,7 +169,6 @@ export default function DashboardView({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* FAST MOVERS */}
                             <div>
                                 <h4 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2"><TrendingUp size={12}/> High Demand</h4>
                                 <div className="space-y-2">
@@ -190,8 +183,6 @@ export default function DashboardView({
                                     ))}
                                 </div>
                             </div>
-
-                            {/* SLOW MOVERS */}
                             <div>
                                 <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2"><TrendingDown size={12}/> Dead Stock Watch</h4>
                                 <div className="space-y-2">
@@ -270,19 +261,6 @@ export default function DashboardView({
                       </BarChart>
                 </ResponsiveContainer>
             </div>
-
-            {/* RE TERMINAL TOAST */}
-            {backupToast && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1000] bg-black/90 border-2 border-emerald-500 text-emerald-500 px-10 py-5 rounded-none shadow-[0_0_30px_rgba(16,185,129,0.5)] font-mono flex flex-col items-center gap-2 animate-terminal-flicker">
-                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
-                    <div className="flex items-center gap-3">
-                        <ShieldCheck size={28} className="animate-pulse" />
-                        <div className="text-lg font-black uppercase tracking-[0.3em]">Backup Initialized</div>
-                    </div>
-                    <div className="h-[1px] w-full bg-emerald-500/30"></div>
-                    <div className="text-[10px] uppercase tracking-widest opacity-70">Physical Data Integrity Confirmed</div>
-                </div>
-            )}
         </div>
     );
 }
