@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { X, Menu, Lock, LogOut, LogIn, ArrowRight } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../config/firebase'; // Ensure this points to your firebase config
+import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
-import MusicPlayer from './MusicPlayer';
+import MusicPlayer from '../MusicPlayer'; // 🚀 FIX: Added ../ to go up one folder level
 
 export default function BiohazardTheme({ 
     activeTab, setActiveTab, children, user, appSettings, 
