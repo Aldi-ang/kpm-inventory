@@ -1038,14 +1038,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const receipt = document.querySelector('.print-receipt');
     if (!receipt) return;
 
-    // Clone the receipt and strip unwanted elements
     const clone = receipt.cloneNode(true);
     clone.querySelectorAll('.no-print').forEach(el => el.remove());
-    
-    // 🚀 FIX 1: Strip restrictive layout classes
     clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
 
-    // Extract app CSS
     let parentStyles = '';
     document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
         parentStyles += el.outerHTML;
@@ -1053,13 +1049,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     const isThermal = clone.classList.contains('format-thermal');
 
-    // 🚀 FIX 2: Give the iframe actual dimensions so Chrome doesn't shrink the print!
     const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = isThermal ? '300px' : '800px'; 
-    iframe.style.height = '1px'; // 🚀 Prevents blank space at top of print
+    iframe.style.position = 'absolute'; // 🚀 FIX 1: Anchor to absolute document flow
+    iframe.style.top = '0'; // 🚀 FIX 2: Anchor to TOP so Chrome doesn't print empty space
+    iframe.style.left = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
     iframe.style.opacity = '0';
     iframe.style.pointerEvents = 'none';
     iframe.style.border = 'none';
@@ -1076,60 +1071,44 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             ${parentStyles}
             <style>
                 @media print {
-                    @page { 
-                        margin: 0; 
-                    }
+                    @page { margin: 0; }
                     html, body { 
                         background: #ffffff !important; 
                         color: #000000 !important; 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        width: ${isThermal ? '100%' : '210mm'} !important; 
+                        /* 🚀 FIX 3: 58mm paper only has a 48mm printable area! */
+                        width: ${isThermal ? '48mm' : '210mm'} !important; 
                         height: auto !important; 
-                        /* 🚀 FIX 1: KILL FLEXBOX TO STOP THE BLANK PAPER FEED */
                         display: block !important; 
                         -webkit-print-color-adjust: exact; 
                         print-color-adjust: exact; 
                     }
                     .print-receipt { 
-                        width: ${isThermal ? '54mm' : '100%'} !important;
+                        width: ${isThermal ? '48mm' : '100%'} !important;
                         max-width: 100% !important;
                         margin: 0 !important;
-                        margin-left: ${isThermal ? '2mm' : '0'} !important; 
-                        padding: ${isThermal ? '0mm' : '10mm'} !important; 
+                        padding: 0 !important; 
                         box-sizing: border-box !important;
                         box-shadow: none !important; 
                         border: none !important; 
-                        height: auto !important; 
-                        /* 🚀 FIX 2: FORCE HARDWARE TO STOP ROLLERS */
                         page-break-after: avoid !important;
-                        page-break-before: avoid !important;
-                        page-break-inside: avoid !important;
                     }
                     
-                    /* --- 🚀 FIX 3: MAXIMUM INK DENSITY FOR THERMAL --- */
-                    .format-thermal { 
-                        /* Arial burns much thicker and darker than Courier */
-                        font-family: Arial, Helvetica, sans-serif !important; 
-                    }
+                    /* Typography Polish */
+                    .format-thermal { font-family: Arial, sans-serif !important; }
                     .format-thermal * { 
                         font-size: 11px !important; 
                         line-height: 1.2 !important; 
-                        /* Force pure hex black */
                         color: #000000 !important; 
-                        /* Force heavy font-weight to maximize burn heat */
                         font-weight: 800 !important; 
                     }
-                    .format-thermal h2 { 
-                        font-size: 14px !important; 
-                        text-align: center !important; 
-                        font-weight: 900 !important; 
-                    }
-                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
-                    .format-thermal td, .format-thermal th { vertical-align: top !important; }
+                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
+                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
+                    .format-thermal td, .format-thermal th { vertical-align: top !important; word-wrap: break-word !important; }
                     * { color: #000000 !important; border-color: #000000 !important; }
                 }
-                body { background: white; margin: 0; padding: 0; }
+                body { background: white; margin: 0; padding: 0; display: block; }
             </style>
         </head>
         <body>
@@ -1147,7 +1126,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     `);
     doc.close();
 
-    // Auto-cleanup the iframe
     setTimeout(() => {
         if (document.body.contains(iframe)) document.body.removeChild(iframe);
     }, 10000);
