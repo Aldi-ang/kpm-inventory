@@ -364,63 +364,103 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             </div>
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                                
+                                
                                 <button onClick={() => {
-                                    const receipt = document.querySelector('.print-receipt');
-                                    if (!receipt) return;
-                                    
-                                    const printWindow = window.open('', '_blank');
-                                    if (!printWindow) {
-                                        alert("⚠️ Safari Blocked the Print Window! Please go to your iPhone Settings > Safari > Turn OFF 'Block Pop-ups'.");
-                                        return;
-                                    }
+    const receipt = document.querySelector('.print-receipt');
+    if (!receipt) return;
 
-                                    const clone = receipt.cloneNode(true);
-                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+    // Clone the receipt and strip unwanted elements
+    const clone = receipt.cloneNode(true);
+    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+    
+    // 🚀 FIX 1: Strip restrictive layout classes
+    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
 
-                                    let parentStyles = '';
-                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-                                        parentStyles += el.outerHTML;
-                                    });
+    // Extract app CSS
+    let parentStyles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+        parentStyles += el.outerHTML;
+    });
 
-                                    const isThermal = clone.classList.contains('format-thermal');
-                                    
-                                    printWindow.document.open();
-                                    printWindow.document.write(`
-                                        <!DOCTYPE html>
-                                        <html>
-                                        <head>
-                                            <title>KPM Invoice</title>
-                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                            ${parentStyles}
-                                            <style>
-                                                @media print {
-                                                    @page { margin: 0; size: ${isThermal ? '58mm auto' : 'A4 portrait'}; }
-                                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; margin: 0 !important; padding: 0 !important; }
-                                                    .format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; margin: 0 auto !important; }
-                                                    .format-thermal { width: 58mm !important; max-width: 58mm !important; padding: 2mm !important; margin: 0 auto !important; font-size: 10px !important; }
-                                                    .format-thermal * { font-size: 10px !important; line-height: 1.2 !important; }
-                                                    table { table-layout: fixed !important; width: 100% !important; }
-                                                    th, td { word-wrap: break-word !important; }
-                                                    .min-w-\\[800px\\] { min-width: 0 !important; width: 100% !important; }
-                                                    * { box-shadow: none !important; border-color: black !important; color: black !important; }
-                                                }
-                                                body { background: #52525b; display: flex; justify-content: center; padding: 20px; font-family: sans-serif; }
-                                                .format-a4 { background: white; width: 210mm; }
-                                                .format-thermal { background: white; width: 58mm; font-size: 10px; }
-                                            </style>
-                                        </head>
-                                        <body>
-                                            ${clone.outerHTML}
-                                            <script>
-                                                setTimeout(function() { window.print(); }, 250);
-                                            </script>
-                                        </body>
-                                        </html>
-                                    `);
-                                    printWindow.document.close();
-                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                    <Printer size={14}/> Print Document
-                                </button>
+    const isThermal = clone.classList.contains('format-thermal');
+
+    // 🚀 FIX 2: Give the iframe actual dimensions so Chrome doesn't shrink the print!
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = isThermal ? '300px' : '800px'; 
+    iframe.style.height = '100vh'; 
+    iframe.style.opacity = '0'; 
+    iframe.style.pointerEvents = 'none';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>KPM Invoice</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            ${parentStyles}
+            <style>
+                @media print {
+                    @page { 
+                        margin: 0; 
+                    }
+                    html, body { 
+                        background: #ffffff !important; 
+                        color: #000000 !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important; 
+                        width: ${isThermal ? '100%' : '210mm'} !important; 
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
+                    .print-receipt { 
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: ${isThermal ? '2mm' : '10mm'} !important; 
+                        box-shadow: none !important; 
+                        border: none !important; 
+                        height: auto !important; 
+                        overflow: visible !important; 
+                    }
+                    * { color: #000000 !important; border-color: #000000 !important; }
+                }
+                body { background: white; margin: 0; padding: 0; }
+            </style>
+        </head>
+        <body>
+            ${clone.outerHTML}
+            <script>
+                window.onload = () => {
+                    setTimeout(() => {
+                        window.focus();
+                        window.print();
+                    }, 500);
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    doc.close();
+
+    // Auto-cleanup the iframe
+    setTimeout(() => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+    }, 10000);
+
+}} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+    <Printer size={14}/> Print Document
+</button>
+
+
+
 
                                 {/* 🚀 RESTORED WHATSAPP BUTTON 🚀 */}
                                 <button onClick={() => {
