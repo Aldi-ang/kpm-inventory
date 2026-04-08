@@ -1058,9 +1058,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
     iframe.style.bottom = '0';
-    iframe.style.width = isThermal ? '300px' : '800px'; // Real width!
-    iframe.style.height = '100vh'; // Real height!
-    iframe.style.opacity = '0'; // Completely invisible to the user
+    iframe.style.width = isThermal ? '300px' : '800px'; 
+    iframe.style.height = '1px'; // 🚀 Prevents blank space at top of print
+    iframe.style.opacity = '0';
     iframe.style.pointerEvents = 'none';
     iframe.style.border = 'none';
     document.body.appendChild(iframe);
@@ -1078,58 +1078,58 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 @media print {
                     @page { 
                         margin: 0; 
-                        /* Keep this as auto, user will set paper size in browser */
-                        size: ${isThermal ? '58mm auto' : 'A4 portrait'}; 
                     }
                     html, body { 
                         background: #ffffff !important; 
                         color: #000000 !important; 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        /* 🚀 FIX 1: Allow full driver width, but control alignment */
                         width: ${isThermal ? '100%' : '210mm'} !important; 
-                        height: max-content !important; 
-                        overflow: visible !important;
+                        height: auto !important; 
+                        /* 🚀 FIX 1: KILL FLEXBOX TO STOP THE BLANK PAPER FEED */
+                        display: block !important; 
                         -webkit-print-color-adjust: exact; 
                         print-color-adjust: exact; 
-                        /* 🚀 FIX 2: Ensure the iframe's internal body is center-aligned */
-                        display: flex !important;
-                        justify-content: center !important;
                     }
                     .print-receipt { 
+                        width: ${isThermal ? '54mm' : '100%'} !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        margin-left: ${isThermal ? '2mm' : '0'} !important; 
+                        padding: ${isThermal ? '0mm' : '10mm'} !important; 
                         box-sizing: border-box !important;
                         box-shadow: none !important; 
                         border: none !important; 
                         height: auto !important; 
-                        overflow: visible !important; 
-                        /* 🚀 FIX 3: THE MAGIC OFFSET */
-                        /* If thermal, we set width slightly less than 58mm (e.g., 55mm) */
-                        /* And add left margin to nudge it past the hardware unprintable zone */
-                        width: ${isThermal ? '54mm' : '100%'} !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        /* Nudge content ~2mm to the right to clear physical left edge */
-                        margin-left: ${isThermal ? '2mm' : '0'} !important; 
-                        /* Internal padding for aesthetics */
-                        padding: ${isThermal ? '1mm' : '10mm'} !important; 
+                        /* 🚀 FIX 2: FORCE HARDWARE TO STOP ROLLERS */
+                        page-break-after: avoid !important;
+                        page-break-before: avoid !important;
+                        page-break-inside: avoid !important;
                     }
                     
-                    /* --- Thermal Specifics (Ensure typography uses available space) --- */
+                    /* --- 🚀 FIX 3: MAXIMUM INK DENSITY FOR THERMAL --- */
                     .format-thermal { 
-                        font-family: 'Courier New', monospace !important; 
-                        letter-spacing: -0.5px !important; 
-                        word-spacing: -1px !important;
+                        /* Arial burns much thicker and darker than Courier */
+                        font-family: Arial, Helvetica, sans-serif !important; 
                     }
                     .format-thermal * { 
                         font-size: 11px !important; 
                         line-height: 1.2 !important; 
+                        /* Force pure hex black */
                         color: #000000 !important; 
+                        /* Force heavy font-weight to maximize burn heat */
+                        font-weight: 800 !important; 
                     }
-                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; }
+                    .format-thermal h2 { 
+                        font-size: 14px !important; 
+                        text-align: center !important; 
+                        font-weight: 900 !important; 
+                    }
                     .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                    .format-thermal td, .format-thermal th { vertical-align: top !important; }
                     * { color: #000000 !important; border-color: #000000 !important; }
                 }
-                body { background: white; margin: 0; padding: 0; display: flex; justify-content: center; }
+                body { background: white; margin: 0; padding: 0; }
             </style>
         </head>
         <body>
