@@ -1077,9 +1077,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         color: #000000 !important; 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        /* 🚀 FIX 3: 58mm paper only has a 48mm printable area! */
                         width: ${isThermal ? '48mm' : '210mm'} !important; 
-                        height: auto !important; 
+                        height: max-content !important; 
+                        min-height: 0 !important;
+                        overflow: hidden !important;
                         display: block !important; 
                         -webkit-print-color-adjust: exact; 
                         print-color-adjust: exact; 
@@ -1095,18 +1096,36 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         page-break-after: avoid !important;
                     }
                     
-                    /* Typography Polish */
-                    .format-thermal { font-family: Arial, sans-serif !important; }
+                    /* --- 🚀 RESTORED DESIGN & CLARITY --- */
+                    .format-thermal { 
+                        /* Monospace prevents characters from bleeding together on thermal paper */
+                        font-family: 'Courier New', Courier, monospace !important; 
+                    }
                     .format-thermal * { 
                         font-size: 11px !important; 
                         line-height: 1.2 !important; 
                         color: #000000 !important; 
-                        font-weight: 800 !important; 
                     }
+                    /* Restore balanced font weights to prevent ink bleed */
+                    .format-thermal .font-bold { font-weight: bold !important; }
+                    .format-thermal .font-black { font-weight: 900 !important; }
+                    
+                    /* Restore Table Spacing */
+                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
+                    .format-thermal .text-right { text-align: right !important; }
+                    .format-thermal .text-center { text-align: center !important; }
+
+                    /* Restore Dashed Lines */
+                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
+                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
+                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+
+                    /* Restore structural flex layouts */
+                    .format-thermal .flex { display: flex !important; }
+                    .format-thermal .justify-between { justify-content: space-between !important; }
+                    
                     .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
-                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
-                    .format-thermal td, .format-thermal th { vertical-align: top !important; word-wrap: break-word !important; }
-                    * { color: #000000 !important; border-color: #000000 !important; }
                 }
                 body { background: white; margin: 0; padding: 0; display: block; }
             </style>
