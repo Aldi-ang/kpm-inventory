@@ -1078,31 +1078,59 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 @media print {
                     @page { 
                         margin: 0; 
-                        /* REMOVED size property. Let the EPPOS driver dictate the roll size! */
+                        /* Force the printer height to 'auto' to stop exactly when content stops */
+                        size: ${isThermal ? '58mm auto' : 'A4 portrait'}; 
                     }
                     html, body { 
                         background: #ffffff !important; 
                         color: #000000 !important; 
-                        margin: 0 !important; 
+                        /* Lock alignment to the absolute center */
+                        margin: 0 auto !important; 
                         padding: 0 !important; 
-                        /* 🚀 FIX 3: Use 100% width so it fluidly fits the 58mm roll */
-                        width: ${isThermal ? '100%' : '210mm'} !important; 
-                        height: auto !important;
-                        overflow: visible !important;
+                        /* Lock exact width */
+                        width: ${isThermal ? '58mm' : '210mm'} !important; 
+                        /* Prevent it from stretching to 210mm if not needed */
+                        height: max-content !important; 
+                        overflow: hidden !important;
                     }
                     .print-receipt { 
-                        width: 100% !important;
+                        width: ${isThermal ? '58mm' : '100%'} !important;
                         max-width: 100% !important;
-                        margin: 0 !important;
+                        margin: 0 auto !important; 
                         padding: ${isThermal ? '2mm' : '10mm'} !important; 
+                        box-sizing: border-box !important;
                         box-shadow: none !important; 
                         border: none !important; 
-                        height: auto !important; 
-                        overflow: visible !important; 
                     }
-                    * { color: #000000 !important; border-color: #000000 !important; }
+                    
+                    /* --- THERMAL SPECIFIC TYPOGRAPHY OVERRIDES --- */
+                    /* We increase the font size here so you DO NOT need 200% scale in Chrome */
+                    .format-thermal, .format-thermal * { 
+                        font-size: 11px !important; 
+                        line-height: 1.3 !important; 
+                        color: #000000 !important; 
+                    }
+                    /* Make the Company Name bolder and larger */
+                    .format-thermal h2 { 
+                        font-size: 14px !important; 
+                        text-align: center !important;
+                    }
+                    .format-thermal p {
+                        text-align: center !important;
+                    }
+                    
+                    /* --- TABLE & COLUMN STABILIZATION --- */
+                    .format-thermal table { 
+                        width: 100% !important; 
+                        table-layout: fixed !important; 
+                    }
+                    .format-thermal td, .format-thermal th { 
+                        word-wrap: break-word !important; 
+                        vertical-align: top !important;
+                    }
                 }
-                body { background: white; margin: 0; padding: 0; }
+                /* Center the iframe's internal layout just in case */
+                body { display: flex; justify-content: center; }
             </style>
         </head>
         <body>
