@@ -1042,8 +1042,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const clone = receipt.cloneNode(true);
     clone.querySelectorAll('.no-print').forEach(el => el.remove());
     
-    // 🚀 FIX: Strip scrollbar classes that cause Chrome to print Blank/Cut-off pages
-    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg');
+    // 🚀 FIX 1: Strip restrictive layout classes
+    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
 
     // Extract app CSS
     let parentStyles = '';
@@ -1053,13 +1053,15 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     const isThermal = clone.classList.contains('format-thermal');
 
-    // 🚀 FIX: Create an invisible Iframe instead of a Popup Window
+    // 🚀 FIX 2: Give the iframe actual dimensions so Chrome doesn't shrink the print!
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
     iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    iframe.style.width = isThermal ? '300px' : '800px'; // Real width!
+    iframe.style.height = '100vh'; // Real height!
+    iframe.style.opacity = '0'; // Completely invisible to the user
+    iframe.style.pointerEvents = 'none';
     iframe.style.border = 'none';
     document.body.appendChild(iframe);
 
@@ -1076,37 +1078,36 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 @media print {
                     @page { 
                         margin: 0; 
-                        size: ${isThermal ? '58mm auto' : 'A4 portrait'}; 
+                        /* REMOVED size property. Let the EPPOS driver dictate the roll size! */
                     }
                     html, body { 
                         background: #ffffff !important; 
                         color: #000000 !important; 
                         margin: 0 !important; 
-                        padding: ${isThermal ? '0 2mm' : '10mm'} !important; 
-                        width: ${isThermal ? '58mm' : '210mm'} !important; 
+                        padding: 0 !important; 
+                        /* 🚀 FIX 3: Use 100% width so it fluidly fits the 58mm roll */
+                        width: ${isThermal ? '100%' : '210mm'} !important; 
                         height: auto !important;
                         overflow: visible !important;
-                        -webkit-print-color-adjust: exact; 
-                        print-color-adjust: exact; 
                     }
-                    /* Forcing everything inside the receipt to render fully */
                     .print-receipt { 
-                        max-height: none !important; 
-                        height: auto !important; 
-                        overflow: visible !important; 
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: ${isThermal ? '2mm' : '10mm'} !important; 
                         box-shadow: none !important; 
                         border: none !important; 
-                        width: 100% !important;
-                        margin: 0 !important;
+                        height: auto !important; 
+                        overflow: visible !important; 
                     }
                     * { color: #000000 !important; border-color: #000000 !important; }
                 }
+                body { background: white; margin: 0; padding: 0; }
             </style>
         </head>
         <body>
             ${clone.outerHTML}
             <script>
-                // Give the iframe 500ms to load CSS before firing the print dialogue
                 window.onload = () => {
                     setTimeout(() => {
                         window.focus();
@@ -1119,7 +1120,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     `);
     doc.close();
 
-    // Auto-cleanup the iframe after 10 seconds
+    // Auto-cleanup the iframe
     setTimeout(() => {
         if (document.body.contains(iframe)) document.body.removeChild(iframe);
     }, 10000);
@@ -1127,6 +1128,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
     <Printer size={14}/> Print Document
 </button>
+
+
+
+
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
                                     if (receiptData.items && receiptData.items.length > 0) {
