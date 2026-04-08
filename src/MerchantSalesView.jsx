@@ -1078,59 +1078,58 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 @media print {
                     @page { 
                         margin: 0; 
-                        /* Force the printer height to 'auto' to stop exactly when content stops */
+                        /* Keep this as auto, user will set paper size in browser */
                         size: ${isThermal ? '58mm auto' : 'A4 portrait'}; 
                     }
                     html, body { 
                         background: #ffffff !important; 
                         color: #000000 !important; 
-                        /* Lock alignment to the absolute center */
-                        margin: 0 auto !important; 
+                        margin: 0 !important; 
                         padding: 0 !important; 
-                        /* Lock exact width */
-                        width: ${isThermal ? '58mm' : '210mm'} !important; 
-                        /* Prevent it from stretching to 210mm if not needed */
+                        /* 🚀 FIX 1: Allow full driver width, but control alignment */
+                        width: ${isThermal ? '100%' : '210mm'} !important; 
                         height: max-content !important; 
-                        overflow: hidden !important;
+                        overflow: visible !important;
+                        -webkit-print-color-adjust: exact; 
+                        print-color-adjust: exact; 
+                        /* 🚀 FIX 2: Ensure the iframe's internal body is center-aligned */
+                        display: flex !important;
+                        justify-content: center !important;
                     }
                     .print-receipt { 
-                        width: ${isThermal ? '58mm' : '100%'} !important;
-                        max-width: 100% !important;
-                        margin: 0 auto !important; 
-                        padding: ${isThermal ? '2mm' : '10mm'} !important; 
                         box-sizing: border-box !important;
                         box-shadow: none !important; 
                         border: none !important; 
+                        height: auto !important; 
+                        overflow: visible !important; 
+                        /* 🚀 FIX 3: THE MAGIC OFFSET */
+                        /* If thermal, we set width slightly less than 58mm (e.g., 55mm) */
+                        /* And add left margin to nudge it past the hardware unprintable zone */
+                        width: ${isThermal ? '54mm' : '100%'} !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        /* Nudge content ~2mm to the right to clear physical left edge */
+                        margin-left: ${isThermal ? '2mm' : '0'} !important; 
+                        /* Internal padding for aesthetics */
+                        padding: ${isThermal ? '1mm' : '10mm'} !important; 
                     }
                     
-                    /* --- THERMAL SPECIFIC TYPOGRAPHY OVERRIDES --- */
-                    /* We increase the font size here so you DO NOT need 200% scale in Chrome */
-                    .format-thermal, .format-thermal * { 
+                    /* --- Thermal Specifics (Ensure typography uses available space) --- */
+                    .format-thermal { 
+                        font-family: 'Courier New', monospace !important; 
+                        letter-spacing: -0.5px !important; 
+                        word-spacing: -1px !important;
+                    }
+                    .format-thermal * { 
                         font-size: 11px !important; 
-                        line-height: 1.3 !important; 
+                        line-height: 1.2 !important; 
                         color: #000000 !important; 
                     }
-                    /* Make the Company Name bolder and larger */
-                    .format-thermal h2 { 
-                        font-size: 14px !important; 
-                        text-align: center !important;
-                    }
-                    .format-thermal p {
-                        text-align: center !important;
-                    }
-                    
-                    /* --- TABLE & COLUMN STABILIZATION --- */
-                    .format-thermal table { 
-                        width: 100% !important; 
-                        table-layout: fixed !important; 
-                    }
-                    .format-thermal td, .format-thermal th { 
-                        word-wrap: break-word !important; 
-                        vertical-align: top !important;
-                    }
+                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; }
+                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                    * { color: #000000 !important; border-color: #000000 !important; }
                 }
-                /* Center the iframe's internal layout just in case */
-                body { display: flex; justify-content: center; }
+                body { background: white; margin: 0; padding: 0; display: flex; justify-content: center; }
             </style>
         </head>
         <body>
