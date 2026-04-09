@@ -1072,18 +1072,40 @@ const handleGitHubMirror = async () => {
   };
 
 
-  // 🚀 EOD HANDLERS 🚀
+ // 🚀 EOD HANDLERS 🚀
   const handleSubmitEOD = async (reportData) => {
       try {
+          // 🚀 PHASE 1 FIX: Force the exact format "Mas Gilga - theonlygilgamesh@gmail.com"
+          // We pull the exact registered email, ignoring what Google tries to force.
+          const formattedAgentName = `${user.displayName || "Field Agent"} - ${user.email || "No Email"}`;
+
+          // 1. Save the EOD Report
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`), {
-              agentName: user.displayName || user.email.split('@')[0], 
+              agentName: formattedAgentName, 
               agentId: agentProfileId || 'ADMIN',
               timestamp: serverTimestamp(),
               status: 'PENDING',
               ...reportData 
           });
-          triggerCapy("EOD Report submitted to database! Waiting for Admin.");
-      } catch (e) { console.error(e); alert("Failed to submit EOD: " + e.message); }
+
+          // 🚀 PHASE 2 FIX: Trigger the Admin Notification Bell!
+          // This drops a message directly into the Admin's notification inbox.
+          if (!isAdmin) {
+              await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                  title: "💰 EOD Submitted",
+                  message: `${formattedAgentName} submitted an EOD report. Pending your verification.`,
+                  type: "EOD_APPROVAL",
+                  isRead: false,
+                  timestamp: serverTimestamp(),
+                  agentId: agentProfileId
+              });
+          }
+
+          triggerCapy("EOD Report submitted! Admin has been notified.");
+      } catch (e) { 
+          console.error(e); 
+          alert("Failed to submit EOD: " + e.message); 
+      }
   };
 
   const handleVerifyEOD = async (report) => {
