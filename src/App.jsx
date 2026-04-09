@@ -2147,6 +2147,9 @@ const handleGitHubMirror = async () => {
       
       // Filter customers strictly based on the agent's authorized tiers
       return customers.filter(c => {
+          // 🚀 ANTI-FRAUD QUARANTINE: Strictly hide PENDING stores from Agents!
+          if (c.status === 'PENDING') return false;
+
           let mappedTier = c.priceTier || 'Retail'; 
           
           // Fallback logic for legacy customers missing the explicit priceTier
@@ -2449,7 +2452,7 @@ const handleGitHubMirror = async () => {
 
 
           {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? customers : permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
           {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} />}
