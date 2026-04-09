@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package } from 'lucide-react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
-const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProfileId, eodReports, user, onSubmitEOD, onVerifyEOD, isAdmin }) => {
+const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProfileId, eodReports, user, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
@@ -189,12 +189,22 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                                             </div>
                                         </div>
 
-                                        <button 
-                                            onClick={() => onVerifyEOD(report)}
-                                            className="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-transform active:scale-95"
-                                        >
-                                            <CheckCircle size={18}/> Verify & Return Stock
-                                        </button>
+                                        <div className="flex gap-2 mt-4">
+                                            <button 
+                                                onClick={() => onVerifyEOD(report)}
+                                                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-transform active:scale-95"
+                                            >
+                                                <CheckCircle size={18}/> Verify
+                                            </button>
+                                            
+                                            {/* 🚀 THE NEW RESET BUTTON */}
+                                            <button 
+                                                onClick={() => onResetEOD(report)}
+                                                className="flex-1 py-3 bg-red-900/40 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
+                                            >
+                                                <XCircle size={18}/> Reset
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

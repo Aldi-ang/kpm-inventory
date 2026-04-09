@@ -1108,11 +1108,11 @@ const handleGitHubMirror = async () => {
       }
   };
 
+  // 🚀 ADMIN EOD PROTOCOLS (Verify & Reset) 🚀
   const handleVerifyEOD = async (report) => {
       if(!window.confirm(`Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`)) return;
       try {
           await runTransaction(db, async (t) => {
-              // 1. Calculate & Return stock to Master Vault
               for (const item of (report.remainingStock || [])) {
                   if (item.qty > 0) {
                       const pRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId);
@@ -1128,21 +1128,25 @@ const handleGitHubMirror = async () => {
                       }
                   }
               }
-              
-              // 2. Clear agent's Canvas
               if (report.agentId && report.agentId !== 'ADMIN') {
                   const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
                   t.update(agentRef, { activeCanvas: [] });
               }
-
-              // 3. Mark EOD as Verified
               const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
-          
-          await logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}. Cleared inventory.`);
+          await logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}`);
           triggerCapy("EOD Verified & Stock Returned!");
       } catch(e) { console.error(e); alert("Verification failed: " + e.message); }
+  };
+
+  const handleResetEOD = async (report) => {
+      if(!window.confirm(`RESET EOD for ${report.agentName}? This will delete today's submission so they can try again.`)) return;
+      try {
+          await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id));
+          await logAudit("EOD_RESET", `Admin reset EOD for ${report.agentName}`);
+          triggerCapy(`EOD Reset! ${report.agentName} can now submit again.`);
+      } catch(e) { console.error(e); alert("Failed to reset: " + e.message); }
   };
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
@@ -2677,6 +2681,7 @@ const handleGitHubMirror = async () => {
                   user={user}
                   onSubmitEOD={handleSubmitEOD}
                   onVerifyEOD={handleVerifyEOD}
+                  onResetEOD={handleResetEOD} // 🚀 THIS IS THE NEW LINE
                   isAdmin={isAdmin}
               />
           )}

@@ -3,7 +3,7 @@ import { X, Menu, Lock, LogOut, LogIn, ArrowRight } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
-import MusicPlayer from '../MusicPlayer'; // 🚀 FIX: Added ../ to go up one folder level
+import MusicPlayer from '../MusicPlayer'; 
 
 export default function BiohazardTheme({ 
     activeTab, setActiveTab, children, user, appSettings, 
@@ -130,7 +130,7 @@ export default function BiohazardTheme({
 
                     {user ? (
                         <div className="flex items-center gap-2">
-                            <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
+                            {/* 🚨 REMOVED THE BELL FROM DOWN HERE 🚨 */}
                             <img 
                                 src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
                                 className="w-7 h-7 rounded border border-white/30 object-cover bg-black"
@@ -171,9 +171,16 @@ export default function BiohazardTheme({
                         </div>
                     </div>
 
-                    <div className="text-[10px] text-gray-500 font-mono text-right">
-                        <div>{new Date().toLocaleDateString()}</div>
-                        <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    <div className="flex items-center gap-6">
+                        {/* 🚀 THE BELL IS NOW IN THE TOP RIGHT (VERCEL STYLE) */}
+                        <div className="z-[9999]">
+                            <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
+                        </div>
+                        
+                        <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
+                            <div>{new Date().toLocaleDateString()}</div>
+                            <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
                     </div>
                 </div>
 
