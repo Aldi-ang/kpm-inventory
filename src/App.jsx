@@ -1072,18 +1072,40 @@ const handleGitHubMirror = async () => {
   };
 
 
-  // 🚀 EOD HANDLERS 🚀
+ // 🚀 EOD HANDLERS 🚀
   const handleSubmitEOD = async (reportData) => {
       try {
+          // 🚀 PHASE 1 FIX: Force the exact format "Mas Gilga - theonlygilgamesh@gmail.com"
+          // We pull the exact registered email, ignoring what Google tries to force.
+          const formattedAgentName = `${user.displayName || "Field Agent"} - ${user.email || "No Email"}`;
+
+          // 1. Save the EOD Report
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`), {
-              agentName: user.displayName || user.email.split('@')[0], 
+              agentName: formattedAgentName, 
               agentId: agentProfileId || 'ADMIN',
               timestamp: serverTimestamp(),
               status: 'PENDING',
               ...reportData 
           });
-          triggerCapy("EOD Report submitted to database! Waiting for Admin.");
-      } catch (e) { console.error(e); alert("Failed to submit EOD: " + e.message); }
+
+          // 🚀 PHASE 2 FIX: Trigger the Admin Notification Bell!
+          // This drops a message directly into the Admin's notification inbox.
+          if (!isAdmin) {
+              await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                  title: "💰 EOD Submitted",
+                  message: `${formattedAgentName} submitted an EOD report. Pending your verification.`,
+                  type: "EOD_APPROVAL",
+                  isRead: false,
+                  timestamp: serverTimestamp(),
+                  agentId: agentProfileId
+              });
+          }
+
+          triggerCapy("EOD Report submitted! Admin has been notified.");
+      } catch (e) { 
+          console.error(e); 
+          alert("Failed to submit EOD: " + e.message); 
+      }
   };
 
   const handleVerifyEOD = async (report) => {
@@ -2125,6 +2147,9 @@ const handleGitHubMirror = async () => {
       
       // Filter customers strictly based on the agent's authorized tiers
       return customers.filter(c => {
+          // 🚀 ANTI-FRAUD QUARANTINE: Strictly hide PENDING stores from Agents!
+          if (c.status === 'PENDING') return false;
+
           let mappedTier = c.priceTier || 'Retail'; 
           
           // Fallback logic for legacy customers missing the explicit priceTier
@@ -2427,7 +2452,7 @@ const handleGitHubMirror = async () => {
 
 
           {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={customers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? customers : permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
           {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} />}

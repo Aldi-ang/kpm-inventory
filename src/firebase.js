@@ -16,5 +16,5 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
-export const APP_ID = "cello-inventory-manager";
+export const appId = "cello-inventory-manager";
 export const ADMIN_PASS = "KomuroMangetsu02";

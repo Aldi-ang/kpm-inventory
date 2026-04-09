@@ -230,6 +230,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
         if (!formData.name.trim()) return; 
+        
         const cleanData = {
             ...formData,
             name: formData.name.trim(),
@@ -237,6 +238,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             longitude: formData.longitude ? parseFloat(formData.longitude) : null,
             updatedAt: serverTimestamp()
         };
+        
         try { 
             if (editingId) { 
                 await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), cleanData); 
@@ -244,9 +246,33 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 triggerCapy("Customer updated!"); 
                 setEditingId(null); 
             } else { 
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), cleanData); 
-                await logAudit("CUSTOMER_ADD", `Added: ${formData.name}`); 
-                triggerCapy("Customer added!"); 
+                // 🚀 ANTI-FRAUD QUARANTINE 🚀
+                // Admin bypasses the lock. Field Agents get locked as PENDING.
+                const initialStatus = isAdmin ? 'APPROVED' : 'PENDING';
+                
+                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), {
+                    ...cleanData,
+                    status: initialStatus,
+                    createdAt: serverTimestamp()
+                }); 
+                
+                await logAudit("CUSTOMER_ADD", `Added: ${formData.name} (${initialStatus})`); 
+                
+                // 🔔 TRIGGER ADMIN NOTIFICATION BELL
+                if (initialStatus === 'PENDING') {
+                    const agentName = user.displayName || user.email.split('@')[0];
+                    await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/notifications`), {
+                        title: "🏪 NOO Verification Required",
+                        message: `${agentName} submitted a new outlet: ${formData.name}.`,
+                        type: "NOO_APPROVAL",
+                        isRead: false,
+                        timestamp: serverTimestamp(),
+                        linkToTab: "customers" // Clicking the bell takes you straight here!
+                    });
+                    triggerCapy("New Outlet submitted! Waiting for Admin verification.");
+                } else {
+                    triggerCapy("Customer added and approved!"); 
+                }
             } 
             setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
             setCoordInput("");
@@ -268,6 +294,21 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     const handleDelete = async (id, name) => { if (window.confirm("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
     const openDetail = (c) => { setSelectedCustomer(c); setViewMode('detail'); };
+
+
+    // 🚀 ADMIN NOO APPROVAL PROTOCOL
+    const handleApproveNOO = async (e, id, name) => {
+        e.stopPropagation();
+        if (!window.confirm(`Approve NOO for ${name}? This will permanently unlock the store for Field Agents.`)) return;
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id), {
+                status: 'APPROVED',
+                verifiedAt: serverTimestamp()
+            });
+            logAudit("NOO_APPROVED", `Verified and approved NOO: ${name}`);
+            triggerCapy(`${name} is now unlocked and live! 🟢`);
+        } catch(err) { console.error(err); alert("Failed to approve: " + err.message); }
+    };
 
     if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} />;
 
@@ -404,8 +445,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     </span>
                                 </div>
                             </div>
-                            {isAdmin && (
+                           {isAdmin && (
                                 <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
+                                    
+                                    {/* 🚀 THE NEW APPROVE BUTTON (Only shows if status is PENDING) */}
+                                    {c.status === 'PENDING' && (
+                                        <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1 text-xs bg-emerald-500/20 text-emerald-500 font-bold rounded hover:bg-emerald-500 hover:text-white transition-colors animate-pulse">Approve</button>
+                                    )}
+
                                     <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-100 text-slate-600 dark:text-slate-300">Edit</button>
                                     <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-100 text-red-500">Delete</button>
                                 </div>
