@@ -1,7 +1,7 @@
 {
   "name": "kpm-inventory",
   "private": true,
-  "version": "0.0.147",
+  "version": "0.0.148",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,6 +20,7 @@
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-is": "^19.2.5",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
