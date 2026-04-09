@@ -218,16 +218,24 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                             {verifiedReports.length === 0 ? (
                                 <div className="text-center p-6 text-slate-600 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No recent logs.</div>
                             ) : verifiedReports.map(report => (
-                                <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70">
+                                <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70 hover:opacity-100 transition-opacity">
                                     <div>
                                         <h4 className="font-bold text-white">{report.agentName}</h4>
                                         <p className="text-[9px] text-slate-500">
                                             {report.verifiedAt?.seconds ? new Date(report.verifiedAt.seconds * 1000).toLocaleString() : ''}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex flex-col items-end">
                                         <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
-                                        <p className="text-[9px] text-orange-400">Stock Cleared</p>
+                                        <p className="text-[9px] text-orange-400 mb-2">Stock Cleared</p>
+                                        
+                                        {/* 🚀 NEW FORCE RESET BUTTON FOR OLD REPORTS */}
+                                        <button 
+                                            onClick={() => onResetEOD(report)}
+                                            className="text-[10px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95"
+                                        >
+                                            <XCircle size={10}/> Force Reset
+                                        </button>
                                     </div>
                                 </div>
                             ))}
