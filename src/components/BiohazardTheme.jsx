@@ -205,13 +205,27 @@ export default function BiohazardTheme({
                 .leaflet-container a.leaflet-popup-close-button { display: none !important; }
 
                 @media print {
-                    @page { size: A4 portrait !important; margin: 5mm !important; }
+                    @page { margin: 0 !important; }
                     body, html, #root { background-color: white !important; color: black !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; display: block !important; }
                     .print-reset { display: block !important; height: auto !important; min-height: auto !important; overflow: visible !important; position: static !important; }
                     nav, header, .hide-on-print, .no-print { display: none !important; }
                     .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
                     .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; page-break-after: avoid !important; page-break-inside: avoid !important; }
-                    .print-receipt.format-thermal { width: 80mm !important; max-width: 80mm !important; padding: 5mm !important; }
+                    
+                    /* 🚀 THE 58MM FIX */
+                    .print-receipt.format-thermal { 
+                        width: 100% !important; 
+                        max-width: 55mm !important; /* Slightly under 58mm to prevent edge-clipping */
+                        padding: 2mm !important; 
+                        margin: 0 !important;
+                        box-sizing: border-box !important;
+                    }
+                    /* 🚀 FORCE TEXT WRAPPING FOR LONG ITEM NAMES */
+                    .print-receipt.format-thermal * {
+                        word-wrap: break-word !important;
+                        white-space: pre-wrap !important;
+                    }
+
                     .print-receipt.format-a4 { width: 210mm !important; max-width: 210mm !important; padding: 10mm !important; box-sizing: border-box !important; }
                     .print-receipt * { color: black !important; border-color: black !important; }
                 }
