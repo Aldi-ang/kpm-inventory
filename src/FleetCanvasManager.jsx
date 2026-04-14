@@ -15,14 +15,14 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
-    // 🚀 UPGRADE: Added Location, Province, and userRole to manage Hierarchy
+    // 🚀 UPGRADE: Default State now explicitly includes userRole for Hierarchy Management
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
         allowedPayments: ['Cash'], 
         allowedTiers: ['Retail', 'Ecer'],
         userRole: 'AGENT',
-        location: 'Headquarters', // Default distribution area
-        province: 'Central Java'  // 🚀 NEW: Province Level
+        location: 'Headquarters', 
+        province: 'Central Java' 
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -31,22 +31,19 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const [isNewProv, setIsNewProv] = useState(false);
     const [isNewLoc, setIsNewLoc] = useState(false);
 
-    // Automatically extract all unique locations from your existing database
     const existingProvinces = useMemo(() => [...new Set(agents.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [agents]);
     const existingLocations = useMemo(() => [...new Set(agents.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [agents]);
 
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
     
-    // --- NEW UI STATES ---
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
-    const [viewingSuratJalan, setViewingSuratJalan] = useState(false); // NEW: Surat Jalan UI
+    const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
 
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
-    // 🚀 Keep the selected agent's activeCanvas up to date automatically!
     useEffect(() => {
         if (selectedAgent) {
             const updated = agents.find(m => m.id === selectedAgent.id);
@@ -54,7 +51,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         }
     }, [agents, selectedAgent]);
 
-    const fetchAgents = () => {}; // 🚀 LEGACY BYPASS: Keeps old save buttons from crashing
+    const fetchAgents = () => {}; 
 
     const togglePayment = (method) => {
         setNewAgent(prev => ({
@@ -77,11 +74,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
-        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, Name, and Plate Number
         const isDupEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         const isDupPhone = agents.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
         const isDupName = agents.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
-        // 🚀 UPGRADE: Check Plate Number (but ignore it if the input is left blank)
         const isDupPlate = newAgent.vehicle?.trim() && agents.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
         if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
@@ -101,7 +96,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
                     allowedPayments: newAgent.allowedPayments,
                     allowedTiers: newAgent.allowedTiers,
-                    // 🚀 UPGRADE: Force Firebase to permanently save the Province!
                     userRole: newAgent.userRole || 'AGENT',
                     location: newAgent.location || 'Headquarters',
                     province: newAgent.province || 'Central Java'
@@ -111,8 +105,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                     batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 }
                 
+                // 🚀 HIERARCHY FIX: Force userRole into the Global Directory so routing works on login
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
-                    bossUid: userId, agentId: editingAgentId, role: newAgent.role, status: 'Active'
+                    bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
 
             } else {
@@ -123,7 +118,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                 batch.set(doc(db, collPath, newId), agentData);
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
-                    bossUid: userId, agentId: newId, role: newAgent.role, status: 'Active'
+                    bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
             }
 
@@ -153,7 +148,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'],
             allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
-            // 🚀 UPGRADE: Ensure the form loads their Province and Location!
             userRole: agent.userRole || 'AGENT',
             location: agent.location || 'Headquarters',
             province: agent.province || 'Central Java'
@@ -180,7 +174,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         }
     };
 
-    // --- HELPER: UNIT CONVERSION ENGINE ---
     const convertToBks = (qty, unit, product) => {
         if (!product) return qty;
         const packsPerSlop = product.packsPerSlop || 10;
@@ -199,10 +192,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         if (!product) return;
 
         const qtyToLoad = Number(loadQty);
-        
-        // 🚀 FIX: Force quantity transfer to strictly use Bungkus to perfectly match Vault records
         const unitToLoad = 'Bungkus';
-        const loadInBks = qtyToLoad; // Bypass math conversion since input is already raw Bungkus
+        const loadInBks = qtyToLoad; 
 
         if ((product.stock || 0) < loadInBks) {
             return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bungkus, but the Master Vault only has ${product.stock || 0} Bungkus available.`);
@@ -280,7 +271,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
-    // --- NEW: DYNAMIC PER-ITEM MATH ENGINE ---
     const todayStr = new Date().toISOString().split('T')[0];
     const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && t.type === 'SALE');
     
@@ -288,7 +278,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         if (!selectedAgent) return [];
         const map = {};
         
-        // 1. Log what is currently in the car
         (selectedAgent.activeCanvas || []).forEach(item => {
             const p = inventory.find(x => x.id === item.productId);
             map[item.productId] = {
@@ -301,7 +290,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             };
         });
         
-        // 2. Add back what was sold today to find the Starting Balance
         agentSales.forEach(t => {
             (t.items || []).forEach(item => {
                 const p = inventory.find(x => x.id === item.productId);
@@ -320,7 +308,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     return (
         <div className="print-reset h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
             
-            {/* GLOBAL RECEIPT MODAL (FIXED FOR LAG AND DARK MODE) */}
+            {/* RECEIPT MODAL */}
             {viewingReceipt && (
                 <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                     <div className="print-receipt format-thermal !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
@@ -363,13 +351,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 </div>
             )}
 
-           {/* NEW: OFFICIAL SURAT JALAN MODAL (ULTIMATE ALIGNMENT FIX) */}
+           {/* SURAT JALAN MODAL */}
             {viewingSuratJalan && selectedAgent && (
                 <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!p-0 print:!m-0 print:!block">
                     <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none">
                         
                         <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:!overflow-visible print:!border-none print:!block print:!w-full print:!m-0 print:!p-0">
-                            {/* ULTIMATE ALIGNMENT FIX: Using !important on print classes to absolutely destroy the 800px mobile scroll lock and double-padding during print */}
                             <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:!min-w-0 print:!w-full print:!max-w-none print:!p-0 print:!m-0 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                 <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                     <div className="flex-1 flex items-center gap-4">
@@ -473,32 +460,32 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {isAddingAgent && (
                         <div className="bg-slate-800 p-4 rounded-xl border-2 border-dashed border-blue-500/50 mb-4 animate-slide-down">
-                            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">{editingAgentId ? 'Edit Agent Profile' : 'Deploy New Agent'}</h3>
+                            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">{editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}</h3>
                             
                             <select value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-bold">
                                 <option value="Motorist">Sales Motorist (Motorbike)</option>
                                 <option value="Canvas">Sales Canvas (Car / Van)</option>
                             </select>
 
-                            <input type="text" placeholder="Agent Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
+                            <input type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             
-                            {/* 🚀 ADMIN ONLY: SYSTEM ACCESS CONTROL INJECTED NEXT TO EMAIL */}
+                            {/* 🚀 HIERARCHY ENGINE: The 4-Tier Security Clearance Selector */}
                             <div className="flex gap-2 mb-2">
-                                <input type="email" placeholder="Google Account Email (Required for Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
+                                <input type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
                                 {isAdmin && (
                                     <select 
-                                        className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : 'border-slate-700 text-white focus:border-blue-500'}`}
+                                        className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : newAgent.userRole === 'AREA_ADMIN' ? 'border-purple-500 text-purple-400' : 'border-slate-700 text-white focus:border-blue-500'}`}
                                         value={newAgent.userRole || 'AGENT'} 
                                         onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
                                         style={{ colorScheme: 'dark' }}
                                     >
-                                        <option value="AGENT" className="bg-slate-900 text-white">Salesman</option>
-                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Master Admin</option>
+                                        <option value="AGENT" className="bg-slate-900 text-white">Tier 4: Salesman (Field)</option>
+                                        <option value="AREA_ADMIN" className="bg-slate-900 text-purple-500">Tier 3: Area Admin (Branch)</option>
+                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Tier 2: Master Admin (HQ)</option>
                                     </select>
                                 )}
                             </div>
                             
-                           {/* 🚀 HIERARCHY: Smart Dropdowns for Province & Area */}
                             <div className="flex gap-2 mb-2">
                                 {isNewProv || existingProvinces.length === 0 ? (
                                     <div className="flex-1 flex gap-2">
@@ -567,111 +554,108 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                     {isLoading ? (
                         <div className="text-center p-10 text-slate-500 animate-pulse">Loading Fleet Data...</div>
-
-
                     ) : agents.length === 0 && !isAddingAgent ? (
-                                    <div className="text-center py-10">
-                                        <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
-                                        <p className="text-slate-500 text-sm">No personnel found.</p>
-                                        <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {/* 🚀 SEARCH BAR INJECTED ABOVE ROSTER */}
-                                        <div className="mb-4 relative">
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Search Name, Plate, Area, Email..." 
-                                                value={searchTerm} 
-                                                onChange={e => setSearchTerm(e.target.value)} 
-                                                className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"
-                                            />
-                                        </div>
+                        <div className="text-center py-10">
+                            <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
+                            <p className="text-slate-500 text-sm">No personnel found.</p>
+                            <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="mb-4 relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search Name, Role, Area, Email..." 
+                                    value={searchTerm} 
+                                    onChange={e => setSearchTerm(e.target.value)} 
+                                    className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"
+                                />
+                            </div>
 
-                                        {/* 🚀 HIERARCHY ENGINE: Filtered & Grouped */}
-                                        {Object.entries(
-                                            agents.filter(a => {
-                                                if (!searchTerm) return true;
-                                                const term = searchTerm.toLowerCase();
-                                                return (a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.phone?.toLowerCase().includes(term) || a.vehicle?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
-                                            }).reduce((acc, agent) => {
-                                                // 🚀 FIX: Safely force to String, then sanitize text to merge typos
-                                                let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
-                                            let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
-                                            
-                                            if (!acc[prov]) acc[prov] = {};
-                                            if (!acc[prov][loc]) acc[prov][loc] = [];
-                                            acc[prov][loc].push(agent);
-                                            return acc;
-                                        }, {})
-                                    ).sort(([provA], [provB]) => provA.localeCompare(provB)).map(([province, areas]) => (
-                                        <details key={province} className="mb-4 group/prov" open>
-                                            
-                                            {/* 🌎 PROVINCE HEADER (Level 1 Dropdown) */}
-                                            <summary className="flex items-center gap-2 mb-2 px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors select-none shadow-md">
-                                                <Globe size={16} className="text-purple-500"/>
-                                                <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">{province}</h2>
-                                                <span className="text-[10px] text-slate-400 ml-auto bg-black/50 px-2 py-0.5 rounded-md border border-slate-700">
-                                                    {Object.values(areas).reduce((sum, arr) => sum + arr.length, 0)} Staff
-                                                </span>
-                                                <ChevronDown size={14} className="text-slate-400 transition-transform group-open/prov:rotate-180" />
-                                            </summary>
+                            {Object.entries(
+                                agents.filter(a => {
+                                    if (!searchTerm) return true;
+                                    const term = searchTerm.toLowerCase();
+                                    return (a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
+                                }).reduce((acc, agent) => {
+                                    let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
+                                    let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
+                                    
+                                    if (!acc[prov]) acc[prov] = {};
+                                    if (!acc[prov][loc]) acc[prov][loc] = [];
+                                    acc[prov][loc].push(agent);
+                                    return acc;
+                                }, {})
+                            ).sort(([provA], [provB]) => provA.localeCompare(provB)).map(([province, areas]) => (
+                                <details key={province} className="mb-4 group/prov" open>
+                                    
+                                    <summary className="flex items-center gap-2 mb-2 px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors select-none shadow-md">
+                                        <Globe size={16} className="text-purple-500"/>
+                                        <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">{province}</h2>
+                                        <span className="text-[10px] text-slate-400 ml-auto bg-black/50 px-2 py-0.5 rounded-md border border-slate-700">
+                                            {Object.values(areas).reduce((sum, arr) => sum + arr.length, 0)} Staff
+                                        </span>
+                                        <ChevronDown size={14} className="text-slate-400 transition-transform group-open/prov:rotate-180" />
+                                    </summary>
 
-                                            <div className="pl-3 border-l-2 border-slate-800 ml-2 mt-2 space-y-4">
-                                                {Object.entries(areas).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
-                                                    <details key={location} className="group/loc" open>
-                                                        
-                                                        {/* 📍 LOCATION HEADER (Level 2 Dropdown) */}
-                                                        <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
-                                                            <MapPin size={14} className="text-orange-500"/>
-                                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
-                                                            <span className="text-[9px] text-slate-600 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
-                                                            <ChevronDown size={14} className="text-slate-500 transition-transform group-open/loc:rotate-180" />
-                                                        </summary>
+                                    <div className="pl-3 border-l-2 border-slate-800 ml-2 mt-2 space-y-4">
+                                        {Object.entries(areas).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
+                                            <details key={location} className="group/loc" open>
+                                                
+                                                <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
+                                                    <MapPin size={14} className="text-orange-500"/>
+                                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
+                                                    <span className="text-[9px] text-slate-600 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
+                                                    <ChevronDown size={14} className="text-slate-500 transition-transform group-open/loc:rotate-180" />
+                                                </summary>
 
-                                                        {/* 👥 AREA ROSTER CARDS */}
-                                                        <div className="space-y-2 pl-2 border-l-2 border-slate-800/50 mt-2 mb-4">
-                                                            {locAgents.sort((a, b) => (b.userRole === 'ADMIN' ? 1 : 0) - (a.userRole === 'ADMIN' ? 1 : 0)).map(m => (
-                                                                <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
-                                                                     className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
-                                                                    
-                                                                    {/* LEFT SIDE: Avatar & Info */}
-                                                                    <div className="flex items-center gap-3 min-w-0">
-                                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.role === 'Canvas' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                                            {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : 'text-white'}`}>{m.name}</h3>
-                                                                            <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                                {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Head of Distribution</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* 🚀 RESTORED RIGHT SIDE: Status Badge & Edit/Delete Buttons */}
-                                                                    <div className="flex flex-col items-end gap-2 shrink-0">
-                                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>
-                                                                            {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
-                                                                        </span>
-                                                                        {isAdmin && (
-                                                                            <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                                                                <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, m); }} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
-                                                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteAgent(e, m); }} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    
+                                                <div className="space-y-2 pl-2 border-l-2 border-slate-800/50 mt-2 mb-4">
+                                                    {/* 🚀 ROSTER SORTING: Master -> Area Admin -> Field Agent */}
+                                                    {locAgents.sort((a, b) => {
+                                                        const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
+                                                        return (rank[b.userRole || 'AGENT'] || 0) - (rank[a.userRole || 'AGENT'] || 0);
+                                                    }).map(m => (
+                                                        <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
+                                                             className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
+                                                            
+                                                            <div className="flex items-center gap-3 min-w-0">
+                                                                {/* 🚀 BADGE LOGIC UPGRADED FOR TIER 3 */}
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.userRole === 'AREA_ADMIN' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : m.role === 'Canvas' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                                    {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.userRole === 'AREA_ADMIN' ? <Globe size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
                                                                 </div>
-                                                            ))}
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : m.userRole === 'AREA_ADMIN' ? 'text-purple-400' : 'text-white'}`}>{m.name}</h3>
+                                                                    <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                                        {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : 
+                                                                         m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 Area Admin ({m.location})</span> : 
+                                                                         <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                                                    {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
+                                                                </span>
+                                                                {isAdmin && (
+                                                                    <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, m); }} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteAgent(e, m); }} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            
                                                         </div>
-                                                    </details>
-                                                ))}
-                                            </div>
-                                        </details>
-                                    ))}
-                                    </>
-                                )}
+                                                    ))}
+                                                </div>
+                                            </details>
+                                        ))}
+                                    </div>
+                                </details>
+                            ))}
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -698,7 +682,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 </div>
                                 <div className="flex gap-2">
                                     {(() => {
-                                        // Top Level Global Summary
                                         let currentLoadBks = 0;
                                         (selectedAgent.activeCanvas || []).forEach(item => {
                                             const product = inventory.find(p => p.id === item.productId);
@@ -737,7 +720,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                         <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                             
-                            {/* THE LOAD ENGINE */}
                             <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 mb-6 shadow-xl">
                                 <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><PackagePlus size={16} className="text-emerald-500"/> Transfer to Vehicle Vault</h3>
                                 <div className="flex flex-col lg:flex-row gap-3 items-end">
@@ -753,7 +735,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         </select>
                                     </div>
                                     <div className="w-full lg:w-32">
-                                        {/* 🚀 FIX: Update label to explicitly ask for Bungkus */}
                                         <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1 block">Qty (Bungkus)</label>
                                         <input type="number" min="1" value={loadQty} onChange={(e) => setLoadQty(e.target.value)} className="w-full bg-slate-900 border border-emerald-500/50 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 text-center" placeholder="0"/>
                                     </div>
@@ -763,7 +744,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 </div>
                             </div>
 
-                            {/* CURRENT MOTORCYCLE INVENTORY (PER-ITEM BREAKDOWN) */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
                                 
@@ -802,7 +782,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                 </div>
                                             </div>
                                             
-                                            {/* PER-ITEM MATH OVERVIEW */}
                                             <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-600 text-[10px] font-mono font-bold w-full md:w-auto">
                                                 <span className="text-slate-400 w-16 text-center">INIT: {item.initialBks}</span>
                                                 <span className="w-[1px] h-4 bg-slate-700"></span>
@@ -815,7 +794,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 )}
                             </div>
 
-                            {/* NEW: TRANSACTION HISTORY ACCORDION */}
                             <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
                                 <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
                                     <div className="flex items-center gap-2">
