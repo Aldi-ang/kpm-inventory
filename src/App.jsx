@@ -47,7 +47,7 @@ import SettingsView from './components/SettingsView';
 import DashboardView from './components/DashboardView'; // 🚀 ADDED
 import AuditVaultView from './components/AuditVaultView'; // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED
 import BiohazardTheme from './components/BiohazardTheme'; // 🚀 ADDED
-
+import BranchWarehouseManager from './components/BranchWarehouseManager';
 
 
 // --- FIREBASE IMPORTS ---
@@ -2771,6 +2771,22 @@ const handleGitHubMirror = async () => {
          {activeTab === 'audit' && (
              <AuditVaultView db={db} storage={storage} appId={appId} user={user} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />
          )}
+
+
+         {activeTab === 'restock_vault' && (
+              <BranchWarehouseManager 
+                  db={db} 
+                  appId={appId} 
+                  user={user} 
+                  userRole={userRole} 
+                  userLocation={agentSettings?.location || 'UNASSIGNED'} 
+                  isAdmin={isAdmin} 
+                  masterUserId={userId} 
+                  globalInventory={inventory} 
+                  triggerCapy={triggerCapy} 
+                  logAudit={logAudit} 
+              />
+          )}
 
 
           {activeTab === 'settings' && (
