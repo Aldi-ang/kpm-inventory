@@ -48,10 +48,12 @@ export default function BiohazardTheme({
         }
         
         let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
-        if (userRole === 'AREA_ADMIN') {
-            allowedTabs.push('restock_vault'); // Grant Tier 3 access to Branch Logistics
-        }
         
+        // 🚀 GRANT TIER 3 ACCESS TO THEIR WAREHOUSE
+        if (userRole === 'AREA_ADMIN') {
+            allowedTabs.push('restock_vault'); 
+        }
+
         if (typeof agentSettings !== 'undefined' && agentSettings?.allowedTiers) {
             if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
                 allowedTabs.push('receivables');

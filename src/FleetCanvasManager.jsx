@@ -462,10 +462,17 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         <div className="bg-slate-800 p-4 rounded-xl border-2 border-dashed border-blue-500/50 mb-4 animate-slide-down">
                             <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">{editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}</h3>
                             
-                            <select value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-bold">
-                                <option value="Motorist">Sales Motorist (Motorbike)</option>
-                                <option value="Canvas">Sales Canvas (Car / Van)</option>
-                            </select>
+                            {/* 🚀 SMART ROLE DISPLAY: Hides driving options for Admins */}
+                            {newAgent.userRole === 'AGENT' ? (
+                                <select value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-bold">
+                                    <option value="Motorist">Sales Motorist (Motorbike)</option>
+                                    <option value="Canvas">Sales Canvas (Car / Van)</option>
+                                </select>
+                            ) : (
+                                <div className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest cursor-not-allowed">
+                                    {newAgent.userRole === 'AREA_ADMIN' ? 'Branch Manager (Non-Driving)' : 'HQ Admin (Non-Driving)'}
+                                </div>
+                            )}
 
                             <input type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             
