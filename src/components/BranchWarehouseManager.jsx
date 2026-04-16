@@ -186,13 +186,18 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                             <h3 className="text-lg font-black text-white uppercase tracking-widest mb-4">Request Stock from HQ</h3>
                             
                             <div className="flex flex-col gap-3 mb-6 relative z-10">
-                                <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500">
+                                <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500">
                                     <option value="">-- Select Product --</option>
                                     {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
-                                <div className="flex gap-2">
-                                    <input type="number" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="flex-1 bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 text-center"/>
-                                    <button onClick={handleAddToCart} className="bg-purple-600 hover:bg-purple-500 text-white px-6 font-bold uppercase tracking-widest rounded-lg shadow-lg">Add</button>
+                                <div className="flex gap-2 items-stretch w-full">
+                                    {/* 🚀 FIXED: min-w-0 prevents the input from pushing the button off-screen */}
+                                    <input type="number" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="flex-1 min-w-0 bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 text-center"/>
+                                    
+                                    {/* 🚀 FIXED: shrink-0 and whitespace-nowrap forces the button to keep its shape */}
+                                    <button onClick={handleAddToCart} className="bg-purple-600 hover:bg-purple-500 text-white px-4 md:px-6 font-bold uppercase tracking-widest rounded-lg shadow-lg shrink-0 whitespace-nowrap text-xs md:text-sm transition-colors">
+                                        Add
+                                    </button>
                                 </div>
                             </div>
 
