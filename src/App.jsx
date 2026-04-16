@@ -1174,14 +1174,13 @@ const handleGitHubMirror = async () => {
                     // Claim the Crown: Promote them to System Admin and delete the invite
                     await setDoc(sysAdminRef, { email: email, claimedAt: serverTimestamp() });
                     await deleteDoc(inviteRef);
-                    // Continue to log them in as Admin
                 }
 
                 if (sysAdminSnap.exists() || inviteSnap.exists()) {
                     console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
-                    setUserRole('ADMIN'); // 🚨 Architect is ADMIN
+                    setUserRole('ADMIN'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
@@ -1221,7 +1220,9 @@ const handleGitHubMirror = async () => {
                     } 
                     else if (data.status === 'Active') {
                         setBossUid(data.bossUid);
-                        setUserRole(data.role.toUpperCase()); // Area Admin or Salesperson
+                        
+                        // 🚀 FIX: Read the Tier security clearance, NOT the vehicle type!
+                        setUserRole(data.userRole || 'AGENT'); 
                         setAgentProfileId(data.agentId);
 
                         const hijackedUser = {
@@ -1230,7 +1231,8 @@ const handleGitHubMirror = async () => {
                             displayName: data.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
-                            role: data.role,              
+                            role: data.role,             // Keep vehicle type for UI display
+                            userRole: data.userRole || 'AGENT', // 🚀 Inject clearance level
                             agentId: data.agentId         
                         };
                         
@@ -1245,7 +1247,7 @@ const handleGitHubMirror = async () => {
                 } else {
                     // 🚨 THE FIX: UNKNOWN LOGINS ARE LOCKED OUT 🚨
                     setBossUid(null);
-                    setUserRole('UNAUTHORIZED'); // <--- CHANGED FROM 'ADMIN'
+                    setUserRole('UNAUTHORIZED'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
