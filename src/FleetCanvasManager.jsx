@@ -74,6 +74,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
+        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, Name, and Plate Number
         const isDupEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         const isDupPhone = agents.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
         const isDupName = agents.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
@@ -105,7 +106,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                     batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 }
                 
-                // 🚀 HIERARCHY FIX: Force userRole into the Global Directory so routing works on login
+                // 🚀 THE FIX: Writes userRole to the Global Directory for existing agents
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
@@ -117,6 +118,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 };
 
                 batch.set(doc(db, collPath, newId), agentData);
+                
+                // 🚀 THE FIX: Writes userRole to the Global Directory for new agents
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
