@@ -2610,8 +2610,8 @@ const handleGitHubMirror = async () => {
           </div>
       )}
 
-          
-          {/* MULTI-WAREHOUSE ERP ENGINE */}
+
+      {/* MULTI-WAREHOUSE ERP ENGINE */}
           {activeTab === 'restock_vault' && (
               <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black p-4">
                   <BranchWarehouseManager 
@@ -2628,6 +2628,8 @@ const handleGitHubMirror = async () => {
                   />
               </div>
           )}
+
+          
 
           {activeTab === 'sales' && (
               <div className="h-full w-full flex flex-col relative bg-black"> 
@@ -2777,20 +2779,7 @@ const handleGitHubMirror = async () => {
          )}
 
 
-         {activeTab === 'restock_vault' && (
-              <BranchWarehouseManager 
-                  db={db} 
-                  appId={appId} 
-                  user={user} 
-                  userRole={userRole} 
-                  userLocation={agentSettings?.location || 'UNASSIGNED'} 
-                  isAdmin={isAdmin} 
-                  masterUserId={userId} 
-                  globalInventory={inventory} 
-                  triggerCapy={triggerCapy} 
-                  logAudit={logAudit} 
-              />
-          )}
+        
 
 
           {activeTab === 'settings' && (
