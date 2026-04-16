@@ -19,7 +19,7 @@ import {
 
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
-import useDatabaseSync from './hooks/useDatabaseSync'; // 🚀 FIX 1: ADD THIS IMPORT!
+import useDatabaseSync from './hooks/useDatabaseSync'; 
 import MapMissionControl from './MapMissionControl';
 import JourneyView from './JourneyView';
 import StockOpnameView from './StockOpnameView';
@@ -29,7 +29,8 @@ import RestockVaultView from './RestockVaultView';
 import AgentInventoryView from './AgentInventoryView';
 import FleetCanvasManager from './FleetCanvasManager';
 import ConsignmentFinanceView from './ConsignmentFinanceView'; 
-import EODReconciliationView from './EODReconciliationView'; // 🚀 IMPORT EOD HERE
+import EODReconciliationView from './EODReconciliationView'; 
+
 
 // --- REUSABLE UI COMPONENTS ---
 import NotificationBell from './components/NotificationBell';
@@ -44,9 +45,9 @@ import HistoryReportView from './components/HistoryReportView';
 import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; 
 import { CustomerManagement, CustomerDetailView } from './components/CustomerManager'; 
 import SettingsView from './components/SettingsView'; 
-import DashboardView from './components/DashboardView'; // 🚀 ADDED
-import AuditVaultView from './components/AuditVaultView'; // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED // 🚀 ADDED
-import BiohazardTheme from './components/BiohazardTheme'; // 🚀 ADDED
+import DashboardView from './components/DashboardView'; 
+import AuditVaultView from './components/AuditVaultView'; 
+import BiohazardTheme from './components/BiohazardTheme'; 
 import BranchWarehouseManager from './components/BranchWarehouseManager';
 
 
@@ -2610,21 +2611,22 @@ const handleGitHubMirror = async () => {
       )}
 
           
-          {/* NEW: RESTOCK VAULT ENGINE */}
+          {/* MULTI-WAREHOUSE ERP ENGINE */}
           {activeTab === 'restock_vault' && (
-          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black">
-              <RestockVaultView 
-                  inventory={inventory} 
-                  procurements={procurements}
-                  db={db} 
-                  storage={storage} 
-                  appId={appId} 
-                  user={user} 
-                  isAdmin={isAdmin}
-                  logAudit={logAudit} 
-                  triggerCapy={triggerCapy} 
-              />
-          </div>
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black p-4">
+                  <BranchWarehouseManager 
+                      db={db} 
+                      appId={appId} 
+                      user={user} 
+                      userRole={userRole} 
+                      userLocation={agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED'} 
+                      isAdmin={isAdmin} 
+                      masterUserId={userId} 
+                      globalInventory={inventory} 
+                      triggerCapy={triggerCapy} 
+                      logAudit={logAudit} 
+                  />
+              </div>
           )}
 
           {activeTab === 'sales' && (

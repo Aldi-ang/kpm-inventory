@@ -49,11 +49,11 @@ export default function BiohazardTheme({
         
         let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
         
-        // 🚀 GRANT TIER 3 ACCESS TO THEIR WAREHOUSE
+        // 🚀 THE MISSING PIECE: Give Area Admins their warehouse tab!
         if (userRole === 'AREA_ADMIN') {
-            allowedTabs.push('restock_vault'); 
+            allowedTabs.push('restock_vault');
         }
-
+        
         if (typeof agentSettings !== 'undefined' && agentSettings?.allowedTiers) {
             if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
                 allowedTabs.push('receivables');
