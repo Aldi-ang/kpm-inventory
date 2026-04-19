@@ -2613,7 +2613,26 @@ const handleGitHubMirror = async () => {
 
       {/* MULTI-WAREHOUSE ERP ENGINE */}
           {activeTab === 'restock_vault' && (
-              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black p-4">
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black p-4 overflow-y-auto custom-scrollbar">
+                  
+                  {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
+                  {isAdmin && (
+                      <div className="mb-12 pb-12 border-b-4 border-slate-800 border-dashed">
+                          <RestockVaultView 
+                              inventory={inventory} 
+                              procurements={procurements}
+                              db={db} 
+                              storage={storage} 
+                              appId={appId} 
+                              user={user} 
+                              isAdmin={isAdmin}
+                              logAudit={logAudit} 
+                              triggerCapy={triggerCapy} 
+                          />
+                      </div>
+                  )}
+
+                  {/* 🚀 BRANCH WAREHOUSE ENGINE (HQ sees approvals, Tier 3 sees requests) */}
                   <BranchWarehouseManager 
                       db={db} 
                       appId={appId} 
