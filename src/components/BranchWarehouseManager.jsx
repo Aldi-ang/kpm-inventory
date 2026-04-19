@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Search, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye } from 'lucide-react';
-import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Search, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save } from 'lucide-react';
+import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit }) {
@@ -29,6 +29,11 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     const [packagePhotoFile, setPackagePhotoFile] = useState(null);
     const [packagePhotoPreview, setPackagePhotoPreview] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // --- HQ (TIER 1/2) EDIT STATE ---
+    const [editingOrder, setEditingOrder] = useState(null);
+    const [editCourier, setEditCourier] = useState("");
+    const [editTrackingNo, setEditTrackingNo] = useState("");
 
     // --- UI VIEW STATE ---
     const [expandedRequest, setExpandedRequest] = useState(null); 
@@ -120,7 +125,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         try {
             const batch = writeBatch(db);
             
-            // 🚀 SAFE FALLBACK APPLIED
             const itemsToProcess = order.fulfilledItems || order.requestedItems || order.items || [];
             
             for (const item of itemsToProcess) {
@@ -164,9 +168,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // ============ MASTER ADMIN LOGIC ============
     // ===========================================
 
+    // --- Fulfillment Logic ---
     const handleStartFulfillment = (req) => {
         setIsFulfilling(req);
-        // 🚀 SAFE FALLBACK: Support old test ghost data
         const itemsToFulfill = req.requestedItems || req.items || [];
         setFulfillmentCart(itemsToFulfill.map(item => ({ ...item })));
         setCourierName("");
@@ -285,6 +289,60 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         }
     };
 
+    // 🚀 NEW: DELETE DATA LOGIC (ADMIN ONLY)
+    const handleDeleteRequest = async (orderId, status) => {
+        if (!window.confirm(`⚠️ WARNING: DELETE RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math. Used for cleaning up test data.`)) return;
+        
+        setIsProcessing(true);
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, orderId));
+            triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);
+            logAudit("STOCK_DELETE_LOG", `Admin deleted request ${orderId}`);
+            setIsProcessing(false);
+        } catch(e) {
+            alert("Failed to delete record: " + e.message);
+            setIsProcessing(false);
+        }
+    };
+
+    // 🚀 NEW: EDIT TRACKING DATA LOGIC (ADMIN ONLY)
+    const handleStartEditingOrder = (order) => {
+        setEditingOrder(order);
+        setEditCourier(order.courier || "");
+        setEditTrackingNo(order.trackingNo || "");
+    };
+
+    const handleSaveOrderEdit = async () => {
+        if (!editingOrder) return;
+        if (!editCourier || !editTrackingNo) return alert("Courier and Tracking No are required.");
+        
+        setIsProcessing(true);
+        try {
+            const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, editingOrder.id);
+            
+            const updatedTimeline = [...(editingOrder.workflowTimeline || [])];
+            updatedTimeline.push({
+                status: 'SYSTEM_EDIT',
+                time: new Date().toISOString(),
+                msg: `HQ Admin (${user.email}) updated tracking info.\nOld: ${editingOrder.courier} (${editingOrder.trackingNo})\nNew: ${editCourier} (${editTrackingNo})`
+            });
+
+            await updateDoc(orderRef, {
+                courier: editCourier,
+                trackingNo: editTrackingNo,
+                workflowTimeline: updatedTimeline
+            });
+            
+            triggerCapy("Tracking information updated successfully! 📝");
+            logAudit("STOCK_EDIT_LOG", `Admin edited tracking for ${editingOrder.id}`);
+            setEditingOrder(null);
+            setIsProcessing(false);
+        } catch (e) {
+            alert("Failed to edit record: " + e.message);
+            setIsProcessing(false);
+        }
+    };
+
 
     // ===========================================
     // ================ RENDERING ================
@@ -296,18 +354,21 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             'REJECTED': 'bg-red-900/50 text-red-400 border border-red-500/50',
             'IN_TRANSIT': 'bg-blue-900/50 text-blue-400 border border-blue-500/50 animate-pulse',
             'DELIVERED': 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/50',
+            'SYSTEM_EDIT': 'bg-purple-900/50 text-purple-400 border border-purple-500/50',
         };
         const icons = {
             'PENDING': <Clock size={12}/>,
             'REJECTED': <XCircle size={12}/>,
             'IN_TRANSIT': <Truck size={12}/>,
             'DELIVERED': <CheckCircle size={12}/>,
+            'SYSTEM_EDIT': <Pencil size={12}/>,
         };
         const labels = {
             'PENDING': 'Menunggu Konfirmasi',
             'REJECTED': 'Ditolak',
             'IN_TRANSIT': 'Dalam Pengiriman',
             'DELIVERED': 'Diterima',
+            'SYSTEM_EDIT': 'Sistem Edit',
         }
         return (
             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1.5 shadow-inner ${styles[status] || 'bg-slate-700'}`}>
@@ -326,7 +387,17 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 <div className="flex flex-col md:flex-row gap-6 mb-8 border-b border-slate-700 pb-6">
                     <div className="flex-1 bg-slate-900 p-5 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-blue-500"/></div>
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Informasi Pengiriman (TMS)</h4>
+                        
+                        <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
+                            {/* 🚀 ADMIN EDIT BUTTON */}
+                            {isAdmin && (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED') && (
+                                <button onClick={() => handleStartEditingOrder(order)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-slate-600 font-bold uppercase flex items-center gap-1 transition-colors">
+                                    <Pencil size={10}/> Edit Resi
+                                </button>
+                            )}
+                        </div>
+
                         {order.status === 'PENDING' ? (
                             <div className="text-center py-5 text-slate-600 italic text-xs">Menunggu HQ Mempersiapkan Barang...</div>
                         ) : order.status === 'REJECTED' ? (
@@ -384,13 +455,16 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                     <div className="absolute left-[7px] top-1 bottom-1 w-[2px] bg-slate-700"></div> 
                     {(order.workflowTimeline || []).map((ev, idx) => {
                         const isLatest = idx === order.workflowTimeline.length - 1;
-                        const circleColor = isLatest ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]' : 'bg-slate-600';
+                        // Special color for System Edits
+                        let circleColor = isLatest ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]' : 'bg-slate-600';
+                        if (ev.status === 'SYSTEM_EDIT') circleColor = 'bg-purple-500';
                         const textColor = isLatest ? 'text-white' : 'text-slate-400';
+
                         return (
                             <div key={idx} className="flex gap-4 relative">
                                 <div className={`w-3 h-3 rounded-full mt-1 shrink-0 ${circleColor} relative z-10 border-2 border-slate-900`}></div>
                                 <div>
-                                    <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-blue-400' : 'text-slate-300'}`}>{ev.status}</p>
+                                    <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-blue-400' : 'text-slate-300'} ${ev.status === 'SYSTEM_EDIT' ? 'text-purple-400' : ''}`}>{ev.status}</p>
                                     <p className={`text-sm font-medium ${textColor} mt-0.5 whitespace-pre-line`}>{ev.msg}</p>
                                     <p className="text-[10px] text-slate-600 font-mono mt-1">
                                         {ev.time ? new Date(ev.time).toLocaleString('id-ID') : 'Time data missing'}
@@ -412,8 +486,39 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] backdrop-blur-sm">
                     <div className="text-center">
                         <Package className="text-blue-500 animate-bounce mx-auto mb-4" size={48}/>
-                        <h2 className="text-3xl font-black text-white uppercase tracking-widest">PROSES DATA LOGISTIK...</h2>
-                        <p className="text-slate-400 mt-2 text-xs uppercase tracking-widest animate-pulse">Sedang sinkronisasi math & upload bukti ke cloud...</p>
+                        <h2 className="text-3xl font-black text-white uppercase tracking-widest">PROSES DATA...</h2>
+                        <p className="text-slate-400 mt-2 text-xs uppercase tracking-widest animate-pulse">Sedang update database cloud...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* =========================================== */}
+            {/* ============= ADMIN EDIT MODAL ============ */}
+            {/* =========================================== */}
+            {editingOrder && isAdmin && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[95] backdrop-blur-sm">
+                    <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.2)] flex flex-col overflow-hidden animate-pop-in">
+                        <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <Pencil className="text-purple-500" size={18}/> Edit Data Logistik
+                            </h3>
+                            <button onClick={() => setEditingOrder(null)} className="text-slate-600 hover:text-white"><XCircle size={20}/></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Update Nama Kurir</label>
+                                <input type="text" value={editCourier} onChange={e => setEditCourier(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500"/>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Update Nomor Resi</label>
+                                <input type="text" value={editTrackingNo} onChange={e => setEditTrackingNo(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-blue-300 font-mono font-bold outline-none focus:border-purple-500 uppercase"/>
+                            </div>
+                        </div>
+                        <div className="p-5 border-t border-slate-700 bg-black/40 flex gap-3">
+                            <button onClick={handleSaveOrderEdit} disabled={isProcessing} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                                <Save size={16}/> Simpan Perubahan
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -478,7 +583,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                         const hqStock = hqProduct?.stock || 0;
                                         const hasEnough = hqStock >= item.qty;
                                         
-                                        // 🚀 SAFE FALLBACK APPLIED
                                         const requestedQty = (isFulfilling.requestedItems || isFulfilling.items || []).find(r => r.productId === item.productId)?.qty || 0;
 
                                         return (
@@ -572,8 +676,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                 <div className="space-y-4">
                                     {requests.map(req => {
                                         const isExpanded = expandedRequest === req.id;
-                                        // 🚀 SAFE FALLBACK APPLIED
-                                        const itemsToProcess = req.requestedItems || req.items || [];
+                                        const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
                                         
                                         return (
                                             <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-900 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
@@ -584,7 +687,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                         <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                     </div>
                                                     <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
-                                                        <span className="text-xs font-black text-slate-300">Total Diminta: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                                        <span className="text-xs font-black text-slate-300">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
                                                         <StatusBadge status={req.status}/>
                                                         <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
@@ -665,13 +768,18 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         <div className="space-y-4">
                             {requests.map(req => {
                                 const isExpanded = expandedRequest === req.id;
-                                // 🚀 SAFE FALLBACK APPLIED
-                                const itemsToProcess = req.requestedItems || req.items || [];
+                                const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
                                 
                                 return (
                                     <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-950 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
                                         
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3 relative">
+                                            
+                                            {/* 🚀 ADMIN TRASH BUTTON */}
+                                            <button onClick={() => handleDeleteRequest(req.id, req.status)} className="absolute -top-1 -right-1 text-slate-600 hover:text-red-500 bg-slate-900 p-1.5 rounded-lg border border-slate-700 transition-colors shadow-lg z-10" title="Delete Order Permanently">
+                                                <Trash2 size={16}/>
+                                            </button>
+
                                             <div>
                                                 <div className="flex gap-2 items-center">
                                                     <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
@@ -681,8 +789,8 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                 </div>
                                                 <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                             </div>
-                                            <div className="flex flex-col md:flex-row items-end md:items-center gap-3 shrink-0">
-                                                <span className="text-xs font-black text-slate-300">Diminta: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                            <div className="flex flex-col md:flex-row items-end md:items-center gap-3 pr-8 shrink-0">
+                                                <span className="text-xs font-black text-slate-300">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
                                                 <StatusBadge status={req.status}/>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
@@ -719,6 +827,5 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     );
 }
 
-// Fixed missing icon definitions
 const ShoppingCart = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>;
 const PackagePlus = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-package-plus"><path d="M16 16h6"/><path d="M19 13v6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="M16.5 9.4 7.55 4.24"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>;
