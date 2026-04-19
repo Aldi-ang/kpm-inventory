@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Search, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save } from 'lucide-react';
+import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Search, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, History } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -21,7 +21,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     const [selectedProduct, setSelectedProduct] = useState("");
     const [requestQty, setRequestQty] = useState("");
 
-    // --- HQ (TIER 1/2) FULFILLMENT (OMS) STATE ---
+    // --- HQ (TIER 1/2) STATE ---
     const [isFulfilling, setIsFulfilling] = useState(null); 
     const [fulfillmentCart, setFulfillmentCart] = useState([]);
     const [courierName, setCourierName] = useState("");
@@ -30,7 +30,8 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     const [packagePhotoPreview, setPackagePhotoPreview] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // --- HQ (TIER 1/2) EDIT STATE ---
+    // --- HQ (TIER 1/2) LEDGER & EDIT STATE ---
+    const [showLedger, setShowLedger] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
     const [editCourier, setEditCourier] = useState("");
     const [editTrackingNo, setEditTrackingNo] = useState("");
@@ -168,7 +169,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // ============ MASTER ADMIN LOGIC ============
     // ===========================================
 
-    // --- Fulfillment Logic ---
     const handleStartFulfillment = (req) => {
         setIsFulfilling(req);
         const itemsToFulfill = req.requestedItems || req.items || [];
@@ -289,9 +289,8 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         }
     };
 
-    // 🚀 NEW: DELETE DATA LOGIC (ADMIN ONLY)
     const handleDeleteRequest = async (orderId, status) => {
-        if (!window.confirm(`⚠️ WARNING: DELETE RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math. Used for cleaning up test data.`)) return;
+        if (!window.confirm(`⚠️ WARNING: DELETE RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
         
         setIsProcessing(true);
         try {
@@ -305,7 +304,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         }
     };
 
-    // 🚀 NEW: EDIT TRACKING DATA LOGIC (ADMIN ONLY)
     const handleStartEditingOrder = (order) => {
         setEditingOrder(order);
         setEditCourier(order.courier || "");
@@ -355,6 +353,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             'IN_TRANSIT': 'bg-blue-900/50 text-blue-400 border border-blue-500/50 animate-pulse',
             'DELIVERED': 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/50',
             'SYSTEM_EDIT': 'bg-purple-900/50 text-purple-400 border border-purple-500/50',
+            'APPROVED': 'bg-blue-900/50 text-blue-400 border border-blue-500/50', // Legacy Support
         };
         const icons = {
             'PENDING': <Clock size={12}/>,
@@ -362,6 +361,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             'IN_TRANSIT': <Truck size={12}/>,
             'DELIVERED': <CheckCircle size={12}/>,
             'SYSTEM_EDIT': <Pencil size={12}/>,
+            'APPROVED': <CheckCircle size={12}/>,
         };
         const labels = {
             'PENDING': 'Menunggu Konfirmasi',
@@ -369,6 +369,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             'IN_TRANSIT': 'Dalam Pengiriman',
             'DELIVERED': 'Diterima',
             'SYSTEM_EDIT': 'Sistem Edit',
+            'APPROVED': 'Approved (Legacy)',
         }
         return (
             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1.5 shadow-inner ${styles[status] || 'bg-slate-700'}`}>
@@ -379,7 +380,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
 
     const OrderTrackingModule = ({ order }) => {
         const isDelivered = order.status === 'DELIVERED';
-        const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT';
+        const isFulfillableByTier3 = isAreaAdmin && (order.status === 'IN_TRANSIT' || order.status === 'APPROVED');
 
         return (
             <div className="bg-black/50 rounded-2xl border border-slate-700 p-6 animate-fade-in mt-2 mb-4">
@@ -390,12 +391,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
-                            {/* 🚀 ADMIN EDIT BUTTON */}
-                            {isAdmin && (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED') && (
-                                <button onClick={() => handleStartEditingOrder(order)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-slate-600 font-bold uppercase flex items-center gap-1 transition-colors">
-                                    <Pencil size={10}/> Edit Resi
-                                </button>
-                            )}
                         </div>
 
                         {order.status === 'PENDING' ? (
@@ -406,11 +401,11 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                             <div className="space-y-2.5 relative z-10">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-400 flex items-center gap-2"><User size={14}/> Courier</span>
-                                    <span className="font-bold text-white uppercase">{order.courier}</span>
+                                    <span className="font-bold text-white uppercase">{order.courier || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-400 flex items-center gap-2"><FileText size={14}/> No. Resi</span>
-                                    <span className="font-bold text-blue-400 uppercase font-mono tracking-wider bg-black/50 px-2 py-0.5 rounded border border-blue-900/50">{order.trackingNo}</span>
+                                    <span className="font-bold text-blue-400 uppercase font-mono tracking-wider bg-black/50 px-2 py-0.5 rounded border border-blue-900/50">{order.trackingNo || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-400">Shipped At</span>
@@ -455,7 +450,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                     <div className="absolute left-[7px] top-1 bottom-1 w-[2px] bg-slate-700"></div> 
                     {(order.workflowTimeline || []).map((ev, idx) => {
                         const isLatest = idx === order.workflowTimeline.length - 1;
-                        // Special color for System Edits
                         let circleColor = isLatest ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]' : 'bg-slate-600';
                         if (ev.status === 'SYSTEM_EDIT') circleColor = 'bg-purple-500';
                         const textColor = isLatest ? 'text-white' : 'text-slate-400';
@@ -496,7 +490,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             {/* ============= ADMIN EDIT MODAL ============ */}
             {/* =========================================== */}
             {editingOrder && isAdmin && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[95] backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
                     <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.2)] flex flex-col overflow-hidden animate-pop-in">
                         <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
                             <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
@@ -524,10 +518,64 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             )}
 
             {/* =========================================== */}
+            {/* ============= OMS LEDGER MODAL ============ */}
+            {/* =========================================== */}
+            {showLedger && isAdmin && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[90] backdrop-blur-sm">
+                    <div className="bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl border-2 border-slate-600 shadow-2xl flex flex-col overflow-hidden animate-fade-in-up">
+                        <div className="p-6 border-b border-slate-700 bg-black/40 flex justify-between items-center shrink-0">
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2"><History className="text-blue-500"/> Outgoing Shipment Ledger</h3>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Full History & Edit/Delete Controls</p>
+                            </div>
+                            <button onClick={() => setShowLedger(false)} className="text-slate-500 hover:text-white"><XCircle size={24}/></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar space-y-3">
+                            {requests.length === 0 ? (
+                                <div className="text-center text-slate-500 py-10 uppercase tracking-widest text-xs">No logistics history found.</div>
+                            ) : requests.map(req => (
+                                <div key={req.id} className="bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-3">
+                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-white font-bold uppercase">{req.branch}</span>
+                                                <StatusBadge status={req.status} />
+                                            </div>
+                                            <div className="text-[10px] text-slate-400 font-mono">ID: {req.id} | Req By: {req.requestedBy.split('@')[0]} | {new Date(req.timestamp?.seconds*1000).toLocaleString()}</div>
+                                            {req.trackingNo && <div className="text-[10px] text-blue-400 font-mono mt-1">RESI: {req.trackingNo} ({req.courier})</div>}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                            <button onClick={() => setExpandedRequest(expandedRequest === req.id ? null : req.id)} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+                                                <Eye size={12}/> Track
+                                            </button>
+                                            {/* 🚀 ADMIN EDIT AND DELETE ONLY SHOW HERE 🚀 */}
+                                            {(req.status === 'IN_TRANSIT' || req.status === 'DELIVERED' || req.status === 'APPROVED') && (
+                                                <button onClick={() => handleStartEditingOrder(req)} className="px-3 py-1.5 bg-blue-900/50 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/50 rounded text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+                                                    <Pencil size={12}/> Edit Resi
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleDeleteRequest(req.id, req.status)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 rounded text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+                                                <Trash2 size={12}/> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {expandedRequest === req.id && (
+                                        <div className="mt-2 border-t border-slate-700 pt-4">
+                                            <OrderTrackingModule order={req} />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* =========================================== */}
             {/* ============= FULFILLMENT MODAL ============ */}
             {/* =========================================== */}
             {isFulfilling && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[90] backdrop-blur-sm overflow-y-auto">
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[80] backdrop-blur-sm overflow-y-auto">
                     <div className="bg-slate-900 w-full max-w-4xl rounded-2xl border-2 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col max-h-[90vh] overflow-hidden">
                         
                         <div className="p-6 border-b border-slate-700 bg-black/40 flex justify-between items-start gap-4">
@@ -626,7 +674,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 <div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
                         {isAdmin ? <ShieldCheck className="text-orange-500" size={32}/> : <Globe className="text-purple-500" size={32}/>}
-                        {isAdmin ? 'Global Logistics Command Center (OMS/TMS)' : `${branchLocation} Hub Logistics`}
+                        {isAdmin ? 'Global Logistics Command Center (OMS)' : `${branchLocation} Hub Logistics`}
                     </h2>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-2 flex-wrap">
                         {isAdmin ? <><MapPin size={10}/> All Branches nationwide.</> : <><User size={10}/> Admin: {user.email} • Assigned Area: {branchLocation}</>}
@@ -662,7 +710,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         </details>
 
                         <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 flex-1 flex flex-col shadow-lg">
-                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><Truck size={20}/> Status Pengiriman & Reorder History (Tokopedia Style)</h3>
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><Truck size={20}/> Status Pengiriman & Reorder History</h3>
                             
                             {isLoading ? (
                                 <div className="text-center p-10 text-slate-600 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
@@ -753,74 +801,88 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             {/* ============ MASTER ADMIN VIEW =========== */}
             {/* =========================================== */}
             {isAdmin && (
-                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl flex-1 flex flex-col">
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Clock className="text-orange-500"/> Incoming Branch Request Pipeline (OMS/TMS Mode)</h3>
+                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl flex-1 flex flex-col relative">
                     
-                    {isLoading ? (
-                        <div className="text-center p-10 text-slate-600 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
-                    ) : requests.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-700 rounded-xl bg-black/20">
-                            <Globe size={48} className="text-slate-700 mb-3 opacity-50"/>
-                            <p className="text-slate-500 font-bold text-sm">No requests nationwide.</p>
-                            <p className="text-slate-600 text-[10px] mt-1 uppercase tracking-widest">Logistics pipeline is clear!</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {requests.map(req => {
-                                const isExpanded = expandedRequest === req.id;
-                                const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
-                                
-                                return (
-                                    <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-950 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
-                                        
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3 relative">
+                    {/* HEADER WITH NEW LEDGER BUTTON */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+                            <Clock className="text-orange-500"/> Incoming Branch Request Pipeline
+                        </h3>
+                        <button onClick={() => setShowLedger(true)} className="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-lg border border-slate-600 font-bold uppercase tracking-widest text-[10px] flex items-center gap-2 shadow-lg transition-colors">
+                            <History size={14}/> LEDGER (ALL HISTORY)
+                        </button>
+                    </div>
+                    
+                    {/* ONLY SHOW ACTIVE PIPELINE ITEMS ON THE MAIN SCREEN */}
+                    {(() => {
+                        const activeRequests = requests.filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT');
+                        
+                        if (isLoading) {
+                            return <div className="text-center p-10 text-slate-600 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>;
+                        }
+                        
+                        if (activeRequests.length === 0) {
+                            return (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-700 rounded-xl bg-black/20">
+                                    <Globe size={48} className="text-slate-700 mb-3 opacity-50"/>
+                                    <p className="text-slate-500 font-bold text-sm">No active requests nationwide.</p>
+                                    <p className="text-slate-600 text-[10px] mt-1 uppercase tracking-widest">Active logistics pipeline is clear!</p>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div className="space-y-4">
+                                {activeRequests.map(req => {
+                                    const isExpanded = expandedRequest === req.id;
+                                    const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
+                                    
+                                    return (
+                                        <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-950 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
                                             
-                                            {/* 🚀 ADMIN TRASH BUTTON */}
-                                            <button onClick={() => handleDeleteRequest(req.id, req.status)} className="absolute -top-1 -right-1 text-slate-600 hover:text-red-500 bg-slate-900 p-1.5 rounded-lg border border-slate-700 transition-colors shadow-lg z-10" title="Delete Order Permanently">
-                                                <Trash2 size={16}/>
-                                            </button>
-
-                                            <div>
-                                                <div className="flex gap-2 items-center">
-                                                    <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
-                                                        <MapPin size={16} className="text-orange-400"/> {req.branch}
-                                                    </h4>
-                                                    <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • {req.requestedBy.split('@')[0]}</span>
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3 relative">
+                                                <div>
+                                                    <div className="flex gap-2 items-center">
+                                                        <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
+                                                            <MapPin size={16} className="text-orange-400"/> {req.branch}
+                                                        </h4>
+                                                        <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • {req.requestedBy.split('@')[0]}</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                 </div>
-                                                <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
-                                            </div>
-                                            <div className="flex flex-col md:flex-row items-end md:items-center gap-3 pr-8 shrink-0">
-                                                <span className="text-xs font-black text-slate-300">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
-                                                <StatusBadge status={req.status}/>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
-                                                        {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
-                                                        {isExpanded ? 'Tutup Track' : 'Lacak (OMS)'}
-                                                    </button>
-                                                    {req.status === 'PENDING' && (
-                                                        <button onClick={() => handleStartFulfillment(req)} className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all animate-pop-in">
-                                                            <Truck size={14}/> Siapkan Pengiriman (Fulfil)
+                                                <div className="flex flex-col md:flex-row items-end md:items-center gap-3 shrink-0">
+                                                    <span className="text-xs font-black text-slate-300">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                                    <StatusBadge status={req.status}/>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
+                                                            {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
+                                                            {isExpanded ? 'Tutup Track' : 'Lacak (OMS)'}
                                                         </button>
-                                                    )}
+                                                        {req.status === 'PENDING' && (
+                                                            <button onClick={() => handleStartFulfillment(req)} className="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all animate-pop-in">
+                                                                <Truck size={14}/> Siapkan Pengiriman (Fulfil)
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {!isExpanded && req.status === 'PENDING' && (
+                                                <div className="space-y-1.5 text-xs text-slate-300 p-2 pl-4 border-l-2 border-slate-700">
+                                                    {itemsToProcess.slice(0,3).map(item => (
+                                                        <div key={item.productId} className="flex gap-2 font-medium"><span>-</span> <span className="uppercase">{item.name}</span> <span className="font-bold text-orange-400">({item.qty} Bks)</span></div>
+                                                    ))}
+                                                    {itemsToProcess.length > 3 && <div className="text-slate-600 italic">...and {itemsToProcess.length - 3} more items.</div>}
+                                                </div>
+                                            )}
+
+                                            {isExpanded && <OrderTrackingModule order={req} />}
                                         </div>
-
-                                        {!isExpanded && req.status === 'PENDING' && (
-                                            <div className="space-y-1.5 text-xs text-slate-300 p-2 pl-4 border-l-2 border-slate-700">
-                                                {itemsToProcess.slice(0,3).map(item => (
-                                                    <div key={item.productId} className="flex gap-2 font-medium"><span>-</span> <span className="uppercase">{item.name}</span> <span className="font-bold text-orange-400">({item.qty} Bks)</span></div>
-                                                ))}
-                                                {itemsToProcess.length > 3 && <div className="text-slate-600 italic">...and {itemsToProcess.length - 3} more items.</div>}
-                                            </div>
-                                        )}
-
-                                        {isExpanded && <OrderTrackingModule order={req} />}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
+                                    )
+                                })}
+                            </div>
+                        );
+                    })()}
                 </div>
             )}
         </div>
