@@ -22,7 +22,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     const [requestQty, setRequestQty] = useState("");
 
     // --- HQ (TIER 1/2) FULFILLMENT (OMS) STATE ---
-    const [isFulfilling, setIsFulfilling] = useState(null); // The request doc currently in fulfillment modal
+    const [isFulfilling, setIsFulfilling] = useState(null); 
     const [fulfillmentCart, setFulfillmentCart] = useState([]);
     const [courierName, setCourierName] = useState("");
     const [trackingNo, setTrackingNo] = useState("");
@@ -31,7 +31,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     const [isProcessing, setIsProcessing] = useState(false);
 
     // --- UI VIEW STATE ---
-    const [expandedRequest, setExpandedRequest] = useState(null); // For viewing order timeline/photo
+    const [expandedRequest, setExpandedRequest] = useState(null); 
 
 
     // 🚀 LIVE SYNC: Fetch Requests & Branch Stock
@@ -39,17 +39,14 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         if (!masterUserId || !appId) return;
         setIsLoading(true);
 
-        // 1. Listen to Stock Requests Workflow
         const reqRef = collection(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`);
         const unsubReq = onSnapshot(reqRef, (snap) => {
             let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Area Admins only see their own branch requests
             if (isAreaAdmin) data = data.filter(r => r.branch === branchLocation);
             setRequests(data.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
             setIsLoading(false);
         });
 
-        // 2. Listen to Branch Specific Stock (Only needed if Area Admin)
         let unsubStock = () => {};
         if (isAreaAdmin && branchLocation !== 'UNASSIGNED') {
             const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${branchLocation}/inventory`);
@@ -66,7 +63,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // ============ AREA ADMIN LOGIC ============
     // ===========================================
     
-    // --- Create Request ---
     const handleAddToCart = () => {
         if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return alert("Select a product and valid quantity.");
         const product = globalInventory.find(p => p.id === selectedProduct);
@@ -98,7 +94,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 id: reqId,
                 branch: branchLocation,
                 requestedBy: user.email,
-                requestedItems: requestCart, // Original request preserved
+                requestedItems: requestCart, 
                 status: 'PENDING',
                 workflowTimeline: [{
                     status: 'PENDING',
@@ -117,7 +113,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         }
     };
 
-    // --- Confirm Receipt (Tokopedia Style) ---
     const handleConfirmReceipt = async (order) => {
         if (!window.confirm(`Confirm receipt of items for ${order.id}?\n\nItems will be officially added to your ${branchLocation} branch warehouse.`)) return;
         setIsProcessing(true);
@@ -125,22 +120,20 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         try {
             const batch = writeBatch(db);
             
-            // 1. Process items into Branch Warehouse
-            for (const item of order.fulfilledItems) {
+            // 🚀 SAFE FALLBACK APPLIED
+            const itemsToProcess = order.fulfilledItems || order.requestedItems || order.items || [];
+            
+            for (const item of itemsToProcess) {
                 const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, item.productId);
-                
-                // Note: In strict accounting, we'd need to fetch current branch stock first. 
-                // For this demo, we use merge: true to add/create.
                 batch.set(branchItemRef, {
                     productId: item.productId,
                     name: item.name,
-                    stock: item.qty, // Note: Should be ADDITIVE in prod transaction
+                    stock: item.qty, 
                     lastReceivedAt: serverTimestamp(),
                     lastReceivedFrom: order.id
                 }, { merge: true });
             }
 
-            // 2. Update Order Status
             const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
             const updatedTimeline = [...(order.workflowTimeline || [])];
             updatedTimeline.push({
@@ -173,8 +166,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
 
     const handleStartFulfillment = (req) => {
         setIsFulfilling(req);
-        // Default fulfillment cart to requested items (editable)
-        setFulfillmentCart(req.requestedItems.map(item => ({ ...item })));
+        // 🚀 SAFE FALLBACK: Support old test ghost data
+        const itemsToFulfill = req.requestedItems || req.items || [];
+        setFulfillmentCart(itemsToFulfill.map(item => ({ ...item })));
         setCourierName("");
         setTrackingNo("");
         setPackagePhotoFile(null);
@@ -197,11 +191,10 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     };
 
     const updateFulfillQty = (pid, newQty) => {
-        if (Number(newQty) <= 0) return; // Prevent 0/neg shipment
+        if (Number(newQty) <= 0) return; 
         setFulfillmentCart(prev => prev.map(item => item.productId === pid ? { ...item, qty: Number(newQty) } : item));
     };
 
-    // --- Reject Request ---
     const handleRejectRequest = async () => {
         if (!isFulfilling) return;
         if (!window.confirm(`Reject this request from ${isFulfilling.branch}?`)) return;
@@ -230,7 +223,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         } catch (e) { alert("Failed to reject: " + e.message); setIsProcessing(false); }
     };
 
-    // --- Tokopedia Logic: Ship Items (Requires Resi, Photo, Courier) ---
     const handleShipItems = async () => {
         if (!isFulfilling) return;
         if (!courierName || !trackingNo || !packagePhotoFile) {
@@ -244,7 +236,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         try {
             const batch = writeBatch(db);
 
-            // 1. Verify HQ has enough stock FOR FULFILLMENT QTY (NOT REQUESTED QTY)
             for (const item of fulfillmentCart) {
                 const hqProduct = globalInventory.find(p => p.id === item.productId);
                 if (!hqProduct || (hqProduct.stock || 0) < item.qty) {
@@ -253,19 +244,16 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 }
             }
 
-            // 2. Upload Proof of Sending Photo to Storage
             const storageRef = ref(storage, `artifacts/${appId}/users/${masterUserId}/stock_shipments/${isFulfilling.id}_${Date.now()}.jpg`);
             const snapshot = await uploadBytes(storageRef, packagePhotoFile);
             const photoUrl = await getDownloadURL(snapshot.ref);
 
-            // 3. Deduct stock from HQ
             for (const item of fulfillmentCart) {
                 const hqProduct = globalInventory.find(p => p.id === item.productId);
                 const hqRef = doc(db, `artifacts/${appId}/users/${masterUserId}/products`, item.productId);
                 batch.update(hqRef, { stock: (hqProduct.stock || 0) - item.qty });
             }
 
-            // 4. Update Order Status to IN_TRANSIT with full tracking trail
             const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, isFulfilling.id);
             const updatedTimeline = [...(isFulfilling.workflowTimeline || [])];
             updatedTimeline.push({
@@ -279,7 +267,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 courier: courierName,
                 trackingNo: trackingNo,
                 packagePhotoUrl: photoUrl,
-                fulfilledItems: fulfillmentCart, // Actual items sent
+                fulfilledItems: fulfillmentCart, 
                 fulfilledAt: serverTimestamp(),
                 fulfilledBy: user.email,
                 workflowTimeline: updatedTimeline
@@ -302,7 +290,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // ================ RENDERING ================
     // ===========================================
 
-    // Helper: Tokopedia Style Status Badge
     const StatusBadge = ({ status }) => {
         const styles = {
             'PENDING': 'bg-orange-900/50 text-orange-400 border border-orange-500/50',
@@ -329,7 +316,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         );
     };
 
-    // Helper: Unified Tracking Status Module (Used by Both Tiers)
     const OrderTrackingModule = ({ order }) => {
         const isDelivered = order.status === 'DELIVERED';
         const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT';
@@ -338,7 +324,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             <div className="bg-black/50 rounded-2xl border border-slate-700 p-6 animate-fade-in mt-2 mb-4">
                 
                 <div className="flex flex-col md:flex-row gap-6 mb-8 border-b border-slate-700 pb-6">
-                    {/* Tokopedia-Style Tracking Card */}
                     <div className="flex-1 bg-slate-900 p-5 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-blue-500"/></div>
                         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Informasi Pengiriman (TMS)</h4>
@@ -378,7 +363,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         )}
                     </div>
 
-                    {/* Proof of Sending Photo */}
                     <div className="w-full md:w-56 shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-xl flex flex-col items-center">
                         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Bukti Pengiriman (HQ)</h4>
                         {order.packagePhotoUrl ? (
@@ -395,10 +379,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                     </div>
                 </div>
 
-                {/* Workflow Timeline (Tokopedia Style) */}
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5">History Order Timeline</h4>
                 <div className="space-y-6 relative pl-6">
-                    <div className="absolute left-[7px] top-1 bottom-1 w-[2px] bg-slate-700"></div> {/* Line */}
+                    <div className="absolute left-[7px] top-1 bottom-1 w-[2px] bg-slate-700"></div> 
                     {(order.workflowTimeline || []).map((ev, idx) => {
                         const isLatest = idx === order.workflowTimeline.length - 1;
                         const circleColor = isLatest ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]' : 'bg-slate-600';
@@ -425,7 +408,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     return (
         <div className="animate-fade-in space-y-6 relative">
             
-            {/* Processing Overlay */}
             {isProcessing && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] backdrop-blur-sm">
                     <div className="text-center">
@@ -443,7 +425,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[90] backdrop-blur-sm overflow-y-auto">
                     <div className="bg-slate-900 w-full max-w-4xl rounded-2xl border-2 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col max-h-[90vh] overflow-hidden">
                         
-                        {/* Modal Header */}
                         <div className="p-6 border-b border-slate-700 bg-black/40 flex justify-between items-start gap-4">
                             <div>
                                 <h3 className="text-2xl font-black text-white uppercase tracking-widest flex items-center gap-3">
@@ -454,11 +435,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                             <button onClick={cancelFulfillment} className="text-slate-600 hover:text-white"><XCircle size={24}/></button>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-8">
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                {/* REQUIRED SHIPPING DATA */}
                                 <div className="space-y-4">
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Truck size={14}/> Wajib Diisi (TMS)</h4>
                                     
@@ -472,7 +451,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                     </div>
                                 </div>
 
-                                {/* REQUIRED PHOTO PROOF */}
                                 <div className="bg-black/50 p-6 rounded-xl border border-slate-700 flex flex-col items-center shadow-xl">
                                     <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Camera size={12}/> Wajib Upload: Foto Paket & Resi</h4>
                                     
@@ -492,7 +470,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                 </div>
                             </div>
 
-                            {/* ITEM EDITING (Tokopedia Style) */}
                             <div>
                                 <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Pencil size={14} className="text-blue-500"/> Edit Barang Yang Dikirim (HQ can edit Qty)</h4>
                                 <div className="space-y-3 bg-black/30 p-4 rounded-2xl border border-slate-700">
@@ -501,12 +478,15 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                         const hqStock = hqProduct?.stock || 0;
                                         const hasEnough = hqStock >= item.qty;
                                         
+                                        // 🚀 SAFE FALLBACK APPLIED
+                                        const requestedQty = (isFulfilling.requestedItems || isFulfilling.items || []).find(r => r.productId === item.productId)?.qty || 0;
+
                                         return (
                                             <div key={item.productId} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                                                 <div>
                                                     <span className="font-bold text-white uppercase text-sm">{item.name}</span>
                                                     <div className="flex gap-4 text-[10px] mt-1">
-                                                        <span className="text-orange-400 font-bold uppercase tracking-widest">Diminta Branch: {isFulfilling.requestedItems.find(r => r.productId === item.productId)?.qty} Bks</span>
+                                                        <span className="text-orange-400 font-bold uppercase tracking-widest">Diminta Branch: {requestedQty} Bks</span>
                                                         <span className={`font-black ${hasEnough ? 'text-slate-500' : 'text-red-500'}`}>Stok HQ (Vault): {hqStock} Bks</span>
                                                     </div>
                                                 </div>
@@ -522,7 +502,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                             </div>
                         </div>
 
-                        {/* Modal Footer (Action Buttons) */}
                         <div className="no-print p-6 border-t border-slate-700 bg-black/40 flex flex-col md:flex-row gap-3 mt-auto shrink-0 rounded-b-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.3)] relative z-20">
                             <button onClick={handleShipItems} disabled={isProcessing} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative">
                                 {isProcessing ? <Clock className="animate-spin" size={18}/> : <Send size={20}/>}
@@ -557,10 +536,8 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             {isAreaAdmin && (
                 <div className="grid grid-cols-1 xl:grid-cols-[1fr,360px] gap-6">
                     
-                    {/* LEFT: Unified Order Log with Unified Status Module */}
                     <div className="space-y-6 flex flex-col">
                         
-                        {/* Current Branch Stock */}
                         <details className="group" open>
                             <summary className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors flex justify-between items-center shadow-lg">
                                 <h3 className="text-lg font-black text-purple-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={20}/> My Current Branch Inventory</h3>
@@ -580,7 +557,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                             </div>
                         </details>
 
-                        {/* Recent Requests Status Log (TMS Mode) */}
                         <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 flex-1 flex flex-col shadow-lg">
                             <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><Truck size={20}/> Status Pengiriman & Reorder History (Tokopedia Style)</h3>
                             
@@ -596,17 +572,19 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                 <div className="space-y-4">
                                     {requests.map(req => {
                                         const isExpanded = expandedRequest === req.id;
+                                        // 🚀 SAFE FALLBACK APPLIED
+                                        const itemsToProcess = req.requestedItems || req.items || [];
+                                        
                                         return (
                                             <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-900 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
                                                 
-                                                {/* Card Header (Tokopedia Style) */}
                                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
                                                     <div>
                                                         <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • Req By {req.requestedBy.split('@')[0]}</span>
                                                         <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                     </div>
                                                     <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
-                                                        <span className="text-xs font-black text-slate-300">Total Diminta: {req.requestedItems.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                                        <span className="text-xs font-black text-slate-300">Total Diminta: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
                                                         <StatusBadge status={req.status}/>
                                                         <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
@@ -615,7 +593,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                     </div>
                                                 </div>
 
-                                                {/* Unified Tracking Status Module (Unified View) */}
                                                 {isExpanded && <OrderTrackingModule order={req} />}
                                             </div>
                                         )
@@ -625,30 +602,27 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         </div>
                     </div>
 
-                    {/* RIGHT: Request Builder */}
                     <div className="bg-slate-900 p-6 rounded-2xl border border-purple-500/30 shadow-xl relative overflow-hidden flex flex-col">
                         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Send size={100} className="text-purple-500"/></div>
                         <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1 relative z-10">Reorder Stock</h3>
                         <p className="text-[10px] text-purple-400 uppercase tracking-widest mb-6 relative z-10">Request stock from HQ Master Vault to your branch.</p>
                         
-                        {/* Builder Form */}
                         <div className="flex flex-col gap-3 mb-6 relative z-10">
                             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5 block">1. Select Product</label>
-                            <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="bg-black border border-slate-600 rounded-xl p-4 text-sm text-white font-bold outline-none focus:border-purple-500 transition-colors shadow-inner">
+                            <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 transition-colors">
                                 <option value="">-- Select Product --</option>
                                 {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                             
                             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5 block">2. Input Qty (Bks)</label>
                             <div className="flex gap-2 items-stretch w-full">
-                                <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="flex-1 min-w-0 bg-black border border-slate-600 rounded-xl p-4 text-sm text-white font-black outline-none focus:border-purple-500 text-center transition-colors shadow-inner"/>
-                                <button onClick={handleAddToCart} className="bg-purple-600 hover:bg-purple-500 text-white px-6 font-black uppercase tracking-widest rounded-xl shadow-lg shrink-0 text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 h-[54px]">
+                                <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="flex-1 min-w-0 bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 text-center transition-colors"/>
+                                <button onClick={handleAddToCart} className="bg-purple-600 hover:bg-purple-500 text-white px-4 md:px-6 font-bold uppercase tracking-widest rounded-lg shadow-lg shrink-0 whitespace-nowrap text-xs md:text-sm transition-colors flex items-center justify-center gap-1.5 h-[46px]">
                                     <PackagePlus size={16}/> Add to Cart
                                 </button>
                             </div>
                         </div>
 
-                        {/* Request Cart */}
                         {requestCart.length > 0 && (
                             <div className="bg-black/40 rounded-2xl p-5 border border-slate-700 mb-4 flex-1 flex flex-col relative z-10 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2 flex items-center gap-2"><ShoppingCart size={14}/> Request Draft Cart ({requestCart.length})</h4>
@@ -691,10 +665,12 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         <div className="space-y-4">
                             {requests.map(req => {
                                 const isExpanded = expandedRequest === req.id;
+                                // 🚀 SAFE FALLBACK APPLIED
+                                const itemsToProcess = req.requestedItems || req.items || [];
+                                
                                 return (
                                     <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-950 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
                                         
-                                        {/* HQ Card Header */}
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
                                             <div>
                                                 <div className="flex gap-2 items-center">
@@ -706,7 +682,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                 <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                             </div>
                                             <div className="flex flex-col md:flex-row items-end md:items-center gap-3 shrink-0">
-                                                <span className="text-xs font-black text-slate-300">Diminta: {req.requestedItems.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                                <span className="text-xs font-black text-slate-300">Diminta: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
                                                 <StatusBadge status={req.status}/>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
@@ -722,17 +698,15 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                             </div>
                                         </div>
 
-                                        {/* OMS View: Items Summary (When Collapsed) */}
                                         {!isExpanded && req.status === 'PENDING' && (
                                             <div className="space-y-1.5 text-xs text-slate-300 p-2 pl-4 border-l-2 border-slate-700">
-                                                {req.requestedItems.slice(0,3).map(item => (
+                                                {itemsToProcess.slice(0,3).map(item => (
                                                     <div key={item.productId} className="flex gap-2 font-medium"><span>-</span> <span className="uppercase">{item.name}</span> <span className="font-bold text-orange-400">({item.qty} Bks)</span></div>
                                                 ))}
-                                                {req.requestedItems.length > 3 && <div className="text-slate-600 italic">...and {req.requestedItems.length - 3} more items.</div>}
+                                                {itemsToProcess.length > 3 && <div className="text-slate-600 italic">...and {itemsToProcess.length - 3} more items.</div>}
                                             </div>
                                         )}
 
-                                        {/* Unified Tracking Status Module (OMS/TMS View) */}
                                         {isExpanded && <OrderTrackingModule order={req} />}
                                     </div>
                                 )
@@ -745,6 +719,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     );
 }
 
-// Icons needed but not imported in previous examples
+// Fixed missing icon definitions
 const ShoppingCart = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>;
 const PackagePlus = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-package-plus"><path d="M16 16h6"/><path d="M19 13v6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="M16.5 9.4 7.55 4.24"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>;
