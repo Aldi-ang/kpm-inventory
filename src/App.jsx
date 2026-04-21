@@ -2627,7 +2627,8 @@ const handleGitHubMirror = async () => {
                               user={user} 
                               isAdmin={isAdmin}
                               logAudit={logAudit} 
-                              triggerCapy={triggerCapy} 
+                              triggerCapy={triggerCapy}
+                              appSettings={appSettings} 
                           />
                       </div>
                   )}
@@ -2644,7 +2645,8 @@ const handleGitHubMirror = async () => {
                       globalInventory={inventory} 
                       triggerCapy={triggerCapy} 
                       logAudit={logAudit} 
-                      appSettings={appSettings} // 🚀 INJECTED THIS LINE
+                      appSettings={appSettings}
+                     
                   />
               </div>
           )}
