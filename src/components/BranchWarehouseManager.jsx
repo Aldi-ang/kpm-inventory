@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 
-export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit }) {
+export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
     const isAreaAdmin = userRole === 'AREA_ADMIN';
     const branchLocation = userLocation || 'UNASSIGNED';
@@ -25,7 +25,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // --- HQ (TIER 1/2) FULFILLMENT STATE ---
     const [isFulfilling, setIsFulfilling] = useState(null); 
     const [fulfillmentCart, setFulfillmentCart] = useState([]);
-    const [senderName, setSenderName] = useState(""); // 🚀 NEW: Sender Name State
+    const [senderName, setSenderName] = useState(""); 
     const [courierName, setCourierName] = useState("");
     const [trackingNo, setTrackingNo] = useState("");
     const [packagePhotoFile, setPackagePhotoFile] = useState(null);
@@ -34,7 +34,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
 
     // --- HQ (TIER 1/2) EDIT STATE ---
     const [editingOrder, setEditingOrder] = useState(null);
-    const [editSenderName, setEditSenderName] = useState(""); // 🚀 NEW: Edit Sender Name
+    const [editSenderName, setEditSenderName] = useState(""); 
     const [editCourier, setEditCourier] = useState("");
     const [editTrackingNo, setEditTrackingNo] = useState("");
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
@@ -140,7 +140,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                 id: reqId,
                 branch: branchLocation,
                 requestedBy: user.email,
-                requestedByName: user.displayName || user.email.split('@')[0], // 🚀 SAVING THE REGISTERED NAME
+                requestedByName: user.displayName || user.email.split('@')[0], 
                 requestedItems: requestCart, 
                 deliveryAddress: shippingAddress,
                 status: 'PENDING',
@@ -187,7 +187,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             updatedTimeline.push({
                 status: 'DELIVERED',
                 time: new Date().toISOString(),
-                msg: `Received & verified by ${user.displayName || user.email.split('@')[0]} at branch.` // 🚀 UPDATE TIMELINE WITH NAME
+                msg: `Received & verified by ${user.displayName || user.email.split('@')[0]} at branch.` 
             });
 
             batch.update(orderRef, {
@@ -216,7 +216,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         setIsFulfilling(req);
         const itemsToFulfill = req.requestedItems || req.items || [];
         setFulfillmentCart(itemsToFulfill.map(item => ({ ...item })));
-        setSenderName(user.displayName || user.email.split('@')[0]); // 🚀 PREFILL SENDER NAME
+        
+        // 🚀 OFFICIAL FIX: Uses Corporate Setting "Admin Display Name" as default sender!
+        setSenderName(appSettings?.adminDisplayName || user.displayName || user.email.split('@')[0]); 
         setCourierName("");
         setTrackingNo("");
         setPackagePhotoFile(null);
@@ -249,12 +251,13 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         setIsProcessing(true);
 
         try {
+            const adminName = appSettings?.adminDisplayName || user.displayName || user.email.split('@')[0];
             const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, isFulfilling.id);
             const updatedTimeline = [...(isFulfilling.workflowTimeline || [])];
             updatedTimeline.push({
                 status: 'REJECTED',
                 time: new Date().toISOString(),
-                msg: `Request rejected by HQ Admin (${user.displayName || user.email.split('@')[0]}).` // 🚀 UPDATE TIMELINE WITH NAME
+                msg: `Request rejected by HQ Admin (${adminName}).`
             });
 
             await updateDoc(orderRef, {
@@ -306,13 +309,12 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             updatedTimeline.push({
                 status: 'IN_TRANSIT',
                 time: new Date().toISOString(),
-                // 🚀 FIX: EXACTLY THE MESSAGE FORMAT YOU REQUESTED
                 msg: `Shipped via ${courierName} (Resi: ${trackingNo}) by ${senderName}. Photo proof uploaded.` 
             });
 
             batch.update(orderRef, {
                 status: 'IN_TRANSIT',
-                senderName: senderName, // 🚀 SAVE SENDER NAME
+                senderName: senderName, 
                 courier: courierName,
                 trackingNo: trackingNo,
                 packagePhotoUrl: photoUrl,
@@ -337,7 +339,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
     // --- HQ (TIER 1/2) EDIT DATA LOGIC ---
     const handleStartEditingOrder = (order) => {
         setEditingOrder(order);
-        setEditSenderName(order.senderName || order.fulfilledBy?.split('@')[0] || "");
+        setEditSenderName(order.senderName || appSettings?.adminDisplayName || order.fulfilledBy?.split('@')[0] || "");
         setEditCourier(order.courier || "");
         setEditTrackingNo(order.trackingNo || "");
     };
@@ -348,18 +350,18 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         
         setIsProcessingOrder(true);
         try {
+            const adminName = appSettings?.adminDisplayName || user.displayName || user.email.split('@')[0];
             const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, editingOrder.id);
             
             const updatedTimeline = [...(editingOrder.workflowTimeline || [])];
             updatedTimeline.push({
                 status: 'SYSTEM_EDIT',
                 time: new Date().toISOString(),
-                // 🚀 UPDATED: SHOW EXACTLY WHAT WAS CHANGED
-                msg: `HQ Admin (${user.displayName || user.email.split('@')[0]}) updated shipping info.\nOld: ${editingOrder.courier} (${editingOrder.trackingNo}) by ${editingOrder.senderName || 'N/A'}\nNew: ${editCourier} (${editTrackingNo}) by ${editSenderName}`
+                msg: `HQ Admin (${adminName}) updated shipping info.\nOld: ${editingOrder.courier} (${editingOrder.trackingNo}) by ${editingOrder.senderName || 'N/A'}\nNew: ${editCourier} (${editTrackingNo}) by ${editSenderName}`
             });
 
             await updateDoc(orderRef, {
-                senderName: editSenderName, // 🚀 UPDATE SENDER NAME
+                senderName: editSenderName, 
                 courier: editCourier,
                 trackingNo: editTrackingNo,
                 workflowTimeline: updatedTimeline
@@ -435,7 +437,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
-                            {/* 🚀 ADMIN EDIT SHIPPING DATA BUTTON */}
                             {isAdmin && (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED') && (
                                 <button onClick={() => handleStartEditingOrder(order)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-slate-600 font-bold uppercase flex items-center gap-1 transition-colors relative z-10 shadow-lg">
                                     <Pencil size={10}/> Edit Shipping Data
@@ -579,7 +580,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                 <h3 className="text-2xl font-black text-white uppercase tracking-widest flex items-center gap-3">
                                     <Pencil className="text-blue-500"/> Siapkan Pengiriman Ke {isFulfilling.branch}
                                 </h3>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Order ID: {isFulfilling.id} • Req By: {isFulfilling.requestedBy}</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Order ID: {isFulfilling.id} • Req By: {isFulfilling.requestedByName || isFulfilling.requestedBy?.split('@')[0]}</p>
                             </div>
                             <button onClick={cancelFulfillment} className="text-slate-600 hover:text-white"><XCircle size={24}/></button>
                         </div>
@@ -690,7 +691,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                         {isAdmin ? 'Global Logistics Command Center' : `${branchLocation} Hub Logistics`}
                     </h2>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-2 flex-wrap">
-                        {isAdmin ? <><MapPin size={10}/> All Branches nationwide.</> : <><User size={10}/> Admin: {user.displayName || user.email?.split('@')[0]} • Assigned Area: {branchLocation}</>}
+                        {isAdmin ? <><MapPin size={10}/> All Branches nationwide.</> : <><User size={10}/> Admin: {appSettings?.adminDisplayName || user.displayName || user.email?.split('@')[0]} • Assigned Area: {branchLocation}</>}
                     </p>
                 </div>
             </div>
@@ -743,7 +744,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                 
                                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
                                                     <div>
-                                                        {/* 🚀 OFFICIAL DISPLAY NAME USED HERE */}
                                                         <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || req.requestedBy?.split('@')[0]} - Area Admin {req.branch}</span>
                                                         <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                     </div>
@@ -875,7 +875,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                         <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
                                                             <MapPin size={16} className="text-orange-400"/> {req.branch}
                                                         </h4>
-                                                        {/* 🚀 OFFICIAL DISPLAY NAME USED HERE */}
                                                         <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || req.requestedBy?.split('@')[0]} - Area Admin {req.branch}</span>
                                                     </div>
                                                     <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
@@ -918,3 +917,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         </div>
     );
 }
+
+const ShoppingCart = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-cart"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>;
+const PackagePlus = ({ size }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-package-plus"><path d="M16 16h6"/><path d="M19 13v6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="M16.5 9.4 7.55 4.24"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>;

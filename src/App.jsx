@@ -2632,7 +2632,7 @@ const handleGitHubMirror = async () => {
                       </div>
                   )}
 
-                  {/* 🚀 BRANCH WAREHOUSE ENGINE (HQ sees approvals, Tier 3 sees requests) */}
+                  {/* 🚀 BRANCH WAREHOUSE ENGINE */}
                   <BranchWarehouseManager 
                       db={db} 
                       appId={appId} 
@@ -2644,6 +2644,7 @@ const handleGitHubMirror = async () => {
                       globalInventory={inventory} 
                       triggerCapy={triggerCapy} 
                       logAudit={logAudit} 
+                      appSettings={appSettings} // 🚀 INJECTED THIS LINE
                   />
               </div>
           )}
