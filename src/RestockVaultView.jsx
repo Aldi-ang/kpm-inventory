@@ -1,14 +1,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity } from 'lucide-react';
+import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot } from 'firebase/firestore';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
-    const [viewMode, setViewMode] = useState('cart'); // 'cart' | 'ledger' | 'targets'
+    const [viewMode, setViewMode] = useState('cart'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPO, setExpandedPO] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const [stockRequests, setStockRequests] = useState([]);
+    
+    // 🚀 NEW: TARGETS STATE
+    const [targets, setTargets] = useState([]);
+    const [showTargetModal, setShowTargetModal] = useState(false);
+    const [targetForm, setTargetForm] = useState({ productId: '', targetQty: '', month: new Date().toISOString().slice(0,7) }); // YYYY-MM
     
     const [editingOrder, setEditingOrder] = useState(null);
     const [editSenderName, setEditSenderName] = useState("");
@@ -28,7 +33,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
         supplierName: '',
-        poNumber: `PROD-${Date.now().toString().slice(-6)}`,
+        poNumber: `SJ-${Date.now().toString().slice(-6)}`, // Switched to SJ (Surat Jalan) default
         poDate: new Date().toISOString().split('T')[0],
         shippingCost: 0,
         exciseTax: 0,
@@ -37,17 +42,24 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     });
     const [receiptFile, setReceiptFile] = useState(null);
 
-    // 🚀 SAFE HELPERS
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
-    const activeUserId = masterUserId || user?.uid; // Fallback protection
+    const activeUserId = masterUserId || user?.uid; 
 
+    // Fetch Outbound Requests & Monthly Targets
     useEffect(() => {
         if (!user || !appId || !isAdmin || !activeUserId) return;
+        
         const reqRef = collection(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`);
         const unsubReq = onSnapshot(reqRef, (snap) => {
             setStockRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
-        return () => unsubReq();
+
+        const tgtRef = collection(db, `artifacts/${appId}/users/${activeUserId}/production_targets`);
+        const unsubTgt = onSnapshot(tgtRef, (snap) => {
+            setTargets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+        return () => { unsubReq(); unsubTgt(); };
     }, [db, appId, user, isAdmin, activeUserId]);
 
     const addToCart = (product) => {
@@ -56,7 +68,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             id: product.id, 
             name: product.name, 
             batchNo: '', 
-            qtyOrdered: '', 
             qtyReceived: '', 
             basePrice: product.priceDistributor || 0 
         }]);
@@ -110,7 +121,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
             const batch = writeBatch(db);
             
-            // 🚀 STRICT NUMBER MATH TO FIX THE BUG
             const stockUpdates = {};
             for (const item of cart) {
                 if (!stockUpdates[item.id]) stockUpdates[item.id] = 0;
@@ -120,7 +130,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             for (const [prodId, qtyToAdd] of Object.entries(stockUpdates)) {
                 const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
                 const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
-                batch.update(prodRef, { stock: currentStock + qtyToAdd }); // Pure Number Math!
+                batch.update(prodRef, { stock: currentStock + qtyToAdd }); 
             }
 
             const poRef = doc(collection(db, `artifacts/${appId}/users/${activeUserId}/procurement`));
@@ -138,15 +148,55 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             if (triggerCapy) triggerCapy(`Production Recorded! ${totalItemsReceived} units injected to Vault.`);
             
             setCart([]);
-            setPoData({ supplierName: '', poNumber: `PROD-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
+            setPoData({ supplierName: '', poNumber: `SJ-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
             setReceiptFile(null);
-            setViewMode('targets'); // Auto-switch to targets to see progress
+            setViewMode('ledger'); 
             
         } catch (error) { 
             console.error(error); 
             alert("Procurement Failed: " + error.message); 
         } finally {
             setIsSubmitting(false); 
+        }
+    };
+
+    // 🚀 NEW: SAVE TARGET LOGIC
+    const handleSaveTarget = async (e) => {
+        e.preventDefault();
+        if (!targetForm.productId || !targetForm.targetQty) return alert("Select product and enter target quantity.");
+        
+        setIsSubmitting(true);
+        try {
+            const product = inventory.find(p => p.id === targetForm.productId);
+            const targetId = `${targetForm.month}_${targetForm.productId}`;
+            const targetRef = doc(db, `artifacts/${appId}/users/${activeUserId}/production_targets`, targetId);
+            
+            await setDoc(targetRef, {
+                productId: product.id,
+                name: product.name,
+                targetQty: Number(targetForm.targetQty),
+                month: targetForm.month,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            if (triggerCapy) triggerCapy(`Target set for ${product.name}! 🎯`);
+            setShowTargetModal(false);
+            setTargetForm({ productId: '', targetQty: '', month: targetForm.month });
+        } catch (error) {
+            alert("Failed to save target: " + error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    // 🚀 NEW: DELETE TARGET LOGIC
+    const handleDeleteTarget = async (targetId) => {
+        if (!window.confirm("Are you sure you want to remove this production target?")) return;
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/production_targets`, targetId));
+            if (triggerCapy) triggerCapy("Target removed.");
+        } catch (e) {
+            alert("Failed to delete target: " + e.message);
         }
     };
 
@@ -181,7 +231,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     }, [procurements, stockRequests]);
 
     const handleDeletePO = async (po) => {
-        if(!window.confirm(`Delete Production Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
+        if(!window.confirm(`Delete Delivery Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
         try {
             const batch = writeBatch(db);
             const stockToRevert = {};
@@ -406,77 +456,80 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         );
     };
 
-    // 🚀 NEW FEATURE: PRODUCTION TARGETS DASHBOARD
+    // 🚀 NEW: DEDICATED PRODUCTION TARGETS DASHBOARD
     const renderTargetsDashboard = () => {
-        // Only show actual factory INBOUND records, sorted newest first
-        const inboundRecords = procurements.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        // Group targets by month
+        const targetsByMonth = targets.reduce((acc, t) => {
+            if(!acc[t.month]) acc[t.month] = [];
+            acc[t.month].push(t);
+            return acc;
+        }, {});
         
-        if (inboundRecords.length === 0) {
+        const sortedMonths = Object.keys(targetsByMonth).sort().reverse();
+
+        if (sortedMonths.length === 0) {
             return (
                 <div className="text-center py-20 text-slate-600">
                     <Target size={48} className="mx-auto mb-4 opacity-20"/>
-                    <p className="tracking-widest uppercase text-sm font-bold opacity-50">No Production Targets Found</p>
+                    <p className="tracking-widest uppercase text-sm font-bold opacity-50">No Active Production Targets</p>
+                    <p className="text-[10px] mt-2">Click "+ Set Target" above to start tracking factory goals.</p>
                 </div>
             )
         }
 
         return (
-            <div className="animate-fade-in space-y-6 pr-2 custom-scrollbar overflow-y-auto">
+            <div className="animate-fade-in space-y-8 pr-2 custom-scrollbar overflow-y-auto">
                 <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl flex items-center gap-3">
-                    <Activity className="text-blue-400"/>
-                    <p className="text-xs text-blue-300 font-medium">Tracking all Factory batches. Progress bars measure actual items successfully received vs requested factory targets.</p>
+                    <Activity className="text-blue-400 shrink-0"/>
+                    <p className="text-xs text-blue-300 font-medium">This dashboard automatically scans the Master Ledger to calculate how many items the factory has delivered against your monthly goals.</p>
                 </div>
 
-                {inboundRecords.map(po => {
-                    const totalTarget = po.items?.reduce((sum, i) => sum + (Number(i.qtyOrdered) || 0), 0) || 0;
-                    const totalProduced = po.items?.reduce((sum, i) => sum + (Number(i.qtyReceived) || 0), 0) || 0;
-                    const progress = totalTarget > 0 ? Math.min(100, Math.round((totalProduced / totalTarget) * 100)) : 0;
+                {sortedMonths.map(monthStr => {
+                    const monthTargets = targetsByMonth[monthStr];
+                    // Format YYYY-MM for display
+                    const displayMonth = new Date(monthStr + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
                     
                     return (
-                        <div key={po.id} className="bg-black border border-white/10 rounded-xl p-6 shadow-lg relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
+                        <div key={monthStr} className="bg-black/40 border border-white/10 rounded-2xl p-6 shadow-xl">
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
+                                <Calendar className="text-orange-500"/> TARGET: {displayMonth}
+                            </h3>
                             
-                            <div className="flex justify-between items-end mb-4 relative z-10">
-                                <div>
-                                    <h3 className="font-black text-white text-xl tracking-widest font-mono flex items-center gap-2">
-                                        <PackagePlus className="text-orange-500" size={18}/> {po.poNumber}
-                                    </h3>
-                                    <p className="text-[10px] text-slate-500 uppercase mt-1 tracking-widest">{po.date} • {po.supplierName || 'Internal Factory'}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-black text-blue-400 font-mono tracking-widest">{progress}% COMPLETED</p>
-                                    <p className="text-[9px] text-slate-500 uppercase mt-0.5">{totalProduced} / {totalTarget} Bks</p>
-                                </div>
-                            </div>
-                            
-                            <div className="w-full bg-slate-900 rounded-full h-3.5 mb-6 overflow-hidden border border-white/5 relative z-10 shadow-inner">
-                                <div className="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {monthTargets.map(target => {
+                                    // Dynamically calculate actuals from procurements in this month
+                                    let totalProduced = 0;
+                                    procurements.forEach(po => {
+                                        const poDateStr = po.date || (po.timestamp ? new Date(po.timestamp.seconds * 1000).toISOString() : new Date().toISOString());
+                                        if (poDateStr.startsWith(monthStr)) { // If PO is in this month
+                                            const foundItem = po.items?.find(i => i.id === target.productId);
+                                            if (foundItem) {
+                                                totalProduced += Number(foundItem.qtyReceived) || 0;
+                                            }
+                                        }
+                                    });
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                                {po.items?.map((item, idx) => {
-                                    const iTarget = Number(item.qtyOrdered) || 0;
-                                    const iProd = Number(item.qtyReceived) || 0;
-                                    const iProg = iTarget > 0 ? Math.min(100, Math.round((iProd / iTarget) * 100)) : 0;
+                                    const progress = target.targetQty > 0 ? Math.min(100, Math.round((totalProduced / target.targetQty) * 100)) : 0;
                                     
                                     return (
-                                        <div key={idx} className="bg-[#0f0f0f] border border-white/5 rounded-xl p-4 shadow-inner">
-                                            <h4 className="text-xs font-bold text-white uppercase mb-3 truncate pr-4">{item.name}</h4>
+                                        <div key={target.id} className="bg-[#0f0f0f] border border-white/5 rounded-xl p-5 shadow-inner relative group">
+                                            <button onClick={() => handleDeleteTarget(target.id)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14}/></button>
+                                            <h4 className="text-sm font-bold text-white uppercase mb-4 pr-6 truncate">{target.name}</h4>
                                             
-                                            <div className="flex justify-between text-[10px] font-mono mb-1.5 px-1">
-                                                <span className="text-slate-500">Target: {iTarget}</span>
-                                                <span className="text-emerald-400 font-bold">Produced: {iProd}</span>
-                                            </div>
-                                            
-                                            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden shadow-inner">
-                                                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${iProg}%` }}></div>
-                                            </div>
-                                            
-                                            {item.batchNo && (
-                                                <div className="mt-3 text-[9px] text-orange-400 font-mono border border-orange-500/20 px-2 py-1 rounded bg-orange-900/10 inline-block">
-                                                    BATCH: {item.batchNo}
+                                            <div className="flex justify-between items-end mb-2">
+                                                <div>
+                                                    <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Factory Progress</span>
+                                                    <span className="text-xl font-black text-blue-400 font-mono">{progress}%</span>
                                                 </div>
-                                            )}
+                                                <div className="text-right">
+                                                    <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Actual / Target</span>
+                                                    <span className="text-sm font-bold text-white font-mono">{totalProduced} / {target.targetQty}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden shadow-inner">
+                                                <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                                            </div>
                                         </div>
                                     )
                                 })}
@@ -524,19 +577,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                         <div className="border-t border-white/10 bg-[#0f0f0f] p-4 lg:p-6 animate-fade-in">
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                                                 <div>
-                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Produced</h4>
+                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Received</h4>
                                                     <div className="space-y-2">
                                                         {record.items?.map((item, idx) => (
-                                                            <div key={idx} className="flex flex-col bg-black p-2.5 rounded-lg border border-white/5">
-                                                                <div className="flex justify-between items-center mb-1">
+                                                            <div key={idx} className="flex flex-col bg-black p-3 rounded-lg border border-white/5">
+                                                                <div className="flex justify-between items-center">
                                                                     <div className="flex items-center gap-3">
                                                                         <span className="bg-orange-900/30 text-orange-500 px-2 py-0.5 rounded border border-orange-500/30 font-bold font-mono text-[10px]">{item.qtyReceived}x</span>
                                                                         <span className="text-xs text-white uppercase font-bold">{item.name}</span>
                                                                     </div>
-                                                                    <span className="text-[10px] text-orange-400 font-mono border border-orange-500/30 px-1 rounded bg-orange-900/10">BATCH: {item.batchNo || 'N/A'}</span>
-                                                                </div>
-                                                                <div className="text-[9px] text-slate-500 flex justify-between">
-                                                                    <span>Target: {item.qtyOrdered || 0}</span>
+                                                                    {item.batchNo && (
+                                                                        <span className="text-[9px] text-orange-400 font-mono border border-orange-500/30 px-1 rounded bg-orange-900/10">BATCH: {item.batchNo}</span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -697,7 +749,40 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* ====== OUTBOUND SHIPPING EDIT MODAL ===== */}
+            {/* 🚀 NEW: SET TARGET MODAL */}
+            {showTargetModal && (
+                <div className="fixed inset-0 z-[300] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-blue-500 shadow-2xl flex flex-col overflow-hidden animate-pop-in">
+                        <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
+                            <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <Target className="text-blue-500" size={18}/> Set Production Goal
+                            </h3>
+                            <button onClick={() => setShowTargetModal(false)} className="text-slate-600 hover:text-white"><X size={20}/></button>
+                        </div>
+                        <form onSubmit={handleSaveTarget} className="p-6 space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Select Product</label>
+                                <select value={targetForm.productId} onChange={e => setTargetForm({...targetForm, productId: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500">
+                                    <option value="">-- Choose Product --</option>
+                                    {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Target Quantity (Bks)</label>
+                                <input type="number" min="1" value={targetForm.targetQty} onChange={e => setTargetForm({...targetForm, targetQty: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500"/>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Target Month</label>
+                                <input type="month" value={targetForm.month} onChange={e => setTargetForm({...targetForm, month: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500"/>
+                            </div>
+                            <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all">
+                                {isSubmitting ? <RefreshCcw className="animate-spin" size={16}/> : <Save size={16}/>} Save Target
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {editingOrder && (
                 <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-purple-500 shadow-2xl flex flex-col overflow-hidden animate-pop-in">
@@ -730,7 +815,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* --- INBOUND ACCEPTANCE LETTER MODAL (PRINT) --- */}
             {viewingAcceptance && (
                  <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
                      <style>{`
@@ -748,13 +832,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                  <h2 className="text-2xl font-black uppercase tracking-widest">{viewingAcceptance.supplierName || 'FACTORY PRODUCTION'}</h2>
                                  <p className="text-xs text-gray-500 font-bold mt-1">GOODS RECEIVED NOTE (GRN) / ACCEPTANCE LETTER</p>
                                  <div className="mt-4 flex justify-between text-xs text-left bg-gray-100 p-3 rounded">
-                                     <div><p className="font-bold text-gray-500">PRODUCTION NO:</p><p className="font-bold text-lg">{viewingAcceptance.poNumber}</p></div>
+                                     <div><p className="font-bold text-gray-500">SURAT JALAN:</p><p className="font-bold text-lg">{viewingAcceptance.poNumber}</p></div>
                                      <div className="text-right"><p className="font-bold text-gray-500">DATE:</p><p className="font-bold">{viewingAcceptance.date}</p></div>
                                  </div>
                              </div>
                              
                              <table className="w-full text-xs text-left border-collapse mb-6">
-                                 <thead><tr className="border-b-2 border-black"><th className="pb-2">ITEM DESCRIPTION</th><th className="pb-2 text-right">BATCH</th><th className="pb-2 text-right">QTY</th></tr></thead>
+                                 <thead><tr className="border-b-2 border-black"><th className="pb-2">ITEM DESCRIPTION</th><th className="pb-2 text-right">BATCH</th><th className="pb-2 text-right">QTY RECEIVED</th></tr></thead>
                                  <tbody className="divide-y border-b-2 border-black">
                                      {viewingAcceptance.items?.map((i, idx) => (
                                          <tr key={idx}><td className="py-3 font-bold">{i.name}</td><td className="py-3 text-right text-gray-500">{i.batchNo || 'N/A'}</td><td className="py-3 text-right font-bold">{i.qtyReceived}</td></tr>
@@ -781,18 +865,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                  </div>
             )}
 
-            {/* --- INBOUND PO EDIT MODAL --- */}
             {editingPO && (
                 <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-[#0f0f0f] border border-white/20 w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl relative">
                         <button onClick={() => setEditingPO(null)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><X size={24}/></button>
-                        <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-2"><Pencil className="text-orange-500"/> Edit Production Record</h2>
+                        <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-2 flex items-center gap-2"><Pencil className="text-orange-500"/> Edit Delivery Record</h2>
                         
                         <form onSubmit={handleSaveEditPO} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">Metadata</h3>
-                                    <div><label className="text-xs text-slate-500">Production No</label><input value={editingPO.poNumber} onChange={e=>setEditingPO({...editingPO, poNumber: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white" required/></div>
+                                    <div><label className="text-xs text-slate-500">Surat Jalan / Delivery No</label><input value={editingPO.poNumber} onChange={e=>setEditingPO({...editingPO, poNumber: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white" required/></div>
                                     <div><label className="text-xs text-slate-500">Source Factory</label><input value={editingPO.supplierName} onChange={e=>setEditingPO({...editingPO, supplierName: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
                                     <div><label className="text-xs text-slate-500">Date</label><input type="date" value={editingPO.date} onChange={e=>setEditingPO({...editingPO, date: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
                                 </div>
@@ -836,8 +919,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                     {editingPO.items.map((item, idx) => (
                                         <div key={item.cartId || item.id} className="flex gap-4 items-center bg-black p-3 border border-white/10 rounded">
                                             <span className="text-xs text-white font-bold flex-1 truncate">{item.name}</span>
-                                            <div className="w-24"><label className="text-[8px] text-slate-500">Batch No</label><input type="text" value={item.batchNo || ''} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].batchNo = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-slate-300 text-center uppercase"/></div>
-                                            <div className="w-24"><label className="text-[8px] text-slate-500">Qty Received</label><input type="number" value={item.qtyReceived} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].qtyReceived = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-emerald-400 font-mono text-center"/></div>
+                                            <div className="w-32"><label className="text-[8px] text-slate-500">Batch No</label><input type="text" value={item.batchNo || ''} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].batchNo = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-slate-300 text-center uppercase"/></div>
+                                            <div className="w-32"><label className="text-[8px] text-slate-500">Qty Received</label><input type="number" value={item.qtyReceived} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].qtyReceived = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-emerald-400 font-mono text-center"/></div>
                                         </div>
                                     ))}
                                 </div>
@@ -879,7 +962,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                             <p className="text-[10px] lg:text-xs text-slate-500 uppercase tracking-widest mt-1">Track actual factory output against targets</p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={() => setViewMode('ledger')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5 transition-colors"><History size={14}/> Master Ledger</button>
+                            <button onClick={() => setShowTargetModal(true)} className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:text-white flex items-center gap-2 border border-emerald-500/30 rounded-lg px-3 py-2 bg-emerald-900/20 transition-colors"><PlusCircle size={14}/> Set Target</button>
+                            <button onClick={() => setViewMode('ledger')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5 transition-colors"><History size={14}/> Ledger</button>
                             <button onClick={() => setViewMode('cart')} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-xl transition-colors text-xs font-bold shadow-lg active:scale-95">
                                 <ArrowRight className="rotate-180" size={16}/> New Entry
                             </button>
@@ -911,12 +995,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: MULTI-ITEM FACTORY PRODUCTION ENGINE */}
+                    {/* RIGHT COLUMN: FACTORY PRODUCTION INBOUND ENGINE */}
                     <div className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
                         <div className="bg-black/80 backdrop-blur-md border-b border-white/10 p-4 lg:p-6 shrink-0 flex justify-between items-center z-10">
                             <div>
                                 <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3"><Truck className="text-orange-500"/> Factory Production Inbound</h2>
-                                <p className="text-[10px] lg:text-xs text-orange-500 font-mono tracking-widest mt-1">RECORD MASTER VAULT PRODUCTION</p>
+                                <p className="text-[10px] lg:text-xs text-orange-500 font-mono tracking-widest mt-1">LOG INCOMING FACTORY TRUCKS TO VAULT</p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setViewMode('targets')} className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-white flex items-center gap-2 border border-blue-500/30 rounded-lg px-3 py-2 bg-blue-900/20 transition-colors"><Target size={14}/> Targets</button>
@@ -929,17 +1013,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         ) : (
                             <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
                                 <div className="space-y-3 mb-8">
+                                    {/* 🚀 NEW: STRIPPED DOWN INBOUND UI */}
                                     {cart.map((item) => (
                                         <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
                                             <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
                                             <div className="flex-1 min-w-[120px] pt-1 md:pt-0">
                                                 <h4 className="text-xs font-bold text-white uppercase truncate pr-6">{item.name}</h4>
-                                                <p className="text-[9px] text-slate-500 font-mono">Distributor Base: Rp {new Intl.NumberFormat('id-ID').format(item.basePrice || 0)}</p>
                                             </div>
-                                            <div className="flex flex-wrap gap-2 w-full md:w-auto items-end pr-6">
-                                                <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
-                                                <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Target</label><input type="number" value={item.qtyOrdered || ''} onChange={e => updateCartItem(item.cartId, 'qtyOrdered', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-slate-400 focus:border-blue-500 outline-none font-mono" placeholder="0"/></div>
-                                                <div className="w-20"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Produced</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-1.5 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
+                                            <div className="flex flex-wrap gap-3 w-full md:w-auto items-end pr-6">
+                                                <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
+                                                <div className="w-32"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Qty Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-2 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
                                             </div>
                                         </div>
                                     ))}
@@ -947,9 +1030,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/10">
                                     <div className="space-y-4">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Production Meta</h3>
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Delivery Meta</h3>
                                         <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mb-1"><Calendar size={12}/> Arrival Date</label><input type="date" value={poData.poDate} onChange={e => setPoData({...poData, poDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" /></div>
-                                        <div><label className="text-[10px] text-slate-500 uppercase">Production Number</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
+                                        <div><label className="text-[10px] text-slate-500 uppercase">Surat Jalan / Delivery No</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
                                         <div><label className="text-[10px] text-slate-500 uppercase">Source (e.g., Factory Name)</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
                                     </div>
 
