@@ -2628,7 +2628,8 @@ const handleGitHubMirror = async () => {
                               isAdmin={isAdmin}
                               logAudit={logAudit} 
                               triggerCapy={triggerCapy}
-                              appSettings={appSettings} 
+                              appSettings={appSettings}
+                              masterUserId={userId} 
                           />
                       </div>
                   )}

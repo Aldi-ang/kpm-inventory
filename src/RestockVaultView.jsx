@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle } from 'lucide-react';
+import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot } from 'firebase/firestore';
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings }) => {
-    const [viewMode, setViewMode] = useState('cart'); 
+const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
+    const [viewMode, setViewMode] = useState('cart'); // 'cart' | 'ledger' | 'targets'
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPO, setExpandedPO] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,25 +37,25 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     });
     const [receiptFile, setReceiptFile] = useState(null);
 
+    // 🚀 SAFE HELPERS
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
+    const activeUserId = masterUserId || user?.uid; // Fallback protection
 
     useEffect(() => {
-        if (!user || !appId || !isAdmin) return;
-        const reqRef = collection(db, `artifacts/${appId}/users/${user.uid}/stock_requests`);
+        if (!user || !appId || !isAdmin || !activeUserId) return;
+        const reqRef = collection(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`);
         const unsubReq = onSnapshot(reqRef, (snap) => {
             setStockRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
         return () => unsubReq();
-    }, [db, appId, user, isAdmin]);
+    }, [db, appId, user, isAdmin, activeUserId]);
 
-    // 🚀 NEW: MULTI-BATCH LOGIC
-    // We assign a unique cartId so you can add the same product multiple times for different batches
     const addToCart = (product) => {
         setCart([...cart, { 
             cartId: Date.now() + Math.random(), 
             id: product.id, 
             name: product.name, 
-            batchNo: '', // 🚀 NEW BATCH FIELD
+            batchNo: '', 
             qtyOrdered: '', 
             qtyReceived: '', 
             basePrice: product.priceDistributor || 0 
@@ -67,8 +67,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
     const filteredInventory = inventory.filter(item => item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const totalBasePrice = cart.reduce((sum, item) => sum + (parseFloat(item.qtyReceived || 0) * parseFloat(item.basePrice || 0)), 0);
-    const totalItemsReceived = cart.reduce((sum, item) => sum + parseFloat(item.qtyReceived || 0), 0);
+    const totalBasePrice = cart.reduce((sum, item) => sum + (Number(item.qtyReceived || 0) * Number(item.basePrice || 0)), 0);
+    const totalItemsReceived = cart.reduce((sum, item) => sum + Number(item.qtyReceived || 0), 0);
 
     const compressImageToBase64 = (file) => {
         return new Promise((resolve, reject) => {
@@ -94,11 +94,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     };
 
     const handleProcessRestock = async () => {
-        if (!user || !db) return alert("System disconnected. Cannot save.");
+        if (!user || !db || !activeUserId) return alert("System disconnected. Cannot save.");
         if (cart.length === 0 || totalItemsReceived <= 0) return alert("Cart is empty or missing quantities.");
         
         const batchId = `BCH-${new Date().toISOString().slice(2,10).replace(/-/g,'')}`;
-        const trueLandedTotal = totalBasePrice + (parseFloat(poData.shippingCost)||0) + (parseFloat(poData.laborCost)||0) + (parseFloat(poData.exciseTax)||0);
+        const trueLandedTotal = totalBasePrice + (Number(poData.shippingCost)||0) + (Number(poData.laborCost)||0) + (Number(poData.exciseTax)||0);
 
         setIsSubmitting(true);
         try {
@@ -110,20 +110,20 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
             const batch = writeBatch(db);
             
-            // 🚀 NEW: Aggregate stock intelligently in case they added the same item 3 times for 3 batches
+            // 🚀 STRICT NUMBER MATH TO FIX THE BUG
             const stockUpdates = {};
             for (const item of cart) {
                 if (!stockUpdates[item.id]) stockUpdates[item.id] = 0;
-                stockUpdates[item.id] += (parseInt(item.qtyReceived) || 0);
+                stockUpdates[item.id] += (Number(item.qtyReceived) || 0);
             }
             
             for (const [prodId, qtyToAdd] of Object.entries(stockUpdates)) {
-                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
-                const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
-                batch.update(prodRef, { stock: currentStock + qtyToAdd });
+                const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
+                const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
+                batch.update(prodRef, { stock: currentStock + qtyToAdd }); // Pure Number Math!
             }
 
-            const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
+            const poRef = doc(collection(db, `artifacts/${appId}/users/${activeUserId}/procurement`));
             const poRecord = { 
                 batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, 
                 timestamp: serverTimestamp(), date: poData.poDate, 
@@ -140,7 +140,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             setCart([]);
             setPoData({ supplierName: '', poNumber: `PROD-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
             setReceiptFile(null);
-            setViewMode('ledger');
+            setViewMode('targets'); // Auto-switch to targets to see progress
             
         } catch (error) { 
             console.error(error); 
@@ -184,20 +184,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         if(!window.confirm(`Delete Production Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
         try {
             const batch = writeBatch(db);
-            
-            // 🚀 NEW: Aggregate reverting stock properly
             const stockToRevert = {};
             for (const item of po.items) {
                 if (!stockToRevert[item.id]) stockToRevert[item.id] = 0;
-                stockToRevert[item.id] += (parseInt(item.qtyReceived) || 0);
+                stockToRevert[item.id] += (Number(item.qtyReceived) || 0);
             }
             for (const [prodId, qtyToSubtract] of Object.entries(stockToRevert)) {
-                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
-                const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
+                const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
+                const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
                 batch.update(prodRef, { stock: currentStock - qtyToSubtract });
             }
             
-            batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, po.id));
+            batch.delete(doc(db, `artifacts/${appId}/users/${activeUserId}/procurement`, po.id));
             await batch.commit();
 
             if (logAudit) await logAudit("RESTOCK_DELETE", `Deleted Record ${po.poNumber} and reverted stock.`);
@@ -208,7 +206,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     const handleDeleteRequest = async (orderId) => {
         if (!window.confirm(`⚠️ WARNING: DELETE OUTBOUND RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
         try {
-            await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/stock_requests`, orderId));
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, orderId));
             if (triggerCapy) triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);
             if (logAudit) await logAudit("STOCK_DELETE_LOG", `Admin deleted request ${orderId}`);
         } catch(e) { alert("Failed to delete record: " + e.message); }
@@ -219,8 +217,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         if(!editingPO) return;
 
         setIsSubmitting(true);
-        const newTotalBase = editingPO.items.reduce((sum, item) => sum + (parseFloat(item.qtyReceived||0) * parseFloat(item.basePrice||0)), 0);
-        const newLanded = newTotalBase + (parseFloat(editingPO.shippingCost)||0) + (parseFloat(editingPO.laborCost)||0) + (parseFloat(editingPO.exciseTax)||0);
+        const newTotalBase = editingPO.items.reduce((sum, item) => sum + (Number(item.qtyReceived||0) * Number(item.basePrice||0)), 0);
+        const newLanded = newTotalBase + (Number(editingPO.shippingCost)||0) + (Number(editingPO.laborCost)||0) + (Number(editingPO.exciseTax)||0);
 
         try {
             let newReceiptUrl = editingPO.receiptUrl || null;
@@ -237,24 +235,23 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             const batch = writeBatch(db);
             const originalPO = procurements.find(p => p.id === editingPO.id);
             
-            // 🚀 NEW: Aggregate diffs for multi-batch editing
             const diffs = {};
             for (const editedItem of editingPO.items) {
                 const oldItem = originalPO.items.find(i => i.cartId === editedItem.cartId || i.id === editedItem.id);
-                const diff = (parseInt(editedItem.qtyReceived) || 0) - (parseInt(oldItem?.qtyReceived) || 0);
+                const diff = (Number(editedItem.qtyReceived) || 0) - (Number(oldItem?.qtyReceived) || 0);
                 if (!diffs[editedItem.id]) diffs[editedItem.id] = 0;
                 diffs[editedItem.id] += diff;
             }
             
             for (const [prodId, diff] of Object.entries(diffs)) {
                 if (diff !== 0) {
-                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
-                    const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
+                    const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
+                    const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
                     batch.update(prodRef, { stock: currentStock + diff });
                 }
             }
 
-            const poRef = doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, editingPO.id);
+            const poRef = doc(db, `artifacts/${appId}/users/${activeUserId}/procurement`, editingPO.id);
             batch.update(poRef, { 
                 ...editingPO, 
                 totalBasePrice: newTotalBase, 
@@ -288,7 +285,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         
         setIsProcessingOrder(true);
         try {
-            const orderRef = doc(db, `artifacts/${appId}/users/${user.uid}/stock_requests`, editingOrder.id);
+            const orderRef = doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, editingOrder.id);
             
             const updatedTimeline = [...(editingOrder.workflowTimeline || [])];
             updatedTimeline.push({
@@ -409,6 +406,88 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         );
     };
 
+    // 🚀 NEW FEATURE: PRODUCTION TARGETS DASHBOARD
+    const renderTargetsDashboard = () => {
+        // Only show actual factory INBOUND records, sorted newest first
+        const inboundRecords = procurements.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        
+        if (inboundRecords.length === 0) {
+            return (
+                <div className="text-center py-20 text-slate-600">
+                    <Target size={48} className="mx-auto mb-4 opacity-20"/>
+                    <p className="tracking-widest uppercase text-sm font-bold opacity-50">No Production Targets Found</p>
+                </div>
+            )
+        }
+
+        return (
+            <div className="animate-fade-in space-y-6 pr-2 custom-scrollbar overflow-y-auto">
+                <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl flex items-center gap-3">
+                    <Activity className="text-blue-400"/>
+                    <p className="text-xs text-blue-300 font-medium">Tracking all Factory batches. Progress bars measure actual items successfully received vs requested factory targets.</p>
+                </div>
+
+                {inboundRecords.map(po => {
+                    const totalTarget = po.items?.reduce((sum, i) => sum + (Number(i.qtyOrdered) || 0), 0) || 0;
+                    const totalProduced = po.items?.reduce((sum, i) => sum + (Number(i.qtyReceived) || 0), 0) || 0;
+                    const progress = totalTarget > 0 ? Math.min(100, Math.round((totalProduced / totalTarget) * 100)) : 0;
+                    
+                    return (
+                        <div key={po.id} className="bg-black border border-white/10 rounded-xl p-6 shadow-lg relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
+                            
+                            <div className="flex justify-between items-end mb-4 relative z-10">
+                                <div>
+                                    <h3 className="font-black text-white text-xl tracking-widest font-mono flex items-center gap-2">
+                                        <PackagePlus className="text-orange-500" size={18}/> {po.poNumber}
+                                    </h3>
+                                    <p className="text-[10px] text-slate-500 uppercase mt-1 tracking-widest">{po.date} • {po.supplierName || 'Internal Factory'}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs font-black text-blue-400 font-mono tracking-widest">{progress}% COMPLETED</p>
+                                    <p className="text-[9px] text-slate-500 uppercase mt-0.5">{totalProduced} / {totalTarget} Bks</p>
+                                </div>
+                            </div>
+                            
+                            <div className="w-full bg-slate-900 rounded-full h-3.5 mb-6 overflow-hidden border border-white/5 relative z-10 shadow-inner">
+                                <div className="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                                {po.items?.map((item, idx) => {
+                                    const iTarget = Number(item.qtyOrdered) || 0;
+                                    const iProd = Number(item.qtyReceived) || 0;
+                                    const iProg = iTarget > 0 ? Math.min(100, Math.round((iProd / iTarget) * 100)) : 0;
+                                    
+                                    return (
+                                        <div key={idx} className="bg-[#0f0f0f] border border-white/5 rounded-xl p-4 shadow-inner">
+                                            <h4 className="text-xs font-bold text-white uppercase mb-3 truncate pr-4">{item.name}</h4>
+                                            
+                                            <div className="flex justify-between text-[10px] font-mono mb-1.5 px-1">
+                                                <span className="text-slate-500">Target: {iTarget}</span>
+                                                <span className="text-emerald-400 font-bold">Produced: {iProd}</span>
+                                            </div>
+                                            
+                                            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden shadow-inner">
+                                                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${iProg}%` }}></div>
+                                            </div>
+                                            
+                                            {item.batchNo && (
+                                                <div className="mt-3 text-[9px] text-orange-400 font-mono border border-orange-500/20 px-2 py-1 rounded bg-orange-900/10 inline-block">
+                                                    BATCH: {item.batchNo}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        )
+    }
+
     const renderLedger = () => {
         if (selectedYear && selectedMonth && selectedDate) {
             const records = folderStructure[selectedYear][selectedMonth][selectedDate] || [];
@@ -447,7 +526,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                                 <div>
                                                     <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Produced</h4>
                                                     <div className="space-y-2">
-                                                        {/* 🚀 NEW: DISPLAYING THE BATCH DATA */}
                                                         {record.items?.map((item, idx) => (
                                                             <div key={idx} className="flex flex-col bg-black p-2.5 rounded-lg border border-white/5">
                                                                 <div className="flex justify-between items-center mb-1">
@@ -619,6 +697,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
+            {/* ====== OUTBOUND SHIPPING EDIT MODAL ===== */}
             {editingOrder && (
                 <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-purple-500 shadow-2xl flex flex-col overflow-hidden animate-pop-in">
@@ -651,6 +730,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
+            {/* --- INBOUND ACCEPTANCE LETTER MODAL (PRINT) --- */}
             {viewingAcceptance && (
                  <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
                      <style>{`
@@ -685,7 +765,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                              <div className="flex justify-end mb-8">
                                  <div className="w-1/2 space-y-2 text-xs border-t border-black pt-2">
                                      <div className="flex justify-between"><span className="text-gray-500">Total Wares Base:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.totalBasePrice)}</span></div>
-                                     <div className="flex justify-between"><span className="text-gray-500">Shipping/Labor:</span><span>Rp {new Intl.NumberFormat('id-ID').format((parseFloat(viewingAcceptance.shippingCost)||0) + (parseFloat(viewingAcceptance.laborCost)||0))}</span></div>
+                                     <div className="flex justify-between"><span className="text-gray-500">Shipping/Labor:</span><span>Rp {new Intl.NumberFormat('id-ID').format((Number(viewingAcceptance.shippingCost)||0) + (Number(viewingAcceptance.laborCost)||0))}</span></div>
                                      <div className="flex justify-between border-b border-dashed border-gray-400 pb-2"><span className="text-gray-500">Tax/Cukai:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.exciseTax || 0)}</span></div>
                                      <div className="flex justify-between font-black text-sm pt-1"><span>TOTAL LANDED VALUE:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.trueLandedTotal)}</span></div>
                                  </div>
@@ -701,6 +781,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                  </div>
             )}
 
+            {/* --- INBOUND PO EDIT MODAL --- */}
             {editingPO && (
                 <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-[#0f0f0f] border border-white/20 w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl relative">
@@ -770,21 +851,45 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* --- MAIN UI TOGGLE --- */}
-            {viewMode === 'ledger' ? (
+            {/* --- MAIN UI TOGGLES --- */}
+            {viewMode === 'ledger' && (
                 <div className="flex-1 flex flex-col bg-[#0a0a0a] text-slate-300 font-sans p-4 lg:p-6 overflow-hidden h-full rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
                         <div>
                             <h2 className="text-xl lg:text-2xl font-black text-white flex items-center gap-3"><History className="text-orange-500"/> Master Logistics Ledger</h2>
                             <p className="text-[10px] lg:text-xs text-slate-500 uppercase tracking-widest mt-1">Unified Inbound & Outbound History</p>
                         </div>
-                        <button onClick={() => setViewMode('cart')} className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-4 py-2 rounded-xl transition-colors text-xs lg:text-sm font-bold shadow-lg active:scale-95">
-                            <ArrowRight className="rotate-180" size={16}/> Back to Production
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setViewMode('targets')} className="text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-white flex items-center gap-2 border border-blue-500/30 rounded-lg px-3 py-2 bg-blue-900/20 transition-colors"><Target size={14}/> Targets</button>
+                            <button onClick={() => setViewMode('cart')} className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white px-4 py-2 rounded-xl transition-colors text-xs font-bold shadow-lg active:scale-95">
+                                <ArrowRight className="rotate-180" size={16}/> New Entry
+                            </button>
+                        </div>
                     </div>
                     {renderLedger()}
                 </div>
-            ) : (
+            )}
+
+            {/* 🚀 NEW TARGETS DASHBOARD */}
+            {viewMode === 'targets' && (
+                <div className="flex-1 flex flex-col bg-[#0a0a0a] text-slate-300 font-sans p-4 lg:p-6 overflow-hidden h-full rounded-2xl border border-white/10">
+                    <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
+                        <div>
+                            <h2 className="text-xl lg:text-2xl font-black text-white flex items-center gap-3"><Target className="text-blue-500"/> Production Targets</h2>
+                            <p className="text-[10px] lg:text-xs text-slate-500 uppercase tracking-widest mt-1">Track actual factory output against targets</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setViewMode('ledger')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5 transition-colors"><History size={14}/> Master Ledger</button>
+                            <button onClick={() => setViewMode('cart')} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-xl transition-colors text-xs font-bold shadow-lg active:scale-95">
+                                <ArrowRight className="rotate-180" size={16}/> New Entry
+                            </button>
+                        </div>
+                    </div>
+                    {renderTargetsDashboard()}
+                </div>
+            )}
+
+            {viewMode === 'cart' && (
                 <>
                     {/* LEFT COLUMN: PRODUCT SELECTOR */}
                     <div className="w-full lg:w-1/3 bg-[#0a0a0a] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl shrink-0">
@@ -813,7 +918,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                 <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3"><Truck className="text-orange-500"/> Factory Production Inbound</h2>
                                 <p className="text-[10px] lg:text-xs text-orange-500 font-mono tracking-widest mt-1">RECORD MASTER VAULT PRODUCTION</p>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setViewMode('targets')} className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-white flex items-center gap-2 border border-blue-500/30 rounded-lg px-3 py-2 bg-blue-900/20 transition-colors"><Target size={14}/> Targets</button>
                                 <button onClick={() => setViewMode('ledger')} className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5 transition-colors"><History size={14}/> Master Ledger</button>
                             </div>
                         </div>
@@ -823,7 +929,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         ) : (
                             <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
                                 <div className="space-y-3 mb-8">
-                                    {/* 🚀 NEW: THE SIMPLIFIED BATCH UI */}
                                     {cart.map((item) => (
                                         <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
                                             <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
@@ -886,7 +991,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-orange-500 uppercase font-bold">True Landed Total</p>
-                                            <p className="text-xl font-mono font-black text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(totalBasePrice + (parseFloat(poData.shippingCost)||0) + (parseFloat(poData.laborCost)||0) + (parseFloat(poData.exciseTax)||0))}</p>
+                                            <p className="text-xl font-mono font-black text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(totalBasePrice + (Number(poData.shippingCost)||0) + (Number(poData.laborCost)||0) + (Number(poData.exciseTax)||0))}</p>
                                         </div>
                                     </div>
                                     <button 
