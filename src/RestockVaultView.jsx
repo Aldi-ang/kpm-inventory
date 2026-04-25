@@ -1,30 +1,29 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check } from 'lucide-react';
+import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot } from 'firebase/firestore';
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy }) => {
+const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings }) => {
     const [viewMode, setViewMode] = useState('cart'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPO, setExpandedPO] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // --- NEW: OUTBOUND SHIPMENT STATE ---
     const [stockRequests, setStockRequests] = useState([]);
+    
     const [editingOrder, setEditingOrder] = useState(null);
+    const [editSenderName, setEditSenderName] = useState("");
     const [editCourier, setEditCourier] = useState("");
     const [editTrackingNo, setEditTrackingNo] = useState("");
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
-    // Ledger Folder States
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
 
-    // Edit/Print/View States
     const [viewingAcceptance, setViewingAcceptance] = useState(null);
     const [editingPO, setEditingPO] = useState(null);
     const [editReceiptFile, setEditReceiptFile] = useState(null);
-    const [viewingImage, setViewingImage] = useState(null);
+    const [viewingImage, setViewingImage] = useState(null); 
 
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
@@ -38,7 +37,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     });
     const [receiptFile, setReceiptFile] = useState(null);
 
-    // 🚀 NEW: FETCH OUTBOUND SHIPMENTS FOR THE LEDGER
+    const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
+
     useEffect(() => {
         if (!user || !appId || !isAdmin) return;
         const reqRef = collection(db, `artifacts/${appId}/users/${user.uid}/stock_requests`);
@@ -48,13 +48,22 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         return () => unsubReq();
     }, [db, appId, user, isAdmin]);
 
-    // --- CART LOGIC ---
+    // 🚀 NEW: MULTI-BATCH LOGIC
+    // We assign a unique cartId so you can add the same product multiple times for different batches
     const addToCart = (product) => {
-        if (cart.find(item => item.id === product.id)) return;
-        setCart([...cart, { ...product, qtyOrdered: 0, qtyReceived: 0, basePrice: product.priceDistributor || 0 }]);
+        setCart([...cart, { 
+            cartId: Date.now() + Math.random(), 
+            id: product.id, 
+            name: product.name, 
+            batchNo: '', // 🚀 NEW BATCH FIELD
+            qtyOrdered: '', 
+            qtyReceived: '', 
+            basePrice: product.priceDistributor || 0 
+        }]);
     };
-    const removeFromCart = (productId) => setCart(cart.filter(item => item.id !== productId));
-    const updateCartItem = (productId, field, value) => setCart(cart.map(item => item.id === productId ? { ...item, [field]: value } : item));
+    
+    const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
+    const updateCartItem = (cartId, field, value) => setCart(cart.map(item => item.cartId === cartId ? { ...item, [field]: value } : item));
 
     const filteredInventory = inventory.filter(item => item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -84,7 +93,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         });
     };
 
-    // --- PROCESS RESTOCK (INBOUND) ---
     const handleProcessRestock = async () => {
         if (!user || !db) return alert("System disconnected. Cannot save.");
         if (cart.length === 0 || totalItemsReceived <= 0) return alert("Cart is empty or missing quantities.");
@@ -96,19 +104,26 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         try {
             let base64Receipt = null;
             if (receiptFile) {
-                triggerCapy("Compressing Document to Database... ⏳");
+                if(triggerCapy) triggerCapy("Compressing Document to Database... ⏳");
                 base64Receipt = await compressImageToBase64(receiptFile);
             }
 
             const batch = writeBatch(db);
+            
+            // 🚀 NEW: Aggregate stock intelligently in case they added the same item 3 times for 3 batches
+            const stockUpdates = {};
             for (const item of cart) {
-                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
-                const currentStock = inventory.find(p => p.id === item.id)?.stock || 0;
-                batch.update(prodRef, { stock: currentStock + (parseInt(item.qtyReceived) || 0) });
+                if (!stockUpdates[item.id]) stockUpdates[item.id] = 0;
+                stockUpdates[item.id] += (parseInt(item.qtyReceived) || 0);
+            }
+            
+            for (const [prodId, qtyToAdd] of Object.entries(stockUpdates)) {
+                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
+                const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
+                batch.update(prodRef, { stock: currentStock + qtyToAdd });
             }
 
             const poRef = doc(collection(db, `artifacts/${appId}/users/${user.uid}/procurement`));
-            
             const poRecord = { 
                 batchId, ...poData, items: cart, totalBasePrice, trueLandedTotal, 
                 timestamp: serverTimestamp(), date: poData.poDate, 
@@ -135,11 +150,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         }
     };
 
-    // 🚀 NEW: UNIFIED LEDGER FOLDER STRUCTURE (MERGES INBOUND & OUTBOUND)
     const folderStructure = useMemo(() => {
         const structure = {};
         
-        // 1. Add Inbound Factory Production
         procurements.forEach(po => {
             const dateStr = po.date || (po.timestamp ? new Date(po.timestamp.seconds * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
             const d = new Date(dateStr);
@@ -152,7 +165,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             structure[year][month][dateStr].push({ ...po, recordType: 'INBOUND' });
         });
 
-        // 2. Add Outbound Branch Shipments
         stockRequests.forEach(req => {
             const dateStr = req.timestamp ? new Date(req.timestamp.seconds * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
             const d = new Date(dateStr);
@@ -168,35 +180,40 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         return structure;
     }, [procurements, stockRequests]);
 
-    // --- LEDGER DELETE (INBOUND) ---
     const handleDeletePO = async (po) => {
         if(!window.confirm(`Delete Production Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
         try {
             const batch = writeBatch(db);
+            
+            // 🚀 NEW: Aggregate reverting stock properly
+            const stockToRevert = {};
             for (const item of po.items) {
-                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
-                const currentStock = inventory.find(p => p.id === item.id)?.stock || 0;
-                batch.update(prodRef, { stock: currentStock - parseInt(item.qtyReceived) });
+                if (!stockToRevert[item.id]) stockToRevert[item.id] = 0;
+                stockToRevert[item.id] += (parseInt(item.qtyReceived) || 0);
             }
+            for (const [prodId, qtyToSubtract] of Object.entries(stockToRevert)) {
+                const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
+                const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
+                batch.update(prodRef, { stock: currentStock - qtyToSubtract });
+            }
+            
             batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/procurement`, po.id));
             await batch.commit();
 
             if (logAudit) await logAudit("RESTOCK_DELETE", `Deleted Record ${po.poNumber} and reverted stock.`);
-            triggerCapy("Record Deleted & Stock Reverted.");
+            if (triggerCapy) triggerCapy("Record Deleted & Stock Reverted.");
         } catch(e) { alert("Failed to delete: " + e.message); }
     };
 
-    // --- LEDGER DELETE (OUTBOUND) ---
     const handleDeleteRequest = async (orderId) => {
         if (!window.confirm(`⚠️ WARNING: DELETE OUTBOUND RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/stock_requests`, orderId));
-            triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);
+            if (triggerCapy) triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);
             if (logAudit) await logAudit("STOCK_DELETE_LOG", `Admin deleted request ${orderId}`);
         } catch(e) { alert("Failed to delete record: " + e.message); }
     };
 
-    // --- LEDGER EDIT (INBOUND) ---
     const handleSaveEditPO = async (e) => {
         e.preventDefault();
         if(!editingPO) return;
@@ -210,7 +227,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             let newHasReceipt = editingPO.hasReceipt || false;
             
             if (editReceiptFile) {
-                triggerCapy("Compressing New Document... ⏳");
+                if(triggerCapy) triggerCapy("Compressing New Document... ⏳");
                 newReceiptUrl = await compressImageToBase64(editReceiptFile);
                 newHasReceipt = true;
             } else if (editingPO.receiptUrl === null) {
@@ -220,13 +237,19 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             const batch = writeBatch(db);
             const originalPO = procurements.find(p => p.id === editingPO.id);
             
+            // 🚀 NEW: Aggregate diffs for multi-batch editing
+            const diffs = {};
             for (const editedItem of editingPO.items) {
-                const oldItem = originalPO.items.find(i => i.id === editedItem.id);
+                const oldItem = originalPO.items.find(i => i.cartId === editedItem.cartId || i.id === editedItem.id);
                 const diff = (parseInt(editedItem.qtyReceived) || 0) - (parseInt(oldItem?.qtyReceived) || 0);
-                
+                if (!diffs[editedItem.id]) diffs[editedItem.id] = 0;
+                diffs[editedItem.id] += diff;
+            }
+            
+            for (const [prodId, diff] of Object.entries(diffs)) {
                 if (diff !== 0) {
-                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, editedItem.id);
-                    const currentStock = inventory.find(p => p.id === editedItem.id)?.stock || 0;
+                    const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, prodId);
+                    const currentStock = inventory.find(p => p.id === prodId)?.stock || 0;
                     batch.update(prodRef, { stock: currentStock + diff });
                 }
             }
@@ -242,7 +265,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             });
 
             await batch.commit();
-            triggerCapy("Production Record Updated Successfully!");
+            if (triggerCapy) triggerCapy("Production Record Updated Successfully!");
             setEditingPO(null);
             setEditReceiptFile(null);
         } catch(e) { 
@@ -252,16 +275,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         }
     };
 
-    // --- LEDGER EDIT (OUTBOUND RESI) ---
     const handleStartEditingOrder = (order) => {
         setEditingOrder(order);
+        setEditSenderName(order.senderName || getAdminName());
         setEditCourier(order.courier || "");
         setEditTrackingNo(order.trackingNo || "");
     };
 
     const handleSaveOrderEdit = async () => {
         if (!editingOrder) return;
-        if (!editCourier || !editTrackingNo) return alert("Courier and Tracking No are required.");
+        if (!editCourier || !editTrackingNo || !editSenderName) return alert("Sender Name, Logistic Company, and Tracking No are required.");
         
         setIsProcessingOrder(true);
         try {
@@ -271,16 +294,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             updatedTimeline.push({
                 status: 'SYSTEM_EDIT',
                 time: new Date().toISOString(),
-                msg: `HQ Admin (${user.email}) updated tracking info.\nOld: ${editingOrder.courier} (${editingOrder.trackingNo})\nNew: ${editCourier} (${editTrackingNo})`
+                msg: `HQ Admin (${getAdminName()}) updated tracking info.\nOld: ${editingOrder.courier} (${editingOrder.trackingNo}) by ${editingOrder.senderName || 'N/A'}\nNew: ${editCourier} (${editTrackingNo}) by ${editSenderName}`
             });
 
             await updateDoc(orderRef, {
+                senderName: editSenderName,
                 courier: editCourier,
                 trackingNo: editTrackingNo,
                 workflowTimeline: updatedTimeline
             });
             
-            triggerCapy("Tracking information updated successfully! 📝");
+            if (triggerCapy) triggerCapy("Tracking information updated successfully! 📝");
             if (logAudit) await logAudit("STOCK_EDIT_LOG", `Admin edited tracking for ${editingOrder.id}`);
             setEditingOrder(null);
             setIsProcessingOrder(false);
@@ -290,10 +314,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         }
     };
 
-
-    // ===========================================
-    // ========= UNIFIED LEDGER RENDERING ========
-    // ===========================================
 
     const StatusBadge = ({ status }) => {
         const styles = {
@@ -330,7 +350,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         ) : (
                             <div className="space-y-2.5 relative z-10">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-400 flex items-center gap-2"><User size={14}/> Courier</span>
+                                    <span className="text-slate-400 flex items-center gap-2"><User size={14}/> Dikirim Oleh (Sender)</span>
+                                    <span className="font-bold text-orange-400 uppercase">{order.senderName || order.fulfilledBy?.split('@')[0] || 'HQ Admin'}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-400 flex items-center gap-2"><Truck size={14}/> Logistic Company</span>
                                     <span className="font-bold text-white uppercase">{order.courier || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
@@ -393,7 +417,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                     <button onClick={() => setSelectedDate(null)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors mb-4"><ArrowRight className="rotate-180" size={16}/> Back to {selectedMonth}</button>
                     {records.map(record => {
                         
-                        // 1. RENDER INBOUND RECORD (FACTORY PRODUCTION)
                         if (record.recordType === 'INBOUND') {
                             return (
                                 <div key={record.id} className="bg-black border border-white/10 rounded-xl overflow-hidden shadow-lg transition-all hover:border-orange-500/50">
@@ -422,8 +445,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                         <div className="border-t border-white/10 bg-[#0f0f0f] p-4 lg:p-6 animate-fade-in">
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                                                 <div>
-                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Items Produced</h4>
+                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Produced</h4>
                                                     <div className="space-y-2">
+                                                        {/* 🚀 NEW: DISPLAYING THE BATCH DATA */}
                                                         {record.items?.map((item, idx) => (
                                                             <div key={idx} className="flex flex-col bg-black p-2.5 rounded-lg border border-white/5">
                                                                 <div className="flex justify-between items-center mb-1">
@@ -431,7 +455,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                                                         <span className="bg-orange-900/30 text-orange-500 px-2 py-0.5 rounded border border-orange-500/30 font-bold font-mono text-[10px]">{item.qtyReceived}x</span>
                                                                         <span className="text-xs text-white uppercase font-bold">{item.name}</span>
                                                                     </div>
-                                                                    <span className="text-[10px] text-slate-400 font-mono">@ Rp {new Intl.NumberFormat('id-ID').format(item.basePrice || 0)}</span>
+                                                                    <span className="text-[10px] text-orange-400 font-mono border border-orange-500/30 px-1 rounded bg-orange-900/10">BATCH: {item.batchNo || 'N/A'}</span>
+                                                                </div>
+                                                                <div className="text-[9px] text-slate-500 flex justify-between">
+                                                                    <span>Target: {item.qtyOrdered || 0}</span>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -478,7 +505,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                             );
                         }
 
-                        // 2. RENDER OUTBOUND RECORD (BRANCH SHIPMENT)
                         if (record.recordType === 'OUTBOUND') {
                             const itemsToProcess = record.fulfilledItems || record.requestedItems || record.items || [];
                             return (
@@ -491,7 +517,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                                     <h3 className="font-bold text-white text-base lg:text-lg tracking-wider font-mono">OUTBOUND: {record.branch}</h3>
                                                     <StatusBadge status={record.status} />
                                                 </div>
-                                                <p className="text-[10px] lg:text-xs text-slate-500 uppercase">{record.id} • Req By: {record.requestedBy?.split('@')[0]}</p>
+                                                <p className="text-[10px] lg:text-xs text-slate-500 uppercase">{record.id} • Req By: {record.requestedByName || record.requestedBy?.split('@')[0]}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-6 lg:gap-8">
@@ -586,7 +612,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-full text-slate-300 font-sans p-2 relative">
             
-            {/* --- IN-APP IMAGE VIEWER MODAL --- */}
             {viewingImage && (
                 <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
                     <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-black/50 p-2 rounded-full"><X size={32}/></button>
@@ -594,23 +619,26 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* --- OUTBOUND RESI EDIT MODAL --- */}
             {editingOrder && (
                 <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-slate-900 w-full max-w-md rounded-2xl border-2 border-purple-500 shadow-2xl flex flex-col overflow-hidden animate-pop-in">
                         <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
                             <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <Pencil className="text-purple-500" size={18}/> Edit Resi
+                                <Pencil className="text-purple-500" size={18}/> Edit Shipping Data
                             </h3>
                             <button onClick={() => setEditingOrder(null)} className="text-slate-600 hover:text-white"><X size={20}/></button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Update Nama Kurir</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Nama Pengirim (Sender Name)</label>
+                                <input type="text" value={editSenderName} onChange={e => setEditSenderName(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500"/>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Logistic Company / Courier</label>
                                 <input type="text" value={editCourier} onChange={e => setEditCourier(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500"/>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Update Nomor Resi</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Nomor Resi / Tracking No</label>
                                 <input type="text" value={editTrackingNo} onChange={e => setEditTrackingNo(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-blue-300 font-mono font-bold outline-none focus:border-purple-500 uppercase"/>
                             </div>
                         </div>
@@ -623,7 +651,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* --- INBOUND ACCEPTANCE LETTER MODAL (PRINT) --- */}
             {viewingAcceptance && (
                  <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
                      <style>{`
@@ -647,26 +674,26 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                              </div>
                              
                              <table className="w-full text-xs text-left border-collapse mb-6">
-                                 <thead><tr className="border-b-2 border-black"><th className="pb-2">ITEM DESCRIPTION</th><th className="pb-2 text-right">QTY</th><th className="pb-2 text-right">UNIT PRICE</th><th className="pb-2 text-right">TOTAL</th></tr></thead>
+                                 <thead><tr className="border-b-2 border-black"><th className="pb-2">ITEM DESCRIPTION</th><th className="pb-2 text-right">BATCH</th><th className="pb-2 text-right">QTY</th></tr></thead>
                                  <tbody className="divide-y border-b-2 border-black">
                                      {viewingAcceptance.items?.map((i, idx) => (
-                                         <tr key={idx}><td className="py-3 font-bold">{i.name}</td><td className="py-3 text-right">{i.qtyReceived}</td><td className="py-3 text-right">Rp {new Intl.NumberFormat('id-ID').format(i.basePrice)}</td><td className="py-3 text-right font-bold">Rp {new Intl.NumberFormat('id-ID').format(i.qtyReceived * i.basePrice)}</td></tr>
+                                         <tr key={idx}><td className="py-3 font-bold">{i.name}</td><td className="py-3 text-right text-gray-500">{i.batchNo || 'N/A'}</td><td className="py-3 text-right font-bold">{i.qtyReceived}</td></tr>
                                      ))}
                                  </tbody>
                              </table>
 
                              <div className="flex justify-end mb-8">
-                                 <div className="w-1/2 space-y-2 text-xs">
-                                     <div className="flex justify-between"><span className="text-gray-500">Subtotal:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.totalBasePrice)}</span></div>
+                                 <div className="w-1/2 space-y-2 text-xs border-t border-black pt-2">
+                                     <div className="flex justify-between"><span className="text-gray-500">Total Wares Base:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.totalBasePrice)}</span></div>
                                      <div className="flex justify-between"><span className="text-gray-500">Shipping/Labor:</span><span>Rp {new Intl.NumberFormat('id-ID').format((parseFloat(viewingAcceptance.shippingCost)||0) + (parseFloat(viewingAcceptance.laborCost)||0))}</span></div>
                                      <div className="flex justify-between border-b border-dashed border-gray-400 pb-2"><span className="text-gray-500">Tax/Cukai:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.exciseTax || 0)}</span></div>
-                                     <div className="flex justify-between font-black text-sm pt-1"><span>TOTAL VALUE:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.trueLandedTotal)}</span></div>
+                                     <div className="flex justify-between font-black text-sm pt-1"><span>TOTAL LANDED VALUE:</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingAcceptance.trueLandedTotal)}</span></div>
                                  </div>
                              </div>
                              
                              <div className="grid grid-cols-2 text-center text-xs mt-12 pt-8 gap-8">
                                  <div><p className="mb-12 text-gray-500">Delivered By</p><p className="border-t border-black pt-1 font-bold">Factory Logistics</p></div>
-                                 <div><p className="mb-12 text-gray-500">Received & Verified By</p><p className="border-t border-black pt-1 font-bold">Master Vault Admin</p></div>
+                                 <div><p className="mb-12 text-gray-500">Received & Verified By</p><p className="border-t border-black pt-1 font-bold">{getAdminName()}</p></div>
                              </div>
                          </div>
                          <div className="no-print bg-gray-100 p-4 border-t border-gray-300"><button onClick={() => window.print()} className="w-full bg-black text-white py-4 rounded font-bold uppercase tracking-widest flex justify-center items-center gap-2 hover:bg-gray-800"><Printer size={16}/> Print Document</button></div>
@@ -674,7 +701,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                  </div>
             )}
 
-            {/* --- INBOUND PO EDIT MODAL --- */}
             {editingPO && (
                 <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-[#0f0f0f] border border-white/20 w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl relative">
@@ -724,13 +750,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                             </div>
                             
                             <div className="border-t border-white/10 pt-4">
-                                <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Adjust Items (Will modify live stock)</h3>
+                                <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-3">Adjust Batches (Will modify live stock)</h3>
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                                     {editingPO.items.map((item, idx) => (
-                                        <div key={item.id} className="flex gap-4 items-center bg-black p-3 border border-white/10 rounded">
+                                        <div key={item.cartId || item.id} className="flex gap-4 items-center bg-black p-3 border border-white/10 rounded">
                                             <span className="text-xs text-white font-bold flex-1 truncate">{item.name}</span>
+                                            <div className="w-24"><label className="text-[8px] text-slate-500">Batch No</label><input type="text" value={item.batchNo || ''} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].batchNo = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-slate-300 text-center uppercase"/></div>
                                             <div className="w-24"><label className="text-[8px] text-slate-500">Qty Received</label><input type="number" value={item.qtyReceived} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].qtyReceived = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-emerald-400 font-mono text-center"/></div>
-                                            <div className="w-32"><label className="text-[8px] text-slate-500">Base Price (Rp)</label><input type="number" value={item.basePrice} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].basePrice = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-orange-400 font-mono text-center"/></div>
                                         </div>
                                     ))}
                                 </div>
@@ -770,12 +796,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                             {filteredInventory.map(item => {
-                                const inCart = cart.find(c => c.id === item.id);
                                 return (
-                                    <div key={item.id} onClick={() => addToCart(item)} className={`p-3 mb-2 rounded-xl cursor-pointer border transition-all flex items-center gap-4 ${inCart ? 'bg-emerald-500/10 border-emerald-500/30 opacity-50' : 'bg-black/40 border-white/5 hover:border-orange-500/50'}`}>
+                                    <div key={item.id} onClick={() => addToCart(item)} className="p-3 mb-2 rounded-xl cursor-pointer border transition-all flex items-center gap-4 bg-black/40 border-white/5 hover:border-orange-500/50">
                                         <div className="w-12 h-12 bg-black rounded flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">{item.images?.front ? <img src={item.images.front} className="w-full h-full object-contain" alt="ware"/> : <PackagePlus size={20} className="text-slate-600"/>}</div>
                                         <div className="flex-1 min-w-0"><h3 className="text-sm font-bold text-white truncate">{item.name}</h3><p className="text-[10px] text-slate-500 font-mono">Stock: <span className="text-emerald-400 font-bold">{item.stock}</span></p></div>
-                                        {inCart && <CheckCircle size={16} className="text-emerald-500" />}
                                     </div>
                                 );
                             })}
@@ -799,20 +823,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         ) : (
                             <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
                                 <div className="space-y-3 mb-8">
-                                    {cart.map((item, idx) => (
-                                        <div key={item.id} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
-                                            <button onClick={() => removeFromCart(item.id)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
+                                    {/* 🚀 NEW: THE SIMPLIFIED BATCH UI */}
+                                    {cart.map((item) => (
+                                        <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
+                                            <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
                                             <div className="flex-1 min-w-[120px] pt-1 md:pt-0">
                                                 <h4 className="text-xs font-bold text-white uppercase truncate pr-6">{item.name}</h4>
-                                                <p className="text-[9px] text-slate-500 font-mono">Distributor Base: Rp {new Intl.NumberFormat('id-ID').format(item.priceDistributor || 0)}</p>
+                                                <p className="text-[9px] text-slate-500 font-mono">Distributor Base: Rp {new Intl.NumberFormat('id-ID').format(item.basePrice || 0)}</p>
                                             </div>
-                                            <div className="flex flex-wrap gap-2 w-full md:w-auto items-end">
-                                                <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Target</label><input type="number" value={item.qtyOrdered || ''} onChange={e => updateCartItem(item.id, 'qtyOrdered', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-blue-500 outline-none font-mono" placeholder="0"/></div>
-                                                <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Produced</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.id, 'qtyReceived', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
-                                                <div className="w-28"><label className="text-[8px] text-slate-500 uppercase block mb-1">Cost / Unit (Rp)</label><input type="number" value={item.basePrice || ''} onChange={e => updateCartItem(item.id, 'basePrice', e.target.value)} className="w-full bg-orange-900/20 border border-orange-500/30 rounded p-1.5 text-xs text-orange-400 focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
-                                                <div className="w-28 text-right bg-black border border-white/5 rounded p-1.5 h-[30px] flex items-center justify-end">
-                                                    <span className="text-[10px] text-emerald-400 font-bold font-mono">= Rp {new Intl.NumberFormat('id-ID').format((item.qtyReceived || 0) * (item.basePrice || 0))}</span>
-                                                </div>
+                                            <div className="flex flex-wrap gap-2 w-full md:w-auto items-end pr-6">
+                                                <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
+                                                <div className="w-20"><label className="text-[8px] text-slate-500 uppercase block mb-1">Target</label><input type="number" value={item.qtyOrdered || ''} onChange={e => updateCartItem(item.cartId, 'qtyOrdered', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-1.5 text-xs text-slate-400 focus:border-blue-500 outline-none font-mono" placeholder="0"/></div>
+                                                <div className="w-20"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Produced</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-1.5 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
                                             </div>
                                         </div>
                                     ))}
@@ -859,7 +881,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                                 <div className="mt-8 flex flex-col md:flex-row items-center justify-between bg-black p-4 rounded-xl border border-white/10 gap-4">
                                     <div className="flex gap-8 w-full md:w-auto">
                                         <div>
-                                            <p className="text-[10px] text-slate-500 uppercase font-bold">Wares Subtotal</p>
+                                            <p className="text-[10px] text-slate-500 uppercase font-bold">Wares Base Value</p>
                                             <p className="text-lg font-mono font-bold text-slate-300">Rp {new Intl.NumberFormat('id-ID').format(totalBasePrice)}</p>
                                         </div>
                                         <div>
