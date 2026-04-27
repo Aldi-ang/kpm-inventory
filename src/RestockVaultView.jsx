@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
-import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot } from 'firebase/firestore';
+import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
@@ -10,10 +10,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     
     const [stockRequests, setStockRequests] = useState([]);
     
-    // 🚀 NEW: TARGETS STATE
     const [targets, setTargets] = useState([]);
     const [showTargetModal, setShowTargetModal] = useState(false);
-    const [targetForm, setTargetForm] = useState({ productId: '', targetQty: '', month: new Date().toISOString().slice(0,7) }); // YYYY-MM
+    const [targetForm, setTargetForm] = useState({ productId: '', targetQty: '', month: new Date().toISOString().slice(0,7) }); 
     
     const [editingOrder, setEditingOrder] = useState(null);
     const [editSenderName, setEditSenderName] = useState("");
@@ -33,7 +32,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
         supplierName: '',
-        poNumber: `SJ-${Date.now().toString().slice(-6)}`, // Switched to SJ (Surat Jalan) default
+        poNumber: `SJ-${Date.now().toString().slice(-6)}`, 
         poDate: new Date().toISOString().split('T')[0],
         shippingCost: 0,
         exciseTax: 0,
@@ -45,7 +44,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
     const activeUserId = masterUserId || user?.uid; 
 
-    // Fetch Outbound Requests & Monthly Targets
     useEffect(() => {
         if (!user || !appId || !isAdmin || !activeUserId) return;
         
@@ -127,10 +125,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 stockUpdates[item.id] += (Number(item.qtyReceived) || 0);
             }
             
+            // 🚀 FIREBASE ATOMIC INCREMENT: Flawless Stock Addition
             for (const [prodId, qtyToAdd] of Object.entries(stockUpdates)) {
                 const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
-                const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
-                batch.update(prodRef, { stock: currentStock + qtyToAdd }); 
+                batch.update(prodRef, { stock: increment(qtyToAdd) }); 
             }
 
             const poRef = doc(collection(db, `artifacts/${appId}/users/${activeUserId}/procurement`));
@@ -145,12 +143,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             await batch.commit();
 
             if (logAudit) await logAudit("RESTOCK_VAULT", `Produced ${totalItemsReceived} units under ${poData.poNumber}`);
-            if (triggerCapy) triggerCapy(`Production Recorded! ${totalItemsReceived} units injected to Vault.`);
+            if (triggerCapy) triggerCapy(`Production Recorded! ${totalItemsReceived} units instantly injected to Master Vault!`);
             
             setCart([]);
             setPoData({ supplierName: '', poNumber: `SJ-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
             setReceiptFile(null);
-            setViewMode('ledger'); 
+            setViewMode('targets'); 
             
         } catch (error) { 
             console.error(error); 
@@ -160,7 +158,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         }
     };
 
-    // 🚀 NEW: SAVE TARGET LOGIC
     const handleSaveTarget = async (e) => {
         e.preventDefault();
         if (!targetForm.productId || !targetForm.targetQty) return alert("Select product and enter target quantity.");
@@ -189,7 +186,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         }
     };
     
-    // 🚀 NEW: DELETE TARGET LOGIC
     const handleDeleteTarget = async (targetId) => {
         if (!window.confirm("Are you sure you want to remove this production target?")) return;
         try {
@@ -239,10 +235,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 if (!stockToRevert[item.id]) stockToRevert[item.id] = 0;
                 stockToRevert[item.id] += (Number(item.qtyReceived) || 0);
             }
+            
+            // 🚀 FIREBASE ATOMIC DECREMENT: Safe Reversal
             for (const [prodId, qtyToSubtract] of Object.entries(stockToRevert)) {
                 const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
-                const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
-                batch.update(prodRef, { stock: currentStock - qtyToSubtract });
+                batch.update(prodRef, { stock: increment(-qtyToSubtract) });
             }
             
             batch.delete(doc(db, `artifacts/${appId}/users/${activeUserId}/procurement`, po.id));
@@ -296,8 +293,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             for (const [prodId, diff] of Object.entries(diffs)) {
                 if (diff !== 0) {
                     const prodRef = doc(db, `artifacts/${appId}/users/${activeUserId}/products`, prodId);
-                    const currentStock = Number(inventory.find(p => p.id === prodId)?.stock || 0);
-                    batch.update(prodRef, { stock: currentStock + diff });
+                    batch.update(prodRef, { stock: increment(diff) }); // 🚀 FIREBASE ATOMIC EDIT
                 }
             }
 
@@ -456,9 +452,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         );
     };
 
-    // 🚀 NEW: DEDICATED PRODUCTION TARGETS DASHBOARD
     const renderTargetsDashboard = () => {
-        // Group targets by month
         const targetsByMonth = targets.reduce((acc, t) => {
             if(!acc[t.month]) acc[t.month] = [];
             acc[t.month].push(t);
@@ -486,7 +480,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
                 {sortedMonths.map(monthStr => {
                     const monthTargets = targetsByMonth[monthStr];
-                    // Format YYYY-MM for display
                     const displayMonth = new Date(monthStr + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
                     
                     return (
@@ -497,15 +490,19 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {monthTargets.map(target => {
-                                    // Dynamically calculate actuals from procurements in this month
                                     let totalProduced = 0;
+                                    
+                                    // 🚀 FLAWLESS MULTI-BATCH MATCHING
                                     procurements.forEach(po => {
                                         const poDateStr = po.date || (po.timestamp ? new Date(po.timestamp.seconds * 1000).toISOString() : new Date().toISOString());
-                                        if (poDateStr.startsWith(monthStr)) { // If PO is in this month
-                                            const foundItem = po.items?.find(i => i.id === target.productId);
-                                            if (foundItem) {
-                                                totalProduced += Number(foundItem.qtyReceived) || 0;
-                                            }
+                                        const poMonthMatch = poDateStr.substring(0, 7); 
+                                        
+                                        if (poMonthMatch === target.month) {
+                                            po.items?.forEach(i => {
+                                                if (i.id === target.productId) {
+                                                    totalProduced += (Number(i.qtyReceived) || 0);
+                                                }
+                                            });
                                         }
                                     });
 
@@ -953,7 +950,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                 </div>
             )}
 
-            {/* 🚀 NEW TARGETS DASHBOARD */}
+            {/* 🚀 TARGETS DASHBOARD */}
             {viewMode === 'targets' && (
                 <div className="flex-1 flex flex-col bg-[#0a0a0a] text-slate-300 font-sans p-4 lg:p-6 overflow-hidden h-full rounded-2xl border border-white/10">
                     <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
@@ -975,7 +972,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
 
             {viewMode === 'cart' && (
                 <>
-                    {/* LEFT COLUMN: PRODUCT SELECTOR */}
                     <div className="w-full lg:w-1/3 bg-[#0a0a0a] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl shrink-0">
                         <div className="bg-orange-600/10 p-4 border-b border-orange-500/20 flex items-center justify-between">
                             <div className="flex items-center gap-3"><PackagePlus className="text-orange-500" /><h2 className="text-lg font-bold text-orange-500 tracking-widest uppercase">Select Wares</h2></div>
@@ -995,12 +991,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: FACTORY PRODUCTION INBOUND ENGINE */}
                     <div className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
                         <div className="bg-black/80 backdrop-blur-md border-b border-white/10 p-4 lg:p-6 shrink-0 flex justify-between items-center z-10">
                             <div>
                                 <h2 className="text-xl lg:text-2xl font-black text-white uppercase tracking-wider flex items-center gap-3"><Truck className="text-orange-500"/> Factory Production Inbound</h2>
-                                <p className="text-[10px] lg:text-xs text-orange-500 font-mono tracking-widest mt-1">LOG INCOMING FACTORY TRUCKS TO VAULT</p>
+                                <p className="text-[10px] lg:text-xs text-orange-500 font-mono tracking-widest mt-1">RECORD MASTER VAULT PRODUCTION</p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setViewMode('targets')} className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-white flex items-center gap-2 border border-blue-500/30 rounded-lg px-3 py-2 bg-blue-900/20 transition-colors"><Target size={14}/> Targets</button>
@@ -1013,19 +1008,29 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
                         ) : (
                             <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
                                 <div className="space-y-3 mb-8">
-                                    {/* 🚀 NEW: STRIPPED DOWN INBOUND UI */}
-                                    {cart.map((item) => (
-                                        <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
-                                            <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
-                                            <div className="flex-1 min-w-[120px] pt-1 md:pt-0">
-                                                <h4 className="text-xs font-bold text-white uppercase truncate pr-6">{item.name}</h4>
+                                    {/* 🚀 NEW: STRIPPED DOWN INBOUND UI WITH SMART TARGET BADGE */}
+                                    {cart.map((item) => {
+                                        const currentMonthStr = new Date().toISOString().slice(0,7);
+                                        const activeTarget = targets.find(t => t.productId === item.id && t.month === currentMonthStr);
+
+                                        return (
+                                            <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
+                                                <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
+                                                <div className="flex-1 min-w-[120px] pt-1 md:pt-0">
+                                                    <h4 className="text-xs font-bold text-white uppercase truncate pr-6">{item.name}</h4>
+                                                    {activeTarget ? (
+                                                        <span className="text-[9px] text-blue-400 font-mono border border-blue-500/30 px-1.5 py-0.5 rounded bg-blue-900/20 mt-1 inline-block">Monthly Goal: {activeTarget.targetQty} Bks</span>
+                                                    ) : (
+                                                        <span className="text-[9px] text-slate-600 font-mono mt-1 inline-block">No active monthly goal</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap gap-3 w-full md:w-auto items-end pr-6">
+                                                    <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
+                                                    <div className="w-32"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Qty Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-2 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-wrap gap-3 w-full md:w-auto items-end pr-6">
-                                                <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
-                                                <div className="w-32"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Qty Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-2 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/10">
