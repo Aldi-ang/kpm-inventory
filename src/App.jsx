@@ -165,6 +165,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
+
+
+
+
+  
+
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
       if (!db || !appId || !userId || userId === 'default') return;
@@ -175,41 +181,46 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           let activeAlerts = [];
 
           if (userRole === 'ADMIN') {
-              // 🚀 FIX: Keep PENDING items, AND items we already clicked (history)
-              const relevantRequests = allRequests.filter(r => r.status === 'PENDING' || readVirtualNotifs.includes(`logistics_${r.id}`));
+              // 🚀 FIX: Keep ALL recent requests, don't delete them. Just mark completed ones as read.
+              const recentRequests = allRequests.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 30);
               
-              activeAlerts = relevantRequests.map(req => ({
+              activeAlerts = recentRequests.map(req => ({
                   id: `logistics_${req.id}`,
                   title: req.status === 'PENDING' ? `📦 REQ: ${req.branch}` : `✅ REQ: ${req.branch} (${req.status})`,
                   message: `${req.requestedByName || req.requestedBy?.split('@')[0]} requested ${req.requestedItems?.reduce((sum, i) => sum + Number(i.qty), 0) || 0} Bks.`,
                   timestamp: req.timestamp,
-                  // 🚀 FIX: Automatically mark as read if it's not pending OR if we clicked it
+                  // 🚀 FIX: Automatically mark as read/transparent if it's no longer PENDING
                   isRead: req.status !== 'PENDING' || readVirtualNotifs.includes(`logistics_${req.id}`),
                   linkToTab: 'restock_vault' 
               }));
           } else if (userRole === 'AREA_ADMIN') {
               const branchLocation = agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED';
-              // 🚀 FIX: Keep IN_TRANSIT items, AND items we already clicked (history)
-              const relevantRequests = allRequests.filter(r => r.branch === branchLocation && (r.status === 'IN_TRANSIT' || readVirtualNotifs.includes(`logistics_${r.id}`)));
               
-              activeAlerts = relevantRequests.map(req => ({
+              // 🚀 FIX: Keep ALL recent requests for this branch so they stay in history
+              const branchRequests = allRequests.filter(r => r.branch === branchLocation);
+              const recentBranchRequests = branchRequests.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 30);
+              
+              activeAlerts = recentBranchRequests.map(req => ({
                   id: `logistics_${req.id}`,
                   title: req.status === 'IN_TRANSIT' ? `🚚 INCOMING SHIPMENT` : `📦 SHIPMENT (${req.status})`,
-                  message: `HQ Shipped via ${req.courier} (Resi: ${req.trackingNo || 'N/A'}).`,
+                  message: `HQ Shipped via ${req.courier || 'Internal'} (Resi: ${req.trackingNo || 'N/A'}).`,
                   timestamp: req.fulfilledAt || req.timestamp,
-                  // 🚀 FIX: Automatically mark as read if it's not in transit OR if we clicked it
+                  // 🚀 FIX: Automatically mark as read/transparent if it's no longer IN TRANSIT
                   isRead: req.status !== 'IN_TRANSIT' || readVirtualNotifs.includes(`logistics_${req.id}`),
                   linkToTab: 'restock_vault' 
               }));
           }
 
-          // Sort newest history to the top
-          activeAlerts.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
           setLogisticsNotifs(activeAlerts);
       });
 
       return () => unsub();
   }, [db, appId, userId, userRole, agentProfileId, motorists, readVirtualNotifs]);
+
+
+
+
+
 
   // 🚀 2. COMBINE REAL AND VIRTUAL NOTIFICATIONS
   const combinedNotifications = useMemo(() => {
