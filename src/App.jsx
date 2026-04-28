@@ -144,7 +144,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // NEW: Agent Permissions State
   const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
 
-  const [logisticsNotifs, setLogisticsNotifs] = useState([]);
+  // 🚀 ADD THESE LINES:
+  const [logisticsNotifs, setLogisticsNotifs] = useState([]); 
+  const [readVirtualNotifs, setReadVirtualNotifs] = useState(() => {
+      const saved = localStorage.getItem('kpm_read_virtual_notifs');
+      return saved ? JSON.parse(saved) : [];
+  });
 
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
@@ -180,6 +185,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   isRead: false,
                   linkToTab: 'restock_vault' // Jump to Master Vault
               }));
+
+
+              
           } else if (userRole === 'AREA_ADMIN') {
               // Branch Admin Notification: Incoming Shipment
               const branchLocation = agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED';
@@ -189,7 +197,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   title: `🚚 INCOMING SHIPMENT`,
                   message: `HQ Shipped via ${req.courier} (Resi: ${req.trackingNo}).`,
                   timestamp: req.fulfilledAt || req.timestamp,
-                  isRead: false,
+
+                  // 🚀 THE FIX IS RIGHT HERE:
+                  isRead: readVirtualNotifs.includes(`logistics_${req.id}`),
+
+
                   linkToTab: 'restock_vault' // Jump to Branch Vault
               }));
           }
@@ -1279,7 +1291,7 @@ const handleGitHubMirror = async () => {
                             role: data.role,             
                             userRole: data.userRole || 'AGENT', 
                             agentId: data.agentId,
-                            location: data.location || 'UNASSIGNED' // 🚀 THE CRITICAL FIX: Inject location directly
+                            location: data.location || "" // 🚀 FIX 1: Blank string allows the app to fetch the real location!
                         };
                         
                         setUser(hijackedUser);
