@@ -144,6 +144,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // NEW: Agent Permissions State
   const [agentSettings, setAgentSettings] = useState({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
 
+  const [logisticsNotifs, setLogisticsNotifs] = useState([]);
+
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
 
@@ -158,7 +160,50 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
+  // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS
+  useEffect(() => {
+      if (!db || !appId || !userId || userId === 'default') return;
 
+      const reqRef = collection(db, `artifacts/${appId}/users/${userId}/stock_requests`);
+      const unsub = onSnapshot(reqRef, (snap) => {
+          const allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          let activeAlerts = [];
+
+          if (userRole === 'ADMIN') {
+              // HQ Admin Notification: Needs Fulfillment
+              const pending = allRequests.filter(r => r.status === 'PENDING');
+              activeAlerts = pending.map(req => ({
+                  id: `logistics_${req.id}`, // Custom ID to prevent database errors
+                  title: `📦 REQ: ${req.branch}`,
+                  message: `${req.requestedByName || req.requestedBy?.split('@')[0]} requested ${req.requestedItems?.reduce((sum, i) => sum + Number(i.qty), 0) || 0} Bks.`,
+                  timestamp: req.timestamp,
+                  isRead: false,
+                  linkToTab: 'restock_vault' // Jump to Master Vault
+              }));
+          } else if (userRole === 'AREA_ADMIN') {
+              // Branch Admin Notification: Incoming Shipment
+              const branchLocation = agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED';
+              const incoming = allRequests.filter(r => r.branch === branchLocation && r.status === 'IN_TRANSIT');
+              activeAlerts = incoming.map(req => ({
+                  id: `logistics_${req.id}`,
+                  title: `🚚 INCOMING SHIPMENT`,
+                  message: `HQ Shipped via ${req.courier} (Resi: ${req.trackingNo}).`,
+                  timestamp: req.fulfilledAt || req.timestamp,
+                  isRead: false,
+                  linkToTab: 'restock_vault' // Jump to Branch Vault
+              }));
+          }
+
+          setLogisticsNotifs(activeAlerts);
+      });
+
+      return () => unsub();
+  }, [db, appId, userId, userRole, agentProfileId, motorists]);
+
+  // 🚀 2. COMBINE REAL AND VIRTUAL NOTIFICATIONS
+  const combinedNotifications = useMemo(() => {
+      return [...notifications, ...logisticsNotifs];
+  }, [notifications, logisticsNotifs]);
 
 // Helper to include Hours and Minutes in the filename
   // --- DOWNLOAD ENGINE HELPERS ---
@@ -1008,8 +1053,8 @@ const handleGitHubMirror = async () => {
 
   // 🚀 NOTIFICATION CLICK HANDLER 🚀
   const handleNotificationClick = async (notification) => {
-      // 1. Mark as Read in Database
-      if (!notification.read) {
+      // 1. Mark as Read in Database (Skip if it is a virtual logistics alert)
+      if (!notification.read && !notification.id.startsWith('logistics_')) {
           try {
               await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/notifications`, notification.id), { read: true });
           } catch (e) { console.error("Error marking read", e); }
@@ -2239,7 +2284,7 @@ const handleGitHubMirror = async () => {
         onLogin={handleLogin} 
         setShowAdminLogin={setShowAdminLogin}
         agentSettings={agentSettings}
-        notifications={notifications}                   
+       notifications={combinedNotifications}                   
         onNotificationClick={handleNotificationClick}
         appVersion={APP_VERSION} // 🚀 ADDED SO THE SIDEBAR KNOWS THE VERSION   
     >
