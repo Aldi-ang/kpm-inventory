@@ -2193,27 +2193,32 @@ const handleGitHubMirror = async () => {
   const salesTerminalInventory = React.useMemo(() => {
       if (userRole === 'ADMIN') {
           if (adminSalesMode === 'VAULT') return filteredInventory;
-          // Boss Vehicle Mode
-          return filteredInventory.filter(p => adminCanvas.some(c => c.productId === p.id)).map(p => {
+          // Boss Vehicle Mode: Show ALL products, but map stock to vehicle
+          return filteredInventory.map(p => {
               const canvasItem = adminCanvas.find(c => c.productId === p.id);
-              if (!canvasItem) return p;
+              let trueStockInVehicle = 0;
+              if (canvasItem) {
+                  let multCanvas = 1;
+                  if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
+                  if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                  if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                  trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+              }
+              return { ...p, stock: trueStockInVehicle };
+          });
+      }
+      
+      // Employee Mode: Show ALL products, but map stock to vehicle
+      return filteredInventory.map(p => {
+          const canvasItem = agentCanvas.find(c => c.productId === p.id);
+          let trueStockInVehicle = 0;
+          if (canvasItem) {
               let multCanvas = 1;
               if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
               if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
               if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-              const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
-              return { ...p, stock: trueStockInVehicle };
-          });
-      }
-      // Employee Mode
-      return filteredInventory.filter(p => agentCanvas.some(c => c.productId === p.id)).map(p => {
-          const canvasItem = agentCanvas.find(c => c.productId === p.id);
-          if (!canvasItem) return p;
-          let multCanvas = 1;
-          if (canvasItem.unit === 'Slop') multCanvas = p.packsPerSlop || 10;
-          if (canvasItem.unit === 'Bal') multCanvas = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-          if (canvasItem.unit === 'Karton') multCanvas = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-          const trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+              trueStockInVehicle = Math.floor(canvasItem.qty * multCanvas);
+          }
           return { ...p, stock: trueStockInVehicle };
       });
   }, [userRole, filteredInventory, agentCanvas, adminSalesMode, adminCanvas]);

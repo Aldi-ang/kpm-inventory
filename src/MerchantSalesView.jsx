@@ -280,11 +280,26 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     };
 
     const addToCart = (product) => {
+        // 🚀 SMART BLOCKER: Prevent selling things they don't have!
+        if (!isReturMode && product.stock <= 0) {
+            alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
+            return;
+        }
+
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
-            triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
-            if (existing) return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
             
+            if (existing) {
+                // 🚀 SMART BLOCKER: Prevent clicking past their max stock!
+                if (!isReturMode && existing.qty >= product.stock) {
+                    alert(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
+                    return prev;
+                }
+                triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
+                return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + 1 } : i);
+            }
+            
+            triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
             const defaultTier = allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail');
             const tierToUse = lockedTier || defaultTier;
             
@@ -302,7 +317,18 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const updateCartItem = (id, field, val) => {
         setCart(prev => prev.map(item => {
             if (item.productId === id) {
-                const updated = { ...item, [field]: val };
+                let finalVal = val;
+                
+                // 🚀 SMART BLOCKER: Prevent typing a number higher than their stock!
+                if (field === 'qty' && !isReturMode) {
+                    const maxStock = item.product.stock || 0;
+                    if (val > maxStock) {
+                        alert(`INSUFFICIENT VEHICLE STOCK!\n\nYou only have ${maxStock} units of ${item.name} available.`);
+                        finalVal = maxStock;
+                    }
+                }
+
+                const updated = { ...item, [field]: finalVal };
                 const prod = item.product;
                 let base = prod.priceRetail || 0;
                 if (updated.priceTier === 'Grosir') base = prod.priceGrosir || 0;
