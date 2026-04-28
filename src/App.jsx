@@ -169,7 +169,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
 
 
-  
+
 
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
@@ -1050,7 +1050,7 @@ const handleGitHubMirror = async () => {
 
   
 
-  // --- NEW: FETCH AGENT CANVAS & PERMISSIONS FOR SALES TERMINAL ---
+ // --- NEW: FETCH AGENT CANVAS & PERMISSIONS FOR SALES TERMINAL ---
   useEffect(() => {
       if (userRole !== 'ADMIN' && agentProfileId && db && userId && userId !== 'default') {
           const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
@@ -1059,17 +1059,22 @@ const handleGitHubMirror = async () => {
                   const data = docSnap.data();
                   setAgentCanvas(data.activeCanvas || []);
                   
-                  // APPLY RESTRICTIONS: Default strictly to Cash and Retail/Ecer if admin hasn't set otherwise
+                  // 🚀 FIX: Map the allowRetur permission securely
                   setAgentSettings({
                       allowedPayments: data.allowedPayments || ['Cash'],
-                      allowedTiers: data.allowedTiers || ['Retail', 'Ecer']
+                      allowedTiers: data.allowedTiers || ['Retail', 'Ecer'],
+                      allowRetur: data.allowRetur === true // Defaults to false
                   });
               }
           });
           return () => unsub();
       } else {
-          // ADMIN: Full access to all payments and tiers
-          setAgentSettings({ allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], allowedTiers: ['Retail', 'Grosir', 'Ecer'] });
+          // ADMIN: Full access to all payments, tiers, and retur
+          setAgentSettings({ 
+              allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], 
+              allowedTiers: ['Retail', 'Grosir', 'Ecer'],
+              allowRetur: true // Admin can always Retur
+          });
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
@@ -2734,7 +2739,7 @@ const handleGitHubMirror = async () => {
                           </div>
                       </div>
                   )}
-                  <div className="flex-1 min-h-0 relative">
+                 <div className="flex-1 min-h-0 relative">
                       <MerchantSalesView 
                           inventory={salesTerminalInventory} 
                           user={user} 
@@ -2742,6 +2747,7 @@ const handleGitHubMirror = async () => {
                           customers={customers} 
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
+                          allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)} // 🚀 ADD THIS PROP
                           onProcessSale={handleMerchantSale}
                           onInspect={(item) => setExaminingProduct(item)} 
                       />

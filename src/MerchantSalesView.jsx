@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
 
-const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [] }) => {
+// 🚀 ADDED 'allowRetur' PROP TO THE DEFINITION
+const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true }) => {
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -21,8 +22,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
-    const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); // NEW: TEMPO STATE
-    const [printFormat, setPrintFormat] = useState('thermal'); // 🚀 CRASH FIX: Added missing print state!
+    const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); 
+    const [printFormat, setPrintFormat] = useState('thermal'); 
 
     // 🚀 THE FIFO DEBT ENGINE (Monitors Jatuh Tempo in Real-Time) 🚀
     const debtInfo = React.useMemo(() => {
@@ -68,7 +69,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return { totalDebt, ageDays, status, oldestDate };
     }, [customerName, transactions]);
 
-    // NEW: LIVE DEBT RADAR ENGINE
     const selectedCustomerDebts = React.useMemo(() => {
         if (!customerName || !transactions || transactions.length === 0) return { totalDebt: 0, isOverdue: false };
         let titipTotal = 0; let paymentTotal = 0; let isOverdue = false;
@@ -79,7 +79,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             if (tCust?.toLowerCase() === customerName.toLowerCase()) {
                 if (t.paymentType === 'Titip' || t.method === 'Titip') {
                     titipTotal += (t.total || 0);
-                    // Check if this specific invoice has passed its Jatuh Tempo
                     const saleDate = t.timestamp?.seconds ? t.timestamp.seconds * 1000 : (t.timestamp || new Date(t.date).getTime());
                     const tempo = t.tempoDays || 7;
                     if (now > (saleDate + (tempo * 86400000))) isOverdue = true;
@@ -108,7 +107,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     // --- NEW: TRANSACTION LIVE PROOF STATE ---
     const [txProofPhoto, setTxProofPhoto] = useState(null);
 
-    // --- NEW: IMAGE COMPRESSOR (Prevents Database Overload) ---
     const handleTxPhotoCapture = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -117,13 +115,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; // Shrink to 600px width
+                const MAX_WIDTH = 600; 
                 const scaleSize = MAX_WIDTH / img.width;
                 canvas.width = MAX_WIDTH;
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% Quality JPEG
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
                 setTxProofPhoto(compressedDataUrl);
             };
             img.src = event.target.result;
@@ -131,7 +129,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         reader.readAsDataURL(file);
     };
 
-    // --- HELPER: HAVERSINE DISTANCE CALCULATOR ---
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
         const R = 6371e3; 
         const φ1 = lat1 * Math.PI/180;
@@ -181,7 +178,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         if (selectedCustomerInfo) {
             verifyLocation();
         } else if (customerName.trim().length > 2) {
-            // FIX: Never stop tracking GPS just because the modal is open!
             const timer = setTimeout(() => { verifyLocation(); }, 1000); 
             return () => clearTimeout(timer);
         } else {
@@ -192,7 +188,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
-        
         const handleClickOutside = (e) => {
             if (!e.target.closest('.manifest-dropdown-area')) {
                 setShowCustomerDropdown(false);
@@ -354,20 +349,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         triggerMerchantSpeak('expensive');
     };
 
-    const handleWhatsAppShare = () => {
-        if (!receiptData) return;
-        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptData.date}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method}\n------------------------\n`;
-        receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}\n`; });
-        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total)}*\n\nThank you for your business!`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    };
-
     const handleFinalDeal = async () => {
-        // PREVENT SALE IF NO PHOTO IS TAKEN
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto) return;
         
         const finalCust = customerName.trim();
-        // 🚀 RETUR ENGINE: Force payment method if in Retur Mode
         const finalMethod = isReturMode ? 'Retur/BS' : paymentMethod;
         const finalCart = [...cart];
         const finalTotal = cartTotal;
@@ -376,19 +361,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             const isFormalNoo = selectedCustomerInfo?.isNooRegistration;
             const newStorePayload = isFormalNoo ? selectedCustomerInfo : null;
 
-            // --- NEW: COMPILE THE DELIVERY PROOF ---
             const proofPayload = {
                 photoData: txProofPhoto,
                 latitude: agentLocation?.latitude || 0,
                 longitude: agentLocation?.longitude || 0,
                 timestamp: new Date().toISOString(),
                 tempoDays: paymentMethod === 'Titip' ? tempoDays : null,
-                // 🚀 RETUR ENGINE: Add the quarantine flags!
                 isRetur: isReturMode,
                 type: isReturMode ? 'RETUR' : 'SALE'
             };
 
-            // Pass proofPayload as the 5th argument
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
@@ -403,7 +385,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             setSelectedCustomerInfo(null);
             setGpsStatus('idle');
             setAgentLocation(null);
-            setTxProofPhoto(null); // Reset the photo for the next sale!
+            setTxProofPhoto(null); 
+            setIsReturMode(false); // Reset Retur Mode
             setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
@@ -439,7 +422,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
                 )}
 
-                {/* --- DEBT WARNING BANNER (RE4 MERCHANT THEME) --- */}
                 {debtInfo && debtInfo.status === 'RED' && (
                     <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65]">
                         <div className="flex items-center gap-2 mb-1">
@@ -447,42 +429,38 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
                         </div>
                         <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
-                            {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO ({debtInfo.oldestDate}).
+                            {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
                         </p>
                         <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
                     </div>
                 )}
-                {debtInfo && debtInfo.status === 'YELLOW' && (
-                    <div className="bg-[#3e3226] border border-yellow-500/50 p-3 shadow-md rounded-sm relative z-[65]">
-                        <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="text-yellow-500 shrink-0" size={16}/>
-                            <h4 className="text-yellow-500 font-black uppercase tracking-widest text-[10px]">Notice: Payment Due Soon</h4>
-                        </div>
-                        <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
-                            {customerName} OWES <span className="font-bold text-white">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> ({debtInfo.ageDays} DAYS OLD).
-                        </p>
-                    </div>
-                )}
                 
-                {/* 🚀 RETUR ENGINE: The Red Toggle Switch */}
-                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-lg ${isReturMode ? 'bg-red-900/40 border-red-500' : 'bg-[#2a241e] border-[#8b7256]'}`}>
+                {/* 🚀 THE SECURED RETUR SWITCH 🚀 */}
+                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-lg ${isReturMode ? 'bg-red-900/40 border-red-500' : 'bg-[#2a241e] border-[#8b7256]'} ${!allowRetur ? 'opacity-60 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-lg shadow-sm ${isReturMode ? 'bg-red-500/20 text-red-400' : 'bg-[#3e3226] text-[#ffca28]'}`}>
-                            <AlertCircle size={16} />
+                            {!allowRetur ? <Lock size={16} className="text-slate-400"/> : <AlertCircle size={16} />}
                         </div>
                         <div>
-                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]" : "text-[#ffca28]"}`}>Retur / Bad Stock</h4>
-                            <p className={`text-[9px] font-bold tracking-wider ${isReturMode ? "text-red-300" : "text-[#d4c5a3]"}`}>Take back damaged goods & reduce Piutang</p>
+                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]" : "text-[#ffca28]"}`}>
+                                Tarik Barang / Retur
+                            </h4>
+                            <p className={`text-[9px] font-bold tracking-wider ${isReturMode ? "text-red-300" : "text-[#d4c5a3]"}`}>
+                                {!allowRetur ? "Locked by HQ Admin" : "Take back unsold goods to vehicle"}
+                            </p>
                         </div>
                     </div>
-                    <button onClick={() => setIsReturMode(!isReturMode)} className={`w-12 h-6 rounded-full transition-all relative shadow-inner cursor-pointer border-2 ${isReturMode ? 'bg-red-500 border-red-400' : 'bg-[#1a1815] border-[#8b7256]'}`}>
-                        <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all shadow-md ${isReturMode ? 'bg-white left-6' : 'bg-[#ffca28] left-0.5'}`}></div>
+                    <button 
+                        onClick={() => allowRetur && setIsReturMode(!isReturMode)} 
+                        disabled={!allowRetur}
+                        className={`w-12 h-6 rounded-full transition-all relative shadow-inner cursor-pointer border-2 ${!allowRetur ? 'bg-slate-800 border-slate-700 cursor-not-allowed' : isReturMode ? 'bg-red-500 border-red-400' : 'bg-[#1a1815] border-[#8b7256]'}`}
+                    >
+                        <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all shadow-md ${!allowRetur ? 'bg-slate-500 left-0.5' : isReturMode ? 'bg-white left-6' : 'bg-[#ffca28] left-0.5'}`}></div>
                     </button>
                 </div>
 
                 <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
                     <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
-                    
                     <div className="relative">
                         <input 
                             value={customerName} 
@@ -491,22 +469,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             placeholder="TYPE OR SELECT..." 
                             className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
                         />
-                        
                         {customerName.length > 0 && (
-                            <button 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setCustomerName("");
-                                    setSelectedCustomerInfo(null);
-                                    setLockedTier(null);
-                                    setGpsStatus('idle');
-                                    setShowCustomerDropdown(true); 
-                                }}
-                                className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}
-                            >
-                                <X size={16} strokeWidth={3}/>
-                            </button>
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
                         )}
                     </div>
                     
@@ -522,7 +486,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
                                 {gpsStatus === 'too_far' && (
                                     <div className="flex items-center gap-2 w-full">
-                                        <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded"><MapPin size={12}/> Geofence Blocked ({distanceToStore}m / 50m max)</span>
+                                        <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded"><MapPin size={12}/> Geofence Blocked ({distanceToStore}m)</span>
                                     </div>
                                 )}
                                 {gpsStatus === 'bypass' && <span className="text-orange-400 flex items-center gap-1"><MapPin size={12}/> Unmapped Store (Bypass Allowed)</span>}
@@ -537,10 +501,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-600">
                                     <AlertCircle size={12}/> Walk-in (Locked to Ecer)
                                 </div>
-                                <button 
-                                    onClick={() => setShowNooModal(true)}
-                                    className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors"
-                                >
+                                <button onClick={() => setShowNooModal(true)} className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
                                     <Store size={12}/> Register Outlet to Unlock Tiers
                                 </button>
                             </div>
@@ -554,45 +515,30 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
                                 </div>
                             ))}
-                            {customerName && !suggestedCustomers.find(c => c.name.toLowerCase() === customerName.toLowerCase()) && (
-                                <div onClick={() => { setShowCustomerDropdown(false); }} className="p-2 text-xs font-bold text-orange-700 bg-orange-100/50 hover:bg-orange-200 cursor-pointer italic uppercase">
-                                    Walk-in: "{customerName}" (Ecer Only)
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
 
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded">
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
                 </div>
 
-                {/* NEW: JATUH TEMPO CONFIGURATOR */}
-                {paymentMethod === 'Titip' && (
+                {paymentMethod === 'Titip' && !isReturMode && (
                     <div className="mt-3 bg-[#3e3226] border border-[#ff9d00]/50 p-3 rounded shadow-inner animate-fade-in">
                         <label className="text-[10px] font-bold text-[#d4c5a3] mb-2 flex items-center justify-between uppercase tracking-widest">
                             <span>Jatuh Tempo (Due Date)</span>
                             <span className="bg-[#ff9d00] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
                         </label>
                         <div className="flex items-center gap-3">
-                            <input 
-                                type="range" min="1" max="60" value={tempoDays} 
-                                onChange={(e) => setTempoDays(parseInt(e.target.value))} 
-                                className="w-full accent-[#ff9d00] h-1.5 bg-[#1a1815] rounded-lg appearance-none cursor-pointer"
-                            />
-                            <input 
-                                type="number" min="1" max="60" value={tempoDays} 
-                                onChange={(e) => setTempoDays(parseInt(e.target.value))} 
-                                className="w-12 bg-[#1a1815] border border-[#5c4b3a] rounded p-1 text-center text-[#ff9d00] text-xs font-bold focus:outline-none focus:border-[#ff9d00]"
-                            />
+                            <input type="range" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-full accent-[#ff9d00] h-1.5 bg-[#1a1815] rounded-lg appearance-none cursor-pointer" />
+                            <input type="number" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-12 bg-[#1a1815] border border-[#5c4b3a] rounded p-1 text-center text-[#ff9d00] text-xs font-bold focus:outline-none focus:border-[#ff9d00]"/>
                         </div>
                     </div>
                 )}
 
-                {/* NEW: LIVE DEBT RADAR WARNING */}
                 {selectedCustomerDebts.totalDebt > 0 && (
                     <div className={`mt-3 p-2 rounded border flex items-start gap-2 animate-fade-in shadow-md ${selectedCustomerDebts.isOverdue ? 'bg-red-900/20 border-red-500/50' : 'bg-orange-900/20 border-orange-500/50'}`}>
                         <AlertCircle className={`shrink-0 mt-0.5 ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`} size={16}/>
@@ -602,7 +548,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             </h4>
                             <p className="text-[10px] text-[#5c4b3a] mt-0.5 leading-tight font-bold">
                                 <strong className="text-[#3e3226]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
-                                {selectedCustomerDebts.isOverdue && <span className="text-red-600 block mt-0.5">Collect payment before new Titip!</span>}
                             </p>
                         </div>
                     </div>
@@ -617,19 +562,23 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className="flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 bg-[#f5e6c8] p-2 rounded border border-[#a89070]/50 shadow-sm">
+                        <div key={idx} className={`flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 p-2 rounded border shadow-sm ${isReturMode ? 'bg-red-100 border-red-300' : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
-                                <span className="text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal text-[#3e3226]">{item.name}</span>
+                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? 'text-red-900' : 'text-[#3e3226]'}`}>
+                                    {item.name} {isReturMode && '(RETUR)'}
+                                </span>
                                 <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
                             </div>
-                            <div className="flex items-center gap-1 md:gap-2 bg-[#dfd5bc] p-1 rounded border border-[#a89070]/30">
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? 'bg-red-200/50 border-red-300' : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
                                 <input type="number" value={item.qty} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]" />
                                 <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
                                 <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
-                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</div>
+                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">
+                                {isReturMode ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
+                            </div>
                         </div>
                     )})
                 )}
@@ -641,14 +590,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         <div className="flex h-full w-full bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-50 pointer-events-none"></div>
             
-            {/* --- NEW BOTTOM NAVIGATION BAR FOR MOBILE --- */}
             <div className="hide-on-print lg:hidden absolute bottom-0 inset-x-0 h-14 flex border-t-2 border-[#5c4b3a] bg-[#0f0e0d] z-[150] shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-                <button onClick={() => setMobileTab('products')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}>
-                    <ShoppingBag size={18}/> Wares
-                </button>
-                <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}>
-                    <User size={18}/> Merchant ({cart.length})
-                </button>
+                <button onClick={() => setMobileTab('products')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}><ShoppingBag size={18}/> Wares</button>
+                <button onClick={() => setMobileTab('merchant')} className={`flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}><User size={18}/> Merchant ({cart.length})</button>
             </div>
 
             <div className={`hide-on-print w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
@@ -656,7 +600,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
                     <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
                         <div className="w-40 h-40 md:w-48 md:h-48 lg:w-72 lg:h-72 relative">
-                            <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" onError={(e) => { e.target.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Merchant"; }}/>
+                            <img src={merchantMood === 'deal' ? "/deal.png" : merchantMood === 'talking' ? "/talking.png" : "/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" />
                         </div>
                     </div>
                     <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/wood-pattern.png')" }}></div>
@@ -669,7 +613,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                
                 <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                     
-                    {/* --- NEW: LIVE DELIVERY PROOF UI --- */}
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Live Delivery Proof <span className="text-red-500">*</span></label>
                         <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
@@ -678,9 +621,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)]">
                                 <img src={txProofPhoto} alt="Proof" className="w-full h-24 object-cover opacity-80" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
-                                <div className="absolute bottom-0 inset-x-0 bg-black/80 p-1.5 text-[9px] text-[#ff9d00] font-mono text-center tracking-widest uppercase">
-                                    <MapPin size={10} className="inline mr-1"/> Verified • {new Date().toLocaleTimeString()}
-                                </div>
                             </div>
                         ) : (
                             <button onClick={() => document.getElementById('txProof').click()} className="w-full py-4 border-2 border-dashed border-[#5c4b3a] hover:border-[#ff9d00] text-[#8b7256] hover:text-[#ff9d00] bg-black/40 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
@@ -692,10 +632,11 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                     <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#5c4b3a] pb-2 md:pb-3 font-mono">
                         <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
-                        <span className="text-2xl md:text-3xl lg:text-4xl font-black text-[#ff9d00] leading-none drop-shadow-sm">Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}</span>
+                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none drop-shadow-sm ${isReturMode ? 'text-red-500' : 'text-[#ff9d00]'}`}>
+                            {isReturMode ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
+                        </span>
                     </div>
                     
-                    {/* BUTTON DISABLED IF NO PHOTO */}
                     <button
                         onClick={handleFinalDeal}
                         disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking' || !txProofPhoto}
@@ -704,7 +645,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         {gpsStatus === 'checking' ? 'Awaiting GPS...' :
                          gpsStatus === 'too_far' ? 'Return to Store' :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
-                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> QUARANTINE BS</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
@@ -831,6 +772,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 </div>
             )}
             
+            {/* --- RECEIPT MODAL --- */}
             {receiptData && (() => {
                 const activeTier = receiptData.items?.[0]?.priceTier || 'Retail';
                 const isGrosir = activeTier === 'Grosir' || activeTier === 'Distributor';
@@ -872,7 +814,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     }
                 });
 
-                // 🚀 SMART DATE/TIME SPLITTER 🚀
                 const rawDate = receiptData.date || '';
                 const dateParts = rawDate.split(', ');
                 const receiptDateStr = dateParts[0] || rawDate;
@@ -882,7 +823,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
-                            {/* --- THERMAL POS LAYOUT (REDESIGNED FOR 58MM) --- */}
+                            {/* --- THERMAL POS LAYOUT --- */}
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
@@ -914,7 +855,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                             <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
                                                         </td>
                                                         <td className="py-1 text-right font-black whitespace-nowrap">
-                                                            {new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                            {receiptData.method === 'Retur/BS' ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                         </td>
                                                     </tr>
                                                 )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
@@ -924,7 +865,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                     
                                     <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
                                         <span>TOTAL</span>
-                                        <span>Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
+                                        <span>{receiptData.method === 'Retur/BS' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
                                     </div>
                                     
                                     <div className="text-center text-[10px] mb-2 font-bold !text-slate-500">
@@ -943,7 +884,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || "Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang"}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA {receiptData.method === 'Retur/BS' ? 'RETUR' : 'PENJUALAN'}</h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>
@@ -951,7 +892,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3">
                                                 <tbody>
-                                                    {/* 🚀 A4 STACKED DATE & TIME 🚀 */}
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
                                                     {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
                                                     
@@ -983,14 +923,14 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                                         <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? (receiptData.method === 'Retur/BS' ? '-' : '') + new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                             <tfoot>
                                                 <tr className="!bg-blue-100">
                                                     <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
-                                                    <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</td>
+                                                    <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">{receiptData.method === 'Retur/BS' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</td>
                                                 </tr>
                                             </tfoot>
                                         </table>
@@ -1035,133 +975,114 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
-    const receipt = document.querySelector('.print-receipt');
-    if (!receipt) return;
+                                    const receipt = document.querySelector('.print-receipt');
+                                    if (!receipt) return;
 
-    const clone = receipt.cloneNode(true);
-    clone.querySelectorAll('.no-print').forEach(el => el.remove());
-    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
+                                    const clone = receipt.cloneNode(true);
+                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+                                    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
 
-    let parentStyles = '';
-    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-        parentStyles += el.outerHTML;
-    });
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
 
-    const isThermal = clone.classList.contains('format-thermal');
+                                    const isThermal = clone.classList.contains('format-thermal');
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute'; // 🚀 FIX 1: Anchor to absolute document flow
-    iframe.style.top = '0'; // 🚀 FIX 2: Anchor to TOP so Chrome doesn't print empty space
-    iframe.style.left = '0';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    iframe.style.opacity = '0';
-    iframe.style.pointerEvents = 'none';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.position = 'absolute'; 
+                                    iframe.style.top = '0'; 
+                                    iframe.style.left = '0';
+                                    iframe.style.width = '1px';
+                                    iframe.style.height = '1px';
+                                    iframe.style.opacity = '0';
+                                    iframe.style.pointerEvents = 'none';
+                                    iframe.style.border = 'none';
+                                    document.body.appendChild(iframe);
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>KPM Invoice</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            ${parentStyles}
-            <style>
-                @media print {
-                    @page { margin: 0; }
-                    html, body { 
-                        background: #ffffff !important; 
-                        color: #000000 !important; 
-                        margin: 0 !important; 
-                        padding: 0 !important; 
-                        width: ${isThermal ? '48mm' : '210mm'} !important; 
-                        height: max-content !important; 
-                        min-height: 0 !important;
-                        overflow: hidden !important;
-                        display: block !important; 
-                        -webkit-print-color-adjust: exact; 
-                        print-color-adjust: exact; 
-                    }
-                    .print-receipt { 
-                        width: ${isThermal ? '48mm' : '100%'} !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        padding: 0 !important; 
-                        box-sizing: border-box !important;
-                        box-shadow: none !important; 
-                        border: none !important; 
-                        page-break-after: avoid !important;
-                    }
-                    
-                    /* --- 🚀 RESTORED DESIGN & CLARITY --- */
-                    .format-thermal { 
-                        /* Monospace prevents characters from bleeding together on thermal paper */
-                        font-family: 'Courier New', Courier, monospace !important; 
-                    }
-                    .format-thermal * { 
-                        font-size: 11px !important; 
-                        line-height: 1.2 !important; 
-                        color: #000000 !important; 
-                    }
-                    /* Restore balanced font weights to prevent ink bleed */
-                    .format-thermal .font-bold { font-weight: bold !important; }
-                    .format-thermal .font-black { font-weight: 900 !important; }
-                    
-                    /* Restore Table Spacing */
-                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
-                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
-                    .format-thermal .text-right { text-align: right !important; }
-                    .format-thermal .text-center { text-align: center !important; }
+                                    const doc = iframe.contentWindow.document;
+                                    doc.open();
+                                    doc.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <title>KPM Invoice</title>
+                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                            ${parentStyles}
+                                            <style>
+                                                @media print {
+                                                    @page { margin: 0; }
+                                                    html, body { 
+                                                        background: #ffffff !important; 
+                                                        color: #000000 !important; 
+                                                        margin: 0 !important; 
+                                                        padding: 0 !important; 
+                                                        width: ${isThermal ? '48mm' : '210mm'} !important; 
+                                                        height: max-content !important; 
+                                                        min-height: 0 !important;
+                                                        overflow: hidden !important;
+                                                        display: block !important; 
+                                                        -webkit-print-color-adjust: exact; 
+                                                        print-color-adjust: exact; 
+                                                    }
+                                                    .print-receipt { 
+                                                        width: ${isThermal ? '48mm' : '100%'} !important;
+                                                        max-width: 100% !important;
+                                                        margin: 0 !important;
+                                                        padding: 0 !important; 
+                                                        box-sizing: border-box !important;
+                                                        box-shadow: none !important; 
+                                                        border: none !important; 
+                                                        page-break-after: avoid !important;
+                                                    }
+                                                    
+                                                    .format-thermal { font-family: 'Courier New', Courier, monospace !important; }
+                                                    .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; }
+                                                    .format-thermal .font-bold { font-weight: bold !important; }
+                                                    .format-thermal .font-black { font-weight: 900 !important; }
+                                                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                                                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
+                                                    .format-thermal .text-right { text-align: right !important; }
+                                                    .format-thermal .text-center { text-align: center !important; }
+                                                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
+                                                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
+                                                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+                                                    .format-thermal .flex { display: flex !important; }
+                                                    .format-thermal .justify-between { justify-content: space-between !important; }
+                                                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
+                                                }
+                                                body { background: white; margin: 0; padding: 0; display: block; }
+                                            </style>
+                                        </head>
+                                        <body>
+                                            ${clone.outerHTML}
+                                            <script>
+                                                window.onload = () => {
+                                                    setTimeout(() => {
+                                                        window.focus();
+                                                        window.print();
+                                                    }, 500);
+                                                };
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `);
+                                    doc.close();
 
-                    /* Restore Dashed Lines */
-                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
-                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
-                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+                                    setTimeout(() => {
+                                        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+                                    }, 10000);
 
-                    /* Restore structural flex layouts */
-                    .format-thermal .flex { display: flex !important; }
-                    .format-thermal .justify-between { justify-content: space-between !important; }
-                    
-                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
-                }
-                body { background: white; margin: 0; padding: 0; display: block; }
-            </style>
-        </head>
-        <body>
-            ${clone.outerHTML}
-            <script>
-                window.onload = () => {
-                    setTimeout(() => {
-                        window.focus();
-                        window.print();
-                    }, 500);
-                };
-            </script>
-        </body>
-        </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-    }, 10000);
-
-}} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-    <Printer size={14}/> Print Document
-</button>
-
-
-
+                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <Printer size={14}/> Print Document
+                                </button>
 
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
                                     if (receiptData.items && receiptData.items.length > 0) {
                                         receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
-                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
+                                    text += `------------------------\n*TOTAL: ${receiptData.method === 'Retur/BS' ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
                                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                                 }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> WhatsApp Share
