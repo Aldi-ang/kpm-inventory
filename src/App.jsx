@@ -1267,7 +1267,6 @@ const handleGitHubMirror = async () => {
                     else if (data.status === 'Active') {
                         setBossUid(data.bossUid);
                         
-                        // 🚀 FIX: Read the Tier security clearance, NOT the vehicle type!
                         setUserRole(data.userRole || 'AGENT'); 
                         setAgentProfileId(data.agentId);
 
@@ -1277,14 +1276,16 @@ const handleGitHubMirror = async () => {
                             displayName: data.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
-                            role: data.role,             // Keep vehicle type for UI display
-                            userRole: data.userRole || 'AGENT', // 🚀 Inject clearance level
-                            agentId: data.agentId         
+                            role: data.role,             
+                            userRole: data.userRole || 'AGENT', 
+                            agentId: data.agentId,
+                            location: data.location || 'UNASSIGNED' // 🚀 THE CRITICAL FIX: Inject location directly
                         };
                         
                         setUser(hijackedUser);
                         setIsAdmin(false); 
                         setActiveTab('journey'); 
+                     
                     } else {
                         alert("Your access has been revoked by the Administrator.");
                         signOut(auth);
@@ -2297,6 +2298,8 @@ const handleGitHubMirror = async () => {
                agentProfileId={agentProfileId} 
                inventory={inventory}
                transactions={transactions}
+               user={user}             // 🚀 FIX: Pass the user profile to prevent 'blank' names
+               motorists={motorists}   // 🚀 FIX: Pass motorists list
            />
       )}
 
@@ -2685,14 +2688,13 @@ const handleGitHubMirror = async () => {
                       appId={appId} 
                       user={user} 
                       userRole={userRole} 
-                      userLocation={agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED'} 
+                      userLocation={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED')} // 🚀 FIX: Read direct location
                       isAdmin={isAdmin} 
                       masterUserId={userId} 
                       globalInventory={inventory} 
                       triggerCapy={triggerCapy} 
                       logAudit={logAudit} 
                       appSettings={appSettings}
-                     
                   />
               </div>
           )}
