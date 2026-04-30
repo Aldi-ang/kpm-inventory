@@ -1761,7 +1761,7 @@ const handleGitHubMirror = async () => {
   // --- CUSTOM HOOKS ---
   const { processTransaction, handleMerchantSale, handleConsignmentPayment, handleConsignmentReturn } = useTransactionEngine({
       db, appId, userId, userRole, agentProfileId, adminSalesMode,
-      logAudit, triggerCapy, setCart, customers
+      logAudit, triggerCapy, setCart, customers, user // 🚀 ADDED 'user' HERE!
   });
 
  const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };

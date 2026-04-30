@@ -3,7 +3,7 @@ import { getCurrentDate } from '../utils/helpers';
 
 export default function useTransactionEngine({
     db, appId, userId, userRole, agentProfileId, adminSalesMode,
-    logAudit, triggerCapy, setCart, customers
+    logAudit, triggerCapy, setCart, customers, user // 🚀 IMPORTED USER HERE
 }) {
 
     // --- CORE TRANSACTION ENGINE ---
@@ -123,7 +123,7 @@ export default function useTransactionEngine({
                     timestamp: serverTimestamp(),
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
-                    tempoDays: proofPayload?.tempoDays || null, // Capture tempo days!
+                    tempoDays: proofPayload?.tempoDays || null,
                     deliveryProof: proofPayload ? {
                         photo: proofPayload.photoData,
                         latitude: proofPayload.latitude,
@@ -194,17 +194,65 @@ export default function useTransactionEngine({
     // 🚀 NEW: UNIFIED STORE AUDIT ENGINE
     const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], returnTotal = 0, itemsRemaining = []) => { 
         try { 
+            // 🚀 FIX: Fallback to username perfectly
             let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
             let newDocId = null;
 
+            // Define which vehicle is currently active
+            let currentAgentProfileId = agentProfileId;
+            if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
+            else if (userRole === 'ADMIN') currentAgentProfileId = null;
+
             await runTransaction(db, async (t) => { 
-                // 1. Process physical stock returns back to Vault
+                
+                // 1. Process physical stock returns (BS / Retur)
+                let agentRef = null;
+                let agentDoc = null;
+                let updatedCanvas = [];
+
+                // Fetch Agent's car if they are in the field
+                if (currentAgentProfileId) {
+                    agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
+                    agentDoc = await t.get(agentRef);
+                    if (agentDoc.exists()) updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+                }
+
                 for(const item of itemsReturned) { 
                     const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                     const prodDoc = await t.get(prodRef); 
-                    if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + (item.qty * 1) }); 
+                    if (!prodDoc.exists()) continue;
+                    
+                    const pData = prodDoc.data();
+
+                    // 🚀 FIX: Route Retur to Vehicle Canvas OR Master Vault
+                    if (currentAgentProfileId && agentDoc.exists()) {
+                        const canvasIdx = updatedCanvas.findIndex(c => c.productId === item.productId);
+                        let mCanvas = item.unit === 'Slop' ? (pData.packsPerSlop || 10) : item.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : item.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+
+                        if (canvasIdx > -1) {
+                            let cItem = updatedCanvas[canvasIdx];
+                            const currentCanvasBks = cItem.qty * mCanvas;
+                            updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + (item.qty * 1)) / mCanvas }; // Add to car!
+                        } else {
+                            // Item wasn't in car, add it!
+                            updatedCanvas.push({ productId: item.productId, name: item.name, qty: item.qty, unit: 'Bks', priceTier: item.priceTier || 'Retail', calculatedPrice: pData.priceRetail || 0 });
+                        }
+                    } else {
+                        // Admin using Master Vault -> Returns directly to Vault Stock
+                        t.update(prodRef, { stock: pData.stock + (item.qty * 1) }); 
+                    }
                 } 
                 
+                // Commit Vehicle Update
+                if (currentAgentProfileId && agentRef) {
+                    t.update(agentRef, { activeCanvas: updatedCanvas });
+                }
+                
+                // Override Agent Name safely
+                if (currentAgentProfileId && agentDoc?.exists() && agentDoc.data().name) {
+                    finalAgentName = agentDoc.data().name;
+                }
+
                 // 2. Log unified audit transaction
                 const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
                 newDocId = transRef.id;
@@ -219,7 +267,7 @@ export default function useTransactionEngine({
                     amountPaid,         // Tagihan Rp
                     returnTotal,        // Value of Retur Rp
                     type: 'CONSIGNMENT_PAYMENT', 
-                    agentId: agentProfileId || 'ADMIN',
+                    agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
                     timestamp: serverTimestamp() 
                 }); 
@@ -227,7 +275,7 @@ export default function useTransactionEngine({
 
             triggerCapy("Store Audit successfully recorded!"); 
 
-            // 🚀 Return the constructed object so the UI can auto-open the receipt!
+            // Return the constructed object so the UI can auto-open the receipt!
             return {
                 id: newDocId,
                 date: getCurrentDate(),
@@ -250,6 +298,7 @@ export default function useTransactionEngine({
     };
 
     const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { 
+        // We leave this here just for legacy UI support if needed, but Audit handles returns now!
         try { 
             await runTransaction(db, async (t) => { 
                 for(const item of itemsReturned) { 
