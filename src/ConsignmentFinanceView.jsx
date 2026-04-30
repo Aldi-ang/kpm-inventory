@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X } from 'lucide-react';
+import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator } from 'lucide-react';
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -18,16 +18,15 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
     const [activeTab, setActiveTab] = useState('financials'); // 'financials', 'stock', 'transfers'
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
-    const [settleMode, setSettleMode] = useState(false);
-    const [returnMode, setReturnMode] = useState(false);
     const [transferMode, setTransferMode] = useState(false);
-    const [itemQtys, setItemQtys] = useState({});
     
-    // Transfer Form State
+    // 🚀 NEW: AUDIT TERMINAL STATE
+    const [auditMode, setAuditMode] = useState(false);
+    const [auditData, setAuditData] = useState({}); // { [itemKey]: { shelf: '', damaged: '' } }
+    
     const [targetAgent, setTargetAgent] = useState('');
     const [transferNote, setTransferNote] = useState('');
 
-    // 🚀 OWNERSHIP FILTER 🚀
     const myTransactions = useMemo(() => {
         if (isAdmin) return transactions;
         return transactions.filter(t => {
@@ -37,7 +36,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         });
     }, [transactions, isAdmin, agentProfileId, user]);
 
-    // 🚀 1. FIFO DEBT ENGINE 🚀
+    // 🚀 1. DYNAMIC FIFO DEBT ENGINE 🚀
     const debtData = useMemo(() => {
         const customers = {};
         const sorted = [...myTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -48,7 +47,14 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             if (t.phone) customers[cName].phone = t.phone;
 
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                customers[cName].debts.push({ id: t.id, date: t.date, original: t.total, remaining: t.total });
+                customers[cName].debts.push({ 
+                    id: t.id, 
+                    date: t.date, 
+                    timestamp: t.timestamp,
+                    original: t.total, 
+                    remaining: t.total,
+                    tempoDays: t.tempoDays || 7 // Fallback to 7 if old data
+                });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
                 let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
@@ -67,30 +73,59 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             }
         });
 
-        const today = new Date(); today.setHours(0,0,0,0);
+        const today = new Date(); 
+        today.setHours(0,0,0,0);
         const results = { RED: [], YELLOW: [], GREEN: [], totalValue: 0, totalOverdue: 0, activeAccounts: 0 };
         
         Object.values(customers).forEach(c => {
             const active = c.debts.filter(d => d.remaining > 0.01);
             if (active.length > 0) {
                 const total = active.reduce((s, d) => s + d.remaining, 0);
-                const oldestDate = new Date(active[0].date); oldestDate.setHours(0,0,0,0);
+                
+                // Track the oldest ACTIVE invoice to determine radar status
+                const oldestDebt = active[0];
+                const oldestDate = new Date(oldestDebt.timestamp?.seconds ? oldestDebt.timestamp.seconds * 1000 : oldestDebt.date);
+                oldestDate.setHours(0,0,0,0);
+                
                 const ageDays = Math.floor((today - oldestDate) / (1000 * 60 * 60 * 24));
+                const tempoDays = oldestDebt.tempoDays || 7;
+                
+                // 🚀 DYNAMIC TEMPO MATH
+                const daysUntilDue = tempoDays - ageDays;
                 
                 let status = 'GREEN';
-                if (ageDays >= 14) { status = 'RED'; results.totalOverdue += total; }
-                else if (ageDays >= 8) status = 'YELLOW';
+                if (daysUntilDue < 0) { 
+                    status = 'RED'; 
+                    results.totalOverdue += total; 
+                }
+                else if (daysUntilDue <= 3) {
+                    status = 'YELLOW'; // Due in 3 days or less
+                }
 
-                results.totalValue += total; results.activeAccounts++;
-                results[status].push({ name: c.name, total, ageDays, oldestDate: active[0].date, phone: c.phone, activeInvoices: active.length });
+                results.totalValue += total; 
+                results.activeAccounts++;
+                results[status].push({ 
+                    name: c.name, 
+                    total, 
+                    ageDays, 
+                    daysUntilDue,
+                    tempoDays,
+                    oldestDate: oldestDebt.date, 
+                    phone: c.phone, 
+                    activeInvoices: active.length 
+                });
             }
         });
         
-        results.RED.sort((a,b) => b.ageDays - a.ageDays); results.YELLOW.sort((a,b) => b.ageDays - a.ageDays); results.GREEN.sort((a,b) => b.ageDays - a.ageDays);
+        // Sort RED by most overdue, YELLOW by closest to due, GREEN by closest to due
+        results.RED.sort((a,b) => a.daysUntilDue - b.daysUntilDue); 
+        results.YELLOW.sort((a,b) => a.daysUntilDue - b.daysUntilDue); 
+        results.GREEN.sort((a,b) => a.daysUntilDue - b.daysUntilDue);
+        
         return results;
     }, [myTransactions]);
 
-    // 🚀 2. PHYSICAL STOCK ENGINE 🚀
+    // 🚀 2. PHYSICAL STOCK ENGINE
     const customerData = useMemo(() => {
         const customers = {};
         const sortedTransactions = [...myTransactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
@@ -111,7 +146,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                 }); 
             }
             if (t.type === 'RETURN') { 
-                customers[name].balance += t.total; 
+                customers[name].balance += t.total; // total is negative, so this subtracts
                 t.items.forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
@@ -140,7 +175,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
 
     const activeCustomer = selectedCustomer ? customerData.find(c => c.name === selectedCustomer.name) || selectedCustomer : null;
     
-    // 🚀 3. TRANSFER ROUTING ENGINE 🚀
+    // 🚀 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
         const incoming = transferRequests.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
         const outgoing = transferRequests.filter(r => r.fromAgentId === agentProfileId);
@@ -148,11 +183,28 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
     }, [transferRequests, agentProfileId]);
 
-    const handleQtyInput = (key, val) => { 
-        let q = parseInt(val) || 0; if(q < 0) q = 0; setItemQtys(p => ({...p, [key]: q})); 
+    // 🚀 NEW: AUDIT INPUT HANDLER
+    const handleAuditInput = (key, field, val) => {
+        const numVal = parseInt(val) || 0;
+        
+        setAuditData(prev => {
+            const current = prev[key] || { shelf: '', damaged: '' };
+            const updated = { ...current, [field]: val === '' ? '' : Math.max(0, numVal) };
+
+            const totalItemQty = activeCustomer.items[key].qty;
+            const shelf = parseInt(updated.shelf) || 0;
+            const damaged = parseInt(updated.damaged) || 0;
+
+            if (shelf + damaged > totalItemQty) {
+                alert("INVALID AUDIT!\n\nJumlah (Sisa di Rak + Retur Rusak) tidak boleh melebihi total barang yang dititipkan.");
+                return current; // Revert change
+            }
+
+            return { ...prev, [key]: updated };
+        });
     };
     
-    const submitAction = () => {
+    const submitAction = async () => {
         if (transferMode) {
             if (!targetAgent) return alert("Select an agent to transfer to!");
             const agentInfo = motorists.find(m => m.id === targetAgent);
@@ -161,19 +213,49 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             return;
         }
 
-        const itemsToProcess = []; let totalValue = 0;
-        Object.entries(itemQtys).forEach(([key, qty]) => { 
-            if(qty > 0) { 
-                const item = activeCustomer.items[key]; 
-                itemsToProcess.push({ productId: item.productId, name: item.name, qty, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' }); 
-                totalValue += (item.calculatedPrice * qty); 
-            } 
-        });
-        if(itemsToProcess.length === 0) return;
-        if (settleMode && onPayment) onPayment(activeCustomer.name, itemsToProcess, totalValue); 
-        else if (returnMode && onReturn) onReturn(activeCustomer.name, itemsToProcess, totalValue);
-        
-        setSettleMode(false); setReturnMode(false); setItemQtys({});
+        if (auditMode) {
+            const paymentItems = [];
+            let paymentTotal = 0;
+            const returnItems = [];
+            let returnTotal = 0;
+
+            Object.entries(auditData).forEach(([key, data]) => {
+                const item = activeCustomer.items[key];
+                const shelf = parseInt(data.shelf) || 0;
+                const damaged = parseInt(data.damaged) || 0;
+                
+                // LAKU = TOTAL - SISA - RETUR
+                const sold = item.qty - shelf - damaged;
+
+                if (sold > 0) {
+                    paymentItems.push({ productId: item.productId, name: item.name, qty: sold, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' });
+                    paymentTotal += (sold * item.calculatedPrice);
+                }
+                if (damaged > 0) {
+                    returnItems.push({ productId: item.productId, name: item.name, qty: damaged, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' });
+                    returnTotal += (damaged * item.calculatedPrice);
+                }
+            });
+
+            if (paymentItems.length === 0 && returnItems.length === 0) {
+                return alert("No changes recorded. Did you enter Sisa / Retur data?");
+            }
+
+            if (!window.confirm(`Confirm Store Audit?\n\n- Payment to Collect: Rp ${new Intl.NumberFormat('id-ID').format(paymentTotal)}\n- Bad Stock to Retur: ${returnItems.reduce((s, i) => s + i.qty, 0)} Bks`)) return;
+
+            // Sequential processing
+            try {
+                if (paymentItems.length > 0 && onPayment) await onPayment(activeCustomer.name, paymentItems, paymentTotal);
+                if (returnItems.length > 0 && onReturn) await onReturn(activeCustomer.name, returnItems, returnTotal);
+                
+                setAuditMode(false);
+                setAuditData({});
+                alert("Audit Complete! Ledgers and Vehicle Inventory Updated.");
+            } catch (err) {
+                console.error(err);
+                alert("Error saving audit data.");
+            }
+        }
     };
     
     const formatStockDisplay = (qty, product) => { 
@@ -184,7 +266,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         return slops > 0 ? `${qty} Bks (${slops} Slop ${bks > 0 ? `+ ${bks} Bks` : ''})` : `${qty} Bks`; 
     };
 
-    const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass }) => (
+    const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass, isOverdue }) => (
         <div className={`flex flex-col rounded-2xl border ${borderClass} ${bgClass} overflow-hidden shadow-lg`}>
             <div className={`p-4 border-b ${borderClass} flex justify-between items-center bg-black/20`}>
                 <h3 className={`font-black uppercase tracking-widest text-sm flex items-center gap-2 ${colorClass}`}>{icon} {title}</h3>
@@ -200,8 +282,14 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                                 <p className={`font-black text-lg ${colorClass}`}>Rp {new Intl.NumberFormat('id-ID').format(c.total)}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Debt Age</p>
-                                <p className="font-bold text-white">{c.ageDays} Days</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">Tempo Check</p>
+                                {isOverdue ? (
+                                    <p className="font-bold text-red-500 animate-pulse">{Math.abs(c.daysUntilDue)} Days Overdue</p>
+                                ) : (
+                                    <p className={`font-bold ${c.daysUntilDue === 0 ? 'text-orange-400' : 'text-white'}`}>
+                                        {c.daysUntilDue === 0 ? 'Due Today!' : `Due in ${c.daysUntilDue} Days`}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -252,21 +340,23 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                         </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <StatusCard title="Good Standing (0-7 Days)" data={debtData.GREEN} colorClass="text-emerald-500" borderClass="border-emerald-500/30" bgClass="bg-emerald-950/10" icon={<ShieldCheck size={18}/>} />
-                        <StatusCard title="Warning (8-14 Days)" data={debtData.YELLOW} colorClass="text-yellow-500" borderClass="border-yellow-500/30" bgClass="bg-yellow-950/10" icon={<AlertCircle size={18}/>} />
-                        <StatusCard title="OVERDUE (Over 14 Days)" data={debtData.RED} colorClass="text-red-500" borderClass="border-red-500/50" bgClass="bg-red-950/20" icon={<XCircle size={18}/>} />
+                        <StatusCard title="Safe (Due in 4+ Days)" data={debtData.GREEN} colorClass="text-emerald-500" borderClass="border-emerald-500/30" bgClass="bg-emerald-950/10" icon={<ShieldCheck size={18}/>} isOverdue={false} />
+                        <StatusCard title="Warning (Due Soon)" data={debtData.YELLOW} colorClass="text-yellow-500" borderClass="border-yellow-500/30" bgClass="bg-yellow-950/10" icon={<AlertCircle size={18}/>} isOverdue={false} />
+                        <StatusCard title="OVERDUE (Jatuh Tempo)" data={debtData.RED} colorClass="text-red-500" borderClass="border-red-500/50" bgClass="bg-red-950/20" icon={<XCircle size={18}/>} isOverdue={true} />
                     </div>
                 </div>
             )}
 
-            {/* --- TAB B: STOCK & HAND-OFF REQUESTS --- */}
+            {/* --- TAB B: STOCK & AUDIT TERMINAL --- */}
             {activeTab === 'stock' && (
                 <div className="animate-fade-in-up flex flex-col lg:flex-row gap-6 h-[calc(100vh-250px)]">
+                    
+                    {/* LEFT LIST */}
                     <div className={`lg:w-1/3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-700 flex flex-col ${selectedCustomer ? 'hidden lg:flex' : 'flex'}`}>
                         <div className="p-4 border-b dark:border-slate-700"><h2 className="font-bold text-lg dark:text-white flex items-center gap-2"><Truck size={20}/> Active Consignments</h2></div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {customerData.map(c => (
-                                <div key={c.name} onClick={() => setSelectedCustomer(c)} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}>
+                                <div key={c.name} onClick={() => { setSelectedCustomer(c); setAuditMode(false); setTransferMode(false); setAuditData({}); }} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}>
                                     <div className="flex justify-between items-start"><h3 className="font-bold dark:text-white">{c.name}</h3></div>
                                     <div className="mt-2 flex justify-between items-center">
                                         <span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded dark:text-slate-300">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span>
@@ -277,6 +367,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                         </div>
                     </div>
 
+                    {/* RIGHT PANEL (AUDIT TERMINAL) */}
                     <div className={`lg:w-2/3 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden ${!selectedCustomer ? 'hidden lg:flex justify-center items-center' : 'flex'}`}>
                         {!selectedCustomer ? (
                             <div className="text-center text-slate-400"><Store size={48} className="mx-auto mb-4 opacity-20"/><p>Select an account to view details.</p></div>
@@ -284,47 +375,116 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                             <>
                                 <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
                                     <div><h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2></div>
-                                    <div className="text-right"><p className="text-xs text-slate-500 uppercase">Outstanding Balance</p><p className="text-2xl font-bold text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
+                                    <div className="text-right"><p className="text-xs text-slate-500 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
                                 </div>
                                 
-                                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-black/5">
                                     {transferMode ? (
                                         <div className="bg-indigo-950/20 border border-indigo-500/30 p-6 rounded-xl">
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/> Hand-off Territory</h3>
                                             <p className="text-xs text-slate-400 mb-4">Transferring this account moves <strong>all active debts and physical stock</strong> to the new agent.</p>
-                                            <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
+                                            <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Agent --</option>
                                                 {motorists.filter(m => m.id !== agentProfileId).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                             </select>
-                                            <textarea className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white text-sm" placeholder="Reason for transfer..." value={transferNote} onChange={e => setTransferNote(e.target.value)} rows="3"></textarea>
+                                            <textarea className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500" placeholder="Reason for transfer..." value={transferNote} onChange={e => setTransferNote(e.target.value)} rows="3"></textarea>
                                         </div>
                                     ) : (
-                                        <div className="space-y-3">
-                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => (
-                                                <div key={key} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border dark:border-slate-700">
-                                                    <div><p className="font-bold dark:text-white">{item.name}</p></div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right"><p className="text-lg font-bold dark:text-white">{formatStockDisplay(item.qty, inventory.find(p => p.id === item.productId))}</p></div>
-                                                        {(settleMode || returnMode) && <input type="number" className={`w-24 p-2 rounded border text-center font-bold`} placeholder="Qty" value={itemQtys[key] || ''} onChange={(e) => handleQtyInput(key, e.target.value)} />}
+                                        <div className="space-y-4">
+                                            {/* 🚀 THE NEW AUDIT TERMINAL UI 🚀 */}
+                                            {auditMode && (
+                                                <div className="bg-orange-900/20 border border-orange-500/30 p-4 rounded-xl mb-4 flex gap-4 items-start shadow-inner">
+                                                    <Calculator className="text-orange-500 shrink-0" size={24}/>
+                                                    <div>
+                                                        <h4 className="text-orange-400 font-black uppercase tracking-widest text-xs mb-1">Store Audit Mode</h4>
+                                                        <p className="text-[10px] text-slate-300 leading-relaxed">
+                                                            Hitung fisik barang di rak warung. Masukkan jumlah <strong>Sisa Barang</strong> dan <strong>Barang Rusak (Retur)</strong>. Sistem otomatis menghitung barang yang Laku dan total tagihan.
+                                                        </p>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            )}
+
+                                            <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 border-b dark:border-slate-700 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                                <div className="col-span-4">Macam Barang</div>
+                                                <div className="col-span-2 text-center">Dititip</div>
+                                                {auditMode ? (
+                                                    <>
+                                                        <div className="col-span-2 text-center text-blue-400">Sisa Rak</div>
+                                                        <div className="col-span-2 text-center text-red-400">Retur / BS</div>
+                                                        <div className="col-span-2 text-right text-emerald-400">Laku (Rp)</div>
+                                                    </>
+                                                ) : (
+                                                    <div className="col-span-6 text-right">Nilai Barang</div>
+                                                )}
+                                            </div>
+
+                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => {
+                                                const aData = auditData[key] || { shelf: '', damaged: '' };
+                                                const shelf = parseInt(aData.shelf) || 0;
+                                                const damaged = parseInt(aData.damaged) || 0;
+                                                const soldQty = auditMode ? Math.max(0, item.qty - shelf - damaged) : 0;
+                                                const soldValue = soldQty * item.calculatedPrice;
+
+                                                return (
+                                                    <div key={key} className={`flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 p-4 items-center bg-white dark:bg-slate-900 rounded-xl border transition-colors ${auditMode && soldQty > 0 ? 'border-emerald-500/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]' : 'dark:border-slate-700 shadow-sm'}`}>
+                                                        
+                                                        <div className="col-span-12 md:col-span-4 w-full md:w-auto flex flex-col">
+                                                            <p className="font-bold dark:text-white uppercase text-sm md:text-xs truncate">{item.name}</p>
+                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / Bks</span>
+                                                        </div>
+                                                        
+                                                        <div className="col-span-12 md:col-span-2 w-full md:w-auto flex justify-between md:justify-center items-center">
+                                                            <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Dititip:</span>
+                                                            <div className="text-right md:text-center">
+                                                                <p className="text-base md:text-sm font-black dark:text-white">{item.qty}</p>
+                                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Bks</p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {auditMode ? (
+                                                            <>
+                                                                <div className="col-span-12 md:col-span-4 w-full grid grid-cols-2 gap-2 mt-2 md:mt-0">
+                                                                    <div className="relative">
+                                                                        <label className="md:hidden text-[9px] text-blue-400 font-bold uppercase block mb-1">Sisa di Rak</label>
+                                                                        <input type="number" min="0" placeholder="Sisa" value={aData.shelf} onChange={(e) => handleAuditInput(key, 'shelf', e.target.value)} className="w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/50 rounded-lg p-2 text-center font-bold text-blue-600 dark:text-blue-400 outline-none focus:ring-2 focus:ring-blue-500"/>
+                                                                    </div>
+                                                                    <div className="relative">
+                                                                        <label className="md:hidden text-[9px] text-red-400 font-bold uppercase block mb-1">Retur / BS</label>
+                                                                        <input type="number" min="0" placeholder="Retur" value={aData.damaged} onChange={(e) => handleAuditInput(key, 'damaged', e.target.value)} className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 rounded-lg p-2 text-center font-bold text-red-600 dark:text-red-400 outline-none focus:ring-2 focus:ring-red-500"/>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="col-span-12 md:col-span-2 w-full md:w-auto mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700 flex justify-between md:justify-end md:flex-col items-center md:items-end">
+                                                                    <span className="md:hidden text-[10px] font-bold text-emerald-500 uppercase">Terjual & Tagihan:</span>
+                                                                    <div className="text-right">
+                                                                        <p className="text-xs font-black text-emerald-500">{soldQty} Laku</p>
+                                                                        <p className="text-sm font-black text-white mt-0.5 font-mono">Rp {new Intl.NumberFormat('id-ID').format(soldValue)}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className="col-span-12 md:col-span-6 w-full md:w-auto flex justify-between md:justify-end items-center mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
+                                                                <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Nilai Barang:</span>
+                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.qty * item.calculatedPrice)}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
                                 
-                                <div className="p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl">
-                                    {(!settleMode && !returnMode && !transferMode) ? (
+                                <div className="p-4 md:p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl shrink-0">
+                                    {(!auditMode && !transferMode) ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
-                                            {isAdmin && <button onClick={() => setSettleMode(true)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-emerald-500 transition-all flex flex-col items-center"><Wallet size={20} className="text-emerald-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Record Payment</span></button>}
-                                            {isAdmin && <button onClick={() => setReturnMode(true)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-red-500 transition-all flex flex-col items-center"><RotateCcw size={20} className="text-red-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Process Return</span></button>}
-                                            {!isAdmin && <button onClick={() => setTransferMode(true)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center"><ArrowLeftRight size={20} className="text-indigo-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Hand-off Account</span></button>}
+                                            {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center shadow-sm"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
+                                            {isAdmin && <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>}
+                                            {!isAdmin && <button onClick={() => setTransferMode(true)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm"><ArrowLeftRight size={20} className="text-indigo-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span></button>}
                                         </div>
                                     ) : (
-                                        <div className="flex gap-3">
-                                            <button onClick={() => { setSettleMode(false); setReturnMode(false); setTransferMode(false); setItemQtys({}); }} className="flex-1 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold dark:text-slate-300">Cancel</button>
-                                            <button onClick={submitAction} className="flex-1 py-3 rounded-xl font-bold text-white shadow-lg bg-emerald-500 hover:bg-emerald-600">Confirm {transferMode ? 'Hand-off Request' : 'Action'}</button>
+                                        <div className="flex flex-col md:flex-row gap-3">
+                                            <button onClick={() => { setAuditMode(false); setTransferMode(false); setAuditData({}); }} className="w-full md:w-1/3 py-4 rounded-xl bg-slate-200 dark:bg-slate-800 font-bold dark:text-slate-300 uppercase tracking-widest text-xs hover:dark:bg-slate-700 transition-colors">Cancel</button>
+                                            <button onClick={submitAction} className="w-full md:w-2/3 py-4 rounded-xl font-black text-white shadow-lg bg-emerald-500 hover:bg-emerald-600 uppercase tracking-[0.1em] flex justify-center items-center gap-2 active:scale-95 transition-transform"><Check size={18}/> Confirm {transferMode ? 'Hand-off Request' : 'Audit & Update Ledgers'}</button>
                                         </div>
                                     )}
                                 </div>
