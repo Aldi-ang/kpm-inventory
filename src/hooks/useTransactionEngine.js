@@ -190,12 +190,21 @@ export default function useTransactionEngine({
         return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload });
     };
 
-    const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid) => { 
+    const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], itemsRemaining = []) => { 
         try { 
+            // 🚀 UPGRADE: We now save the full Audit Snapshot so the Receipt can render it!
             await addDoc(collection(db, `artifacts/${appId}/users/${userId}/transactions`), { 
-                date: getCurrentDate(), customerName, paymentType: "Cash", itemsPaid, amountPaid, type: 'CONSIGNMENT_PAYMENT', timestamp: serverTimestamp() 
+                date: getCurrentDate(), 
+                customerName, 
+                paymentType: "Cash", 
+                itemsPaid, 
+                itemsReturned,
+                itemsRemaining,
+                amountPaid, 
+                type: 'CONSIGNMENT_PAYMENT', 
+                timestamp: serverTimestamp() 
             }); 
-            triggerCapy("Payment recorded!"); 
+            triggerCapy("Audit payment recorded!"); 
         } catch (err) { console.error(err); } 
     };
 

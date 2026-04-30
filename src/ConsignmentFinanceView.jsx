@@ -245,8 +245,23 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
 
             // Sequential processing
             try {
-                if (paymentItems.length > 0 && onPayment) await onPayment(activeCustomer.name, paymentItems, paymentTotal);
-                if (returnItems.length > 0 && onReturn) await onReturn(activeCustomer.name, returnItems, returnTotal);
+                // 🚀 PASS ALL THE ARRAYS TO THE ENGINE SO IT CAN SNAPSHOT THE AUDIT
+                if (paymentItems.length > 0 && onPayment) {
+                    const remainingItems = [];
+                    Object.entries(auditData).forEach(([key, data]) => {
+                        const item = activeCustomer.items[key];
+                        const shelf = parseInt(data.shelf) || 0;
+                        if (shelf > 0) remainingItems.push({ ...item, qty: shelf, unit: 'Bks' });
+                    });
+                    
+                    await onPayment(activeCustomer.name, paymentItems, paymentTotal, returnItems, remainingItems);
+                }
+
+                // If there are return items but NO payments (e.g. everything was damaged, nothing sold)
+                // We still need to run the Return protocol to fix the vehicle stock
+                if (returnItems.length > 0 && onReturn && paymentItems.length === 0) {
+                    await onReturn(activeCustomer.name, returnItems, returnTotal);
+                }
                 
                 setAuditMode(false);
                 setAuditData({});

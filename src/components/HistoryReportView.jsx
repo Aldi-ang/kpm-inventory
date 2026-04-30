@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare } from 'lucide-react'; // 🚀 Added MessageSquare
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 
@@ -14,7 +13,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [viewingReceipt, setViewingReceipt] = useState(null); 
     const [viewingPhoto, setViewingPhoto] = useState(null); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
-    const [printScale, setPrintScale] = useState(100); // 🚀 NEW: Dynamic Print Scaling
+    const [printScale, setPrintScale] = useState(100); 
 
     // 1. RBAC & FOLDER STRUCTURE ENGINE
     const reportData = useMemo(() => {
@@ -157,47 +156,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                  </div>
              )}
 
+            {/* 🚀 UPGRADE: STORE AUDIT RECEIPT RENDERER 🚀 */}
             {viewingReceipt && (() => {
-                const activeTier = viewingReceipt.items?.[0]?.priceTier || 'Retail';
-                const isGrosir = activeTier === 'Grosir' || activeTier === 'Distributor';
-                const unitLabel = isGrosir ? 'SLOP' : 'BKS';
-
-                const catalogRows = inventory.map(invItem => {
-                    const packsPerSlop = invItem.packsPerSlop || 10;
-                    let basePrice = invItem.priceRetail || 0;
-                    if (activeTier === 'Grosir') basePrice = invItem.priceGrosir || 0;
-                    if (activeTier === 'Ecer') basePrice = invItem.priceEcer || 0;
-                    
-                    const displayPrice = isGrosir ? (basePrice * packsPerSlop) : basePrice;
-
-                    const boughtItem = viewingReceipt.items?.find(i => i.productId === invItem.id);
-                    let displayQty = 0;
-                    let rowTotal = 0;
-                    
-                    if (boughtItem) {
-                        let qtyInBks = boughtItem.qty;
-                        if (boughtItem.unit === 'Slop') qtyInBks = boughtItem.qty * packsPerSlop;
-                        if (boughtItem.unit === 'Bal') qtyInBks = boughtItem.qty * (invItem.slopsPerBal || 20) * packsPerSlop;
-                        if (boughtItem.unit === 'Karton') qtyInBks = boughtItem.qty * (invItem.balsPerCarton || 4) * (invItem.slopsPerBal || 20) * packsPerSlop;
-                        
-                        displayQty = isGrosir ? (qtyInBks / packsPerSlop) : qtyInBks;
-                        rowTotal = boughtItem.calculatedPrice * boughtItem.qty;
-                    }
-                    return { name: invItem.name, displayPrice, displayQty, total: rowTotal, isBought: !!boughtItem };
-                });
-
-                viewingReceipt.items?.forEach(boughtItem => {
-                    if (!inventory.find(i => i.id === boughtItem.productId)) {
-                        let qtyInBks = boughtItem.unit === 'Bks' ? boughtItem.qty : boughtItem.qty * 10;
-                        let bksPrice = boughtItem.unit === 'Bks' ? boughtItem.calculatedPrice : boughtItem.calculatedPrice / 10;
-                        
-                        let displayQty = isGrosir ? (qtyInBks / 10) : qtyInBks;
-                        let displayPrice = isGrosir ? (bksPrice * 10) : bksPrice;
-                        
-                        catalogRows.push({ name: boughtItem.name + " (Discontinued)", displayPrice, displayQty, total: boughtItem.calculatedPrice * boughtItem.qty, isBought: true });
-                    }
-                });
-
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
                 if (viewingReceipt.timestamp) {
@@ -210,6 +170,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                     receiptTimeStr = parts[1] || '';
                 }
 
+                // Normal Sales / Normal Retur
+                const isNormalSale = viewingReceipt.type === 'SALE' || viewingReceipt.type === 'RETURN';
+                
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
@@ -219,7 +182,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
+                                            {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT RECEIPT' : 'OFFICIAL SALES RECEIPT'}
+                                        </p>
                                     </div>
                                     
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
@@ -231,31 +196,89 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
 
                                     <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="border-b border-dashed !border-slate-400">
-                                                    <th className="pb-1 font-bold">ITEM</th>
-                                                    <th className="pb-1 text-right font-bold">TOTAL</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="align-top">
-                                                {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                                    <tr key={i}>
-                                                        <td className="py-1 pr-2">
-                                                            <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
-                                                            <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
-                                                        </td>
-                                                        <td className="py-1 text-right font-black whitespace-nowrap">
-                                                            {new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
-                                                        </td>
+                                        
+                                        {/* OPTION A: NORMAL SALE/RETUR (Standard Table) */}
+                                        {isNormalSale && (
+                                            <table className="w-full text-left">
+                                                <thead>
+                                                    <tr className="border-b border-dashed !border-slate-400">
+                                                        <th className="pb-1 font-bold">ITEM</th>
+                                                        <th className="pb-1 text-right font-bold">TOTAL</th>
                                                     </tr>
-                                                )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="align-top">
+                                                    {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
+                                                        <tr key={i}>
+                                                            <td className="py-1 pr-2">
+                                                                <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
+                                                                <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
+                                                            </td>
+                                                            <td className="py-1 text-right font-black whitespace-nowrap">
+                                                                {new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                            </td>
+                                                        </tr>
+                                                    )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
+                                                </tbody>
+                                            </table>
+                                        )}
+
+                                        {/* 🚀 OPTION B: AUDIT INVOICE (Bullet Point System) 🚀 */}
+                                        {!isNormalSale && (
+                                            <div className="space-y-4">
+                                                <div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
+                                                
+                                                {/* Iterate over all the items that were audited */}
+                                                {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                                    // Deduplicate by Product ID so we only print each product once
+                                                    if (!acc.find(i => i.productId === curr.productId)) acc.push(curr);
+                                                    return acc;
+                                                }, []).map((item, i) => {
+                                                    
+                                                    // Find the specific data for this product in the arrays
+                                                    const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                                    const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                                    const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                                    
+                                                    // We only show it if there is SOME activity
+                                                    if (!paidItem && !returItem && !remainItem) return null;
+
+                                                    const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
+
+                                                    return (
+                                                        <div key={i} className="mb-3">
+                                                            <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
+                                                            <div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">
+                                                                Total Consigned: {initialQty} Bks
+                                                            </div>
+                                                            <div className="pl-2 space-y-0.5 text-[10px] !text-slate-600 font-mono">
+                                                                {paidItem && paidItem.qty > 0 && (
+                                                                    <div className="flex justify-between">
+                                                                        <span>• Sold (Laku): {paidItem.qty} Bks</span>
+                                                                        <span className="font-black !text-black">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span>
+                                                                    </div>
+                                                                )}
+                                                                {returItem && returItem.qty > 0 && (
+                                                                    <div className="flex justify-between">
+                                                                        <span>• Retur (BS): {returItem.qty} Bks</span>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                )}
+                                                                {remainItem && remainItem.qty > 0 && (
+                                                                    <div className="flex justify-between">
+                                                                        <span>• Remaining (Sisa): {remainItem.qty} Bks</span>
+                                                                        <span>-</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
-                                        <span>TOTAL</span>
+                                        <span>TOTAL COLLECTED</span>
                                         <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
                                     </div>
                                     
@@ -275,7 +298,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA PENJUALAN</h2>
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
+                                                    {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 'NOTA PENJUALAN'}
+                                                </h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
                                             </div>
                                         </div>
@@ -285,7 +310,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <tbody>
                                                     <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
                                                     {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Harga</td><td className="font-bold py-1 !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                                 </tbody>
@@ -296,34 +320,80 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </div>
                                         </div>
 
-                                        <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                            <thead className="!bg-blue-50 !text-blue-900">
-                                                <tr>
-                                                    <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
-                                                    <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
-                                                    <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">HARGA / {unitLabel}</th>
-                                                    <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY ({unitLabel})</th>
-                                                    <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {catalogRows.map((item, i) => (
-                                                    <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                        {isNormalSale ? (
+                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                                <thead className="!bg-blue-50 !text-blue-900">
+                                                    <tr>
+                                                        <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr className="!bg-blue-100">
-                                                    <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
-                                                    <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {viewingReceipt.items?.map((item, i) => (
+                                                        <tr key={i}>
+                                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.qty} {item.unit}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr className="!bg-blue-100">
+                                                        <td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td>
+                                                        <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || 0)}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        ) : (
+                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                                <thead className="!bg-blue-50 !text-blue-900">
+                                                    <tr>
+                                                        <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-left font-black">AUDITED PRODUCT</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">INITIAL STOCK</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-center w-32 font-black">BREAKDOWN</th>
+                                                        <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">TAGIHAN (Rp)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                                    }, []).map((item, i) => {
+                                                        const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                                        const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                                        const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                                        
+                                                        if (!paidItem && !returItem && !remainItem) return null;
+                                                        const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
+
+                                                        return (
+                                                            <tr key={i}>
+                                                                <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
+                                                                <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td>
+                                                                <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
+                                                                <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
+                                                                    {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
+                                                                    {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
+                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
+                                                                </td>
+                                                                <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">
+                                                                    {paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr className="!bg-emerald-100">
+                                                        <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td>
+                                                        <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        )}
 
                                         <div className="flex justify-between items-start mt-12 pb-4">
                                             <div className="w-1/2">
@@ -365,7 +435,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 
-                                
                                 <button onClick={() => {
     const receipt = document.querySelector('.print-receipt');
     if (!receipt) return;
@@ -382,8 +451,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const isThermal = clone.classList.contains('format-thermal');
 
     const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute'; // 🚀 FIX 1: Anchor to absolute document flow
-    iframe.style.top = '0'; // 🚀 FIX 2: Anchor to TOP so Chrome doesn't print empty space
+    iframe.style.position = 'absolute'; 
+    iframe.style.top = '0'; 
     iframe.style.left = '0';
     iframe.style.width = '1px';
     iframe.style.height = '1px';
@@ -488,11 +557,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
 
 
-                                {/* 🚀 RESTORED WHATSAPP BUTTON 🚀 */}
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
                                     if (viewingReceipt.items && viewingReceipt.items.length > 0) {
                                         viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                    }
+                                    if (viewingReceipt.itemsPaid && viewingReceipt.itemsPaid.length > 0) {
+                                        viewingReceipt.itemsPaid.forEach(item => { text += `[LAKU] ${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
                                     text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
                                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -725,9 +796,29 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             {trans.map(t => (
                                                                 <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                                                                     <td className="p-3 font-mono text-slate-600 dark:text-slate-400 text-xs">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
-                                                                    <td className="p-3"><span className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{t.type.replace('_', ' ')}</span></td>
-                                                                    <td className="p-3 text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-[200px] break-words">
-                                                                        {t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : t.itemsPaid ? `Payment for ${t.itemsPaid.length} Items` : 'N/A'}
+                                                                    <td className="p-3">
+                                                                        <span className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                            {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.type.replace('_', ' ')}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="p-3 text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-[250px] break-words">
+                                                                        {/* 🚀 UPGRADE: Dynamic Details Column 🚀 */}
+                                                                        {t.type === 'CONSIGNMENT_PAYMENT' ? (
+                                                                            // Render Audit Breakdown
+                                                                            <div className="space-y-1">
+                                                                                {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
+                                                                                    if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                                                                }, []).map((item, idx) => (
+                                                                                    <div key={idx} className="font-bold text-[10px] uppercase">
+                                                                                        • {item.name}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            // Render Normal Sale/Retur Details
+                                                                            t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : 'N/A'
+                                                                        )}
+
                                                                         {t.paymentType === 'Titip' && <span className="block mt-1 text-[9px] text-orange-500 font-bold tracking-wider border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
                                                                         {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && <span className="block mt-1 text-[9px] text-blue-500 font-bold tracking-wider">({t.paymentType.toUpperCase()})</span>}
                                                                     </td>
