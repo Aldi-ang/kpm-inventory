@@ -12,14 +12,14 @@ export default function useTransactionEngine({
         
         const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
         const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
-        const activeCart = manualData ? manualData.cart : []; // Cart passed from hook config or manual
+        const activeCart = manualData ? manualData.cart : []; 
         const newStoreData = manualData ? manualData.newStoreData : null; 
         const proofPayload = manualData ? manualData.proofPayload : null; 
         const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
         
         if(!customerName) { alert("Customer Name is required!"); return; } 
 
-        let finalAgentName = 'Admin'; // Default to admin, overwritten if agent is found
+        let finalAgentName = 'Admin'; 
 
         try { 
             await runTransaction(db, async (firestoreTrans) => { 
@@ -123,6 +123,7 @@ export default function useTransactionEngine({
                     timestamp: serverTimestamp(),
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
+                    tempoDays: proofPayload?.tempoDays || null, // Capture tempo days!
                     deliveryProof: proofPayload ? {
                         photo: proofPayload.photoData,
                         latitude: proofPayload.latitude,
@@ -190,22 +191,62 @@ export default function useTransactionEngine({
         return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload });
     };
 
-    const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], itemsRemaining = []) => { 
+    // 🚀 NEW: UNIFIED STORE AUDIT ENGINE
+    const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], returnTotal = 0, itemsRemaining = []) => { 
         try { 
-            // 🚀 UPGRADE: We now save the full Audit Snapshot so the Receipt can render it!
-            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/transactions`), { 
-                date: getCurrentDate(), 
-                customerName, 
-                paymentType: "Cash", 
-                itemsPaid, 
+            let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+            let newDocId = null;
+
+            await runTransaction(db, async (t) => { 
+                // 1. Process physical stock returns back to Vault
+                for(const item of itemsReturned) { 
+                    const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
+                    const prodDoc = await t.get(prodRef); 
+                    if(prodDoc.exists()) t.update(prodRef, { stock: prodDoc.data().stock + (item.qty * 1) }); 
+                } 
+                
+                // 2. Log unified audit transaction
+                const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
+                newDocId = transRef.id;
+
+                t.set(transRef, { 
+                    date: getCurrentDate(), 
+                    customerName, 
+                    paymentType: "Cash", 
+                    itemsPaid,          // Laku
+                    itemsReturned,      // BS / Retur
+                    itemsRemaining,     // Sisa
+                    amountPaid,         // Tagihan Rp
+                    returnTotal,        // Value of Retur Rp
+                    type: 'CONSIGNMENT_PAYMENT', 
+                    agentId: agentProfileId || 'ADMIN',
+                    agentName: finalAgentName,
+                    timestamp: serverTimestamp() 
+                }); 
+            }); 
+
+            triggerCapy("Store Audit successfully recorded!"); 
+
+            // 🚀 Return the constructed object so the UI can auto-open the receipt!
+            return {
+                id: newDocId,
+                date: getCurrentDate(),
+                customerName,
+                paymentType: "Cash",
+                itemsPaid,
                 itemsReturned,
                 itemsRemaining,
-                amountPaid, 
-                type: 'CONSIGNMENT_PAYMENT', 
-                timestamp: serverTimestamp() 
-            }); 
-            triggerCapy("Audit payment recorded!"); 
-        } catch (err) { console.error(err); } 
+                amountPaid,
+                returnTotal,
+                total: amountPaid,
+                type: 'CONSIGNMENT_PAYMENT',
+                agentName: finalAgentName,
+                timestamp: { seconds: Math.floor(Date.now() / 1000) }
+            };
+        } catch (err) { 
+            console.error(err); 
+            throw err;
+        } 
     };
 
     const handleConsignmentReturn = async (customerName, itemsReturned, refundValue) => { 

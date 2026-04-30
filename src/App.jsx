@@ -2776,6 +2776,7 @@ const handleGitHubMirror = async () => {
                   onRequestTransfer={handleRequestTransfer}
                   onAgentAcceptTransfer={handleAgentAcceptTransfer}
                   onAdminApproveTransfer={handleAdminApproveTransfer}
+                  appSettings={appSettings}
               />
           )}
 

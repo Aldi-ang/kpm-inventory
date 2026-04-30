@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator } from 'lucide-react';
+import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer } from 'lucide-react';
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -14,15 +14,19 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer }) => {
-    const [activeTab, setActiveTab] = useState('financials'); // 'financials', 'stock', 'transfers'
+export default function ConsignmentFinanceView({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
+    const [activeTab, setActiveTab] = useState('financials');
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [transferMode, setTransferMode] = useState(false);
     
-    // 🚀 NEW: AUDIT TERMINAL STATE
+    // AUDIT TERMINAL STATE
     const [auditMode, setAuditMode] = useState(false);
-    const [auditData, setAuditData] = useState({}); // { [itemKey]: { shelf: '', damaged: '' } }
+    const [auditData, setAuditData] = useState({}); 
+    
+    // RECEIPT MODAL STATE 🚀
+    const [viewingReceipt, setViewingReceipt] = useState(null);
+    const [printFormat, setPrintFormat] = useState('thermal');
     
     const [targetAgent, setTargetAgent] = useState('');
     const [transferNote, setTransferNote] = useState('');
@@ -36,7 +40,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         });
     }, [transactions, isAdmin, agentProfileId, user]);
 
-    // 🚀 1. DYNAMIC FIFO DEBT ENGINE 🚀
+    // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
         const customers = {};
         const sorted = [...myTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -53,7 +57,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                     timestamp: t.timestamp,
                     original: t.total, 
                     remaining: t.total,
-                    tempoDays: t.tempoDays || 7 // Fallback to 7 if old data
+                    tempoDays: t.tempoDays || 7 
                 });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
@@ -81,43 +85,24 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             const active = c.debts.filter(d => d.remaining > 0.01);
             if (active.length > 0) {
                 const total = active.reduce((s, d) => s + d.remaining, 0);
-                
-                // Track the oldest ACTIVE invoice to determine radar status
                 const oldestDebt = active[0];
                 const oldestDate = new Date(oldestDebt.timestamp?.seconds ? oldestDebt.timestamp.seconds * 1000 : oldestDebt.date);
                 oldestDate.setHours(0,0,0,0);
                 
                 const ageDays = Math.floor((today - oldestDate) / (1000 * 60 * 60 * 24));
                 const tempoDays = oldestDebt.tempoDays || 7;
-                
-                // 🚀 DYNAMIC TEMPO MATH
                 const daysUntilDue = tempoDays - ageDays;
                 
                 let status = 'GREEN';
-                if (daysUntilDue < 0) { 
-                    status = 'RED'; 
-                    results.totalOverdue += total; 
-                }
-                else if (daysUntilDue <= 3) {
-                    status = 'YELLOW'; // Due in 3 days or less
-                }
+                if (daysUntilDue < 0) { status = 'RED'; results.totalOverdue += total; }
+                else if (daysUntilDue <= 3) { status = 'YELLOW'; }
 
                 results.totalValue += total; 
                 results.activeAccounts++;
-                results[status].push({ 
-                    name: c.name, 
-                    total, 
-                    ageDays, 
-                    daysUntilDue,
-                    tempoDays,
-                    oldestDate: oldestDebt.date, 
-                    phone: c.phone, 
-                    activeInvoices: active.length 
-                });
+                results[status].push({ name: c.name, total, ageDays, daysUntilDue, tempoDays, oldestDate: oldestDebt.date, phone: c.phone, activeInvoices: active.length });
             }
         });
         
-        // Sort RED by most overdue, YELLOW by closest to due, GREEN by closest to due
         results.RED.sort((a,b) => a.daysUntilDue - b.daysUntilDue); 
         results.YELLOW.sort((a,b) => a.daysUntilDue - b.daysUntilDue); 
         results.GREEN.sort((a,b) => a.daysUntilDue - b.daysUntilDue);
@@ -125,7 +110,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         return results;
     }, [myTransactions]);
 
-    // 🚀 2. PHYSICAL STOCK ENGINE
+    // 2. PHYSICAL STOCK ENGINE
     const customerData = useMemo(() => {
         const customers = {};
         const sortedTransactions = [...myTransactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
@@ -146,7 +131,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                 }); 
             }
             if (t.type === 'RETURN') { 
-                customers[name].balance += t.total; // total is negative, so this subtracts
+                customers[name].balance += t.total; 
                 t.items.forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
@@ -156,7 +141,13 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             }
             if (t.type === 'CONSIGNMENT_PAYMENT') { 
                 customers[name].balance -= t.amountPaid; 
-                t.itemsPaid.forEach(item => { 
+                t.itemsPaid?.forEach(item => { 
+                    const product = getProduct(item.productId); 
+                    const bksQty = convertToBks(item.qty, item.unit, product); 
+                    const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
+                    if(customers[name].items[itemKey]) customers[name].items[itemKey].qty -= bksQty; 
+                }); 
+                t.itemsReturned?.forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
@@ -175,7 +166,7 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
 
     const activeCustomer = selectedCustomer ? customerData.find(c => c.name === selectedCustomer.name) || selectedCustomer : null;
     
-    // 🚀 3. TRANSFER ROUTING ENGINE
+    // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
         const incoming = transferRequests.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
         const outgoing = transferRequests.filter(r => r.fromAgentId === agentProfileId);
@@ -183,23 +174,18 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
     }, [transferRequests, agentProfileId]);
 
-    // 🚀 NEW: AUDIT INPUT HANDLER
     const handleAuditInput = (key, field, val) => {
         const numVal = parseInt(val) || 0;
-        
         setAuditData(prev => {
             const current = prev[key] || { shelf: '', damaged: '' };
             const updated = { ...current, [field]: val === '' ? '' : Math.max(0, numVal) };
-
             const totalItemQty = activeCustomer.items[key].qty;
             const shelf = parseInt(updated.shelf) || 0;
             const damaged = parseInt(updated.damaged) || 0;
-
             if (shelf + damaged > totalItemQty) {
                 alert("INVALID AUDIT!\n\nJumlah (Sisa di Rak + Retur Rusak) tidak boleh melebihi total barang yang dititipkan.");
-                return current; // Revert change
+                return current; 
             }
-
             return { ...prev, [key]: updated };
         });
     };
@@ -218,13 +204,12 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             let paymentTotal = 0;
             const returnItems = [];
             let returnTotal = 0;
+            const remainingItems = [];
 
             Object.entries(auditData).forEach(([key, data]) => {
                 const item = activeCustomer.items[key];
                 const shelf = parseInt(data.shelf) || 0;
                 const damaged = parseInt(data.damaged) || 0;
-                
-                // LAKU = TOTAL - SISA - RETUR
                 const sold = item.qty - shelf - damaged;
 
                 if (sold > 0) {
@@ -235,37 +220,26 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                     returnItems.push({ productId: item.productId, name: item.name, qty: damaged, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' });
                     returnTotal += (damaged * item.calculatedPrice);
                 }
+                if (shelf > 0) {
+                    remainingItems.push({ productId: item.productId, name: item.name, qty: shelf, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' });
+                }
             });
 
-            if (paymentItems.length === 0 && returnItems.length === 0) {
+            if (paymentItems.length === 0 && returnItems.length === 0 && remainingItems.length === 0) {
                 return alert("No changes recorded. Did you enter Sisa / Retur data?");
             }
 
             if (!window.confirm(`Confirm Store Audit?\n\n- Payment to Collect: Rp ${new Intl.NumberFormat('id-ID').format(paymentTotal)}\n- Bad Stock to Retur: ${returnItems.reduce((s, i) => s + i.qty, 0)} Bks`)) return;
 
-            // Sequential processing
             try {
-                // 🚀 PASS ALL THE ARRAYS TO THE ENGINE SO IT CAN SNAPSHOT THE AUDIT
-                if (paymentItems.length > 0 && onPayment) {
-                    const remainingItems = [];
-                    Object.entries(auditData).forEach(([key, data]) => {
-                        const item = activeCustomer.items[key];
-                        const shelf = parseInt(data.shelf) || 0;
-                        if (shelf > 0) remainingItems.push({ ...item, qty: shelf, unit: 'Bks' });
-                    });
-                    
-                    await onPayment(activeCustomer.name, paymentItems, paymentTotal, returnItems, remainingItems);
+                if (onPayment) {
+                    const receipt = await onPayment(activeCustomer.name, paymentItems, paymentTotal, returnItems, returnTotal, remainingItems);
+                    if (receipt) {
+                        setViewingReceipt(receipt); // 🚀 AUTO-OPEN RECEIPT!
+                    }
                 }
-
-                // If there are return items but NO payments (e.g. everything was damaged, nothing sold)
-                // We still need to run the Return protocol to fix the vehicle stock
-                if (returnItems.length > 0 && onReturn && paymentItems.length === 0) {
-                    await onReturn(activeCustomer.name, returnItems, returnTotal);
-                }
-                
                 setAuditMode(false);
                 setAuditData({});
-                alert("Audit Complete! Ledgers and Vehicle Inventory Updated.");
             } catch (err) {
                 console.error(err);
                 alert("Error saving audit data.");
@@ -316,6 +290,309 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
+            {/* --- AUTO-POP RECEIPT MODAL 🚀 --- */}
+            {viewingReceipt && (() => {
+                let receiptDateStr = viewingReceipt.date || '';
+                let receiptTimeStr = '';
+                if (viewingReceipt.timestamp) {
+                    const dateObj = new Date(viewingReceipt.timestamp.seconds * 1000);
+                    receiptDateStr = dateObj.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                    receiptTimeStr = dateObj.toLocaleTimeString('id-ID');
+                }
+
+                return (
+                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
+                            
+                            {/* --- THERMAL POS LAYOUT --- */}
+                            {printFormat === 'thermal' && (
+                                <div className="p-4 shrink-0 font-mono text-xs">
+                                    <div className="text-center mb-4">
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">STORE AUDIT RECEIPT</p>
+                                    </div>
+                                    
+                                    <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
+                                        <div className="flex"><span className="w-12 font-bold">TGL</span><span>: {receiptDateStr}</span></div>
+                                        <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
+                                        <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {viewingReceipt.customerName}</span></div>
+                                        {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {viewingReceipt.agentName}</span></div>}
+                                        <div className="flex"><span className="w-12 font-bold">BAYAR</span><span className="uppercase">: {viewingReceipt.paymentType || 'Cash'}</span></div>
+                                    </div>
+
+                                    <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
+                                        <div className="space-y-4">
+                                            <div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
+                                            
+                                            {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                                if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                            }, []).map((item, i) => {
+                                                const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                                const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                                const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                                
+                                                if (!paidItem && !returItem && !remainItem) return null;
+                                                const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
+
+                                                return (
+                                                    <div key={i} className="mb-3">
+                                                        <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
+                                                        <div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">
+                                                            Total Consigned: {initialQty} Bks
+                                                        </div>
+                                                        <div className="pl-2 space-y-0.5 text-[10px] !text-slate-600 font-mono">
+                                                            {paidItem && paidItem.qty > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span>• Laku: {paidItem.qty} Bks</span>
+                                                                    <span className="font-black !text-black">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span>
+                                                                </div>
+                                                            )}
+                                                            {returItem && returItem.qty > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span>• Retur: {returItem.qty} Bks</span>
+                                                                    <span>-</span>
+                                                                </div>
+                                                            )}
+                                                            {remainItem && remainItem.qty > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span>• Sisa: {remainItem.qty} Bks</span>
+                                                                    <span>-</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
+                                        <span>TOTAL COLLECTED</span>
+                                        <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</span>
+                                    </div>
+                                    
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500">
+                                        <p>*** THANK YOU ***</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- A4 STANDARD INVOICE LAYOUT --- */}
+                            {printFormat === 'a4' && (
+                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
+                                    <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
+                                        <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
+                                            <div className="flex-1">
+                                                <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                                <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">STORE AUDIT REPORT</h2>
+                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between mb-8 text-sm">
+                                            <table className="w-1/3">
+                                                <tbody>
+                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                </tbody>
+                                            </table>
+                                            <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
+                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                                <p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                            </div>
+                                        </div>
+
+                                        <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                            <thead className="!bg-blue-50 !text-blue-900">
+                                                <tr>
+                                                    <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-left font-black">AUDITED PRODUCT</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">INITIAL STOCK</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-center w-32 font-black">BREAKDOWN</th>
+                                                    <th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">TAGIHAN (Rp)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                                    if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                                }, []).map((item, i) => {
+                                                    const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                                    const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                                    const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                                    
+                                                    if (!paidItem && !returItem && !remainItem) return null;
+                                                    const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
+
+                                                    return (
+                                                        <tr key={i}>
+                                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
+                                                                {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
+                                                                {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
+                                                                {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
+                                                            </td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">
+                                                                {paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="!bg-emerald-100">
+                                                    <td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td>
+                                                    <td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+
+                                        <div className="flex justify-between items-start mt-12 pb-4">
+                                            <div className="w-1/2">
+                                                <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
+                                                    <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
+                                                    <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
+                                                        {appSettings?.bankDetails || `BCA 0301138379\nA/N ABEDNEGO YB`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
+                                                <div className="flex flex-col items-center">
+                                                    <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
+                                                    <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                    <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.customerName}</p>
+                                                </div>
+                                                <div className="flex flex-col items-center">
+                                                    <p className="font-bold text-sm mb-24 uppercase tracking-widest">Hormat Kami,</p>
+                                                    <div className="border-b-2 !border-slate-800 w-40 md:w-48"></div>
+                                                    <p className="text-xs mt-2 uppercase font-bold">{viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                    <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
+                                    Thermal POS (58mm)
+                                </label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800">
+                                    <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>
+                                    Standard Invoice (A4)
+                                </label>
+                            </div>
+
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                                <button onClick={() => {
+                                    const receipt = document.querySelector('.print-receipt');
+                                    if (!receipt) return;
+
+                                    const clone = receipt.cloneNode(true);
+                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+                                    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
+
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
+
+                                    const isThermal = clone.classList.contains('format-thermal');
+
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.position = 'absolute'; 
+                                    iframe.style.top = '0'; 
+                                    iframe.style.left = '0';
+                                    iframe.style.width = '1px';
+                                    iframe.style.height = '1px';
+                                    iframe.style.opacity = '0';
+                                    iframe.style.pointerEvents = 'none';
+                                    iframe.style.border = 'none';
+                                    document.body.appendChild(iframe);
+
+                                    const doc = iframe.contentWindow.document;
+                                    doc.open();
+                                    doc.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <title>KPM Invoice</title>
+                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                            ${parentStyles}
+                                            <style>
+                                                @media print {
+                                                    @page { margin: 0; }
+                                                    html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                    .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+                                                    .format-thermal { font-family: 'Courier New', Courier, monospace !important; }
+                                                    .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; }
+                                                    .format-thermal .font-bold { font-weight: bold !important; }
+                                                    .format-thermal .font-black { font-weight: 900 !important; }
+                                                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                                                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
+                                                    .format-thermal .text-right { text-align: right !important; }
+                                                    .format-thermal .text-center { text-align: center !important; }
+                                                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
+                                                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
+                                                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+                                                }
+                                                body { background: white; margin: 0; padding: 0; display: block; }
+                                            </style>
+                                        </head>
+                                        <body>
+                                            ${clone.outerHTML}
+                                            <script>
+                                                window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `);
+                                    doc.close();
+
+                                    setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
+                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <Printer size={14}/> Print
+                                </button>
+
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*STORE AUDIT RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                    
+                                    (viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                    }, []).forEach((item) => {
+                                        const p = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                        const r = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                        const s = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                        
+                                        if (p || r || s) {
+                                            text += `*${item.name}*\n`;
+                                            if (p) text += ` • LAKU: ${p.qty} Bks (Rp ${new Intl.NumberFormat('id-ID').format((p.calculatedPrice||0) * p.qty)})\n`;
+                                            if (r) text += ` • RETUR: ${r.qty} Bks\n`;
+                                            if (s) text += ` • SISA: ${s.qty} Bks\n`;
+                                        }
+                                    });
+
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <MessageSquare size={14}/> Share
+                                </button>
+                            </div>
+
+                            <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* --- HEADER & MASTER TOGGLE --- */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-6">
                 <div>
@@ -512,7 +789,6 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             {/* --- TAB C: TRANSFER HANDSHAKE HUB --- */}
             {activeTab === 'transfers' && (
                 <div className="animate-fade-in-up grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* INCOMING / ADMIN QUEUE */}
                     <div className="bg-black/20 border border-white/10 rounded-2xl p-6">
                         <h3 className="font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight className="text-indigo-500"/> {isAdmin ? 'Admin Auth Required' : 'Incoming Hand-offs'}</h3>
                         <div className="space-y-4">
@@ -544,7 +820,6 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
                         </div>
                     </div>
 
-                    {/* OUTGOING QUEUE */}
                     <div className="bg-black/20 border border-white/10 rounded-2xl p-6 opacity-70">
                         <h3 className="font-black text-slate-400 uppercase tracking-widest mb-4">My Outgoing Requests</h3>
                         <div className="space-y-3">
@@ -560,6 +835,4 @@ const ConsignmentFinanceView = ({ transactions, inventory, onAddGoods, onPayment
             )}
         </div>
     );
-};
-
-export default ConsignmentFinanceView;
+}
