@@ -49,9 +49,9 @@ export default function BiohazardTheme({
         
         let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
         
-        // 🚀 THE MISSING PIECE: Give Area Admins their warehouse tab!
+        // 🚀 THE FIX: Give Area Admins access to the Restock Vault AND the Fleet & Canvas tab!
         if (userRole === 'AREA_ADMIN') {
-            allowedTabs.push('restock_vault');
+            allowedTabs.push('restock_vault', 'fleet');
         }
         
         if (typeof agentSettings !== 'undefined' && agentSettings?.allowedTiers) {
