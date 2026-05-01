@@ -4,19 +4,25 @@ import {
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
-import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; // 🚀 ADDED onSnapshot
+import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
 
-export default function FleetCanvasManager({ db, appId, user, userRole, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
+// 🚀 THE FIX: Catch the agentProfileId prop!
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     const isAreaAdmin = userRole === 'AREA_ADMIN';
-    const userLocation = user?.location || 'UNASSIGNED';
+    
+    // 🚀 THE FIX: Find the exact location of the Area Admin
+    const userLocation = user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED');
 
-    // 🚀 CHAMELEON ROSTER: Filter agents based on who is looking
+    // 🚀 CHAMELEON ROSTER: Filter using a safe, case-insensitive check
     const agents = useMemo(() => {
-        if (isAreaAdmin) return motorists.filter(m => m.location === userLocation);
+        if (isAreaAdmin) {
+            const targetLoc = (userLocation || '').trim().toLowerCase();
+            return motorists.filter(m => (m.location || '').trim().toLowerCase() === targetLoc);
+        }
         return motorists;
     }, [motorists, isAreaAdmin, userLocation]);
 
-    const isLoading = false; 
+    const isLoading = false;
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
