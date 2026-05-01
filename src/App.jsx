@@ -1761,7 +1761,7 @@ const handleGitHubMirror = async () => {
   // --- CUSTOM HOOKS ---
   const { processTransaction, handleMerchantSale, handleConsignmentPayment, handleConsignmentReturn } = useTransactionEngine({
       db, appId, userId, userRole, agentProfileId, adminSalesMode,
-      logAudit, triggerCapy, setCart, customers, user // 🚀 ADDED 'user' HERE!
+      logAudit, triggerCapy, setCart, customers, user 
   });
 
  const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
@@ -2544,19 +2544,20 @@ const handleGitHubMirror = async () => {
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
           {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} />}
           
-          {/* NEW FLEET ROUTER */}
-          {activeTab === 'fleet' && userRole === 'ADMIN' && (
+          {/* 🚀 UPGRADED FLEET ROUTER: Now open to both Tier 2 (Master) and Tier 3 (Branch) */}
+          {activeTab === 'fleet' && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
             <FleetCanvasManager 
                 db={db} 
                 appId={appId} 
                 user={user} 
+                userRole={userRole}     // 🚀 NEW: Tell the manager who is looking
                 inventory={inventory} 
                 transactions={transactions} 
                 appSettings={appSettings}
                 logAudit={logAudit} 
                 triggerCapy={triggerCapy} 
                 isAdmin={isAdmin} 
-                motorists={motorists} // 🚀 FIXED: Inject the live, real-time database sync
+                motorists={motorists}
             />
           )}
           

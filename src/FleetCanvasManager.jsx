@@ -4,35 +4,63 @@ import {
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
-import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; // 🚀 ADDED onSnapshot
 
-const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) => {
-    // 🚀 UPGRADE: We now use the Live Global Database Sync (motorists) instead of fetching locally.
-    const agents = motorists;
+export default function FleetCanvasManager({ db, appId, user, userRole, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
+    const isAreaAdmin = userRole === 'AREA_ADMIN';
+    const userLocation = user?.location || 'UNASSIGNED';
+
+    // 🚀 CHAMELEON ROSTER: Filter agents based on who is looking
+    const agents = useMemo(() => {
+        if (isAreaAdmin) return motorists.filter(m => m.location === userLocation);
+        return motorists;
+    }, [motorists, isAreaAdmin, userLocation]);
+
     const isLoading = false; 
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
-    // 🚀 UPGRADE: Default State now explicitly includes userRole for Hierarchy Management
+    // 🚀 CHAMELEON INVENTORY: Fetch Branch Stock for Tier 3
+    const [branchStock, setBranchStock] = useState([]);
+    const userId = user?.uid || user?.id || 'default';
+
+    useEffect(() => {
+        if (isAreaAdmin && userLocation !== 'UNASSIGNED') {
+            const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`);
+            const unsub = onSnapshot(stockRef, (snap) => {
+                setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            });
+            return () => unsub();
+        }
+    }, [db, appId, userId, isAreaAdmin, userLocation]);
+
+    // Map the correct stock levels for the dropdown
+    const displayInventory = useMemo(() => {
+        if (!isAreaAdmin) return inventory; 
+        return inventory.map(item => {
+            const bItem = branchStock.find(b => b.id === item.id);
+            return { ...item, stock: bItem ? (bItem.stock || 0) : 0 };
+        });
+    }, [inventory, branchStock, isAreaAdmin]);
+
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
         allowedPayments: ['Cash'], 
         allowedTiers: ['Retail', 'Ecer'],
         userRole: 'AGENT',
-        location: 'Headquarters', 
+        location: isAreaAdmin ? userLocation : 'Headquarters', 
         province: 'Central Java' 
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
-    // 🚀 UPGRADE: Search Bar & Smart Location Dropdown States
     const [searchTerm, setSearchTerm] = useState("");
     const [isNewProv, setIsNewProv] = useState(false);
     const [isNewLoc, setIsNewLoc] = useState(false);
 
-    const existingProvinces = useMemo(() => [...new Set(agents.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [agents]);
-    const existingLocations = useMemo(() => [...new Set(agents.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [agents]);
+    const existingProvinces = useMemo(() => [...new Set(motorists.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [motorists]);
+    const existingLocations = useMemo(() => [...new Set(motorists.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [motorists]);
 
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
@@ -41,7 +69,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
 
-    const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
     useEffect(() => {
@@ -51,19 +78,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         }
     }, [agents, selectedAgent]);
 
-    const fetchAgents = () => {}; 
-
     const togglePayment = (method) => {
         setNewAgent(prev => ({
-            ...prev,
-            allowedPayments: prev.allowedPayments.includes(method) ? prev.allowedPayments.filter(m => m !== method) : [...prev.allowedPayments, method]
+            ...prev, allowedPayments: prev.allowedPayments.includes(method) ? prev.allowedPayments.filter(m => m !== method) : [...prev.allowedPayments, method]
         }));
     };
 
     const toggleTier = (tier) => {
         setNewAgent(prev => ({
-            ...prev,
-            allowedTiers: prev.allowedTiers.includes(tier) ? prev.allowedTiers.filter(t => t !== tier) : [...prev.allowedTiers, tier]
+            ...prev, allowedTiers: prev.allowedTiers.includes(tier) ? prev.allowedTiers.filter(t => t !== tier) : [...prev.allowedTiers, tier]
         }));
     };
 
@@ -74,16 +97,15 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
-        // 🚀 ADVANCED SECURITY LOCK: Prevent duplicate Email, Phone, Name, and Plate Number
-        const isDupEmail = agents.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
-        const isDupPhone = agents.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
-        const isDupName = agents.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
-        const isDupPlate = newAgent.vehicle?.trim() && agents.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
+        const isDupEmail = motorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
+        const isDupPhone = motorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
+        const isDupName = motorists.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
+        const isDupPlate = newAgent.vehicle?.trim() && motorists.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
         if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
         if (isDupPhone) return alert(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
-        if (isDupName) return alert(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered. Please use a unique name (e.g., "Budi Solo").`);
-        if (isDupPlate) return alert(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned to another active personnel.`);
+        if (isDupName) return alert(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered.`);
+        if (isDupPlate) return alert(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned.`);
 
         try {
             const batch = writeBatch(db);
@@ -95,31 +117,20 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 const agentRef = doc(db, collPath, editingAgentId);
                 batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
-                    allowedPayments: newAgent.allowedPayments,
-                    allowedTiers: newAgent.allowedTiers,
-                    userRole: newAgent.userRole || 'AGENT',
-                    location: newAgent.location || 'Headquarters',
-                    province: newAgent.province || 'Central Java'
+                    allowedPayments: newAgent.allowedPayments, allowedTiers: newAgent.allowedTiers,
+                    userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java'
                 });
 
-                if (oldEmailKey && oldEmailKey !== emailKey) {
-                    batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
-                }
+                if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 
-                // 🚀 THE FIX: Writes userRole to the Global Directory for existing agents
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
 
             } else {
                 const newId = `AGT_${Date.now()}`;
-                const agentData = {
-                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString()
-                };
-
+                const agentData = { id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString() };
                 batch.set(doc(db, collPath, newId), agentData);
-                
-                // 🚀 THE FIX: Writes userRole to the Global Directory for new agents
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
                 });
@@ -131,29 +142,22 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 triggerCapy(`Profile updated for ${newAgent.name}!`);
                 logAudit("FLEET_EDIT", `Updated profile for ${emailKey}`);
             } else {
-                triggerCapy(`${newAgent.name} added! Their email is now authorized to access your vault. 🚀`);
+                triggerCapy(`${newAgent.name} added!`);
                 logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${emailKey}`);
             }
 
             setNewAgent(defaultAgentState);
             setIsAddingAgent(false);
             setEditingAgentId(null);
-            fetchAgents();
-        } catch (e) {
-            console.error("Batch Failed:", e);
-            alert("Firebase Blocked the Save: " + e.message + "\n\nPlease check your Firebase Security Rules.");
-        }
+        } catch (e) { alert("Firebase Blocked the Save: " + e.message); }
     };
 
     const handleEditClick = (e, agent) => {
         e.stopPropagation();
         setNewAgent({
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
-            allowedPayments: agent.allowedPayments || ['Cash'],
-            allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
-            userRole: agent.userRole || 'AGENT',
-            location: agent.location || 'Headquarters',
-            province: agent.province || 'Central Java'
+            allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
+            userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java'
         });
         setEditingAgentId(agent.id);
         setIsAddingAgent(true);
@@ -170,11 +174,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
-            fetchAgents();
-        } catch (e) {
-            console.error("Batch Failed:", e);
-            alert("Firebase Blocked the Deletion: " + e.message);
-        }
+        } catch (e) { alert("Firebase Blocked the Deletion: " + e.message); }
     };
 
     const convertToBks = (qty, unit, product) => {
@@ -188,10 +188,11 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         return qty; 
     };
 
+    // 🚀 THE FIX: SMART WAREHOUSE ROUTING ON LOAD
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
-        const product = inventory.find(p => p.id === selectedProduct);
+        const product = displayInventory.find(p => p.id === selectedProduct);
         if (!product) return;
 
         const qtyToLoad = Number(loadQty);
@@ -199,13 +200,20 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         const loadInBks = qtyToLoad; 
 
         if ((product.stock || 0) < loadInBks) {
-            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bungkus, but the Master Vault only has ${product.stock || 0} Bungkus available.`);
+            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bungkus, but the ${isAreaAdmin ? 'Branch' : 'Master'} Vault only has ${product.stock || 0} Bungkus available.`);
         }
 
         try {
             const batch = writeBatch(db);
-            const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-            batch.update(prodRef, { stock: (product.stock || 0) - loadInBks });
+            
+            // Deduct from correct vault
+            if (isAreaAdmin) {
+                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`, product.id);
+                batch.update(branchRef, { stock: (product.stock || 0) - loadInBks });
+            } else {
+                const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
+                batch.update(hqRef, { stock: (product.stock || 0) - loadInBks });
+            }
 
             const agentRef = doc(db, collPath, selectedAgent.id);
             let updatedCanvas = [...(selectedAgent.activeCanvas || [])];
@@ -220,10 +228,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             batch.update(agentRef, { activeCanvas: updatedCanvas });
             await batch.commit();
 
-            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. Vault stock deducted! 📦`);
+            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${isAreaAdmin ? 'Branch' : 'HQ'} stock deducted! 📦`);
             setLoadQty("");
             setSelectedProduct("");
-            fetchAgents(); 
             logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${product.name} to ${selectedAgent.name}`);
         } catch (e) {
             console.error(e);
@@ -231,9 +238,10 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         }
     };
 
+    // 🚀 THE FIX: SMART WAREHOUSE ROUTING ON CLEAR
     const handleClearCanvas = async () => {
         if (!selectedAgent) return;
-        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the Master Vault.`)) return;
+        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${isAreaAdmin ? 'Branch' : 'Master'} Vault.`)) return;
 
         try {
             const batch = writeBatch(db);
@@ -243,8 +251,17 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                 const product = inventory.find(p => p.id === item.productId);
                 if (product) {
                     const returnInBks = convertToBks(item.qty, item.unit, product);
-                    const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-                    batch.update(prodRef, { stock: (product.stock || 0) + returnInBks });
+                    
+                    if (isAreaAdmin) {
+                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`, product.id);
+                        const currentBranchStock = branchStock.find(b => b.id === product.id)?.stock || 0;
+                        batch.set(branchRef, { 
+                            productId: product.id, name: product.name, stock: currentBranchStock + returnInBks 
+                        }, { merge: true });
+                    } else {
+                        const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
+                        batch.update(hqRef, { stock: (product.stock || 0) + returnInBks });
+                    }
                 }
             });
 
@@ -253,11 +270,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             
             await batch.commit();
             triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
-            fetchAgents();
             logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name}`);
-        } catch(e) {
-            alert("Failed to clear canvas: " + e.message);
-        }
+        } catch(e) { alert("Failed to clear canvas: " + e.message); }
     };
 
     const handleWhatsAppShare = () => {
@@ -284,12 +298,8 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
         (selectedAgent.activeCanvas || []).forEach(item => {
             const p = inventory.find(x => x.id === item.productId);
             map[item.productId] = {
-                productId: item.productId,
-                name: item.name,
-                currentBks: convertToBks(item.qty, item.unit, p),
-                soldBks: 0,
-                unit: item.unit, 
-                currentRaw: item.qty 
+                productId: item.productId, name: item.name, currentBks: convertToBks(item.qty, item.unit, p),
+                soldBks: 0, unit: item.unit, currentRaw: item.qty 
             };
         });
         
@@ -465,7 +475,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         <div className="bg-slate-800 p-4 rounded-xl border-2 border-dashed border-blue-500/50 mb-4 animate-slide-down">
                             <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">{editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}</h3>
                             
-                            {/* 🚀 SMART ROLE DISPLAY: Hides driving options for Admins */}
                             {newAgent.userRole === 'AGENT' ? (
                                 <select value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-bold">
                                     <option value="Motorist">Sales Motorist (Motorbike)</option>
@@ -479,7 +488,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
 
                             <input type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
                             
-                            {/* 🚀 HIERARCHY ENGINE: The 4-Tier Security Clearance Selector */}
                             <div className="flex gap-2 mb-2">
                                 <input type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
                                 {isAdmin && (
@@ -489,9 +497,9 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
                                         style={{ colorScheme: 'dark' }}
                                     >
-                                        <option value="AGENT" className="bg-slate-900 text-white">Tier 4: Salesman (Field)</option>
-                                        <option value="AREA_ADMIN" className="bg-slate-900 text-purple-500">Tier 3: Area Admin (Branch)</option>
-                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Tier 2: Master Admin (HQ)</option>
+                                        <option value="AGENT" className="bg-slate-900 text-white">Tier 4: Salesman</option>
+                                        <option value="AREA_ADMIN" className="bg-slate-900 text-purple-500">Tier 3: Area Admin</option>
+                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Tier 2: HQ Admin</option>
                                     </select>
                                 )}
                             </div>
@@ -507,7 +515,7 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         <select value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="flex-1 bg-slate-900 border border-purple-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-purple-500 uppercase">
                                             {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
-                                        <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>
+                                        <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>
                                     </div>
                                 )}
                             </div>
@@ -568,19 +576,12 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                         <div className="text-center py-10">
                             <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
                             <p className="text-slate-500 text-sm">No personnel found.</p>
-                            <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
                         </div>
                     ) : (
                         <>
                             <div className="mb-4 relative">
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search Name, Role, Area, Email..." 
-                                    value={searchTerm} 
-                                    onChange={e => setSearchTerm(e.target.value)} 
-                                    className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"
-                                />
+                                <input type="text" placeholder="Search Name, Role, Area, Email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"/>
                             </div>
 
                             {Object.entries(
@@ -591,7 +592,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 }).reduce((acc, agent) => {
                                     let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
                                     let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
-                                    
                                     if (!acc[prov]) acc[prov] = {};
                                     if (!acc[prov][loc]) acc[prov][loc] = [];
                                     acc[prov][loc].push(agent);
@@ -599,7 +599,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 }, {})
                             ).sort(([provA], [provB]) => provA.localeCompare(provB)).map(([province, areas]) => (
                                 <details key={province} className="mb-4 group/prov" open>
-                                    
                                     <summary className="flex items-center gap-2 mb-2 px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors select-none shadow-md">
                                         <Globe size={16} className="text-purple-500"/>
                                         <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">{province}</h2>
@@ -612,7 +611,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                     <div className="pl-3 border-l-2 border-slate-800 ml-2 mt-2 space-y-4">
                                         {Object.entries(areas).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
                                             <details key={location} className="group/loc" open>
-                                                
                                                 <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
                                                     <MapPin size={14} className="text-orange-500"/>
                                                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
@@ -621,29 +619,22 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                 </summary>
 
                                                 <div className="space-y-2 pl-2 border-l-2 border-slate-800/50 mt-2 mb-4">
-                                                    {/* 🚀 ROSTER SORTING: Master -> Area Admin -> Field Agent */}
                                                     {locAgents.sort((a, b) => {
                                                         const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
                                                         return (rank[b.userRole || 'AGENT'] || 0) - (rank[a.userRole || 'AGENT'] || 0);
                                                     }).map(m => (
-                                                        <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }}
-                                                             className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
-                                                            
+                                                        <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }} className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
                                                             <div className="flex items-center gap-3 min-w-0">
-                                                                {/* 🚀 BADGE LOGIC UPGRADED FOR TIER 3 */}
                                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.userRole === 'AREA_ADMIN' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : m.role === 'Canvas' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                                                     {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.userRole === 'AREA_ADMIN' ? <Globe size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : m.userRole === 'AREA_ADMIN' ? 'text-purple-400' : 'text-white'}`}>{m.name}</h3>
                                                                     <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                        {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : 
-                                                                         m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 Area Admin ({m.location})</span> : 
-                                                                         <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
+                                                                        {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 Area Admin ({m.location})</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
                                                                     </p>
                                                                 </div>
                                                             </div>
-
                                                             <div className="flex flex-col items-end gap-2 shrink-0">
                                                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
                                                                     {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
@@ -655,7 +646,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            
                                                         </div>
                                                     ))}
                                                 </div>
@@ -690,41 +680,6 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                         ))}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {(() => {
-                                        let currentLoadBks = 0;
-                                        (selectedAgent.activeCanvas || []).forEach(item => {
-                                            const product = inventory.find(p => p.id === item.productId);
-                                            currentLoadBks += convertToBks(item.qty, item.unit, product);
-                                        });
-                                        let soldTodayBks = 0;
-                                        agentSales.forEach(t => {
-                                            (t.items || []).forEach(item => {
-                                                const product = inventory.find(p => p.id === item.productId);
-                                                soldTodayBks += convertToBks(item.qty, item.unit, product);
-                                            });
-                                        });
-                                        const initialLoadBks = currentLoadBks + soldTodayBks;
-
-                                        return (
-                                            <>
-                                                <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1">Initial</p>
-                                                    <p className="text-lg font-black text-slate-300">{initialLoadBks}</p>
-                                                </div>
-                                                <div className="bg-orange-900/20 p-2.5 rounded-xl border border-orange-500/30 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[8px] text-orange-400 uppercase tracking-widest mb-1">Sold</p>
-                                                    <p className="text-lg font-black text-orange-500">{soldTodayBks}</p>
-                                                </div>
-                                                <div className="bg-emerald-900/20 p-2.5 rounded-xl border border-emerald-500/30 text-center min-w-[70px] shadow-inner relative overflow-hidden">
-                                                    <div className="absolute inset-0 bg-emerald-500/10 animate-pulse pointer-events-none"></div>
-                                                    <p className="text-[8px] text-emerald-400 uppercase tracking-widest mb-1">Current</p>
-                                                    <p className="text-lg font-black text-emerald-500 relative z-10">{currentLoadBks}</p>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
                             </div>
                         </div>
 
@@ -734,12 +689,14 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><PackagePlus size={16} className="text-emerald-500"/> Transfer to Vehicle Vault</h3>
                                 <div className="flex flex-col lg:flex-row gap-3 items-end">
                                     <div className="w-full lg:flex-1">
-                                        <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 block">Select Main Vault Stock</label>
+                                        <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 block">
+                                            Select {isAreaAdmin ? 'Branch Warehouse' : 'Main Vault'} Stock
+                                        </label>
                                         <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500">
                                             <option value="">-- Choose Product --</option>
-                                            {inventory && inventory.map(item => (
+                                            {displayInventory && displayInventory.map(item => (
                                                 <option key={item.id} value={item.id}>
-                                                    {item.name} {isAdmin ? `(Vault: ${item.stock} ${item.unit})` : ''}
+                                                    {item.name} (Available: {item.stock} {item.unit})
                                                 </option>
                                             ))}
                                         </select>
@@ -759,87 +716,39 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
                                 
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
                                     <div className="flex items-center gap-2">
-                                        <button 
-                                            onClick={() => setViewingSuratJalan(true)} 
-                                            className="text-[9px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"
-                                        >
-                                            <Printer size={12}/> Surat Jalan
-                                        </button>
-                                        <button 
-                                            onClick={handleClearCanvas} 
-                                            className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors"
-                                        >
-                                            Reconcile & Clear
-                                        </button>
+                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[9px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
+                                        <button onClick={handleClearCanvas} className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
                                     </div>
                                 )}
                             </div>
 
                             <div className="space-y-2">
-                                {combinedItems.length === 0 ? (
+                                {(selectedAgent.activeCanvas || []).length === 0 ? (
                                     <div className="text-center py-8 bg-black/20 rounded-xl border border-slate-800 border-dashed">
                                         <Archive size={24} className="mx-auto mb-2 text-slate-600"/>
                                         <p className="text-xs text-slate-500 uppercase tracking-widest">No Items Assigned Today</p>
                                     </div>
                                 ) : (
-                                    combinedItems.map((item, idx) => (
-                                        <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${item.currentBks > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                                                <div>
-                                                    <span className="font-bold text-white text-sm">{item.name}</span>
-                                                    {item.currentRaw > 0 && <p className="text-[10px] text-slate-400 mt-0.5">Active Load: {item.currentRaw} {item.unit}</p>}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-600 text-[10px] font-mono font-bold w-full md:w-auto">
-                                                <span className="text-slate-400 w-16 text-center">INIT: {item.initialBks}</span>
-                                                <span className="w-[1px] h-4 bg-slate-700"></span>
-                                                <span className="text-orange-400 w-16 text-center">SOLD: {item.soldBks}</span>
-                                                <span className="w-[1px] h-4 bg-slate-700"></span>
-                                                <span className={`${item.currentBks > 0 ? 'text-emerald-400' : 'text-red-500'} w-16 text-center`}>LEFT: {item.currentBks}</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
-                                <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
-                                    <div className="flex items-center gap-2">
-                                        <FileText size={18} className="text-blue-500"/>
-                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Sales History ({agentSales.length})</h3>
-                                    </div>
-                                    {showHistory ? <ChevronUp size={18} className="text-slate-400"/> : <ChevronDown size={18} className="text-slate-400"/>}
-                                </button>
-                                
-                                {showHistory && (
-                                    <div className="p-4 space-y-3 bg-black/10">
-                                        {agentSales.length === 0 ? (
-                                            <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4">No sales recorded today.</p>
-                                        ) : (
-                                            agentSales.map(tx => (
-                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm">
+                                    (selectedAgent.activeCanvas || []).map((item, idx) => {
+                                        const p = inventory.find(x => x.id === item.productId);
+                                        const currentBks = convertToBks(item.qty, item.unit, p);
+                                        return (
+                                            <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${currentBks > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
                                                     <div>
-                                                        <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
-                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString() : 'Today'} • {tx.paymentType}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
-                                                            <p className="text-emerald-400 font-black text-sm md:text-base">{new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}</p>
-                                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
-                                                        </div>
-                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
-                                                            <FileText size={16}/>
-                                                        </button>
+                                                        <span className="font-bold text-white text-sm">{item.name}</span>
+                                                        <p className="text-[10px] text-slate-400 mt-0.5">Active Load: {item.qty} {item.unit}</p>
                                                     </div>
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
+                                                <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-600 text-[10px] font-mono font-bold w-full md:w-auto">
+                                                    <span className={`${currentBks > 0 ? 'text-emerald-400' : 'text-red-500'} text-center px-4`}>LEFT: {currentBks} BKS</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
-
                         </div>
                     </>
                 ) : (
@@ -852,6 +761,4 @@ const FleetCanvasManager = ({ db, appId, user, inventory, transactions = [], app
             </div>
         </div>
     );
-};
-
-export default FleetCanvasManager;
+}
