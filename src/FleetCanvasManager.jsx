@@ -213,6 +213,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         return qty; 
     };
 
+    // 🚀 THE FIX: SMART WAREHOUSE ROUTING WITH FAIL-SAFE MERGE
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
@@ -230,12 +231,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         try {
             const batch = writeBatch(db);
             
+            // 🚀 FAIL-SAFE: Use Set with Merge instead of Update
             if (isAreaAdmin) {
-                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`, product.id);
-                batch.update(branchRef, { stock: (product.stock || 0) - loadInBks });
+                const safeBranchPath = branchPathLocation.replace(/\//g, '-'); // Sanitize slashes
+                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, product.id);
+                batch.set(branchRef, { productId: product.id, name: product.name, stock: (product.stock || 0) - loadInBks }, { merge: true });
             } else {
                 const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-                batch.update(hqRef, { stock: (product.stock || 0) - loadInBks });
+                batch.set(hqRef, { stock: (product.stock || 0) - loadInBks }, { merge: true });
             }
 
             const agentRef = doc(db, collPath, selectedAgent.id);
@@ -248,7 +251,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 updatedCanvas.push({ productId: product.id, name: product.name, qty: qtyToLoad, unit: unitToLoad });
             }
 
-            batch.update(agentRef, { activeCanvas: updatedCanvas });
+            // 🚀 FAIL-SAFE: Use Set with Merge
+            batch.set(agentRef, { activeCanvas: updatedCanvas }, { merge: true });
             await batch.commit();
 
             triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${isAreaAdmin ? 'Branch' : 'HQ'} stock deducted! 📦`);
@@ -275,20 +279,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const returnInBks = convertToBks(item.qty, item.unit, product);
                     
                     if (isAreaAdmin) {
-                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`, product.id);
+                        const safeBranchPath = branchPathLocation.replace(/\//g, '-');
+                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, product.id);
                         const currentBranchStock = branchStock.find(b => b.id === product.id)?.stock || 0;
-                        batch.set(branchRef, { 
-                            productId: product.id, name: product.name, stock: currentBranchStock + returnInBks 
-                        }, { merge: true });
+                        batch.set(branchRef, { productId: product.id, name: product.name, stock: currentBranchStock + returnInBks }, { merge: true });
                     } else {
                         const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-                        batch.update(hqRef, { stock: (product.stock || 0) + returnInBks });
+                        batch.set(hqRef, { stock: (product.stock || 0) + returnInBks }, { merge: true });
                     }
                 }
             });
 
             const agentRef = doc(db, collPath, selectedAgent.id);
-            batch.update(agentRef, { activeCanvas: [] });
+            batch.set(agentRef, { activeCanvas: [] }, { merge: true });
             
             await batch.commit();
             triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
