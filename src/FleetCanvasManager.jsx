@@ -213,7 +213,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         return qty; 
     };
 
-    // 🚀 THE FIX: SMART WAREHOUSE ROUTING WITH FAIL-SAFE MERGE
+    // 🚀 THE FIX: BULLETPROOF ARRAY HANDLING & SALES TERMINAL COMPATIBILITY
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
@@ -221,17 +221,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (!product) return;
 
         const qtyToLoad = Number(loadQty);
-        const unitToLoad = 'Bungkus';
+        const unitToLoad = 'Bks'; // 🚀 STANDARD UNIT FIX
         const loadInBks = qtyToLoad; 
 
         if ((product.stock || 0) < loadInBks) {
-            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bungkus, but the ${isAreaAdmin ? 'Branch' : 'Master'} Vault only has ${product.stock || 0} Bungkus available.`);
+            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks, but the ${isAreaAdmin ? 'Branch' : 'Master'} Vault only has ${product.stock || 0} Bks available.`);
         }
 
         try {
             const batch = writeBatch(db);
             
-            // 🚀 FAIL-SAFE: Use Set with Merge instead of Update
+            // 1. Deduct Stock safely
             if (isAreaAdmin) {
                 const safeBranchPath = branchPathLocation.replace(/\//g, '-'); // Sanitize slashes
                 const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, product.id);
@@ -242,17 +242,28 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             }
 
             const agentRef = doc(db, collPath, selectedAgent.id);
-            let updatedCanvas = [...(selectedAgent.activeCanvas || [])];
+            
+            // 🚀 THE FIX: Deep Copy array to prevent React mutation glitches
+            let updatedCanvas = JSON.parse(JSON.stringify(selectedAgent.activeCanvas || []));
             const existingItemIndex = updatedCanvas.findIndex(item => item.productId === product.id);
 
             if (existingItemIndex >= 0) {
                 updatedCanvas[existingItemIndex].qty += qtyToLoad;
             } else {
-                updatedCanvas.push({ productId: product.id, name: product.name, qty: qtyToLoad, unit: unitToLoad });
+                // 🚀 THE FIX: Inject price data so the Tier 4 Sales Terminal accepts it!
+                updatedCanvas.push({ 
+                    productId: product.id, 
+                    name: product.name, 
+                    qty: qtyToLoad, 
+                    unit: unitToLoad,
+                    priceTier: product.priceTier || 'Retail',
+                    calculatedPrice: product.priceRetail || 0
+                });
             }
 
-            // 🚀 FAIL-SAFE: Use Set with Merge
-            batch.set(agentRef, { activeCanvas: updatedCanvas }, { merge: true });
+            // 🚀 THE FIX: Use explicit Update to force an array overwrite
+            batch.update(agentRef, { activeCanvas: updatedCanvas });
+            
             await batch.commit();
 
             triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${isAreaAdmin ? 'Branch' : 'HQ'} stock deducted! 📦`);
@@ -291,7 +302,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             });
 
             const agentRef = doc(db, collPath, selectedAgent.id);
-            batch.set(agentRef, { activeCanvas: [] }, { merge: true });
+            // 🚀 THE FIX: Force explicit update to clear array
+            batch.update(agentRef, { activeCanvas: [] });
             
             await batch.commit();
             triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
