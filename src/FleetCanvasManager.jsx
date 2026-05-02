@@ -8,9 +8,29 @@ import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot }
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     const isAreaAdmin = userRole === 'AREA_ADMIN';
-    
+    const userId = user?.uid || user?.id || 'default';
+    const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
+
+    // 🚀 THE FIX: Direct Regional Uplink for Tier 3
+    const [localFleet, setLocalFleet] = useState([]);
+    const [isFetchingFleet, setIsFetchingFleet] = useState(isAreaAdmin);
+
+    useEffect(() => {
+        if (isAreaAdmin) {
+            const fleetRef = collection(db, collPath);
+            const unsub = onSnapshot(fleetRef, (snap) => {
+                setLocalFleet(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setIsFetchingFleet(false);
+            });
+            return () => unsub();
+        }
+    }, [db, collPath, isAreaAdmin]);
+
+    // Use global list for Admin, local fetched list for Area Admin
+    const activeMotorists = isAreaAdmin ? localFleet : motorists;
+
     // 🚀 THE BULLETPROOF LOCATION FINDER
-    const myProfile = motorists.find(m => m.id === agentProfileId);
+    const myProfile = activeMotorists.find(m => m.id === agentProfileId);
     const rawLocation = myProfile?.location || user?.location || 'UNASSIGNED';
     const searchLocation = String(rawLocation).trim().toLowerCase();
     const branchPathLocation = String(rawLocation).trim(); // Keep original casing for DB path
@@ -18,12 +38,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     // 🚀 CHAMELEON ROSTER: Safe, case-insensitive mapping
     const agents = useMemo(() => {
         if (isAreaAdmin) {
-            return motorists.filter(m => String(m.location || '').trim().toLowerCase() === searchLocation);
+            return activeMotorists.filter(m => String(m.location || '').trim().toLowerCase() === searchLocation);
         }
-        return motorists;
-    }, [motorists, isAreaAdmin, searchLocation]);
-
-    const isLoading = false; 
+        return activeMotorists;
+    }, [activeMotorists, isAreaAdmin, searchLocation]);
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
@@ -31,7 +49,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     
     // 🚀 CHAMELEON INVENTORY: Fetch Branch Stock for Tier 3
     const [branchStock, setBranchStock] = useState([]);
-    const userId = user?.uid || user?.id || 'default';
 
     useEffect(() => {
         if (isAreaAdmin && branchPathLocation !== 'UNASSIGNED') {
@@ -66,8 +83,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [isNewProv, setIsNewProv] = useState(false);
     const [isNewLoc, setIsNewLoc] = useState(false);
 
-    const existingProvinces = useMemo(() => [...new Set(motorists.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [motorists]);
-    const existingLocations = useMemo(() => [...new Set(motorists.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [motorists]);
+    const existingProvinces = useMemo(() => [...new Set(activeMotorists.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [activeMotorists]);
+    const existingLocations = useMemo(() => [...new Set(activeMotorists.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [activeMotorists]);
 
     const [selectedProduct, setSelectedProduct] = useState("");
     const [loadQty, setLoadQty] = useState("");
@@ -75,8 +92,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
-
-    const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
     useEffect(() => {
         if (selectedAgent) {
@@ -104,10 +119,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
-        const isDupEmail = motorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
-        const isDupPhone = motorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
-        const isDupName = motorists.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
-        const isDupPlate = newAgent.vehicle?.trim() && motorists.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
+        const isDupEmail = activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
+        const isDupPhone = activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
+        const isDupName = activeMotorists.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
+        const isDupPlate = newAgent.vehicle?.trim() && activeMotorists.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
         if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
         if (isDupPhone) return alert(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
@@ -130,16 +145,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
                 
+                // 🚀 FIX: Map Location into Employee Directory so App.jsx reads it natively!
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
-                    bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
-                });
+                    bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
+                    location: newAgent.location || 'Headquarters' 
+                }, { merge: true });
 
             } else {
                 const newId = `AGT_${Date.now()}`;
                 const agentData = { id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString() };
                 batch.set(doc(db, collPath, newId), agentData);
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
-                    bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active'
+                    bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
+                    location: newAgent.location || 'Headquarters'
                 });
             }
 
@@ -321,6 +339,18 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         return Object.values(map).map(i => ({ ...i, initialBks: i.currentBks + i.soldBks }));
     }, [selectedAgent, inventory, agentSales]);
 
+
+    if (isFetchingFleet) {
+        return (
+            <div className="h-full w-full flex items-center justify-center bg-slate-900 rounded-2xl border border-slate-700">
+                <div className="text-center animate-pulse">
+                    <Activity size={48} className="text-blue-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white uppercase tracking-widest">Establishing Regional Uplink</h2>
+                    <p className="text-slate-400 mt-2 text-xs">Fetching Branch Roster Data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="print-reset h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
@@ -585,9 +615,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </div>
                     )}
 
-                    {isLoading ? (
-                        <div className="text-center p-10 text-slate-500 animate-pulse">Loading Fleet Data...</div>
-                    ) : agents.length === 0 && !isAddingAgent ? (
+                    {agents.length === 0 && !isAddingAgent ? (
                         <div className="text-center py-10">
                             <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
                             <p className="text-slate-500 text-sm">No personnel found.</p>
