@@ -6,23 +6,24 @@ import {
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
 
-// 🚀 THE FIX: Catch the agentProfileId prop!
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     const isAreaAdmin = userRole === 'AREA_ADMIN';
     
-    // 🚀 THE FIX: Find the exact location of the Area Admin
-    const userLocation = user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED');
+    // 🚀 THE BULLETPROOF LOCATION FINDER
+    const myProfile = motorists.find(m => m.id === agentProfileId);
+    const rawLocation = myProfile?.location || user?.location || 'UNASSIGNED';
+    const searchLocation = String(rawLocation).trim().toLowerCase();
+    const branchPathLocation = String(rawLocation).trim(); // Keep original casing for DB path
 
-    // 🚀 CHAMELEON ROSTER: Filter using a safe, case-insensitive check
+    // 🚀 CHAMELEON ROSTER: Safe, case-insensitive mapping
     const agents = useMemo(() => {
         if (isAreaAdmin) {
-            const targetLoc = (userLocation || '').trim().toLowerCase();
-            return motorists.filter(m => (m.location || '').trim().toLowerCase() === targetLoc);
+            return motorists.filter(m => String(m.location || '').trim().toLowerCase() === searchLocation);
         }
         return motorists;
-    }, [motorists, isAreaAdmin, userLocation]);
+    }, [motorists, isAreaAdmin, searchLocation]);
 
-    const isLoading = false;
+    const isLoading = false; 
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
@@ -33,14 +34,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const userId = user?.uid || user?.id || 'default';
 
     useEffect(() => {
-        if (isAreaAdmin && userLocation !== 'UNASSIGNED') {
-            const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`);
+        if (isAreaAdmin && branchPathLocation !== 'UNASSIGNED') {
+            const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`);
             const unsub = onSnapshot(stockRef, (snap) => {
                 setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             });
             return () => unsub();
         }
-    }, [db, appId, userId, isAreaAdmin, userLocation]);
+    }, [db, appId, userId, isAreaAdmin, branchPathLocation]);
 
     // Map the correct stock levels for the dropdown
     const displayInventory = useMemo(() => {
@@ -56,8 +57,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         allowedPayments: ['Cash'], 
         allowedTiers: ['Retail', 'Ecer'],
         userRole: 'AGENT',
-        location: isAreaAdmin ? userLocation : 'Headquarters', 
-        province: 'Central Java' 
+        location: isAreaAdmin ? branchPathLocation : 'Headquarters', 
+        province: myProfile?.province || 'Central Java' 
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -194,7 +195,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         return qty; 
     };
 
-    // 🚀 THE FIX: SMART WAREHOUSE ROUTING ON LOAD
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
@@ -212,9 +212,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         try {
             const batch = writeBatch(db);
             
-            // Deduct from correct vault
             if (isAreaAdmin) {
-                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`, product.id);
+                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`, product.id);
                 batch.update(branchRef, { stock: (product.stock || 0) - loadInBks });
             } else {
                 const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
@@ -244,7 +243,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         }
     };
 
-    // 🚀 THE FIX: SMART WAREHOUSE ROUTING ON CLEAR
     const handleClearCanvas = async () => {
         if (!selectedAgent) return;
         if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${isAreaAdmin ? 'Branch' : 'Master'} Vault.`)) return;
@@ -259,7 +257,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const returnInBks = convertToBks(item.qty, item.unit, product);
                     
                     if (isAreaAdmin) {
-                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${userLocation}/inventory`, product.id);
+                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`, product.id);
                         const currentBranchStock = branchStock.find(b => b.id === product.id)?.stock || 0;
                         batch.set(branchRef, { 
                             productId: product.id, name: product.name, stock: currentBranchStock + returnInBks 
@@ -466,8 +464,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             <div className="hide-on-print w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-black/20">
                     <div>
-                        <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Truck size={20} className="text-blue-500"/> Fleet Roster</h2>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Active Personnel: {agents.length}</p>
+                        <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider">
+                            <Truck size={20} className="text-blue-500"/> 
+                            {isAreaAdmin ? `${branchPathLocation} Roster` : 'Fleet Roster'}
+                        </h2>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
+                            Active Personnel: {agents.length}
+                        </p>
                     </div>
                     {isAdmin && (
                         <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
@@ -475,6 +478,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </button>
                     )}
                 </div>
+
+                {isAreaAdmin && searchLocation === 'unassigned' && (
+                    <div className="m-4 bg-red-900/50 border border-red-500 text-red-400 p-3 rounded-lg text-xs font-bold shadow-md">
+                        ⚠️ LOCATION ERROR: Your admin profile does not have an assigned location. Please contact HQ to assign you to a Branch Area.
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {isAddingAgent && (
@@ -496,7 +505,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             
                             <div className="flex gap-2 mb-2">
                                 <input type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
-                                {isAdmin && (
+                                {userRole === 'ADMIN' && (
                                     <select 
                                         className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : newAgent.userRole === 'AREA_ADMIN' ? 'border-purple-500 text-purple-400' : 'border-slate-700 text-white focus:border-blue-500'}`}
                                         value={newAgent.userRole || 'AGENT'} 
@@ -582,6 +591,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         <div className="text-center py-10">
                             <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
                             <p className="text-slate-500 text-sm">No personnel found.</p>
+                            <p className="text-slate-600 text-[10px] mt-1">Click the + button to add your first agent.</p>
                         </div>
                     ) : (
                         <>
