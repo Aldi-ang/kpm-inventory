@@ -27,12 +27,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const activeMotorists = isAreaAdmin ? localFleet : motorists;
 
-    const myProfile = activeMotorists.find(m => m.id === agentProfileId);
+    // 🚀 BULLETPROOF PROFILE FINDER: Use Email as a fail-safe!
+    const myProfile = activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase()) || activeMotorists.find(m => m.id === agentProfileId);
+    
     const rawLocation = myProfile?.location || user?.location || 'UNASSIGNED';
     const searchLocation = String(rawLocation).trim().toLowerCase();
     const branchPathLocation = String(rawLocation).trim(); 
 
-    // DELEGATED AUTHORITY ENGINE
+    // 🚀 DELEGATED AUTHORITY ENGINE (Now bulletproof)
     const canEditFleet = isAdmin || (isAreaAdmin && myProfile?.canEditRoster === true);
 
     const agents = useMemo(() => {
@@ -44,6 +46,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
+    const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); // 🚀 NEW: Read-Only State
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
     const [branchStock, setBranchStock] = useState([]);
@@ -99,18 +102,22 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     }, [agents, selectedAgent]);
 
     const togglePayment = (method) => {
+        if (isReadOnlyMode) return;
         setNewAgent(prev => ({
             ...prev, allowedPayments: prev.allowedPayments.includes(method) ? prev.allowedPayments.filter(m => m !== method) : [...prev.allowedPayments, method]
         }));
     };
 
     const toggleTier = (tier) => {
+        if (isReadOnlyMode) return;
         setNewAgent(prev => ({
             ...prev, allowedTiers: prev.allowedTiers.includes(tier) ? prev.allowedTiers.filter(t => t !== tier) : [...prev.allowedTiers, tier]
         }));
     };
 
     const handleSaveAgent = async () => {
+        if (isReadOnlyMode) return setIsAddingAgent(false); // Read-only failsafe
+        
         if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
         if (newAgent.allowedPayments.length === 0) return alert("You must allow at least one Payment Method (e.g., Cash)!");
         if (newAgent.allowedTiers.length === 0) return alert("You must allow at least one Price Tier!");
@@ -188,6 +195,21 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             canEditRoster: agent.canEditRoster || false
         });
         setEditingAgentId(agent.id);
+        setIsReadOnlyMode(false); // Full Edit Mode
+        setIsAddingAgent(true);
+    };
+
+    // 🚀 NEW: READ ONLY PROFILE VIEWER
+    const handleViewClick = (e, agent) => {
+        e.stopPropagation();
+        setNewAgent({
+            name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
+            allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
+            userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
+            canEditRoster: agent.canEditRoster || false
+        });
+        setEditingAgentId(agent.id);
+        setIsReadOnlyMode(true); // Locked Down Mode
         setIsAddingAgent(true);
     };
 
@@ -512,33 +534,29 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </p>
                     </div>
                     {canEditFleet && (
-                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
-                            {isAddingAgent ? <X size={18}/> : <UserPlus size={18}/>}
+                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
+                            {isAddingAgent && !isReadOnlyMode ? <X size={18}/> : <UserPlus size={18}/>}
                         </button>
                     )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {isAddingAgent && (
-                        <div className="bg-slate-800 p-4 rounded-xl border-2 border-dashed border-blue-500/50 mb-4 animate-slide-down">
-                            <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-3">{editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}</h3>
+                        <div className={`bg-slate-800 p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-emerald-500/50' : 'border-blue-500/50'} mb-4 animate-slide-down`}>
+                            <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-emerald-400' : 'text-blue-400'}`}>
+                                {isReadOnlyMode ? 'Profile Details' : editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}
+                            </h3>
                             
-                            {newAgent.userRole === 'AGENT' ? (
-                                <select value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500 font-bold">
-                                    <option value="Motorist">Sales Motorist (Motorbike)</option>
-                                    <option value="Canvas">Sales Canvas (Car / Van)</option>
-                                </select>
-                            ) : (
-                                <div className="w-full bg-slate-800 border border-slate-700 rounded p-2.5 text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest cursor-not-allowed">
-                                    {newAgent.userRole === 'AREA_ADMIN' ? 'Branch Manager (Non-Driving)' : 'HQ Admin (Non-Driving)'}
-                                </div>
-                            )}
+                            <select disabled={isReadOnlyMode} value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none font-bold ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}>
+                                <option value="Motorist">Sales Motorist (Motorbike)</option>
+                                <option value="Canvas">Sales Canvas (Car / Van)</option>
+                            </select>
 
-                            <input type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
                             
                             <div className="flex gap-2 mb-2">
-                                <input type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className="flex-1 bg-slate-900 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-blue-500 font-mono"/>
-                                {isAdmin && (
+                                <input disabled={isReadOnlyMode} type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className={`flex-1 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none font-mono ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                                {isAdmin && !isReadOnlyMode && (
                                     <select 
                                         className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : newAgent.userRole === 'AREA_ADMIN' ? 'border-purple-500 text-purple-400' : 'border-slate-700 text-white focus:border-blue-500'}`}
                                         value={newAgent.userRole || 'AGENT'} 
@@ -551,46 +569,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </select>
                                 )}
                             </div>
-                            
-                            <div className="flex gap-2 mb-2">
-                                {isNewProv || existingProvinces.length === 0 ? (
-                                    <div className="flex-1 flex gap-2">
-                                        <input type="text" placeholder="Type New Province..." value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="flex-1 bg-slate-900 border border-purple-500 rounded p-2.5 text-xs text-white outline-none focus:border-purple-400"/>
-                                        {existingProvinces.length > 0 && <button onClick={() => setIsNewProv(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex gap-2">
-                                        <select value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className="flex-1 bg-slate-900 border border-purple-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-purple-500 uppercase">
-                                            {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                        <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>
-                                    </div>
-                                )}
-                            </div>
 
-                            <div className="flex gap-2 mb-2">
-                                {isNewLoc || existingLocations.length === 0 ? (
-                                    <div className="flex-1 flex gap-2">
-                                        <input type="text" placeholder="Type New Area..." value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="flex-1 bg-slate-900 border border-orange-500 rounded p-2.5 text-xs text-white outline-none focus:border-orange-400"/>
-                                        {existingLocations.length > 0 && <button onClick={() => setIsNewLoc(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex gap-2">
-                                        <select value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className="flex-1 bg-slate-900 border border-orange-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-orange-500 uppercase">
-                                            {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
-                                        </select>
-                                        <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-orange-900/50 border border-orange-500/50 text-orange-400 p-2.5 rounded hover:bg-orange-400 transition-colors" title="Add New Area"><Plus size={14}/></button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <input type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none focus:border-blue-500"/>
-                            <input type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none focus:border-blue-500"/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
                             
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 
-                                {newAgent.userRole === 'AREA_ADMIN' && isAdmin && (
+                                {newAgent.userRole === 'AREA_ADMIN' && isAdmin && !isReadOnlyMode && (
                                     <div className="mb-4">
                                         <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Branch Privileges</label>
                                         <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${newAgent.canEditRoster ? 'bg-purple-900/30 border-purple-500 text-purple-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
@@ -604,8 +590,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                                            <label key={method} className={`flex items-center gap-1.5 cursor-pointer text-xs font-bold px-2 py-1 rounded border transition-colors ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
-                                                <input type="checkbox" className="hidden" checked={newAgent.allowedPayments.includes(method)} onChange={() => togglePayment(method)} />
+                                            <label key={method} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                                                <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedPayments.includes(method)} onChange={() => togglePayment(method)} />
                                                 {method === 'Titip' ? 'Consignment' : method}
                                             </label>
                                         ))}
@@ -615,17 +601,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Ecer', 'Retail', 'Grosir'].map(tier => (
-                                            <label key={tier} className={`flex items-center gap-1.5 cursor-pointer text-xs font-bold px-2 py-1 rounded border transition-colors ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
-                                                <input type="checkbox" className="hidden" checked={newAgent.allowedTiers.includes(tier)} onChange={() => toggleTier(tier)} />
+                                            <label key={tier} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                                                <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedTiers.includes(tier)} onChange={() => toggleTier(tier)} />
                                                 {tier}
                                             </label>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
-                                {editingAgentId ? 'Save Profile & Permissions' : 'Authorize & Register'}
-                            </button>
+                            
+                            {isReadOnlyMode ? (
+                                <button onClick={() => setIsAddingAgent(false)} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-md">
+                                    Close Profile
+                                </button>
+                            ) : (
+                                <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
+                                    {editingAgentId ? 'Save Profile & Permissions' : 'Authorize & Register'}
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -696,12 +689,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
                                                                     {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                                                 </span>
-                                                                {canEditFleet && (
-                                                                    <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleEditClick(e, m); }} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteAgent(e, m); }} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
-                                                                    </div>
-                                                                )}
+                                                                <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                                                    {/* 🚀 NEW: View Details (Always Available) */}
+                                                                    <button onClick={(e) => handleViewClick(e, m)} className="text-slate-400 hover:text-emerald-400" title="View Profile Details"><User size={14}/></button>
+                                                                    {/* 🚀 Authorized Edit Controls */}
+                                                                    {canEditFleet && (
+                                                                        <>
+                                                                            <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
+                                                                            <button onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -716,7 +714,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 </div>
             </div>
 
-            {/* 🚀 RESTORED RIGHT PANEL: THE LOADING DOCK 🚀 */}
+            {/* RIGHT PANEL: THE LOADING DOCK */}
             <div className="hide-on-print flex-1 bg-slate-900 flex flex-col">
                 {selectedAgent ? (
                     <>
