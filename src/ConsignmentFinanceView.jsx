@@ -34,7 +34,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     const [targetAgent, setTargetAgent] = useState('');
     const [transferNote, setTransferNote] = useState('');
 
-    // DYNAMIC TERRITORY FILTERING
+    // 🚀 THE FIX: SCALABLE TERRITORY FILTERING LOGIC
     const myTransactions = useMemo(() => {
         if (!isAdmin) {
             return transactions.filter(t => {
@@ -48,9 +48,16 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
         if (viewMode === 'GLOBAL') return transactions;
         if (viewMode === 'ME') return transactions.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
         
+        // 🚀 NEW: Filter by entire Branch/Location
+        if (viewMode.startsWith('LOC_')) {
+            const targetLoc = viewMode.replace('LOC_', '');
+            const agentIdsInLoc = motorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === targetLoc).map(m => m.id);
+            return transactions.filter(t => agentIdsInLoc.includes(t.agentId));
+        }
+
         // Specific Agent Filter
         return transactions.filter(t => t.agentId === viewMode);
-    }, [transactions, isAdmin, agentProfileId, user, viewMode]);
+    }, [transactions, isAdmin, agentProfileId, user, viewMode, motorists]);
 
     // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
@@ -306,7 +313,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
-            {/* --- 🚀 FULLY RESTORED AUTO-POP RECEIPT MODAL 🚀 --- */}
+            {/* --- AUTO-POP RECEIPT MODAL --- */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
@@ -622,20 +629,37 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                             {isAdmin && viewMode === 'GLOBAL' ? 'Global Receivables' : 'My Receivables'}
                         </h2>
                         
-                        {/* 🚀 THE FIX: TERRITORY FILTER FOR ADMINS (WITH UPDATED NAME) 🚀 */}
+                        {/* 🚀 THE FIX: SCALABLE GROUPED TERRITORY FILTER FOR ADMINS 🚀 */}
                         {isAdmin && (
                             <div className="flex items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg">
                                 <MapPin size={16} className="text-orange-500 ml-2"/>
                                 <select 
                                     value={viewMode}
                                     onChange={(e) => { setViewMode(e.target.value); setSelectedCustomer(null); }}
-                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-[10px] md:text-xs outline-none cursor-pointer pr-4"
+                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-[10px] md:text-xs outline-none cursor-pointer pr-4 max-w-[200px] md:max-w-xs truncate"
                                 >
                                     <option value="GLOBAL" className="bg-slate-900">🌍 All Territories (Global View)</option>
                                     <option value="ME" className="bg-slate-900">👑 HQ (Main Area)</option>
-                                    {motorists.map(m => (
-                                        <option key={m.id} value={m.id} className="bg-slate-900">👤 {m.name}'s Territory</option>
-                                    ))}
+                                    
+                                    {/* 🚀 DYNAMIC GROUPING BY BRANCH/LOCATION 🚀 */}
+                                    {(() => {
+                                        const nonAdminMotorists = motorists.filter(m => m.userRole !== 'ADMIN');
+                                        const uniqueLocations = [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
+                                        
+                                        return uniqueLocations.map(loc => {
+                                            const locAgents = nonAdminMotorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
+                                            return (
+                                                <optgroup key={loc} label={`📍 BRANCH: ${loc} (${locAgents.length} Agents)`} className="bg-slate-800 text-slate-400 font-black">
+                                                    <option value={`LOC_${loc}`} className="bg-slate-900 text-emerald-400">🏢 VIEW ALL: {loc}</option>
+                                                    {locAgents.map(m => (
+                                                        <option key={m.id} value={m.id} className="bg-slate-900 text-orange-400 font-bold">
+                                                            &nbsp;&nbsp;{m.userRole === 'AREA_ADMIN' ? '🏢' : '👤'} {m.name} ({m.role === 'Canvas' ? 'Canvas' : 'Motorist'})
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
+                                            );
+                                        });
+                                    })()}
                                 </select>
                             </div>
                         )}
