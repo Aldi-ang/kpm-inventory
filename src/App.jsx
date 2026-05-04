@@ -1094,10 +1094,17 @@ const handleGitHubMirror = async () => {
 
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
   const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
+      // 1. 🛑 SPAM PREVENTION: Check if already pending
+      const isAlreadyPending = transferRequests.some(r => 
+          (r.storeName || '').trim().toLowerCase() === (storeName || '').trim().toLowerCase() && 
+          (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN')
+      );
+      if (isAlreadyPending) return alert(`Hold on! A transfer request for ${storeName} is already pending.`);
+
       try {
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/account_transfers`), {
               storeName,
-              fromAgentId: agentProfileId,
+              fromAgentId: agentProfileId || 'ADMIN',
               fromAgentName: user.displayName || user.email.split('@')[0],
               toAgentId,
               toAgentName,
@@ -1105,6 +1112,18 @@ const handleGitHubMirror = async () => {
               status: 'PENDING_AGENT',
               timestamp: serverTimestamp()
           });
+
+          // 2. 🔔 BELL NOTIFICATION TO RECEIVING AGENT
+          await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+              title: "🤝 Hand-off Request",
+              message: `${user.displayName || 'Admin'} wants to transfer ${storeName} to you.`,
+              type: "TRANSFER_REQUEST",
+              isRead: false,
+              timestamp: serverTimestamp(),
+              agentId: toAgentId,
+              linkToTab: 'receivables'
+          });
+
           triggerCapy(`Transfer request for ${storeName} sent to ${toAgentName}!`);
       } catch (e) { console.error(e); alert("Failed to request transfer: " + e.message); }
   };
@@ -1116,6 +1135,20 @@ const handleGitHubMirror = async () => {
               status: isAccepted ? 'PENDING_ADMIN' : 'REJECTED',
               respondedAt: serverTimestamp()
           });
+
+          if (isAccepted) {
+              // 3. 🔔 BELL NOTIFICATION TO ADMIN
+              await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                  title: "🛡️ Transfer Needs Approval",
+                  message: `A hand-off request is awaiting your final authorization.`,
+                  type: "TRANSFER_APPROVAL",
+                  isRead: false,
+                  timestamp: serverTimestamp(),
+                  agentId: 'ADMIN',
+                  linkToTab: 'receivables'
+              });
+          }
+
           triggerCapy(isAccepted ? "Transfer accepted! Waiting for Admin approval." : "Transfer rejected.");
       } catch (e) { console.error(e); alert("Action failed: " + e.message); }
   };
@@ -1125,16 +1158,44 @@ const handleGitHubMirror = async () => {
       try {
           const batch = writeBatch(db);
           
-          // 1. Update the request ticket
+          // Update the request ticket
           const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, request.id);
           batch.update(reqRef, { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() });
 
-          // 2. If approved, rewrite the entire history of this store to the new agent!
           if (isApproved) {
+              // 4. 🧬 CLONE BUG FIX A: Rewrite all historical debt transactions
               const storeTx = transactions.filter(t => (t.customerName || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
               storeTx.forEach(t => {
                   const tRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id);
                   batch.update(tRef, { agentId: request.toAgentId, agentName: request.toAgentName });
+              });
+
+              // 5. 🧬 CLONE BUG FIX B: Re-assign the actual Customer Profile
+              const targetCustomer = customers.find(c => (c.name || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
+              if (targetCustomer) {
+                  const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id);
+                  batch.update(custRef, { mappedBy: request.toAgentName });
+              }
+
+              // 6. 🔔 BELL NOTIFICATIONS TO BOTH AGENTS
+              if (request.fromAgentId !== 'ADMIN') {
+                  await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                      title: "✅ Transfer Approved",
+                      message: `Admin approved the transfer of ${request.storeName} to ${request.toAgentName}.`,
+                      type: "TRANSFER_COMPLETE",
+                      isRead: false,
+                      timestamp: serverTimestamp(),
+                      agentId: request.fromAgentId
+                  });
+              }
+              
+              await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                  title: "✅ Transfer Complete",
+                  message: `${request.storeName} is now officially in your territory.`,
+                  type: "TRANSFER_COMPLETE",
+                  isRead: false,
+                  timestamp: serverTimestamp(),
+                  agentId: request.toAgentId
               });
           }
 
@@ -1143,7 +1204,6 @@ const handleGitHubMirror = async () => {
           triggerCapy(isApproved ? "Transfer complete! Debt reassigned." : "Transfer declined.");
       } catch(e) { console.error(e); alert("Failed: " + e.message); }
   };
-
 
  // 🚀 EOD HANDLERS 🚀
   const handleSubmitEOD = async (reportData) => {
