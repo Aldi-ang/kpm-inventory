@@ -24,7 +24,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     const [auditMode, setAuditMode] = useState(false);
     const [auditData, setAuditData] = useState({}); 
     
-    // RECEIPT MODAL STATE 🚀
+    // RECEIPT MODAL STATE 
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [printFormat, setPrintFormat] = useState('thermal');
     
@@ -169,10 +169,11 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
         const incoming = transferRequests.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
-        const outgoing = transferRequests.filter(r => r.fromAgentId === agentProfileId);
+        // 🚀 THE FIX: Admins can now track their outgoing store assignments
+        const outgoing = transferRequests.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
         const adminPend = transferRequests.filter(r => r.status === 'PENDING_ADMIN');
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
-    }, [transferRequests, agentProfileId]);
+    }, [transferRequests, agentProfileId, isAdmin]);
 
     const handleAuditInput = (key, field, val) => {
         const numVal = parseInt(val) || 0;
@@ -235,7 +236,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                 if (onPayment) {
                     const receipt = await onPayment(activeCustomer.name, paymentItems, paymentTotal, returnItems, returnTotal, remainingItems);
                     if (receipt) {
-                        setViewingReceipt(receipt); // 🚀 AUTO-OPEN RECEIPT!
+                        setViewingReceipt(receipt);
                     }
                 }
                 setAuditMode(false);
@@ -290,7 +291,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
-            {/* --- AUTO-POP RECEIPT MODAL 🚀 --- */}
+            {/* --- AUTO-POP RECEIPT MODAL --- */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
@@ -309,7 +310,9 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">STORE AUDIT RECEIPT</p>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
+                                            STORE AUDIT RECEIPT
+                                        </p>
                                     </div>
                                     
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
@@ -387,7 +390,9 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">STORE AUDIT REPORT</h2>
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
+                                                    STORE AUDIT REPORT
+                                                </h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>
@@ -675,15 +680,21 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                         <div className="bg-indigo-950/20 border border-indigo-500/30 p-6 rounded-xl">
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/> Hand-off Territory</h3>
                                             <p className="text-xs text-slate-400 mb-4">Transferring this account moves <strong>all active debts and physical stock</strong> to the new agent.</p>
+                                            
+                                            {/* 🚀 UPGRADED DROPDOWN: Shows exactly who you are transferring to! */}
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
-                                                <option value="">-- Select Receiving Agent --</option>
-                                                {motorists.filter(m => m.id !== agentProfileId).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                                <option value="">-- Select Receiving Personnel --</option>
+                                                {motorists.filter(m => m.id !== agentProfileId).map(m => (
+                                                    <option key={m.id} value={m.id}>
+                                                        {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
+                                                    </option>
+                                                ))}
                                             </select>
+                                            
                                             <textarea className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500" placeholder="Reason for transfer..." value={transferNote} onChange={e => setTransferNote(e.target.value)} rows="3"></textarea>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
-                                            {/* 🚀 THE NEW AUDIT TERMINAL UI 🚀 */}
                                             {auditMode && (
                                                 <div className="bg-orange-900/20 border border-orange-500/30 p-4 rounded-xl mb-4 flex gap-4 items-start shadow-inner">
                                                     <Calculator className="text-orange-500 shrink-0" size={24}/>
@@ -766,12 +777,18 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                     )}
                                 </div>
                                 
+                                {/* 🚀 THE FIX: UNLOCKED ADMIN ACTIONS */}
                                 <div className="p-4 md:p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl shrink-0">
                                     {(!auditMode && !transferMode) ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center shadow-sm"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
                                             {isAdmin && <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>}
-                                            {!isAdmin && <button onClick={() => setTransferMode(true)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm"><ArrowLeftRight size={20} className="text-indigo-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span></button>}
+                                            
+                                            {/* 🚀 Admins now have the Hand-off button! */}
+                                            <button onClick={() => setTransferMode(true)} className={`p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm ${!isAdmin ? 'col-span-4' : ''}`}>
+                                                <ArrowLeftRight size={20} className="text-indigo-500 mb-1"/>
+                                                <span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span>
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col md:flex-row gap-3">
