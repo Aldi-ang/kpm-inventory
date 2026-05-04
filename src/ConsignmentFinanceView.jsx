@@ -20,6 +20,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
     // SCALABLE MULTI-FILTER STATE
     const [activeRegion, setActiveRegion] = useState('ALL');
     const [agentSearch, setAgentSearch] = useState('');
+    const [showAgentDropdown, setShowAgentDropdown] = useState(false); // 🚀 NEW: Controls the smart dropdown
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [transferMode, setTransferMode] = useState(false);
@@ -40,6 +41,26 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         return [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
     }, [motorists]);
 
+    // 🚀 NEW: SMART DROPDOWN ENGINE
+    const dropdownAgents = useMemo(() => {
+        let list = (motorists || []).filter(m => m.userRole !== 'ADMIN');
+        
+        // 1. Filter by Region
+        if (activeRegion !== 'ALL' && activeRegion !== 'HQ') {
+            list = list.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === activeRegion);
+        } else if (activeRegion === 'HQ') {
+            return []; // HQ doesn't have standard field agents to list here
+        }
+        
+        // 2. Filter by Search Query
+        if (agentSearch.trim() !== '') {
+            const term = agentSearch.toLowerCase().trim();
+            list = list.filter(m => String(m.name).toLowerCase().includes(term));
+        }
+        
+        return list;
+    }, [motorists, activeRegion, agentSearch]);
+
     // 🚀 SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
         const safeTx = Array.isArray(transactions) ? transactions : [];
@@ -53,6 +74,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         
         let filtered = safeTx;
 
+        // 1. Region Filter
         if (activeRegion === 'HQ') {
             filtered = filtered.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
         } else if (activeRegion !== 'ALL') {
@@ -60,6 +82,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             filtered = filtered.filter(t => agentIdsInLoc.includes(t.agentId));
         }
 
+        // 2. Member Search Filter
         if (agentSearch.trim() !== '') {
             const term = agentSearch.toLowerCase().trim();
             filtered = filtered.filter(t => String(t.agentName || 'Admin').toLowerCase().includes(term));
@@ -297,6 +320,14 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             }
         }
     };
+    
+    const formatStockDisplay = (qty, product) => { 
+        if (!product) return `${qty} Bks`; 
+        const packsPerSlop = product.packsPerSlop || 10; 
+        const slops = Math.floor(qty / packsPerSlop); 
+        const bks = qty % packsPerSlop; 
+        return slops > 0 ? `${qty} Bks (${slops} Slop ${bks > 0 ? `+ ${bks} Bks` : ''})` : `${qty} Bks`; 
+    };
 
     const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass, isOverdue }) => (
         <div className={`flex flex-col rounded-2xl border ${borderClass} ${bgClass} overflow-hidden shadow-lg`}>
@@ -492,6 +523,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 </tr>
                                             </tfoot>
                                         </table>
+
                                         <div className="flex justify-between items-start mt-12 pb-4">
                                             <div className="w-1/2">
                                                 <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
@@ -521,6 +553,102 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                 <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/> Standard Invoice (A4)</label>
                             </div>
 
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                                <button onClick={() => {
+                                    const receipt = document.querySelector('.print-receipt');
+                                    if (!receipt) return;
+
+                                    const clone = receipt.cloneNode(true);
+                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+                                    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
+
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
+
+                                    const isThermal = clone.classList.contains('format-thermal');
+
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.position = 'absolute'; 
+                                    iframe.style.top = '0'; 
+                                    iframe.style.left = '0';
+                                    iframe.style.width = '1px';
+                                    iframe.style.height = '1px';
+                                    iframe.style.opacity = '0';
+                                    iframe.style.pointerEvents = 'none';
+                                    iframe.style.border = 'none';
+                                    document.body.appendChild(iframe);
+
+                                    const doc = iframe.contentWindow.document;
+                                    doc.open();
+                                    doc.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <title>KPM Invoice</title>
+                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                            ${parentStyles}
+                                            <style>
+                                                @media print {
+                                                    @page { margin: 0; }
+                                                    html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                    .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+                                                    .format-thermal { font-family: 'Courier New', Courier, monospace !important; }
+                                                    .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; }
+                                                    .format-thermal .font-bold { font-weight: bold !important; }
+                                                    .format-thermal .font-black { font-weight: 900 !important; }
+                                                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                                                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
+                                                    .format-thermal .text-right { text-align: right !important; }
+                                                    .format-thermal .text-center { text-align: center !important; }
+                                                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
+                                                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
+                                                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+                                                }
+                                                body { background: white; margin: 0; padding: 0; display: block; }
+                                            </style>
+                                        </head>
+                                        <body>
+                                            ${clone.outerHTML}
+                                            <script>
+                                                window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `);
+                                    doc.close();
+
+                                    setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
+                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <Printer size={14}/> Print
+                                </button>
+
+                                <button onClick={() => {
+                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*STORE AUDIT RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                    
+                                    (viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
+                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
+                                    }, []).forEach((item) => {
+                                        const p = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
+                                        const r = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
+                                        const s = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
+                                        
+                                        if (p || r || s) {
+                                            text += `*${item.name}*\n`;
+                                            if (p) text += ` • LAKU: ${p.qty} Bks (Rp ${new Intl.NumberFormat('id-ID').format((p.calculatedPrice||0) * p.qty)})\n`;
+                                            if (r) text += ` • RETUR: ${r.qty} Bks\n`;
+                                            if (s) text += ` • SISA: ${s.qty} Bks\n`;
+                                        }
+                                    });
+
+                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <MessageSquare size={14}/> Share
+                                </button>
+                            </div>
+
                             <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
                         </div>
                     </div>
@@ -538,14 +666,20 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                     </div>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 mb-4 lg:mb-0">Accounts Receivable & Territory Management</p>
                     
-                    {/* REGION SELECTOR + AGENT SEARCH */}
+                    {/* 🚀 THE FIX: SMART COMBOBOX (REGION + AUTOCOMPLETE SEARCH) 🚀 */}
                     {isAdmin && (
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
+                            
+                            {/* Region Dropdown */}
                             <div className="flex items-center gap-2 px-2 py-1 border-b sm:border-b-0 sm:border-r border-white/10 shrink-0">
                                 <MapPin size={16} className="text-orange-500"/>
                                 <select 
                                     value={activeRegion}
-                                    onChange={(e) => { setActiveRegion(e.target.value); setSelectedCustomer(null); }}
+                                    onChange={(e) => { 
+                                        setActiveRegion(e.target.value); 
+                                        setAgentSearch(''); // Clear search when region changes
+                                        setSelectedCustomer(null); 
+                                    }}
                                     className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-xs outline-none cursor-pointer"
                                 >
                                     <option value="ALL" className="bg-slate-900">🌍 All Regions</option>
@@ -555,19 +689,51 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                     ))}
                                 </select>
                             </div>
-                            <div className="flex-1 flex items-center gap-2 px-2 py-1">
-                                <Search size={14} className="text-slate-500 shrink-0"/>
-                                <input 
-                                    type="text" 
-                                    placeholder="Search Member Name..." 
-                                    value={agentSearch}
-                                    onChange={(e) => { setAgentSearch(e.target.value); setSelectedCustomer(null); }}
-                                    className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-600 font-bold uppercase tracking-widest"
-                                />
-                                {agentSearch && (
-                                    <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); }} className="text-slate-400 hover:text-red-500 shrink-0">
-                                        <X size={14}/>
-                                    </button>
+                            
+                            {/* Smart Autocomplete Search */}
+                            <div className="flex-1 relative">
+                                <div className="flex items-center gap-2 px-2 py-1">
+                                    <Search size={14} className="text-slate-500 shrink-0"/>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search Member Name..." 
+                                        value={agentSearch}
+                                        onFocus={() => setShowAgentDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowAgentDropdown(false), 200)}
+                                        onChange={(e) => { 
+                                            setAgentSearch(e.target.value); 
+                                            setSelectedCustomer(null);
+                                            setShowAgentDropdown(true); 
+                                        }}
+                                        className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-600 font-bold uppercase tracking-widest"
+                                    />
+                                    {agentSearch && (
+                                        <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); setShowAgentDropdown(false); }} className="text-slate-400 hover:text-red-500 shrink-0 z-10 relative">
+                                            <X size={14}/>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Floating Dropdown Results */}
+                                {showAgentDropdown && dropdownAgents.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-[100] max-h-60 overflow-y-auto custom-scrollbar animate-fade-in">
+                                        {dropdownAgents.map(agent => (
+                                            <button
+                                                key={agent.id}
+                                                onClick={() => {
+                                                    setAgentSearch(agent.name);
+                                                    setShowAgentDropdown(false);
+                                                    setSelectedCustomer(null);
+                                                }}
+                                                className="w-full text-left px-4 py-3 hover:bg-slate-700 border-b border-slate-700/50 last:border-0 transition-colors flex flex-col group"
+                                            >
+                                                <span className="text-white font-bold text-xs uppercase group-hover:text-orange-400 transition-colors">{agent.name}</span>
+                                                <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    {agent.role || 'Motorist'} • {agent.location || 'Unassigned'}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -703,19 +869,19 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 )}
                                             </div>
 
-                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => (i.qty || 0) > 0).map(([key, item]) => {
+                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => {
                                                 const aData = auditData[key] || { shelf: '', damaged: '' };
                                                 const shelf = parseInt(aData.shelf) || 0;
                                                 const damaged = parseInt(aData.damaged) || 0;
                                                 const soldQty = auditMode ? Math.max(0, item.qty - shelf - damaged) : 0;
-                                                const soldValue = soldQty * (item.calculatedPrice || 0);
+                                                const soldValue = soldQty * item.calculatedPrice;
 
                                                 return (
                                                     <div key={key} className={`flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 p-4 items-center bg-white dark:bg-slate-900 rounded-xl border transition-colors ${auditMode && soldQty > 0 ? 'border-emerald-500/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]' : 'dark:border-slate-700 shadow-sm'}`}>
                                                         
                                                         <div className="col-span-12 md:col-span-4 w-full md:w-auto flex flex-col">
                                                             <p className="font-bold dark:text-white uppercase text-sm md:text-xs truncate">{item.name}</p>
-                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)} / Bks</span>
+                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / Bks</span>
                                                         </div>
                                                         
                                                         <div className="col-span-12 md:col-span-2 w-full md:w-auto flex justify-between md:justify-center items-center">
@@ -749,7 +915,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                         ) : (
                                                             <div className="col-span-12 md:col-span-6 w-full md:w-auto flex justify-between md:justify-end items-center mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
                                                                 <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Nilai Barang:</span>
-                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format((item.qty || 0) * (item.calculatedPrice || 0))}</p>
+                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.qty * item.calculatedPrice)}</p>
                                                             </div>
                                                         )}
                                                     </div>
