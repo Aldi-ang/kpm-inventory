@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer } from 'lucide-react';
+import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin } from 'lucide-react';
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -16,6 +16,9 @@ const convertToBks = (qty, unit, product) => {
 
 export default function ConsignmentFinanceView({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
     const [activeTab, setActiveTab] = useState('financials');
+    
+    // TERRITORY VIEW MODE FOR ADMINS
+    const [viewMode, setViewMode] = useState('GLOBAL'); 
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [transferMode, setTransferMode] = useState(false);
@@ -31,14 +34,23 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     const [targetAgent, setTargetAgent] = useState('');
     const [transferNote, setTransferNote] = useState('');
 
+    // DYNAMIC TERRITORY FILTERING
     const myTransactions = useMemo(() => {
-        if (isAdmin) return transactions;
-        return transactions.filter(t => {
-            const matchId = agentProfileId && t.agentId === agentProfileId;
-            const matchName = user && t.agentName && (t.agentName === user.displayName || t.agentName === user.name || t.agentName === user.email?.split('@')[0]);
-            return matchId || matchName;
-        });
-    }, [transactions, isAdmin, agentProfileId, user]);
+        if (!isAdmin) {
+            return transactions.filter(t => {
+                const matchId = agentProfileId && t.agentId === agentProfileId;
+                const matchName = user && t.agentName && (t.agentName === user.displayName || t.agentName === user.name || t.agentName === user.email?.split('@')[0]);
+                return matchId || matchName;
+            });
+        }
+        
+        // ADMIN UI FILTERS
+        if (viewMode === 'GLOBAL') return transactions;
+        if (viewMode === 'ME') return transactions.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
+        
+        // Specific Agent Filter
+        return transactions.filter(t => t.agentId === viewMode);
+    }, [transactions, isAdmin, agentProfileId, user, viewMode]);
 
     // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
@@ -117,11 +129,13 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
         sortedTransactions.forEach(t => {
             if (!t.customerName) return; 
             const name = t.customerName.trim(); 
-            if (!customers[name]) customers[name] = { name, items: {}, balance: 0, lastActivity: t.date };
-            const getProduct = (pid) => inventory.find(p => p.id === pid);
+            
+            if (!customers[name]) customers[name] = { name, items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
             
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
                 customers[name].balance += t.total; 
+                customers[name].ownerName = t.agentName || 'Admin'; 
+                
                 t.items.forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
@@ -161,6 +175,8 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
             Object.keys(c.items).forEach(k => { c.items[k].qty = Math.max(0, c.items[k].qty); }); 
         });
         
+        function getProduct(pid) { return inventory.find(p => p.id === pid); }
+        
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
     }, [myTransactions, inventory]);
 
@@ -169,7 +185,6 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
         const incoming = transferRequests.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
-        // 🚀 THE FIX: Admins can now track their outgoing store assignments
         const outgoing = transferRequests.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
         const adminPend = transferRequests.filter(r => r.status === 'PENDING_ADMIN');
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
@@ -291,7 +306,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
-            {/* --- AUTO-POP RECEIPT MODAL --- */}
+            {/* --- 🚀 FULLY RESTORED AUTO-POP RECEIPT MODAL 🚀 --- */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
@@ -601,9 +616,30 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
             {/* --- HEADER & MASTER TOGGLE --- */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <FileSpreadsheet className="text-orange-500" size={32}/> {isAdmin ? 'Global Receivables' : 'My Receivables'}
-                    </h2>
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2">
+                        <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
+                            <FileSpreadsheet className="text-orange-500" size={32}/> 
+                            {isAdmin && viewMode === 'GLOBAL' ? 'Global Receivables' : 'My Receivables'}
+                        </h2>
+                        
+                        {/* 🚀 THE FIX: TERRITORY FILTER FOR ADMINS (WITH UPDATED NAME) 🚀 */}
+                        {isAdmin && (
+                            <div className="flex items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg">
+                                <MapPin size={16} className="text-orange-500 ml-2"/>
+                                <select 
+                                    value={viewMode}
+                                    onChange={(e) => { setViewMode(e.target.value); setSelectedCustomer(null); }}
+                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-[10px] md:text-xs outline-none cursor-pointer pr-4"
+                                >
+                                    <option value="GLOBAL" className="bg-slate-900">🌍 All Territories (Global View)</option>
+                                    <option value="ME" className="bg-slate-900">👑 HQ (Main Area)</option>
+                                    {motorists.map(m => (
+                                        <option key={m.id} value={m.id} className="bg-slate-900">👤 {m.name}'s Territory</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">Accounts Receivable & Territory Management</p>
                 </div>
                 
@@ -653,11 +689,23 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                         <div className="p-4 border-b dark:border-slate-700"><h2 className="font-bold text-lg dark:text-white flex items-center gap-2"><Truck size={20}/> Active Consignments</h2></div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {customerData.map(c => (
-                                <div key={c.name} onClick={() => { setSelectedCustomer(c); setAuditMode(false); setTransferMode(false); setAuditData({}); }} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}>
-                                    <div className="flex justify-between items-start"><h3 className="font-bold dark:text-white">{c.name}</h3></div>
-                                    <div className="mt-2 flex justify-between items-center">
-                                        <span className="text-xs bg-slate-100 dark:bg-slate-600 px-2 py-1 rounded dark:text-slate-300">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span>
-                                        <span className="font-mono font-bold text-emerald-600">{formatRupiah(c.balance)}</span>
+                                <div key={c.name} onClick={() => { setSelectedCustomer(c); setAuditMode(false); setTransferMode(false); setAuditData({}); }} className={`p-4 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${selectedCustomer?.name === c.name ? 'bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500' : ''}`}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-bold dark:text-white">{c.name}</h3>
+                                            
+                                            {/* OWNER BADGE FOR GLOBAL VIEW */}
+                                            {isAdmin && viewMode === 'GLOBAL' && (
+                                                <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[9px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
+                                                    <User size={10} className="text-orange-500"/> 
+                                                    Managed by: {c.ownerName}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 flex justify-between items-center border-t border-slate-700/50 pt-2">
+                                        <span className="text-[10px] font-bold tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-1 border border-slate-700 rounded text-slate-500 uppercase">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span>
+                                        <span className="font-mono font-bold text-emerald-500">{formatRupiah(c.balance)}</span>
                                     </div>
                                 </div>
                             ))}
@@ -671,7 +719,10 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                         ) : (
                             <>
                                 <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
-                                    <div><h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2></div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2>
+                                        {isAdmin && viewMode === 'GLOBAL' && <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>}
+                                    </div>
                                     <div className="text-right"><p className="text-xs text-slate-500 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
                                 </div>
                                 
@@ -681,7 +732,6 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/> Hand-off Territory</h3>
                                             <p className="text-xs text-slate-400 mb-4">Transferring this account moves <strong>all active debts and physical stock</strong> to the new agent.</p>
                                             
-                                            {/* 🚀 UPGRADED DROPDOWN: Shows exactly who you are transferring to! */}
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Personnel --</option>
                                                 {motorists.filter(m => m.id !== agentProfileId).map(m => (
@@ -777,14 +827,12 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                     )}
                                 </div>
                                 
-                                {/* 🚀 THE FIX: UNLOCKED ADMIN ACTIONS */}
                                 <div className="p-4 md:p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl shrink-0">
                                     {(!auditMode && !transferMode) ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center shadow-sm"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
                                             {isAdmin && <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>}
                                             
-                                            {/* 🚀 Admins now have the Hand-off button! */}
                                             <button onClick={() => setTransferMode(true)} className={`p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm ${!isAdmin ? 'col-span-4' : ''}`}>
                                                 <ArrowLeftRight size={20} className="text-indigo-500 mb-1"/>
                                                 <span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span>

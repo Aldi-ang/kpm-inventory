@@ -27,14 +27,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const activeMotorists = isAreaAdmin ? localFleet : motorists;
 
-    // 🚀 BULLETPROOF PROFILE FINDER: Use Email as a fail-safe!
     const myProfile = activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase()) || activeMotorists.find(m => m.id === agentProfileId);
     
     const rawLocation = myProfile?.location || user?.location || 'UNASSIGNED';
     const searchLocation = String(rawLocation).trim().toLowerCase();
     const branchPathLocation = String(rawLocation).trim(); 
 
-    // 🚀 DELEGATED AUTHORITY ENGINE (Now bulletproof)
     const canEditFleet = isAdmin || (isAreaAdmin && myProfile?.canEditRoster === true);
 
     const agents = useMemo(() => {
@@ -46,7 +44,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
-    const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); // 🚀 NEW: Read-Only State
+    const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); 
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
     const [branchStock, setBranchStock] = useState([]);
@@ -116,7 +114,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     };
 
     const handleSaveAgent = async () => {
-        if (isReadOnlyMode) return setIsAddingAgent(false); // Read-only failsafe
+        if (isReadOnlyMode) return setIsAddingAgent(false); 
         
         if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
         if (newAgent.allowedPayments.length === 0) return alert("You must allow at least one Payment Method (e.g., Cash)!");
@@ -195,11 +193,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             canEditRoster: agent.canEditRoster || false
         });
         setEditingAgentId(agent.id);
-        setIsReadOnlyMode(false); // Full Edit Mode
+        setIsReadOnlyMode(false);
         setIsAddingAgent(true);
     };
 
-    // 🚀 NEW: READ ONLY PROFILE VIEWER
     const handleViewClick = (e, agent) => {
         e.stopPropagation();
         setNewAgent({
@@ -209,7 +206,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             canEditRoster: agent.canEditRoster || false
         });
         setEditingAgentId(agent.id);
-        setIsReadOnlyMode(true); // Locked Down Mode
+        setIsReadOnlyMode(true);
         setIsAddingAgent(true);
     };
 
@@ -569,6 +566,39 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </select>
                                 )}
                             </div>
+                            
+                            {/* 🚀 THE FIX: RESTORED LOCATION SELECTION INPUTS 🚀 */}
+                            <div className="flex gap-2 mb-2">
+                                {isNewProv || existingProvinces.length === 0 ? (
+                                    <div className="flex-1 flex gap-2">
+                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Province..." value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-purple-500 rounded p-2.5 text-xs text-white outline-none focus:border-purple-400 ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}/>
+                                        {existingProvinces.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewProv(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex gap-2">
+                                        <select disabled={isReadOnlyMode} value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-purple-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-purple-500 uppercase ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}>
+                                            {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-2 mb-2">
+                                {isNewLoc || existingLocations.length === 0 ? (
+                                    <div className="flex-1 flex gap-2">
+                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Area..." value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-orange-500 rounded p-2.5 text-xs text-white outline-none focus:border-orange-400 ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}/>
+                                        {existingLocations.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewLoc(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex gap-2">
+                                        <select disabled={isReadOnlyMode} value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-orange-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-orange-500 uppercase ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}>
+                                            {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
+                                        </select>
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-orange-900/50 border border-orange-500/50 text-orange-400 p-2.5 rounded hover:bg-orange-400 transition-colors" title="Add New Area"><Plus size={14}/></button>}
+                                    </div>
+                                )}
+                            </div>
 
                             <input disabled={isReadOnlyMode} type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
                             <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
@@ -690,9 +720,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                     {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                                                 </span>
                                                                 <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                                                    {/* 🚀 NEW: View Details (Always Available) */}
                                                                     <button onClick={(e) => handleViewClick(e, m)} className="text-slate-400 hover:text-emerald-400" title="View Profile Details"><User size={14}/></button>
-                                                                    {/* 🚀 Authorized Edit Controls */}
                                                                     {canEditFleet && (
                                                                         <>
                                                                             <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
