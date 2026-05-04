@@ -17,8 +17,9 @@ const convertToBks = (qty, unit, product) => {
 export default function ConsignmentFinanceView({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
     const [activeTab, setActiveTab] = useState('financials');
     
-    // TERRITORY VIEW MODE FOR ADMINS
-    const [viewMode, setViewMode] = useState('GLOBAL'); 
+    // 🚀 NEW: SCALABLE MULTI-FILTER STATE
+    const [activeRegion, setActiveRegion] = useState('ALL');
+    const [agentSearch, setAgentSearch] = useState('');
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [transferMode, setTransferMode] = useState(false);
@@ -34,7 +35,12 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     const [targetAgent, setTargetAgent] = useState('');
     const [transferNote, setTransferNote] = useState('');
 
-    // 🚀 THE FIX: SCALABLE TERRITORY FILTERING LOGIC
+    const uniqueLocations = useMemo(() => {
+        const nonAdminMotorists = motorists.filter(m => m.userRole !== 'ADMIN');
+        return [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
+    }, [motorists]);
+
+    // 🚀 THE FIX: SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
         if (!isAdmin) {
             return transactions.filter(t => {
@@ -44,20 +50,24 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
             });
         }
         
-        // ADMIN UI FILTERS
-        if (viewMode === 'GLOBAL') return transactions;
-        if (viewMode === 'ME') return transactions.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
-        
-        // 🚀 NEW: Filter by entire Branch/Location
-        if (viewMode.startsWith('LOC_')) {
-            const targetLoc = viewMode.replace('LOC_', '');
-            const agentIdsInLoc = motorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === targetLoc).map(m => m.id);
-            return transactions.filter(t => agentIdsInLoc.includes(t.agentId));
+        let filtered = transactions;
+
+        // 1. Region Filter
+        if (activeRegion === 'HQ') {
+            filtered = filtered.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
+        } else if (activeRegion !== 'ALL') {
+            const agentIdsInLoc = motorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === activeRegion).map(m => m.id);
+            filtered = filtered.filter(t => agentIdsInLoc.includes(t.agentId));
         }
 
-        // Specific Agent Filter
-        return transactions.filter(t => t.agentId === viewMode);
-    }, [transactions, isAdmin, agentProfileId, user, viewMode, motorists]);
+        // 2. Member Search Filter
+        if (agentSearch.trim() !== '') {
+            const term = agentSearch.toLowerCase().trim();
+            filtered = filtered.filter(t => (t.agentName || 'Admin').toLowerCase().includes(term));
+        }
+
+        return filtered;
+    }, [transactions, isAdmin, agentProfileId, user, activeRegion, agentSearch, motorists]);
 
     // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
@@ -621,53 +631,53 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
             })()}
 
             {/* --- HEADER & MASTER TOGGLE --- */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-6">
-                <div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/10 pb-6">
+                <div className="w-full lg:w-auto">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-2">
                         <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
                             <FileSpreadsheet className="text-orange-500" size={32}/> 
-                            {isAdmin && viewMode === 'GLOBAL' ? 'Global Receivables' : 'My Receivables'}
+                            {isAdmin ? 'Global Receivables' : 'My Receivables'}
                         </h2>
-                        
-                        {/* 🚀 THE FIX: SCALABLE GROUPED TERRITORY FILTER FOR ADMINS 🚀 */}
-                        {isAdmin && (
-                            <div className="flex items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg">
-                                <MapPin size={16} className="text-orange-500 ml-2"/>
+                    </div>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 mb-4 lg:mb-0">Accounts Receivable & Territory Management</p>
+                    
+                    {/* 🚀 THE FIX: REGION SELECTOR + AGENT SEARCH 🚀 */}
+                    {isAdmin && (
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
+                            <div className="flex items-center gap-2 px-2 py-1 border-b sm:border-b-0 sm:border-r border-white/10 shrink-0">
+                                <MapPin size={16} className="text-orange-500"/>
                                 <select 
-                                    value={viewMode}
-                                    onChange={(e) => { setViewMode(e.target.value); setSelectedCustomer(null); }}
-                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-[10px] md:text-xs outline-none cursor-pointer pr-4 max-w-[200px] md:max-w-xs truncate"
+                                    value={activeRegion}
+                                    onChange={(e) => { setActiveRegion(e.target.value); setSelectedCustomer(null); }}
+                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-xs outline-none cursor-pointer"
                                 >
-                                    <option value="GLOBAL" className="bg-slate-900">🌍 All Territories (Global View)</option>
-                                    <option value="ME" className="bg-slate-900">👑 HQ (Main Area)</option>
-                                    
-                                    {/* 🚀 DYNAMIC GROUPING BY BRANCH/LOCATION 🚀 */}
-                                    {(() => {
-                                        const nonAdminMotorists = motorists.filter(m => m.userRole !== 'ADMIN');
-                                        const uniqueLocations = [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
-                                        
-                                        return uniqueLocations.map(loc => {
-                                            const locAgents = nonAdminMotorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
-                                            return (
-                                                <optgroup key={loc} label={`📍 BRANCH: ${loc} (${locAgents.length} Agents)`} className="bg-slate-800 text-slate-400 font-black">
-                                                    <option value={`LOC_${loc}`} className="bg-slate-900 text-emerald-400">🏢 VIEW ALL: {loc}</option>
-                                                    {locAgents.map(m => (
-                                                        <option key={m.id} value={m.id} className="bg-slate-900 text-orange-400 font-bold">
-                                                            &nbsp;&nbsp;{m.userRole === 'AREA_ADMIN' ? '🏢' : '👤'} {m.name} ({m.role === 'Canvas' ? 'Canvas' : 'Motorist'})
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            );
-                                        });
-                                    })()}
+                                    <option value="ALL" className="bg-slate-900">🌍 All Regions</option>
+                                    <option value="HQ" className="bg-slate-900">👑 HQ (Main Area)</option>
+                                    {uniqueLocations.map(loc => (
+                                        <option key={loc} value={loc} className="bg-slate-900">📍 Region: {loc}</option>
+                                    ))}
                                 </select>
                             </div>
-                        )}
-                    </div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">Accounts Receivable & Territory Management</p>
+                            <div className="flex-1 flex items-center gap-2 px-2 py-1">
+                                <Search size={14} className="text-slate-500 shrink-0"/>
+                                <input 
+                                    type="text" 
+                                    placeholder="Search Member Name..." 
+                                    value={agentSearch}
+                                    onChange={(e) => { setAgentSearch(e.target.value); setSelectedCustomer(null); }}
+                                    className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-600 font-bold uppercase tracking-widest"
+                                />
+                                {agentSearch && (
+                                    <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); }} className="text-slate-400 hover:text-red-500 shrink-0">
+                                        <X size={14}/>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full">
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full shrink-0">
                     <button onClick={() => setActiveTab('financials')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'financials' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
                         <DollarSign size={16}/> A/R Financials
                     </button>
@@ -718,8 +728,8 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                         <div>
                                             <h3 className="font-bold dark:text-white">{c.name}</h3>
                                             
-                                            {/* OWNER BADGE FOR GLOBAL VIEW */}
-                                            {isAdmin && viewMode === 'GLOBAL' && (
+                                            {/* OWNER BADGE (ALWAYS VISIBLE TO ADMINS) */}
+                                            {isAdmin && (
                                                 <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[9px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
                                                     <User size={10} className="text-orange-500"/> 
                                                     Managed by: {c.ownerName}
@@ -745,7 +755,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                 <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
                                     <div>
                                         <h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2>
-                                        {isAdmin && viewMode === 'GLOBAL' && <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>}
+                                        {isAdmin && <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>}
                                     </div>
                                     <div className="text-right"><p className="text-xs text-slate-500 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
                                 </div>
@@ -756,13 +766,22 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/> Hand-off Territory</h3>
                                             <p className="text-xs text-slate-400 mb-4">Transferring this account moves <strong>all active debts and physical stock</strong> to the new agent.</p>
                                             
+                                            {/* 🚀 UPGRADED TRANSFER MENU WITH REGION GROUPS 🚀 */}
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Personnel --</option>
-                                                {motorists.filter(m => m.id !== agentProfileId).map(m => (
-                                                    <option key={m.id} value={m.id}>
-                                                        {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
-                                                    </option>
-                                                ))}
+                                                {uniqueLocations.map(loc => {
+                                                    const locAgents = motorists.filter(m => m.id !== agentProfileId && String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
+                                                    if(locAgents.length === 0) return null;
+                                                    return (
+                                                        <optgroup key={loc} label={`📍 BRANCH: ${loc}`} className="bg-slate-800 text-slate-400 font-black">
+                                                            {locAgents.map(m => (
+                                                                <option key={m.id} value={m.id} className="bg-slate-900 text-white font-bold">
+                                                                    {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    );
+                                                })}
                                             </select>
                                             
                                             <textarea className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500" placeholder="Reason for transfer..." value={transferNote} onChange={e => setTransferNote(e.target.value)} rows="3"></textarea>
