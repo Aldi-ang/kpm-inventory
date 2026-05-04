@@ -14,10 +14,11 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-export default function ConsignmentFinanceView({ transactions, inventory, onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
+// 🚀 THE FIX: ADDED DEFAULT ARRAYS TO PROPS TO PREVENT CRASHES IF DATA IS MISSING
+export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
     const [activeTab, setActiveTab] = useState('financials');
     
-    // 🚀 NEW: SCALABLE MULTI-FILTER STATE
+    // SCALABLE MULTI-FILTER STATE
     const [activeRegion, setActiveRegion] = useState('ALL');
     const [agentSearch, setAgentSearch] = useState('');
 
@@ -40,7 +41,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
         return [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
     }, [motorists]);
 
-    // 🚀 THE FIX: SCALABLE REGION & SEARCH FILTERING LOGIC
+    // SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
         if (!isAdmin) {
             return transactions.filter(t => {
@@ -63,7 +64,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
         // 2. Member Search Filter
         if (agentSearch.trim() !== '') {
             const term = agentSearch.toLowerCase().trim();
-            filtered = filtered.filter(t => (t.agentName || 'Admin').toLowerCase().includes(term));
+            filtered = filtered.filter(t => String(t.agentName || 'Admin').toLowerCase().includes(term));
         }
 
         return filtered;
@@ -143,27 +144,34 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
     const customerData = useMemo(() => {
         const customers = {};
         const sortedTransactions = [...myTransactions].sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+        
         sortedTransactions.forEach(t => {
             if (!t.customerName) return; 
             const name = t.customerName.trim(); 
             
             if (!customers[name]) customers[name] = { name, items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
             
+            // 🚀 THE FIX: Added fallback (t.items || []) to prevent crashing on corrupted data!
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
                 customers[name].balance += t.total; 
                 customers[name].ownerName = t.agentName || 'Admin'; 
                 
-                t.items.forEach(item => { 
+                (t.items || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
-                    if(!customers[name].items[itemKey]) customers[name].items[itemKey] = { ...item, qty: 0, unit: 'Bks', calculatedPrice: item.calculatedPrice / convertToBks(1, item.unit, product) }; 
+                    
+                    if(!customers[name].items[itemKey]) {
+                        const conversionFactor = convertToBks(1, item.unit, product);
+                        const safePrice = conversionFactor > 0 ? (item.calculatedPrice / conversionFactor) : item.calculatedPrice;
+                        customers[name].items[itemKey] = { ...item, qty: 0, unit: 'Bks', calculatedPrice: safePrice }; 
+                    }
                     customers[name].items[itemKey].qty += bksQty; 
                 }); 
             }
             if (t.type === 'RETURN') { 
                 customers[name].balance += t.total; 
-                t.items.forEach(item => { 
+                (t.items || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
@@ -172,13 +180,13 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
             }
             if (t.type === 'CONSIGNMENT_PAYMENT') { 
                 customers[name].balance -= t.amountPaid; 
-                t.itemsPaid?.forEach(item => { 
+                (t.itemsPaid || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
                     if(customers[name].items[itemKey]) customers[name].items[itemKey].qty -= bksQty; 
                 }); 
-                t.itemsReturned?.forEach(item => { 
+                (t.itemsReturned || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
                     const itemKey = `${item.productId}-${item.priceTier || 'Standard'}`; 
@@ -641,7 +649,7 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                     </div>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 mb-4 lg:mb-0">Accounts Receivable & Territory Management</p>
                     
-                    {/* 🚀 THE FIX: REGION SELECTOR + AGENT SEARCH 🚀 */}
+                    {/* REGION SELECTOR + AGENT SEARCH */}
                     {isAdmin && (
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
                             <div className="flex items-center gap-2 px-2 py-1 border-b sm:border-b-0 sm:border-r border-white/10 shrink-0">
@@ -766,7 +774,6 @@ export default function ConsignmentFinanceView({ transactions, inventory, onAddG
                                             <h3 className="font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/> Hand-off Territory</h3>
                                             <p className="text-xs text-slate-400 mb-4">Transferring this account moves <strong>all active debts and physical stock</strong> to the new agent.</p>
                                             
-                                            {/* 🚀 UPGRADED TRANSFER MENU WITH REGION GROUPS 🚀 */}
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Personnel --</option>
                                                 {uniqueLocations.map(loc => {
