@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin } from 'lucide-react';
+import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
@@ -11,10 +11,9 @@ const convertToBks = (qty, unit, product) => {
     if (unit === 'Slop') return qty * packsPerSlop;
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-    return qty; 
+    return qty || 0; 
 };
 
-// 🚀 THE FIX: ADDED DEFAULT ARRAYS TO PROPS TO PREVENT CRASHES IF DATA IS MISSING
 export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
     const [activeTab, setActiveTab] = useState('financials');
     
@@ -37,31 +36,30 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
     const [transferNote, setTransferNote] = useState('');
 
     const uniqueLocations = useMemo(() => {
-        const nonAdminMotorists = motorists.filter(m => m.userRole !== 'ADMIN');
+        const nonAdminMotorists = (motorists || []).filter(m => m.userRole !== 'ADMIN');
         return [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
     }, [motorists]);
 
-    // SCALABLE REGION & SEARCH FILTERING LOGIC
+    // 🚀 SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
+        const safeTx = Array.isArray(transactions) ? transactions : [];
         if (!isAdmin) {
-            return transactions.filter(t => {
+            return safeTx.filter(t => {
                 const matchId = agentProfileId && t.agentId === agentProfileId;
                 const matchName = user && t.agentName && (t.agentName === user.displayName || t.agentName === user.name || t.agentName === user.email?.split('@')[0]);
                 return matchId || matchName;
             });
         }
         
-        let filtered = transactions;
+        let filtered = safeTx;
 
-        // 1. Region Filter
         if (activeRegion === 'HQ') {
             filtered = filtered.filter(t => t.agentId === 'ADMIN' || !t.agentId || t.agentName === 'Admin');
         } else if (activeRegion !== 'ALL') {
-            const agentIdsInLoc = motorists.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === activeRegion).map(m => m.id);
+            const agentIdsInLoc = (motorists || []).filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === activeRegion).map(m => m.id);
             filtered = filtered.filter(t => agentIdsInLoc.includes(t.agentId));
         }
 
-        // 2. Member Search Filter
         if (agentSearch.trim() !== '') {
             const term = agentSearch.toLowerCase().trim();
             filtered = filtered.filter(t => String(t.agentName || 'Admin').toLowerCase().includes(term));
@@ -76,7 +74,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         const sorted = [...myTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
 
         sorted.forEach(t => {
-            const cName = (t.customerName || 'Unknown').trim();
+            const cName = String(t.customerName || 'Unknown').trim();
             if (!customers[cName]) customers[cName] = { name: cName, debts: [], phone: '' };
             if (t.phone) customers[cName].phone = t.phone;
 
@@ -85,13 +83,13 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                     id: t.id, 
                     date: t.date, 
                     timestamp: t.timestamp,
-                    original: t.total, 
-                    remaining: t.total,
+                    original: t.total || 0, 
+                    remaining: t.total || 0,
                     tempoDays: t.tempoDays || 7 
                 });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
+                let deduction = t.type === 'RETURN' ? Math.abs(t.total || 0) : (t.amountPaid || 0);
                 for (let i = 0; i < customers[cName].debts.length; i++) {
                     if (customers[cName].debts[i].remaining > 0) {
                         if (deduction >= customers[cName].debts[i].remaining) {
@@ -116,10 +114,17 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             if (active.length > 0) {
                 const total = active.reduce((s, d) => s + d.remaining, 0);
                 const oldestDebt = active[0];
-                const oldestDate = new Date(oldestDebt.timestamp?.seconds ? oldestDebt.timestamp.seconds * 1000 : oldestDebt.date);
+                let oldestDate;
+                if (oldestDebt.timestamp?.seconds) {
+                    oldestDate = new Date(oldestDebt.timestamp.seconds * 1000);
+                } else if (oldestDebt.date) {
+                    oldestDate = new Date(oldestDebt.date);
+                } else {
+                    oldestDate = new Date();
+                }
                 oldestDate.setHours(0,0,0,0);
                 
-                const ageDays = Math.floor((today - oldestDate) / (1000 * 60 * 60 * 24));
+                const ageDays = Math.floor((today - oldestDate) / (1000 * 60 * 60 * 24)) || 0;
                 const tempoDays = oldestDebt.tempoDays || 7;
                 const daysUntilDue = tempoDays - ageDays;
                 
@@ -147,13 +152,12 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         
         sortedTransactions.forEach(t => {
             if (!t.customerName) return; 
-            const name = t.customerName.trim(); 
+            const name = String(t.customerName).trim(); 
             
             if (!customers[name]) customers[name] = { name, items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
             
-            // 🚀 THE FIX: Added fallback (t.items || []) to prevent crashing on corrupted data!
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
-                customers[name].balance += t.total; 
+                customers[name].balance += (t.total || 0); 
                 customers[name].ownerName = t.agentName || 'Admin'; 
                 
                 (t.items || []).forEach(item => { 
@@ -163,14 +167,14 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                     
                     if(!customers[name].items[itemKey]) {
                         const conversionFactor = convertToBks(1, item.unit, product);
-                        const safePrice = conversionFactor > 0 ? (item.calculatedPrice / conversionFactor) : item.calculatedPrice;
+                        const safePrice = conversionFactor > 0 ? ((item.calculatedPrice||0) / conversionFactor) : (item.calculatedPrice||0);
                         customers[name].items[itemKey] = { ...item, qty: 0, unit: 'Bks', calculatedPrice: safePrice }; 
                     }
                     customers[name].items[itemKey].qty += bksQty; 
                 }); 
             }
             if (t.type === 'RETURN') { 
-                customers[name].balance += t.total; 
+                customers[name].balance += (t.total || 0); 
                 (t.items || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
@@ -179,7 +183,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 }); 
             }
             if (t.type === 'CONSIGNMENT_PAYMENT') { 
-                customers[name].balance -= t.amountPaid; 
+                customers[name].balance -= (t.amountPaid || 0); 
                 (t.itemsPaid || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 
@@ -200,7 +204,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             Object.keys(c.items).forEach(k => { c.items[k].qty = Math.max(0, c.items[k].qty); }); 
         });
         
-        function getProduct(pid) { return inventory.find(p => p.id === pid); }
+        function getProduct(pid) { return (inventory || []).find(p => p.id === pid); }
         
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
     }, [myTransactions, inventory]);
@@ -209,9 +213,10 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
     
     // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
-        const incoming = transferRequests.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
-        const outgoing = transferRequests.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
-        const adminPend = transferRequests.filter(r => r.status === 'PENDING_ADMIN');
+        const safeReqs = Array.isArray(transferRequests) ? transferRequests : [];
+        const incoming = safeReqs.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
+        const outgoing = safeReqs.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
+        const adminPend = safeReqs.filter(r => r.status === 'PENDING_ADMIN');
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
     }, [transferRequests, agentProfileId, isAdmin]);
 
@@ -220,6 +225,8 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         setAuditData(prev => {
             const current = prev[key] || { shelf: '', damaged: '' };
             const updated = { ...current, [field]: val === '' ? '' : Math.max(0, numVal) };
+            if (!activeCustomer || !activeCustomer.items[key]) return current;
+            
             const totalItemQty = activeCustomer.items[key].qty;
             const shelf = parseInt(updated.shelf) || 0;
             const damaged = parseInt(updated.damaged) || 0;
@@ -232,9 +239,12 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
     };
     
     const submitAction = async () => {
+        if (!activeCustomer) return;
+
         if (transferMode) {
             if (!targetAgent) return alert("Select an agent to transfer to!");
-            const agentInfo = motorists.find(m => m.id === targetAgent);
+            const agentInfo = (motorists || []).find(m => m.id === targetAgent);
+            if (!agentInfo) return alert("Agent not found!");
             onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote);
             setTransferMode(false); setTargetAgent(''); setTransferNote('');
             return;
@@ -249,6 +259,8 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
 
             Object.entries(auditData).forEach(([key, data]) => {
                 const item = activeCustomer.items[key];
+                if (!item) return;
+
                 const shelf = parseInt(data.shelf) || 0;
                 const damaged = parseInt(data.damaged) || 0;
                 const sold = item.qty - shelf - damaged;
@@ -275,9 +287,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             try {
                 if (onPayment) {
                     const receipt = await onPayment(activeCustomer.name, paymentItems, paymentTotal, returnItems, returnTotal, remainingItems);
-                    if (receipt) {
-                        setViewingReceipt(receipt);
-                    }
+                    if (receipt) setViewingReceipt(receipt);
                 }
                 setAuditMode(false);
                 setAuditData({});
@@ -286,14 +296,6 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 alert("Error saving audit data.");
             }
         }
-    };
-    
-    const formatStockDisplay = (qty, product) => { 
-        if (!product) return `${qty} Bks`; 
-        const packsPerSlop = product.packsPerSlop || 10; 
-        const slops = Math.floor(qty / packsPerSlop); 
-        const bks = qty % packsPerSlop; 
-        return slops > 0 ? `${qty} Bks (${slops} Slop ${bks > 0 ? `+ ${bks} Bks` : ''})` : `${qty} Bks`; 
     };
 
     const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass, isOverdue }) => (
@@ -331,11 +333,11 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
-            {/* --- AUTO-POP RECEIPT MODAL --- */}
+            {/* --- RECEIPT MODAL --- */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
-                if (viewingReceipt.timestamp) {
+                if (viewingReceipt.timestamp?.seconds) {
                     const dateObj = new Date(viewingReceipt.timestamp.seconds * 1000);
                     receiptDateStr = dateObj.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
                     receiptTimeStr = dateObj.toLocaleTimeString('id-ID');
@@ -345,14 +347,12 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
-                            {/* --- THERMAL POS LAYOUT --- */}
+                            {/* THERMAL POS LAYOUT */}
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
-                                            STORE AUDIT RECEIPT
-                                        </p>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">STORE AUDIT RECEIPT</p>
                                     </div>
                                     
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
@@ -413,14 +413,11 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                         <span>TOTAL COLLECTED</span>
                                         <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</span>
                                     </div>
-                                    
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500">
-                                        <p>*** THANK YOU ***</p>
-                                    </div>
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500"><p>*** THANK YOU ***</p></div>
                                 </div>
                             )}
 
-                            {/* --- A4 STANDARD INVOICE LAYOUT --- */}
+                            {/* A4 STANDARD INVOICE LAYOUT */}
                             {printFormat === 'a4' && (
                                 <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
                                     <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
@@ -430,9 +427,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
-                                                    STORE AUDIT REPORT
-                                                </h2>
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">STORE AUDIT REPORT</h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>
@@ -497,17 +492,13 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 </tr>
                                             </tfoot>
                                         </table>
-
                                         <div className="flex justify-between items-start mt-12 pb-4">
                                             <div className="w-1/2">
                                                 <div className="p-4 border-2 !border-blue-800 !bg-blue-50 rounded-xl inline-block shadow-md">
                                                     <p className="font-bold !text-blue-900 mb-1 text-[10px] uppercase tracking-widest">Pembayaran Transfer Ke:</p>
-                                                    <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">
-                                                        {appSettings?.bankDetails || `BCA 0301138379\nA/N ABEDNEGO YB`}
-                                                    </p>
+                                                    <p className="text-xl md:text-2xl font-black !text-blue-900 tracking-[0.1em] mt-2 leading-snug whitespace-pre-line">{appSettings?.bankDetails || `BCA 0301138379\nA/N ABEDNEGO YB`}</p>
                                                 </div>
                                             </div>
-                                            
                                             <div className="flex gap-12 md:gap-20 text-center !text-slate-800 pt-4 pr-8">
                                                 <div className="flex flex-col items-center">
                                                     <p className="font-bold text-sm mb-24 uppercase tracking-widest">Penerima,</p>
@@ -526,110 +517,8 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                             )}
 
                             <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
-                                    <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
-                                    Thermal POS (58mm)
-                                </label>
-                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800">
-                                    <input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>
-                                    Standard Invoice (A4)
-                                </label>
-                            </div>
-
-                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                                <button onClick={() => {
-                                    const receipt = document.querySelector('.print-receipt');
-                                    if (!receipt) return;
-
-                                    const clone = receipt.cloneNode(true);
-                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
-                                    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
-
-                                    let parentStyles = '';
-                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-                                        parentStyles += el.outerHTML;
-                                    });
-
-                                    const isThermal = clone.classList.contains('format-thermal');
-
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.position = 'absolute'; 
-                                    iframe.style.top = '0'; 
-                                    iframe.style.left = '0';
-                                    iframe.style.width = '1px';
-                                    iframe.style.height = '1px';
-                                    iframe.style.opacity = '0';
-                                    iframe.style.pointerEvents = 'none';
-                                    iframe.style.border = 'none';
-                                    document.body.appendChild(iframe);
-
-                                    const doc = iframe.contentWindow.document;
-                                    doc.open();
-                                    doc.write(`
-                                        <!DOCTYPE html>
-                                        <html>
-                                        <head>
-                                            <title>KPM Invoice</title>
-                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                            ${parentStyles}
-                                            <style>
-                                                @media print {
-                                                    @page { margin: 0; }
-                                                    html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                                    .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
-                                                    .format-thermal { font-family: 'Courier New', Courier, monospace !important; }
-                                                    .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; }
-                                                    .format-thermal .font-bold { font-weight: bold !important; }
-                                                    .format-thermal .font-black { font-weight: 900 !important; }
-                                                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
-                                                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
-                                                    .format-thermal .text-right { text-align: right !important; }
-                                                    .format-thermal .text-center { text-align: center !important; }
-                                                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
-                                                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
-                                                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
-                                                }
-                                                body { background: white; margin: 0; padding: 0; display: block; }
-                                            </style>
-                                        </head>
-                                        <body>
-                                            ${clone.outerHTML}
-                                            <script>
-                                                window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };
-                                            </script>
-                                        </body>
-                                        </html>
-                                    `);
-                                    doc.close();
-
-                                    setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
-                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                    <Printer size={14}/> Print
-                                </button>
-
-                                <button onClick={() => {
-                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*STORE AUDIT RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
-                                    
-                                    (viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
-                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
-                                    }, []).forEach((item) => {
-                                        const p = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
-                                        const r = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
-                                        const s = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
-                                        
-                                        if (p || r || s) {
-                                            text += `*${item.name}*\n`;
-                                            if (p) text += ` • LAKU: ${p.qty} Bks (Rp ${new Intl.NumberFormat('id-ID').format((p.calculatedPrice||0) * p.qty)})\n`;
-                                            if (r) text += ` • RETUR: ${r.qty} Bks\n`;
-                                            if (s) text += ` • SISA: ${s.qty} Bks\n`;
-                                        }
-                                    });
-
-                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                    <MessageSquare size={14}/> Share
-                                </button>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/> Thermal POS (58mm)</label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/> Standard Invoice (A4)</label>
                             </div>
 
                             <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
@@ -638,7 +527,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 );
             })()}
 
-            {/* --- HEADER & MASTER TOGGLE --- */}
+            {/* --- HEADER & FILTERS --- */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/10 pb-6">
                 <div className="w-full lg:w-auto">
                     <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-2">
@@ -686,12 +575,8 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 </div>
                 
                 <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full shrink-0">
-                    <button onClick={() => setActiveTab('financials')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'financials' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                        <DollarSign size={16}/> A/R Financials
-                    </button>
-                    <button onClick={() => setActiveTab('stock')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'stock' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                        <Box size={16}/> Physical Stock
-                    </button>
+                    <button onClick={() => setActiveTab('financials')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'financials' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><DollarSign size={16}/> A/R Financials</button>
+                    <button onClick={() => setActiveTab('stock')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'stock' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Box size={16}/> Physical Stock</button>
                     <button onClick={() => setActiveTab('transfers')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === 'transfers' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
                         <ArrowLeftRight size={16}/> Hand-offs
                         {(incomingRequests.length > 0 || (isAdmin && pendingAdminRequests.length > 0)) && (
@@ -735,18 +620,15 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="font-bold dark:text-white">{c.name}</h3>
-                                            
-                                            {/* OWNER BADGE (ALWAYS VISIBLE TO ADMINS) */}
                                             {isAdmin && (
                                                 <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[9px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
-                                                    <User size={10} className="text-orange-500"/> 
-                                                    Managed by: {c.ownerName}
+                                                    <User size={10} className="text-orange-500"/> Managed by: {c.ownerName}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="mt-3 flex justify-between items-center border-t border-slate-700/50 pt-2">
-                                        <span className="text-[10px] font-bold tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-1 border border-slate-700 rounded text-slate-500 uppercase">{Object.values(c.items).reduce((a,b)=>a+b.qty,0)} Bks Held</span>
+                                        <span className="text-[10px] font-bold tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-1 border border-slate-700 rounded text-slate-500 uppercase">{Object.values(c.items).reduce((a,b)=>a+(b.qty||0),0)} Bks Held</span>
                                         <span className="font-mono font-bold text-emerald-500">{formatRupiah(c.balance)}</span>
                                     </div>
                                 </div>
@@ -777,7 +659,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Personnel --</option>
                                                 {uniqueLocations.map(loc => {
-                                                    const locAgents = motorists.filter(m => m.id !== agentProfileId && String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
+                                                    const locAgents = (motorists || []).filter(m => m.id !== agentProfileId && String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
                                                     if(locAgents.length === 0) return null;
                                                     return (
                                                         <optgroup key={loc} label={`📍 BRANCH: ${loc}`} className="bg-slate-800 text-slate-400 font-black">
@@ -821,19 +703,19 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 )}
                                             </div>
 
-                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => {
+                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => (i.qty || 0) > 0).map(([key, item]) => {
                                                 const aData = auditData[key] || { shelf: '', damaged: '' };
                                                 const shelf = parseInt(aData.shelf) || 0;
                                                 const damaged = parseInt(aData.damaged) || 0;
                                                 const soldQty = auditMode ? Math.max(0, item.qty - shelf - damaged) : 0;
-                                                const soldValue = soldQty * item.calculatedPrice;
+                                                const soldValue = soldQty * (item.calculatedPrice || 0);
 
                                                 return (
                                                     <div key={key} className={`flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 p-4 items-center bg-white dark:bg-slate-900 rounded-xl border transition-colors ${auditMode && soldQty > 0 ? 'border-emerald-500/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]' : 'dark:border-slate-700 shadow-sm'}`}>
                                                         
                                                         <div className="col-span-12 md:col-span-4 w-full md:w-auto flex flex-col">
                                                             <p className="font-bold dark:text-white uppercase text-sm md:text-xs truncate">{item.name}</p>
-                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / Bks</span>
+                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)} / Bks</span>
                                                         </div>
                                                         
                                                         <div className="col-span-12 md:col-span-2 w-full md:w-auto flex justify-between md:justify-center items-center">
@@ -867,7 +749,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                         ) : (
                                                             <div className="col-span-12 md:col-span-6 w-full md:w-auto flex justify-between md:justify-end items-center mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
                                                                 <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Nilai Barang:</span>
-                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.qty * item.calculatedPrice)}</p>
+                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format((item.qty || 0) * (item.calculatedPrice || 0))}</p>
                                                             </div>
                                                         )}
                                                     </div>
