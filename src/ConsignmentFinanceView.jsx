@@ -14,13 +14,13 @@ const convertToBks = (qty, unit, product) => {
     return qty || 0; 
 };
 
-export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings }) {
+export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
     
     // SCALABLE MULTI-FILTER STATE
     const [activeRegion, setActiveRegion] = useState('ALL');
     const [agentSearch, setAgentSearch] = useState('');
-    const [showAgentDropdown, setShowAgentDropdown] = useState(false); // 🚀 NEW: Controls the smart dropdown
+    const [showAgentDropdown, setShowAgentDropdown] = useState(false);
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [transferMode, setTransferMode] = useState(false);
@@ -41,7 +41,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         return [...new Set(nonAdminMotorists.map(m => String(m.location || 'UNASSIGNED').trim().toUpperCase()))].sort();
     }, [motorists]);
 
-    // 🚀 NEW: SMART DROPDOWN ENGINE
+    // SMART DROPDOWN ENGINE
     const dropdownAgents = useMemo(() => {
         let list = (motorists || []).filter(m => m.userRole !== 'ADMIN');
         
@@ -49,7 +49,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         if (activeRegion !== 'ALL' && activeRegion !== 'HQ') {
             list = list.filter(m => String(m.location || 'UNASSIGNED').trim().toUpperCase() === activeRegion);
         } else if (activeRegion === 'HQ') {
-            return []; // HQ doesn't have standard field agents to list here
+            return []; 
         }
         
         // 2. Filter by Search Query
@@ -61,7 +61,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         return list;
     }, [motorists, activeRegion, agentSearch]);
 
-    // 🚀 SCALABLE REGION & SEARCH FILTERING LOGIC
+    // SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
         const safeTx = Array.isArray(transactions) ? transactions : [];
         if (!isAdmin) {
@@ -268,7 +268,13 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             if (!targetAgent) return alert("Select an agent to transfer to!");
             const agentInfo = (motorists || []).find(m => m.id === targetAgent);
             if (!agentInfo) return alert("Agent not found!");
+            
+            // Call the core function
             onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote);
+            
+            // 🚀 THE FIX: TRIGGER CAPYBARA INSTEAD OF ALERT
+            if(triggerCapy) triggerCapy(`Transfer request sent to ${agentInfo.name}!`);
+            
             setTransferMode(false); setTargetAgent(''); setTransferNote('');
             return;
         }
@@ -319,14 +325,6 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 alert("Error saving audit data.");
             }
         }
-    };
-    
-    const formatStockDisplay = (qty, product) => { 
-        if (!product) return `${qty} Bks`; 
-        const packsPerSlop = product.packsPerSlop || 10; 
-        const slops = Math.floor(qty / packsPerSlop); 
-        const bks = qty % packsPerSlop; 
-        return slops > 0 ? `${qty} Bks (${slops} Slop ${bks > 0 ? `+ ${bks} Bks` : ''})` : `${qty} Bks`; 
     };
 
     const StatusCard = ({ title, data, colorClass, borderClass, icon, bgClass, isOverdue }) => (
@@ -666,7 +664,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                     </div>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 mb-4 lg:mb-0">Accounts Receivable & Territory Management</p>
                     
-                    {/* 🚀 THE FIX: SMART COMBOBOX (REGION + AUTOCOMPLETE SEARCH) 🚀 */}
+                    {/* REGION SELECTOR + AGENT SEARCH */}
                     {isAdmin && (
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
                             
@@ -677,7 +675,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                     value={activeRegion}
                                     onChange={(e) => { 
                                         setActiveRegion(e.target.value); 
-                                        setAgentSearch(''); // Clear search when region changes
+                                        setAgentSearch(''); 
                                         setSelectedCustomer(null); 
                                     }}
                                     className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-xs outline-none cursor-pointer"
@@ -869,19 +867,19 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 )}
                                             </div>
 
-                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => i.qty > 0).map(([key, item]) => {
+                                            {Object.entries(activeCustomer?.items || {}).filter(([k, i]) => (i.qty || 0) > 0).map(([key, item]) => {
                                                 const aData = auditData[key] || { shelf: '', damaged: '' };
                                                 const shelf = parseInt(aData.shelf) || 0;
                                                 const damaged = parseInt(aData.damaged) || 0;
                                                 const soldQty = auditMode ? Math.max(0, item.qty - shelf - damaged) : 0;
-                                                const soldValue = soldQty * item.calculatedPrice;
+                                                const soldValue = soldQty * (item.calculatedPrice || 0);
 
                                                 return (
                                                     <div key={key} className={`flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 p-4 items-center bg-white dark:bg-slate-900 rounded-xl border transition-colors ${auditMode && soldQty > 0 ? 'border-emerald-500/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]' : 'dark:border-slate-700 shadow-sm'}`}>
                                                         
                                                         <div className="col-span-12 md:col-span-4 w-full md:w-auto flex flex-col">
                                                             <p className="font-bold dark:text-white uppercase text-sm md:text-xs truncate">{item.name}</p>
-                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice)} / Bks</span>
+                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)} / Bks</span>
                                                         </div>
                                                         
                                                         <div className="col-span-12 md:col-span-2 w-full md:w-auto flex justify-between md:justify-center items-center">
@@ -915,7 +913,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                         ) : (
                                                             <div className="col-span-12 md:col-span-6 w-full md:w-auto flex justify-between md:justify-end items-center mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
                                                                 <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Nilai Barang:</span>
-                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.qty * item.calculatedPrice)}</p>
+                                                                <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format((item.qty || 0) * (item.calculatedPrice || 0))}</p>
                                                             </div>
                                                         )}
                                                     </div>
