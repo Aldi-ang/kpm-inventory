@@ -13,17 +13,15 @@ import L from 'leaflet';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
-// Kills the old red drop-pins entirely. Markers now scale and pulse based on their active/target states.
 delete L.Icon.Default.prototype._getIconUrl;
 
-const getIcon = (store, activeTiers, isTemp = false, isActive = false, isTarget = false) => {
+const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
     let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     
     const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-8px; right:-8px; background:gold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">👑</div>` : '';
-    const targetBadge = isTarget ? `<div style="position:absolute; bottom:-4px; right:-4px; background:#3b82f6; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid white; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">🏁</div>` : '';
     
     let glow = '';
     let transform = 'scale(1)';
@@ -48,7 +46,6 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false, isTarget 
                     ${content}
                 </div>
                 ${hubBadge}
-                ${targetBadge}
             </div>`,
         iconSize: [34, 34], iconAnchor: [17, 17]
     });
@@ -170,12 +167,9 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
     return null;
 };
 
-const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, routeStops = [], toggleRadarTarget, isActive }) => {
+const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isActive }) => {
     const map = useMap();
-    const isTarget = routeStops.find(s => s.id === store.id);
-    
-    // 🚀 USE SMART AVATAR (Passes Active and Target states cleanly)
-    const smartIcon = getIcon(store, activeTiers, false, isActive, isTarget);
+    const smartIcon = getIcon(store, activeTiers, false, isActive);
 
     return (
         <Marker 
@@ -183,14 +177,12 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, rout
             icon={smartIcon} 
             eventHandlers={{ 
                 click: () => {
-                    if (toggleRadarTarget) toggleRadarTarget(store); 
                     handlePinClick(store, map); 
                 } 
             }} 
             riseOnHover={true}
             zIndexOffset={isActive ? 1000 : 0} 
         >
-            {/* Tooltips only on Desktop Hover. NO POPUPS on Mobile! */}
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
@@ -375,8 +367,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
 // --- DEDICATED GEOJSON UPLOADER & MANAGER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
-    // (Content remains exactly the same as original)
-    // ...
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
@@ -808,36 +798,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 // --- MAIN WRAPPER (APP IN APP) ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
 
-    const [routeStops, setRouteStops] = useState([]);
-    const [streetRoute, setStreetRoute] = useState(null);
-
-    useEffect(() => {
-        const fetchStreetRoute = async () => {
-            if (routeStops.length < 2) {
-                setStreetRoute(null);
-                return;
-            }
-            const coordsString = routeStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
-            try {
-                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
-                const data = await response.json();
-                if (data.routes && data.routes[0]) {
-                    const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-                    setStreetRoute(flippedCoords);
-                }
-            } catch (error) {}
-        };
-        fetchStreetRoute();
-    }, [routeStops]);
-
-    const toggleRadarTarget = (merchant) => {
-        setRouteStops(prev => {
-            const exists = prev.find(stop => stop.id === merchant.id);
-            if (exists) return prev.filter(stop => stop.id !== merchant.id);
-            return [...prev, merchant];
-        });
-    };
-
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
@@ -1031,7 +991,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     return (
         // 🚀 FULLSCREEN APP-IN-APP WRAPPER
-        // Absolute inset-0 guarantees it dynamically bursts out of standard padding to hit the edges.
         <div className="absolute inset-0 w-full h-full bg-slate-900 overflow-hidden font-sans z-[50]">
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
@@ -1120,17 +1079,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
-            {routeStops.length > 0 && (
-                <div className="absolute top-4 right-16 z-[400] w-72 bg-black/90 border border-emerald-500/30 p-4 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.2)] font-mono rounded-xl">
-                    <h3 className="text-emerald-500 font-bold tracking-widest uppercase mb-3 text-xs flex justify-between items-center">
-                        Live Radar <span className="text-white bg-slate-800 px-2 py-0.5 rounded">{routeStops.length} Targets</span>
-                    </h3>
-                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ width: '0%' }}></div>
-                    </div>
-                </div>
-            )}
-
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="topright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
@@ -1152,13 +1100,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
-
-                {streetRoute && (
-                    <Polyline 
-                        positions={streetRoute} 
-                        pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15', className: 'animated-supply-line' }} 
-                    />
-                )}
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
@@ -1218,14 +1159,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         activeTiers={activeTiers} 
                         conquestMode={conquestMode} 
                         handlePinClick={handlePinClick} 
-                        routeStops={routeStops} 
-                        toggleRadarTarget={toggleRadarTarget}
                         isActive={activeStore && activeStore.id === store.id}
                     />
                 ))}
             </MapContainer>
 
-            {/* 🚀 GOOGLE MAPS STYLE BOTTOM SHEET (Replaces the old Popup Bubbles) */}
+            {/* 🚀 GOOGLE MAPS STYLE BOTTOM SHEET */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
