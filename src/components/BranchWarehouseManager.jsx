@@ -156,6 +156,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         }
     };
 
+    // 🚀 THE FIX: TRANSACTION READ BEFORE WRITE ENGINE 🚀
     const handleConfirmReceipt = async (order) => {
         if (!window.confirm(`Confirm receipt of items for ${order.id}?\n\nItems will be officially added to your ${branchLocation} branch warehouse.`)) return;
         setIsProcessing(true);
@@ -163,53 +164,60 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         try {
             const itemsToProcess = order.fulfilledItems || order.requestedItems || order.items || [];
             
-            // 🚀 THE FIX: Use runTransaction to safely ADD to existing stock instead of overwriting it
             await runTransaction(db, async (t) => {
-                for (const item of itemsToProcess) {
+                // --- PHASE 1: EXECUTE ALL READS ---
+                
+                // 1. Read Order Document
+                const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
+                const orderSnap = await t.get(orderRef);
+                if (!orderSnap.exists()) throw new Error("Order not found in database!");
+                const orderData = orderSnap.data();
+
+                // 2. Read All Branch Inventory Documents
+                const inventorySnaps = await Promise.all(itemsToProcess.map(async (item) => {
                     const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, item.productId);
-                    const branchItemSnap = await t.get(branchItemRef);
-                    
+                    const snap = await t.get(branchItemRef);
+                    return { ref: branchItemRef, snap, item };
+                }));
+
+                // --- PHASE 2: EXECUTE ALL WRITES ---
+                
+                // 1. Write to Branch Inventory
+                inventorySnaps.forEach(data => {
                     let currentStock = 0;
-                    if (branchItemSnap.exists()) {
-                        currentStock = branchItemSnap.data().stock || 0;
+                    if (data.snap.exists()) {
+                        currentStock = data.snap.data().stock || 0;
                     }
-                    
-                    // Safely add incoming qty to current stock
-                    t.set(branchItemRef, {
-                        productId: item.productId,
-                        name: item.name,
-                        stock: currentStock + Number(item.qty), 
+                    t.set(data.ref, {
+                        productId: data.item.productId,
+                        name: data.item.name,
+                        stock: currentStock + Number(data.item.qty), 
                         lastReceivedAt: serverTimestamp(),
                         lastReceivedFrom: order.id
                     }, { merge: true });
-                }
+                });
 
-                // Update the tracking ticket status inside the same transaction
-                const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
-                const orderSnap = await t.get(orderRef);
-                
-                if (orderSnap.exists()) {
-                    const orderData = orderSnap.data();
-                    const updatedTimeline = [...(orderData.workflowTimeline || [])];
-                    updatedTimeline.push({
-                        status: 'DELIVERED',
-                        time: new Date().toISOString(),
-                        msg: `Received & verified by ${user.displayName || (user.email || "").split('@')[0]} at branch.` 
-                    });
+                // 2. Write Order Update
+                const updatedTimeline = [...(orderData.workflowTimeline || [])];
+                updatedTimeline.push({
+                    status: 'DELIVERED',
+                    time: new Date().toISOString(),
+                    msg: `Received & verified by ${user.displayName || (user.email || "").split('@')[0]} at branch.` 
+                });
 
-                    t.update(orderRef, {
-                        status: 'DELIVERED',
-                        receivedAt: serverTimestamp(),
-                        receivedBy: user.email,
-                        workflowTimeline: updatedTimeline
-                    });
-                }
+                t.update(orderRef, {
+                    status: 'DELIVERED',
+                    receivedAt: serverTimestamp(),
+                    receivedBy: user.email,
+                    workflowTimeline: updatedTimeline
+                });
             });
 
             triggerCapy(`${branchLocation} Inventory updated! Thank you. ✅`);
             logAudit("STOCK_RECEIVE", `${branchLocation} confirmed receipt of ${order.id}`);
             setIsProcessing(false);
         } catch(e) {
+            console.error(e);
             alert("Error confirming receipt: " + e.message);
             setIsProcessing(false);
         }
@@ -577,12 +585,16 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                             <div key={req.id} className={`p-3 sm:p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-slate-900 border-blue-800 shadow-2xl' : 'bg-black/40 border-slate-700 hover:bg-slate-800'}`}>
                                                 
                                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
-                                                    <div className="w-full sm:w-auto">
+                                                    <div className="w-full sm:w-auto mb-2 sm:mb-0">
                                                         <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase block truncate">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
-                                                        <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                        <p className="text-[9px] text-slate-600 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                        {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
+                                                        <div className="text-[10px] text-slate-300 font-medium">
+                                                            <span className="font-bold text-orange-400 mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
+                                                            <span className="text-slate-400">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
+                                                        </div>
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-                                                        <span className="text-xs font-black text-slate-300 whitespace-nowrap">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
                                                         <StatusBadge status={req.status}/>
                                                         <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
@@ -613,7 +625,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                     <option value="">-- Choose Product --</option>
                                     {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
-                                {/* Mobile Responsive Grid for Qty & Button */}
                                 <div className="grid grid-cols-[1fr,auto] gap-2 w-full">
                                     <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 text-center transition-colors"/>
                                     <button onClick={handleAddToCart} className="bg-purple-600 hover:bg-purple-500 text-white px-4 font-bold uppercase tracking-widest rounded-lg shadow-lg shrink-0 whitespace-nowrap text-xs transition-colors flex items-center justify-center gap-1.5">
@@ -627,7 +638,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12}/> 2. Detail Alamat Pengiriman</label>
                                 <div className="space-y-3">
                                     <input placeholder="Jalan / Gedung / Patokan" className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white outline-none focus:border-purple-500" value={shippingAddress.jalan} onChange={e=>setShippingAddress({...shippingAddress, jalan: e.target.value})}/>
-                                    {/* Mobile Responsive Grid for City/State */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <input placeholder="Kecamatan" className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white outline-none focus:border-purple-500" value={shippingAddress.kecamatan} onChange={e=>setShippingAddress({...shippingAddress, kecamatan: e.target.value})}/>
                                         <input placeholder="Kabupaten" className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white outline-none focus:border-purple-500" value={shippingAddress.kabupaten} onChange={e=>setShippingAddress({...shippingAddress, kabupaten: e.target.value})}/>
@@ -705,19 +715,23 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                     <Trash2 size={16}/>
                                                 </button>
 
-                                                <div>
+                                                <div className="w-full sm:w-auto mb-2 sm:mb-0 flex-1">
                                                     <div className="flex gap-2 items-center">
                                                         <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
                                                             <MapPin size={16} className="text-orange-400"/> {req.branch}
                                                         </h4>
                                                         <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
                                                     </div>
-                                                    <p className="text-[9px] text-slate-600 font-mono mt-0.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                    <p className="text-[9px] text-slate-600 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                    {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
+                                                    <div className="text-[10px] text-slate-300 font-medium">
+                                                        <span className="font-bold text-orange-400 mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
+                                                        <span className="text-slate-400">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto pr-8">
-                                                    <span className="text-xs font-black text-slate-300">Barang: {itemsToProcess.reduce((sum,i) => sum+i.qty, 0)} Bks</span>
+                                                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto pr-8 mt-2 sm:mt-0">
                                                     <StatusBadge status={req.status}/>
-                                                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                                    <div className="flex gap-2 w-full sm:w-auto">
                                                         <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
                                                             {isExpanded ? 'Tutup Track' : 'Lacak (OMS)'}
@@ -731,15 +745,6 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                                                 </div>
                                             </div>
 
-                                            {!isExpanded && req.status === 'PENDING' && (
-                                                <div className="space-y-1.5 text-xs text-slate-300 p-2 pl-4 border-l-2 border-slate-700">
-                                                    {itemsToProcess.slice(0,3).map(item => (
-                                                        <div key={item.productId} className="flex gap-2 font-medium"><span>-</span> <span className="uppercase">{item.name}</span> <span className="font-bold text-orange-400">({item.qty} Bks)</span></div>
-                                                    ))}
-                                                    {itemsToProcess.length > 3 && <div className="text-slate-600 italic">...and {itemsToProcess.length - 3} more items.</div>}
-                                                </div>
-                                            )}
-
                                             {isExpanded && <OrderTrackingModule order={req} />}
                                         </div>
                                     )
@@ -749,6 +754,7 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
                     })()}
                 </div>
             )}
+            
             {/* ====== MODALS ====== */}
             {isProcessing && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] backdrop-blur-sm">
