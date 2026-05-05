@@ -222,10 +222,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
 
 
-  // 🚀 2. COMBINE REAL AND VIRTUAL NOTIFICATIONS
+  // 🚀 2. COMBINE REAL AND VIRTUAL NOTIFICATIONS (WITH STRICT INBOX FILTERING)
   const combinedNotifications = useMemo(() => {
-      return [...notifications, ...logisticsNotifs];
-  }, [notifications, logisticsNotifs]);
+      // 🚀 THE FIX: Filter database notifications so users ONLY see alerts meant for them!
+      const myDbNotifs = notifications.filter(n => {
+          if (userRole === 'ADMIN') return n.agentId === 'ADMIN' || !n.agentId; // Admin sees 'ADMIN' alerts
+          return n.agentId === agentProfileId; // Agents only see alerts tagged with their profile ID
+      });
+      return [...myDbNotifs, ...logisticsNotifs];
+  }, [notifications, logisticsNotifs, userRole, agentProfileId]);
 
 // Helper to include Hours and Minutes in the filename
   // --- DOWNLOAD ENGINE HELPERS ---
@@ -1094,7 +1099,6 @@ const handleGitHubMirror = async () => {
 
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
   const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
-      // 1. 🛑 SPAM PREVENTION: Check if already pending
       const isAlreadyPending = transferRequests.some(r => 
           (r.storeName || '').trim().toLowerCase() === (storeName || '').trim().toLowerCase() && 
           (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN')
@@ -1113,14 +1117,15 @@ const handleGitHubMirror = async () => {
               timestamp: serverTimestamp()
           });
 
-          // 2. 🔔 BELL NOTIFICATION TO RECEIVING AGENT (Tier 3)
+          // 🔔 BELL NOTIFICATION TO RECEIVING AGENT (Tier 3)
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
               title: "🤝 Hand-off Request",
               message: `${user.displayName || 'Admin'} wants to transfer ${storeName} to you.`,
               type: "TRANSFER_REQUEST",
-              isRead: false,
+              read: false,          // 🚀 THE FIX: Added 'read: false' for DB sync compatibility
+              isRead: false,        
               timestamp: serverTimestamp(),
-              agentId: toAgentId,
+              agentId: toAgentId,   // Recipient is the receiving agent
               linkToTab: 'receivables'
           });
 
@@ -1130,7 +1135,6 @@ const handleGitHubMirror = async () => {
 
   const handleAgentAcceptTransfer = async (requestId, isAccepted) => {
       try {
-          // Find the request to get original sender details
           const request = transferRequests.find(r => r.id === requestId);
           if (!request) return alert("Request not found!");
 
@@ -1141,12 +1145,13 @@ const handleGitHubMirror = async () => {
           });
 
           if (isAccepted) {
-              // 3a. 🔔 NOTIFY ORIGINAL REQUESTER (Tier 1/2 or Tier 4)
+              // 🔔 NOTIFY ORIGINAL REQUESTER
               if (request.fromAgentId && request.fromAgentId !== agentProfileId) {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "⏳ Request Accepted",
                       message: `${request.toAgentName} accepted ${request.storeName}. Waiting for Admin confirmation.`,
                       type: "TRANSFER_UPDATE",
+                      read: false,
                       isRead: false,
                       timestamp: serverTimestamp(),
                       agentId: request.fromAgentId,
@@ -1154,11 +1159,12 @@ const handleGitHubMirror = async () => {
                   });
               }
 
-              // 3b. 🔔 NOTIFY ADMIN FOR FINAL APPROVAL
+              // 🔔 NOTIFY ADMIN FOR FINAL APPROVAL
               await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                   title: "🛡️ Transfer Needs Approval",
                   message: `${request.toAgentName} accepted the hand-off for ${request.storeName}. Awaiting your authorization.`,
                   type: "TRANSFER_APPROVAL",
+                  read: false,
                   isRead: false,
                   timestamp: serverTimestamp(),
                   agentId: 'ADMIN',
@@ -1171,6 +1177,7 @@ const handleGitHubMirror = async () => {
                       title: "❌ Request Declined",
                       message: `${request.toAgentName} declined the transfer of ${request.storeName}.`,
                       type: "TRANSFER_REJECTED",
+                      read: false,
                       isRead: false,
                       timestamp: serverTimestamp(),
                       agentId: request.fromAgentId,
@@ -1188,31 +1195,28 @@ const handleGitHubMirror = async () => {
       try {
           const batch = writeBatch(db);
           
-          // Update the request ticket
           const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, request.id);
           batch.update(reqRef, { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() });
 
           if (isApproved) {
-              // Rewrite all historical debt transactions
               const storeTx = transactions.filter(t => (t.customerName || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
               storeTx.forEach(t => {
                   const tRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id);
                   batch.update(tRef, { agentId: request.toAgentId, agentName: request.toAgentName });
               });
 
-              // Re-assign the actual Customer Profile
               const targetCustomer = customers.find(c => (c.name || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
               if (targetCustomer) {
                   const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id);
                   batch.update(custRef, { mappedBy: request.toAgentName });
               }
 
-              // 🔔 BELL NOTIFICATIONS TO BOTH AGENTS
               if (request.fromAgentId && request.fromAgentId !== 'ADMIN') {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "✅ Transfer Approved",
                       message: `Admin approved the transfer of ${request.storeName} to ${request.toAgentName}.`,
                       type: "TRANSFER_COMPLETE",
+                      read: false,
                       isRead: false,
                       timestamp: serverTimestamp(),
                       agentId: request.fromAgentId,
@@ -1224,18 +1228,19 @@ const handleGitHubMirror = async () => {
                   title: "✅ Transfer Complete",
                   message: `${request.storeName} is now officially in your territory.`,
                   type: "TRANSFER_COMPLETE",
+                  read: false,
                   isRead: false,
                   timestamp: serverTimestamp(),
                   agentId: request.toAgentId,
                   linkToTab: 'receivables'
               });
           } else {
-              // VETOED BY ADMIN
                if (request.fromAgentId && request.fromAgentId !== 'ADMIN') {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "❌ Transfer Vetoed",
                       message: `Admin rejected the hand-off for ${request.storeName}.`,
                       type: "TRANSFER_REJECTED",
+                      read: false,
                       isRead: false,
                       timestamp: serverTimestamp(),
                       agentId: request.fromAgentId,
@@ -1246,6 +1251,7 @@ const handleGitHubMirror = async () => {
                   title: "❌ Transfer Vetoed",
                   message: `Admin rejected your hand-off for ${request.storeName}.`,
                   type: "TRANSFER_REJECTED",
+                  read: false,
                   isRead: false,
                   timestamp: serverTimestamp(),
                   agentId: request.toAgentId,
@@ -1262,11 +1268,8 @@ const handleGitHubMirror = async () => {
  // 🚀 EOD HANDLERS 🚀
   const handleSubmitEOD = async (reportData) => {
       try {
-          // 🚀 PHASE 1 FIX: Force the exact format "Mas Gilga - theonlygilgamesh@gmail.com"
-          // We pull the exact registered email, ignoring what Google tries to force.
           const formattedAgentName = `${user.displayName || "Field Agent"} - ${user.email || "No Email"}`;
 
-          // 1. Save the EOD Report
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`), {
               agentName: formattedAgentName, 
               agentId: agentProfileId || 'ADMIN',
@@ -1275,16 +1278,16 @@ const handleGitHubMirror = async () => {
               ...reportData 
           });
 
-          // 🚀 PHASE 2 FIX: Trigger the Admin Notification Bell!
-          // This drops a message directly into the Admin's notification inbox.
           if (!isAdmin) {
               await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                   title: "💰 EOD Submitted",
                   message: `${formattedAgentName} submitted an EOD report. Pending your verification.`,
                   type: "EOD_APPROVAL",
+                  read: false,          // 🚀 FIX: Add read: false
                   isRead: false,
                   timestamp: serverTimestamp(),
-                  agentId: agentProfileId
+                  agentId: 'ADMIN',     // 🚀 FIX: Send to ADMIN instead of sender
+                  linkToTab: 'eod'
               });
           }
 
@@ -1295,7 +1298,6 @@ const handleGitHubMirror = async () => {
       }
   };
 
-  // 🚀 ADMIN EOD PROTOCOLS (Verify & Reset) 🚀
   const handleVerifyEOD = async (report) => {
       if(!window.confirm(`Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`)) return;
       try {
