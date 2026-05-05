@@ -5,8 +5,13 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
     
-    // Sort newest first and count unread alerts
-    const sortedNotifs = [...notifications].sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+    // 🚀 THE FIX: Handle null timestamps (pending Firebase server sync) so fresh alerts go to the TOP
+    const sortedNotifs = [...notifications].sort((a, b) => {
+        const timeA = a.timestamp?.seconds || (a.timestamp ? new Date(a.timestamp).getTime() / 1000 : Infinity);
+        const timeB = b.timestamp?.seconds || (b.timestamp ? new Date(b.timestamp).getTime() / 1000 : Infinity);
+        return timeB - timeA;
+    });
+    
     const unreadCount = sortedNotifs.filter(n => !n.read && n.isRead !== true).length;
 
     // Close dropdown when clicking anywhere outside of it
@@ -76,7 +81,7 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                                                 {notif.title || "Alert"}
                                             </h4>
                                             <span className="text-[9px] text-slate-500 font-mono">
-                                                {notif.timestamp?.seconds ? new Date(notif.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Now'}
+                                                {notif.timestamp?.seconds ? new Date(notif.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
                                             </span>
                                         </div>
                                         <p className="text-[10px] text-slate-300 leading-relaxed font-sans">
