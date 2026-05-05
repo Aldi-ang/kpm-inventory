@@ -499,7 +499,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <div className="flex flex-col items-center">
                                         <p className="font-bold text-sm mb-24 uppercase tracking-widest">Admin Gudang</p>
                                         <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
-                                        <p className="text-sm mt-2 uppercase font-bold">{user.displayName || 'Admin'}</p>
+                                        <p className="text-sm mt-2 uppercase font-bold">
+                                            {(() => {
+                                                // 🚀 THE FIX: Dynamically find the Tier 3 Area Admin for this motorist's branch
+                                                const branchAdmin = activeMotorists.find(m => 
+                                                    m.userRole === 'AREA_ADMIN' && 
+                                                    String(m.location || '').trim().toUpperCase() === String(selectedAgent.location || '').trim().toUpperCase()
+                                                );
+                                                return branchAdmin ? branchAdmin.name : (user.displayName || 'Admin');
+                                            })()}
+                                        </p>
                                     </div>
                                     <div className="flex flex-col items-center">
                                         <p className="font-bold text-sm mb-24 uppercase tracking-widest">Sales/Motorist</p>
