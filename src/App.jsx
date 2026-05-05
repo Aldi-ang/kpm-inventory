@@ -2589,7 +2589,7 @@ const handleGitHubMirror = async () => {
                 </button>
                 
                 {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
-                    {window.PublicKeyCredential && hasPasskey && (
+                    {window.PublicKeyCredential && (
                         <button 
                             onClick={handleBiometricUnlock}
                             className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
