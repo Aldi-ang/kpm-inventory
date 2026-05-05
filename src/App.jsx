@@ -1142,8 +1142,9 @@ const handleGitHubMirror = async () => {
           });
 
           if (isAccepted) {
-              // 🔔 NOTIFY ORIGINAL REQUESTER
-              if (request.fromAgentId && request.fromAgentId !== agentProfileId) {
+              // 3a. 🔔 NOTIFY ORIGINAL REQUESTER 
+              // 🚀 THE FIX: We skip this if the requester WAS the Admin, to prevent double-spamming their inbox!
+              if (request.fromAgentId && request.fromAgentId !== agentProfileId && request.fromAgentId !== 'ADMIN') {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "⏳ Request Accepted",
                       message: `${request.toAgentName} accepted ${request.storeName}. Waiting for Admin confirmation.`,
@@ -1156,7 +1157,7 @@ const handleGitHubMirror = async () => {
                   });
               }
 
-              // 🔔 NOTIFY ADMIN FOR FINAL APPROVAL
+              // 3b. 🔔 NOTIFY ADMIN FOR FINAL APPROVAL
               await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                   title: "🛡️ Transfer Needs Approval",
                   message: `${request.toAgentName} accepted the hand-off for ${request.storeName}. Awaiting your authorization.`,
@@ -1168,7 +1169,7 @@ const handleGitHubMirror = async () => {
                   linkToTab: 'receivables'
               });
           } else {
-              // REJECTED - NOTIFY ORIGINAL REQUESTER
+              // REJECTED - NOTIFY ORIGINAL REQUESTER (Admin or Tier 4)
               if (request.fromAgentId && request.fromAgentId !== agentProfileId) {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "❌ Request Declined",
