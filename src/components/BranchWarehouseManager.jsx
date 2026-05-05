@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
-import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 
 export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -161,36 +161,51 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
         setIsProcessing(true);
 
         try {
-            const batch = writeBatch(db);
             const itemsToProcess = order.fulfilledItems || order.requestedItems || order.items || [];
             
-            for (const item of itemsToProcess) {
-                const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, item.productId);
-                batch.set(branchItemRef, {
-                    productId: item.productId,
-                    name: item.name,
-                    stock: item.qty, 
-                    lastReceivedAt: serverTimestamp(),
-                    lastReceivedFrom: order.id
-                }, { merge: true });
-            }
+            // 🚀 THE FIX: Use runTransaction to safely ADD to existing stock instead of overwriting it
+            await runTransaction(db, async (t) => {
+                for (const item of itemsToProcess) {
+                    const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, item.productId);
+                    const branchItemSnap = await t.get(branchItemRef);
+                    
+                    let currentStock = 0;
+                    if (branchItemSnap.exists()) {
+                        currentStock = branchItemSnap.data().stock || 0;
+                    }
+                    
+                    // Safely add incoming qty to current stock
+                    t.set(branchItemRef, {
+                        productId: item.productId,
+                        name: item.name,
+                        stock: currentStock + Number(item.qty), 
+                        lastReceivedAt: serverTimestamp(),
+                        lastReceivedFrom: order.id
+                    }, { merge: true });
+                }
 
-            const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
-            const updatedTimeline = [...(order.workflowTimeline || [])];
-            updatedTimeline.push({
-                status: 'DELIVERED',
-                time: new Date().toISOString(),
-                msg: `Received & verified by ${user.displayName || (user.email || "").split('@')[0]} at branch.` 
+                // Update the tracking ticket status inside the same transaction
+                const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
+                const orderSnap = await t.get(orderRef);
+                
+                if (orderSnap.exists()) {
+                    const orderData = orderSnap.data();
+                    const updatedTimeline = [...(orderData.workflowTimeline || [])];
+                    updatedTimeline.push({
+                        status: 'DELIVERED',
+                        time: new Date().toISOString(),
+                        msg: `Received & verified by ${user.displayName || (user.email || "").split('@')[0]} at branch.` 
+                    });
+
+                    t.update(orderRef, {
+                        status: 'DELIVERED',
+                        receivedAt: serverTimestamp(),
+                        receivedBy: user.email,
+                        workflowTimeline: updatedTimeline
+                    });
+                }
             });
 
-            batch.update(orderRef, {
-                status: 'DELIVERED',
-                receivedAt: serverTimestamp(),
-                receivedBy: user.email,
-                workflowTimeline: updatedTimeline
-            });
-
-            await batch.commit();
             triggerCapy(`${branchLocation} Inventory updated! Thank you. ✅`);
             logAudit("STOCK_RECEIVE", `${branchLocation} confirmed receipt of ${order.id}`);
             setIsProcessing(false);
