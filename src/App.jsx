@@ -154,22 +154,28 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
 
- 
+  // 🚀 1.5 THE FIX: DIRECT SYSTEM NOTIFICATIONS LISTENER
+  // Bypasses the useDatabaseSync hook which was completely blind to this collection
+  const [systemNotifs, setSystemNotifs] = useState([]);
+  
+  useEffect(() => {
+      if (!db || !appId || !userId || userId === 'default') return;
+      const notifRef = collection(db, `artifacts/${appId}/users/${userId}/notifications`);
+      const unsub = onSnapshot(notifRef, (snap) => {
+          setSystemNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+      return () => unsub();
+  }, [db, appId, userId]);
+
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       inventory, setInventory, customers, setCustomers, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests, notifications, setNotifications,
-      adminCanvas, setAdminCanvas, // 🚀 FIX 2: CORRECTED THE NAMING!
+      adminCanvas, setAdminCanvas, 
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
-
-
-
-
-
-
 
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
@@ -181,7 +187,6 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           let activeAlerts = [];
 
           if (userRole === 'ADMIN') {
-              // 🚀 FIX: Keep ALL recent requests, don't delete them. Just mark completed ones as read.
               const recentRequests = allRequests.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 30);
               
               activeAlerts = recentRequests.map(req => ({
@@ -189,14 +194,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   title: req.status === 'PENDING' ? `📦 REQ: ${req.branch}` : `✅ REQ: ${req.branch} (${req.status})`,
                   message: `${req.requestedByName || req.requestedBy?.split('@')[0]} requested ${req.requestedItems?.reduce((sum, i) => sum + Number(i.qty), 0) || 0} Bks.`,
                   timestamp: req.timestamp,
-                  // 🚀 FIX: Automatically mark as read/transparent if it's no longer PENDING
                   isRead: req.status !== 'PENDING' || readVirtualNotifs.includes(`logistics_${req.id}`),
                   linkToTab: 'restock_vault' 
               }));
           } else if (userRole === 'AREA_ADMIN') {
               const branchLocation = agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED';
               
-              // 🚀 FIX: Keep ALL recent requests for this branch so they stay in history
               const branchRequests = allRequests.filter(r => r.branch === branchLocation);
               const recentBranchRequests = branchRequests.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 30);
               
@@ -205,7 +208,6 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   title: req.status === 'IN_TRANSIT' ? `🚚 INCOMING SHIPMENT` : `📦 SHIPMENT (${req.status})`,
                   message: `HQ Shipped via ${req.courier || 'Internal'} (Resi: ${req.trackingNo || 'N/A'}).`,
                   timestamp: req.fulfilledAt || req.timestamp,
-                  // 🚀 FIX: Automatically mark as read/transparent if it's no longer IN TRANSIT
                   isRead: req.status !== 'IN_TRANSIT' || readVirtualNotifs.includes(`logistics_${req.id}`),
                   linkToTab: 'restock_vault' 
               }));
@@ -217,20 +219,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       return () => unsub();
   }, [db, appId, userId, userRole, agentProfileId, motorists, readVirtualNotifs]);
 
-
-
-
-
-
   // 🚀 2. COMBINE REAL AND VIRTUAL NOTIFICATIONS (WITH STRICT INBOX FILTERING)
   const combinedNotifications = useMemo(() => {
-      // 🚀 THE FIX: Filter database notifications so users ONLY see alerts meant for them!
-      const myDbNotifs = notifications.filter(n => {
-          if (userRole === 'ADMIN') return n.agentId === 'ADMIN' || !n.agentId; // Admin sees 'ADMIN' alerts
-          return n.agentId === agentProfileId; // Agents only see alerts tagged with their profile ID
+      // 🚀 THE FIX: Filter the real systemNotifs instead of the broken 'notifications' variable
+      const myDbNotifs = systemNotifs.filter(n => {
+          if (userRole === 'ADMIN') return n.agentId === 'ADMIN' || !n.agentId; 
+          return n.agentId === agentProfileId;
       });
       return [...myDbNotifs, ...logisticsNotifs];
-  }, [notifications, logisticsNotifs, userRole, agentProfileId]);
+  }, [systemNotifs, logisticsNotifs, userRole, agentProfileId]);
 
 // Helper to include Hours and Minutes in the filename
   // --- DOWNLOAD ENGINE HELPERS ---
