@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed // 🚀 ADDED: LocateFixed Icon for GPS
+    Navigation, LocateFixed, Clock
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -50,7 +50,6 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     });
 };
 
-// 🚀 NEW: GOOGLE MAPS STYLE BLUE DOT FOR USER LOCATION
 const userLocationIcon = L.divIcon({
     className: 'user-location-icon',
     html: `
@@ -142,7 +141,6 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-// 🚀 NEW: GPS LOCATION CONTROLLER 
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const [isLocating, setIsLocating] = useState(false);
@@ -625,8 +623,14 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     const [touchStartY, setTouchStartY] = useState(null);
+    
+    // 🚀 NEW: State for dynamically controlling visit frequency
+    const [visitFreq, setVisitFreq] = useState(store.visitFreq || 7);
 
-    useEffect(() => { setLocalScale(store.catchmentScale || 1.0); }, [store.id, store.catchmentScale]);
+    useEffect(() => { 
+        setLocalScale(store.catchmentScale || 1.0); 
+        setVisitFreq(store.visitFreq || 7);
+    }, [store.id, store.catchmentScale, store.visitFreq]);
 
     const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
@@ -645,8 +649,20 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             }
         });
         const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
-        return { totalRev, currentConsignment, activeItems, visitCount: storeTrans.length };
+        return { totalRev, currentConsignment, activeItems };
     }, [store.name, transactions, inventory]);
+
+    // 🚀 NEW: Deeply extracted recent sales history
+    const recentSales = useMemo(() => {
+        return (transactions || [])
+            .filter(t => t.customerName === store.name && t.type === 'SALE')
+            .sort((a, b) => {
+                const dateA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.date).getTime();
+                const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date).getTime();
+                return dateB - dateA;
+            })
+            .slice(0, 5); // Grab the last 5 transactions
+    }, [transactions, store.name]);
 
     const handleToggleStoreType = async () => {
         if (!db || !appId) return;
@@ -678,6 +694,17 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) {}
     };
 
+    // 🚀 NEW: Database update function for changing Visit Frequency
+    const handleSaveVisitFreq = async (newFreq) => {
+        const freq = Math.max(1, parseInt(newFreq) || 7);
+        setVisitFreq(freq);
+        if (!db || !appId || !user) return;
+        try { 
+            const userId = user?.uid || user?.id;
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { visitFreq: freq }); 
+        } catch (error) { console.error("Failed to save visit freq:", error); }
+    };
+
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
     
     // 🚀 NATIVE GOOGLE MAPS APP ROUTING
@@ -694,6 +721,15 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             setTouchStartY(null);
         }
     };
+
+    // 🚀 NEW: Clean Location String (Strips out 'Uncategorized')
+    const displayLocation = useMemo(() => {
+        const parts = [];
+        if (store.address && store.address.trim() !== '') parts.push(store.address);
+        if (store.city && store.city !== 'Uncategorized') parts.push(store.city);
+        if (store.region && store.region !== 'Uncategorized') parts.push(store.region);
+        return parts.length > 0 ? parts.join(', ') : 'Location details unavailable';
+    }, [store.address, store.city, store.region]);
 
     return (
         <>
@@ -728,7 +764,9 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     </div>
                     
                     {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
-                    <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
+                    
+                    {/* 🚀 FIXED: Render Cleaned Location String */}
+                    <p className="text-slate-400 text-xs flex items-center gap-1 mb-4 leading-relaxed"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
@@ -745,9 +783,33 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         )}
                     </div>
 
-                    <div className={`p-4 rounded-xl mb-6 flex items-center gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
-                        <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
-                        <div><p className="text-[10px] uppercase font-bold opacity-70 text-white">Next Visit</p><p className="font-bold text-sm text-white">{store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`}</p></div>
+                    {/* 🚀 FIXED: Next Visit Math & Editable Timespan Controller */}
+                    <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
+                        <div className="flex items-center gap-3">
+                            <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
+                            <div className="flex-1">
+                                <p className="text-[10px] uppercase font-bold opacity-70 text-white">Next Visit Target</p>
+                                <p className="font-bold text-sm text-white">
+                                    {!store.lastVisit ? 'Never Visited (Due Now)' : (store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`)}
+                                </p>
+                            </div>
+                            
+                            {/* Controller Box for Admins */}
+                            {isAdmin && (
+                                <div className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-lg border border-slate-600 shadow-inner">
+                                    <Clock size={12} className="text-slate-400 ml-1"/>
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        value={visitFreq} 
+                                        onChange={(e) => setVisitFreq(e.target.value)} 
+                                        onBlur={(e) => handleSaveVisitFreq(e.target.value)}
+                                        className="w-8 text-center text-xs font-black bg-transparent text-white outline-none"
+                                    />
+                                    <span className="text-[9px] text-slate-400 font-bold pr-1 uppercase">Days</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {isAdmin && (
@@ -797,7 +859,45 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     )}
                                 </div>
                             )}
-                            <div className="bg-slate-800 p-3 rounded-xl"><p className="text-[10px] text-slate-400 uppercase">Lifetime Sales</p><p className="font-bold text-emerald-400">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)}</p></div>
+
+                            {/* 🚀 RECENT SALES HISTORY DROP-DOWN REPLACEMENT */}
+                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
+                                    Recent Sales
+                                    <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
+                                </h3>
+                                
+                                <div className="space-y-3">
+                                    {recentSales.length > 0 ? recentSales.map(tx => (
+                                        <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
+                                            <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                                <div>
+                                                    <span className="text-xs font-bold text-white block">
+                                                        {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-500">
+                                                        {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {(tx.items || []).map((item, i) => (
+                                                    <div key={i} className="flex justify-between text-[10px]">
+                                                        <span className="text-slate-300 truncate pr-2">- {item.name}</span>
+                                                        <span className="text-orange-400 font-bold shrink-0">{item.qty} {item.unit}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center py-4 opacity-50 flex flex-col items-center">
+                                            <TrendingUp size={20} className="text-slate-500 mb-1"/>
+                                            <p className="text-xs text-slate-400 italic">No recent sales data.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -902,13 +1002,27 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
                 if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
 
-                const last = c.lastVisit ? new Date(c.lastVisit) : new Date(0);
-                const next = new Date(last); next.setDate(last.getDate() + (parseInt(c.visitFreq) || 7));
-                const diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
-                const daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
-                const isConquered = daysSinceVisit <= 30;
+                // 🚀 FIXED: Smart Date Math that handles Never-Visited stores correctly
+                const last = c.lastVisit ? new Date(c.lastVisit) : null;
+                const freq = parseInt(c.visitFreq) || 7;
+                let diffDays = 0;
+                let daysSinceVisit = 0;
+                let isConquered = false;
 
-                return { ...c, city: cit, latitude: lat, longitude: lng, status: diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'), diffDays, daysSinceVisit, isConquered };
+                if (last && !isNaN(last.getTime())) {
+                    const next = new Date(last);
+                    next.setDate(last.getDate() + freq);
+                    diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
+                    daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
+                    isConquered = daysSinceVisit <= 30;
+                } else {
+                    diffDays = -1; // Force overdue for never visited
+                    daysSinceVisit = 999;
+                    isConquered = false;
+                }
+                const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
+
+                return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last };
             })
             .filter(c => c !== null);
 
@@ -1013,6 +1127,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <div className="h-5 w-[1px] bg-slate-700"></div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#10b981] border border-white"></div> High</div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f59e0b] border border-white"></div> Med</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f97316] border border-white"></div> Low</div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white"></div> Zero</div>
                 </div>
             )}
@@ -1112,7 +1227,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                {/* 🚀 NEW: THE GPS LOCATION CONTROLLER AND BLUE DOT MARKER */}
                 <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
                 {userLocation && (
                     <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
