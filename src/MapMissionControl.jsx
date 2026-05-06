@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation
+    Navigation, LocateFixed // 🚀 ADDED: LocateFixed Icon for GPS
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -27,7 +27,6 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     let transform = 'scale(1)';
     let zIndex = '';
     
-    // Smooth Scale & Pulse for the actively tapped marker
     if (isActive) {
         glow = `box-shadow: 0 0 0 4px #10b981, 0 0 25px #10b981;`;
         transform = `scale(1.3)`;
@@ -51,15 +50,24 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     });
 };
 
+// 🚀 NEW: GOOGLE MAPS STYLE BLUE DOT FOR USER LOCATION
+const userLocationIcon = L.divIcon({
+    className: 'user-location-icon',
+    html: `
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; width: 24px; height: 24px;">
+            <div style="position: absolute; width: 100%; height: 100%; background-color: #3b82f6; border-radius: 50%; opacity: 0.4; animation: pulse-ring 2s infinite;"></div>
+            <div style="width: 14px; height: 14px; background-color: #2563eb; border: 2px solid white; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
+        </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
 
-// --- UTILITY HELPERS ---
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
-        if (typeof coords[0] === 'number') {
-            return [Number(coords[0].toFixed(4)), Number(coords[1].toFixed(4))];
-        }
+        if (typeof coords[0] === 'number') return [Number(coords[0].toFixed(4)), Number(coords[1].toFixed(4))];
         return coords.map(compressCoords);
     }
     return coords;
@@ -94,7 +102,6 @@ const convertToBks = (qty, unit, product) => {
     return qty; 
 };
 
-
 const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus, selectedZone }) => {
     const map = useMap();
     const isFirstRun = useRef(true);
@@ -112,12 +119,7 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
                 const bounds = layer.getBounds();
                 const mapWidth = map.getSize().x;
                 const leftPad = mapWidth > 650 ? 400 : 20; 
-                map.fitBounds(bounds, { 
-                    paddingTopLeft: [leftPad, 20], 
-                    paddingBottomRight: [20, 20], 
-                    maxZoom: 13, 
-                    duration: 1.2 
-                });
+                map.fitBounds(bounds, { paddingTopLeft: [leftPad, 20], paddingBottomRight: [20, 20], maxZoom: 13, duration: 1.2 });
             } catch(e) {}
         }
     }, [selectedZone, map]);
@@ -138,6 +140,42 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
         }
     }, [selectedRegion, selectedCity, map, uploadedFocus, mapPoints, selectedZone]); 
     return null;
+};
+
+// 🚀 NEW: GPS LOCATION CONTROLLER 
+const LocationController = ({ userLocation, setUserLocation }) => {
+    const map = useMap();
+    const [isLocating, setIsLocating] = useState(false);
+
+    const handleLocate = () => {
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const coords = [pos.coords.latitude, pos.coords.longitude];
+                setUserLocation(coords);
+                map.flyTo(coords, 15, { duration: 1.2 });
+                setIsLocating(false);
+            },
+            (err) => {
+                console.error(err);
+                alert("Please enable location permissions in your iPhone Settings to use this feature.");
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    };
+
+    return (
+        <div className="absolute bottom-[100px] right-[10px] z-[999]">
+            <button 
+                onClick={handleLocate} 
+                className={`bg-slate-800 text-white border border-slate-600 p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-slate-700 hover:text-blue-400 transition-colors ${isLocating ? 'animate-pulse text-blue-500 border-blue-500' : ''}`}
+                title="Show My Location"
+            >
+                <LocateFixed size={24} />
+            </button>
+        </div>
+    );
 };
 
 const AdminControls = ({ isAdmin, onSetHome }) => {
@@ -175,11 +213,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
         <Marker 
             position={[store.latitude, store.longitude]} 
             icon={smartIcon} 
-            eventHandlers={{ 
-                click: () => {
-                    handlePinClick(store, map); 
-                } 
-            }} 
+            eventHandlers={{ click: () => { handlePinClick(store, map); } }} 
             riseOnHover={true}
             zIndexOffset={isActive ? 1000 : 0} 
         >
@@ -194,32 +228,23 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
     );
 };
 
-// --- TACTICAL SECTOR DASHBOARD ---
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType, timeFilter, setTimeFilter }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
     const globalRevenue = useMemo(() => {
         let total = 0;
-        const visibleBoundaries = selectedAreaType !== "All" 
-            ? boundaries.filter(b => b.level === selectedAreaType)
-            : boundaries;
-            
-        visibleBoundaries.forEach(b => {
-            total += (zoneRevenues[b.id] || 0);
-        });
+        const visibleBoundaries = selectedAreaType !== "All" ? boundaries.filter(b => b.level === selectedAreaType) : boundaries;
+        visibleBoundaries.forEach(b => { total += (zoneRevenues[b.id] || 0); });
         return total;
     }, [boundaries, zoneRevenues, selectedAreaType]);
     
     const rankedSectors = useMemo(() => {
         let filtered = [...boundaries];
-        if (selectedAreaType !== "All") {
-            filtered = filtered.filter(b => b.level === selectedAreaType);
-        }
+        if (selectedAreaType !== "All") filtered = filtered.filter(b => b.level === selectedAreaType);
         return filtered.sort((a,b) => (zoneRevenues[b.id]||0) - (zoneRevenues[a.id]||0));
     }, [boundaries, zoneRevenues, selectedAreaType]);
 
     const maxRev = rankedSectors.length > 0 ? (zoneRevenues[rankedSectors[0].id] || 1) : 1;
-
     const activeZoneRev = selectedZone ? (zoneRevenues[selectedZone.id] || 0) : 0;
     const activeZoneStores = selectedZone ? mapPoints.filter(s => checkPointInGeoJSON(s.longitude, s.latitude, selectedZone.geometry)) : [];
     const activeOverdue = activeZoneStores.filter(s => s.status === 'overdue').length;
@@ -239,7 +264,6 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     return (
         <div className="absolute top-20 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-100px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
-
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <div className="absolute top-4 right-4 flex gap-3">
                     <button onClick={() => setIsMinimized(true)} className="text-slate-500 hover:text-white transition-colors"><MinusCircle size={18}/></button>
@@ -252,11 +276,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
                 <div className="flex items-center gap-2 mb-3 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700">
                     <Tag size={14} className="text-slate-400 ml-1"/>
-                    <select
-                        value={selectedAreaType}
-                        onChange={(e) => setSelectedAreaType(e.target.value)}
-                        className="bg-transparent text-xs font-bold text-white outline-none w-full cursor-pointer"
-                    >
+                    <select value={selectedAreaType} onChange={(e) => setSelectedAreaType(e.target.value)} className="bg-transparent text-xs font-bold text-white outline-none w-full cursor-pointer">
                         <option value="Provinsi" className="bg-slate-900">Provinsi Dashboard</option>
                         <option value="Kabupaten" className="bg-slate-900">Kabupaten Dashboard</option>
                         <option value="Kecamatan" className="bg-slate-900">Kecamatan Dashboard</option>
@@ -268,24 +288,13 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest">Global Revenue</p>
-                            <select 
-                                value={timeFilter} 
-                                onChange={(e) => setTimeFilter(e.target.value)}
-                                className="bg-slate-800 text-[9px] text-emerald-400 font-bold px-1.5 py-0.5 rounded outline-none cursor-pointer border border-emerald-500/30 hover:border-emerald-500 transition-colors"
-                            >
-                                <option value="Today">Today</option>
-                                <option value="7 Days">7 Days</option>
-                                <option value="This Month">This Month</option>
-                                <option value="This Year">This Year</option>
-                                <option value="All-Time">All-Time</option>
+                            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="bg-slate-800 text-[9px] text-emerald-400 font-bold px-1.5 py-0.5 rounded outline-none cursor-pointer border border-emerald-500/30 hover:border-emerald-500 transition-colors">
+                                <option value="Today">Today</option><option value="7 Days">7 Days</option><option value="This Month">This Month</option><option value="This Year">This Year</option><option value="All-Time">All-Time</option>
                             </select>
                         </div>
                         <p className="text-2xl font-black text-emerald-400">{formatRupiah(globalRevenue)}</p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Active Sectors</p>
-                        <p className="text-xl font-bold text-white">{rankedSectors.length}</p>
-                    </div>
+                    <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Active Sectors</p><p className="text-xl font-bold text-white">{rankedSectors.length}</p></div>
                 </div>
             </div>
 
@@ -305,24 +314,15 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     const isSelected = selectedZone?.id === sector.id;
 
                     return (
-                        <div 
-                            key={sector.id} 
-                            onClick={() => setSelectedZone(sector)}
-                            className={`p-3 rounded-xl border transition-all cursor-pointer group ${isSelected ? 'bg-white/10 border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-black/40 border-slate-700 hover:border-slate-500'}`}
-                        >
+                        <div key={sector.id} onClick={() => setSelectedZone(sector)} className={`p-3 rounded-xl border transition-all cursor-pointer group ${isSelected ? 'bg-white/10 border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-black/40 border-slate-700 hover:border-slate-500'}`}>
                             <div className="flex justify-between items-center mb-2">
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span className="text-[10px] font-bold text-slate-500 w-4">{index + 1}.</span>
-                                    <div className="flex flex-col overflow-hidden">
-                                        <span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span>
-                                        <span className="text-[8px] text-slate-500 uppercase">{sector.level}</span>
-                                    </div>
+                                    <div className="flex flex-col overflow-hidden"><span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span><span className="text-[8px] text-slate-500 uppercase">{sector.level}</span></div>
                                 </div>
                                 <span className={`text-xs font-black ${textColor}`}>{formatRupiah(rev)}</span>
                             </div>
-                            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
-                                <div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div>
-                            </div>
+                            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex"><div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div></div>
                         </div>
                     );
                 })}
@@ -336,36 +336,24 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                                 <p className="text-[8px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
                                 <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
                             </div>
-                            <div className="text-right shrink-0">
-                                <p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p>
-                            </div>
+                            <div className="text-right shrink-0"><p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p></div>
                         </div>
-
                         <div className="flex gap-2">
-                            <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center">
-                                <span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span>
-                                <span className="text-xs font-bold text-white">{activeZoneStores.length}</span>
-                            </div>
+                            <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span><span className="text-xs font-bold text-white">{activeZoneStores.length}</span></div>
                             <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
                                 <span className={`text-[8px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat</span>
-                                <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
-                                    {activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}
-                                </span>
+                                <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>{activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}</span>
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div className="text-center opacity-50 flex flex-col items-center justify-center py-1">
-                        <ShieldAlert size={20} className="mb-1 text-slate-400"/>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Select Sector for Analysis</p>
-                    </div>
+                    <div className="text-center opacity-50 flex flex-col items-center justify-center py-1"><ShieldAlert size={20} className="mb-1 text-slate-400"/><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Select Sector for Analysis</p></div>
                 )}
             </div>
         </div>
     );
 };
 
-// --- DEDICATED GEOJSON UPLOADER & MANAGER ---
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -577,7 +565,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     );
 };
 
-
 const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     if (!zone) return null;
 
@@ -637,7 +624,8 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [showConsignDetails, setShowConsignDetails] = useState(false);
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
-    
+    const [touchStartY, setTouchStartY] = useState(null);
+
     useEffect(() => { setLocalScale(store.catchmentScale || 1.0); }, [store.id, store.catchmentScale]);
 
     const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
@@ -691,22 +679,47 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     };
 
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
-    const getGpsLink = () => { if (store.latitude && store.longitude) return `http://googleusercontent.com/maps.google.com/?q=${store.latitude},${store.longitude}`; return `http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; };
+    
+    // 🚀 NATIVE GOOGLE MAPS APP ROUTING
+    const getGpsLink = () => { 
+        if (store.latitude && store.longitude) return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`; 
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
+    };
+
+    const handleTouchStart = (e) => { setTouchStartY(e.touches[0].clientY); };
+    const handleTouchMove = (e) => {
+        if (!touchStartY) return;
+        if (e.touches[0].clientY - touchStartY > 50) {
+            setSelectedStore(null);
+            setTouchStartY(null);
+        }
+    };
 
     return (
         <>
-            {/* Mobile Backdrop */}
-            <div className="lg:hidden fixed inset-0 bg-black/40 z-[999] backdrop-blur-sm transition-opacity" onClick={() => setSelectedStore(null)}></div>
+            <div 
+                className="lg:hidden fixed inset-0 bg-black/40 z-[999] backdrop-blur-sm transition-opacity" 
+                onClick={() => setSelectedStore(null)}
+                onTouchStart={(e) => e.stopPropagation()} 
+            ></div>
             
-            {/* The Bottom Sheet (Mobile) / Sidebar (Desktop) */}
-            <div className="fixed bottom-0 left-0 right-0 max-h-[85vh] lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-2xl z-[1000] flex flex-col lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] transition-transform transform translate-y-0 duration-300 animate-slide-up lg:animate-slide-in-left">
-                
-                {/* Mobile Drag Handle */}
-                <div className="lg:hidden w-full flex justify-center pt-4 pb-2 shrink-0 cursor-pointer" onClick={() => setSelectedStore(null)}>
+            <div 
+                className="fixed bottom-0 left-0 right-0 max-h-[85vh] lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-2xl z-[1000] flex flex-col lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] transition-transform transform translate-y-0 duration-300 animate-slide-up lg:animate-slide-in-left"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onWheel={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+            >
+                <div 
+                    className="lg:hidden w-full flex justify-center pt-4 pb-2 shrink-0 cursor-pointer" 
+                    onClick={() => setSelectedStore(null)}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={() => setTouchStartY(null)}
+                >
                     <div className="w-12 h-1.5 bg-slate-600 rounded-full"></div>
                 </div>
 
-                {/* Desktop Close Button */}
                 <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
                 <div className="p-6 lg:pt-8 overflow-y-auto custom-scrollbar flex-1 pb-10 lg:pb-6">
@@ -717,7 +730,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
                     <p className="text-slate-400 text-xs flex items-center gap-1 mb-4"><MapPin size={12}/> {store.city}</p>
 
-                    {/* Action Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
                             <Navigation size={14}/> Directions
@@ -823,6 +835,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [uploadedFocus, setUploadedFocus] = useState(null);
     
     const [boundaries, setBoundaries] = useState([]);
+    
+    // 🚀 NEW: GPS STATE FOR USER LOCATION
+    const [userLocation, setUserLocation] = useState(null);
 
     const userId = user?.uid || user?.id || "default";
 
@@ -979,7 +994,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     
-    // 🚀 NEW: When a pin is clicked, lock it as active so the icon engine can pulse it!
     const handlePinClick = (store, map) => { 
         setSelectedStore(store); 
         setSelectedZone(null); 
@@ -990,22 +1004,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        // 🚀 FULLSCREEN APP-IN-APP WRAPPER
-        <div className="absolute inset-0 w-full h-full bg-slate-900 overflow-hidden font-sans z-[50]">
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50]">
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
             {salesHeatmapMode && (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Sales Heatmap</span>
+                <div className="absolute bottom-[100px] lg:bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Heatmap</span>
                     <div className="h-5 w-[1px] bg-slate-700"></div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#10b981] border border-white"></div> High</div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f59e0b] border border-white"></div> Med</div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f97316] border border-white"></div> Low</div>
                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white"></div> Zero</div>
                 </div>
             )}
 
-            {/* 🚀 FLOATING GOOGLE MAPS CONTROLS */}
             <div className="absolute top-4 left-4 right-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-700 p-2 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
@@ -1100,6 +1111,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
+
+                {/* 🚀 NEW: THE GPS LOCATION CONTROLLER AND BLUE DOT MARKER */}
+                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
+                {userLocation && (
+                    <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
+                )}
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
@@ -1204,6 +1221,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
                 
+                /* 🚀 PULSING BLUE DOT ANIMATION */
+                @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(3.5); opacity: 0; } }
+
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
             `}</style>
         </div>
