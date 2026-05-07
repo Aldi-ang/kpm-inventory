@@ -625,7 +625,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (MULTI-SNAP POINTS)
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (CRASH-PROOFED)
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const sheetRef = useRef(null);
     const contentRef = useRef(null);
@@ -633,20 +633,20 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     const [visitFreq, setVisitFreq] = useState(store.visitFreq || 7);
+    const [showConsignDetails, setShowConsignDetails] = useState(false);
 
     // Gestures State
     const touchY = useRef(0);
     const startY = useRef(0);
     const isDragging = useRef(false);
-    const sheetHeight = useRef(0); // Current calculated height
-    const currentSnapPoint = useRef(0.5); // Start at 50%
+    const sheetHeight = useRef(0); 
+    const currentSnapPoint = useRef(0.5); 
     const isContentScrolling = useRef(false);
 
-    // 🚀 FIXED: Default logic. When selecting a store on mobile, default to 50% snap point instantly.
     useEffect(() => {
         if (window.innerWidth < 1024 && sheetRef.current) {
             const winH = window.innerHeight;
-            currentSnapPoint.current = 0.5; // Default logic: Snap to 50%
+            currentSnapPoint.current = 0.5; 
             sheetHeight.current = winH * 0.5;
             sheetRef.current.style.transform = `translateY(${winH - sheetHeight.current}px)`;
             sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -658,13 +658,11 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setVisitFreq(store.visitFreq || 7);
     }, [store.id, store.catchmentScale, store.visitFreq]);
 
-    // Handle internal content scrolling logic vs sheet dragging logic
     useEffect(() => {
         const contentDiv = contentRef.current;
         if (!contentDiv) return;
 
         const handleScroll = () => {
-            // If scrolled down, allow content scrolling, don't drag sheet
             if (contentDiv.scrollTop > 0) { isContentScrolling.current = true; } 
             else { isContentScrolling.current = false; }
         };
@@ -672,23 +670,15 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return () => contentDiv.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // 🚀 FIXED: GESTURE ENGINE (POINTER EVENTS)
     const onPointerDown = (e) => {
-        // Only trigger drag on the header/handle, or if content is at top and dragging down
         if (isContentScrolling.current && e.target.closest('.scrollable-content')) return;
-        
-        // Don't drag if clicking buttons inside the header
-        if (e.target.closest('button') || e.target.closest('a')) return;
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('select')) return;
 
         isDragging.current = true;
         startY.current = e.clientY;
         touchY.current = e.clientY;
         
-        if (sheetRef.current) {
-            // Remove transitions while dragging for "liquid" feel
-            sheetRef.current.style.transition = 'none';
-        }
-        
+        if (sheetRef.current) { sheetRef.current.style.transition = 'none'; }
         e.currentTarget.setPointerCapture(e.pointerId);
     };
 
@@ -698,13 +688,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const deltaY = e.clientY - touchY.current;
         const winH = window.innerHeight;
         
-        // Calculate new height, clamp between roughly 10% and 95%
         let newHeight = sheetHeight.current - deltaY;
         newHeight = Math.max(winH * 0.08, Math.min(winH * 0.95, newHeight));
         
         sheetHeight.current = newHeight;
-        
-        // Apply transform transform directly to DOM for native performance
         const translateVal = winH - newHeight;
         sheetRef.current.style.transform = `translateY(${translateVal}px)`;
         
@@ -718,26 +705,22 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
         const winH = window.innerHeight;
         const currentRelHeight = sheetHeight.current / winH;
-        
-        // Define requested Snap Points [10%, 50%, 90%]
         const SNAPS = [0.10, 0.50, 0.90];
         
-        // Find nearest snap point
         let nearestSnap = SNAPS.reduce((prev, curr) => {
             return (Math.abs(curr - currentRelHeight) < Math.abs(prev - currentRelHeight) ? curr : prev);
         });
 
-        // Snap logic: Elastic snap back to nearest point
         currentSnapPoint.current = nearestSnap;
         sheetHeight.current = winH * nearestSnap;
         
-        // Add elastic transition for snapping
         sheetRef.current.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         const translateVal = winH - sheetHeight.current;
         sheetRef.current.style.transform = `translateY(${translateVal}px)`;
     };
 
-    // Database Actions (keeping existing logic)
+    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
+
     const stats = useMemo(() => {
         const storeTrans = (transactions || []).filter(t => t.customerName === store.name);
         const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
@@ -747,9 +730,18 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const itemMap = {}; 
         storeTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                (t.items || []).forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name, qty: 0 }; itemMap[i.productId].qty += bks; });
+                (t.items || []).forEach(i => { 
+                    if (!i || !i.productId) return; // 🚀 CRASH PROOFING
+                    const bks = convertToBks(i.qty || 0, i.unit || 'Bks', inventory ? inventory.find(p => p.id === i.productId) : null); 
+                    if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name || 'Unknown', qty: 0 }; 
+                    itemMap[i.productId].qty += bks; 
+                });
             } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                (t.items || t.itemsPaid || []).forEach(i => { const bks = convertToBks(i.qty, i.unit, inventory ? inventory.find(p => p.id === i.productId) : null); if (itemMap[i.productId]) itemMap[i.productId].qty -= bks; });
+                (t.items || t.itemsPaid || []).forEach(i => { 
+                    if (!i || !i.productId) return; // 🚀 CRASH PROOFING
+                    const bks = convertToBks(i.qty || 0, i.unit || 'Bks', inventory ? inventory.find(p => p.id === i.productId) : null); 
+                    if (itemMap[i.productId]) itemMap[i.productId].qty -= bks; 
+                });
             }
         });
         const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
@@ -760,9 +752,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return (transactions || [])
             .filter(t => t.customerName === store.name && t.type === 'SALE')
             .sort((a, b) => {
-                const dateA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.date).getTime();
-                const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date).getTime();
-                return dateB - dateA;
+                // 🚀 CRASH PROOFING: Protect against NaN and Invalid Dates
+                const dateA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.date || 0).getTime();
+                const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date || 0).getTime();
+                return (dateB || 0) - (dateA || 0);
             })
             .slice(0, 5); 
     }, [transactions, store.name]);
@@ -774,15 +767,12 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
             const userId = user?.uid || user?.id;
             const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id);
-            
-            // 🚀 FIXED: Separated the variables correctly
             const updates = { storeType: newType };
-            if (newType === 'Wholesaler') updates.suppliedBy = null; 
-            
+            if (newType === 'Wholesaler') updates.suppliedBy = null;
             await updateDoc(ref, updates);
         } catch (error) {} finally { setIsLinking(false); }
     };
-    
+
     const handleAssignHub = async (hubId) => {
         if (!db || !appId || isLinking) return;
         setIsLinking(true);
@@ -807,16 +797,20 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { visitFreq: freq }); 
-        } catch (error) { console.error("Failed to save visit freq:", error); }
+        } catch (error) {}
     };
 
-    const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
+    // 🚀 CRASH PROOFING: Force phone variable to be a String before running regex replace
+    const getWhatsappLink = () => { 
+        if (!store.phone) return "#"; 
+        return `https://wa.me/${String(store.phone).replace(/\D/g, '').replace(/^0/, '62')}`; 
+    };
+    
+    // 🚀 CRASH PROOFING: Fixed malformed URL syntax for true Universal mapping
     const getGpsLink = () => { 
-        if (store.latitude && store.longitude) return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`; 
-        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
+        if (store.latitude && store.longitude) return `https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`; 
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
     };
-
-    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
     const displayLocation = useMemo(() => {
         const parts = [];
@@ -828,36 +822,29 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     return (
         <>
-            {/* Mobile Backdrop */}
             <div 
                 className="lg:hidden fixed inset-0 bg-black/50 z-[999] backdrop-blur-sm transition-opacity duration-300" 
                 onClick={() => setSelectedStore(null)}
                 style={{ opacity: selectedStore ? 1 : 0 }}
             ></div>
             
-            {/* 🚀 FIXED: The Liquid Sheet Container */}
             <div 
                 ref={sheetRef}
                 className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col transition-transform lg:animate-slide-in-left lg:transform-none"
-                // Initial Mobile State (Hidden off screen)
                 style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none', touchAction: 'none' }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onPointerCancel={onPointerUp}
             >
-                {/* 🚀 FIXED: Mobile Drag Handle Area */}
                 <div className="lg:hidden w-full flex justify-center pt-3 pb-3 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800">
                     <div className="w-16 h-1.5 bg-slate-700 rounded-full"></div>
                 </div>
 
-                {/* Desktop Close Button */}
                 <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
-                {/* 🚀 FIXED: Scrollable Content Container (Slider inside Slider logic) */}
                 <div ref={contentRef} className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" style={{ touchAction: 'auto' }}>
                     
-                    {/* Header Summary (Always visible, part of 10% snap) */}
                     <div className="flex items-start justify-between mb-1 pr-8">
                         <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name}</h2>
                     </div>
@@ -866,18 +853,15 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     
                     <p className="text-slate-400 text-xs flex items-center gap-1 mb-5 leading-relaxed truncate"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
-                    {/* Action Grid (Part of 10% snap UX) */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
                             <Navigation size={14}/> Directions
                         </a>
                         
-                        {/* Mobile: Dynamic Close (Google Maps style) */}
                         <button onClick={() => setSelectedStore(null)} className="lg:hidden w-full py-3.5 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 shadow-md">
                            <X size={14}/> Close
                         </button>
 
-                        {/* Desktop WhatsApp (Replaces mobile close) */}
                         {isAdmin && store.phone ? (
                             <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="hidden lg:flex w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
                                 <Phone size={14}/> WhatsApp
@@ -889,7 +873,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         )}
                     </div>
 
-                    {/* Visit Status (Becomes visible at 50% snap) */}
                     <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                         <div className="flex items-center gap-3">
                             <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -917,7 +900,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         </div>
                     </div>
 
-                    {/* Admin/Details sections (Visible at 50% and 90% snaps) */}
                     {isAdmin && (
                         <>
                             <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
@@ -946,7 +928,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                 </div>
                             )}
 
-                            {/* Complex details (Scrolled at 90% snap) */}
                             <div className="space-y-4 mb-2">
                                 {stats.currentConsignment > 0 && (
                                     <div className="p-4 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
@@ -971,29 +952,38 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     </h3>
                                     
                                     <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
-                                        {recentSales.length > 0 ? recentSales.map(tx => (
-                                            <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
-                                                <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
-                                                    <div>
-                                                        <span className="text-xs font-bold text-white block">
-                                                            {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-500">
-                                                            {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'})}
-                                                        </span>
-                                                    </div>
-                                                    <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {(tx.items || []).map((item, i) => (
-                                                        <div key={i} className="flex justify-between text-[10px]">
-                                                            <span className="text-slate-300 truncate pr-2">- {item.name}</span>
-                                                            <span className="text-orange-400 font-bold shrink-0">{item.qty} {item.unit}</span>
+                                        {recentSales.length > 0 ? recentSales.map(tx => {
+                                            // 🚀 CRASH PROOFING: Bulletproof Date extraction
+                                            let displayDate = "Unknown Date";
+                                            let displayTime = "--:--";
+                                            try {
+                                                const rawDate = tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000) : new Date(tx.date || 0);
+                                                if (!isNaN(rawDate.getTime()) && rawDate.getTime() > 0) {
+                                                    displayDate = rawDate.toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'});
+                                                    displayTime = rawDate.toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                                                }
+                                            } catch(err) {}
+
+                                            return (
+                                                <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
+                                                    <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                                        <div>
+                                                            <span className="text-xs font-bold text-white block">{displayDate}</span>
+                                                            <span className="text-[10px] text-slate-500">{displayTime}</span>
                                                         </div>
-                                                    ))}
+                                                        <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {(tx.items || []).map((item, i) => (
+                                                            <div key={i} className="flex justify-between text-[10px]">
+                                                                <span className="text-slate-300 truncate pr-2">- {item?.name || 'Item'}</span>
+                                                                <span className="text-orange-400 font-bold shrink-0">{item?.qty || 0} {item?.unit || 'Bks'}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )) : (
+                                            )
+                                        }) : (
                                             <div className="text-center py-4 opacity-50 flex flex-col items-center">
                                                 <TrendingUp size={20} className="text-slate-500 mb-1"/>
                                                 <p className="text-xs text-slate-400 italic">No recent sales data.</p>
