@@ -180,7 +180,8 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
     return (
-        <div className="absolute top-[80px] right-[10px] z-[999]">
+        // 🚀 FIXED: Pushed down for mobile to clear global header 
+        <div className="absolute top-[140px] lg:top-[80px] right-[10px] z-[999]">
             <button onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
                 <MapPin size={14}/> Set Home
             </button>
@@ -249,7 +250,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
     if (isMinimized) {
         return (
-            <div className="absolute top-20 left-4 z-[2000] animate-slide-in-left">
+            // 🚀 FIXED: Mobile Margin Push
+            <div className="absolute top-[140px] lg:top-20 left-4 z-[2000] animate-slide-in-left">
                 <button onClick={() => setIsMinimized(false)} className="bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3 hover:bg-slate-800 transition-colors font-mono font-bold text-xs uppercase tracking-widest">
                     <ShieldAlert size={18} className="animate-pulse" />
                     Sector Command
@@ -260,7 +262,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     }
 
     return (
-        <div className="absolute top-20 left-4 w-[90vw] md:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-100px)] overflow-hidden font-mono">
+        // 🚀 FIXED: Width max constraint to prevent mobile bleeding, pushed top to clear app header
+        <div className="absolute top-[140px] lg:top-20 left-4 right-4 lg:right-auto lg:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100dvh-160px)] lg:max-h-[calc(100vh-100px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <div className="absolute top-4 right-4 flex gap-3">
@@ -493,7 +496,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     return (
-        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
+        // 🚀 FIXED: Mobile Margin Push Top
+        <div className="absolute top-[140px] lg:top-24 left-4 lg:left-auto right-4 lg:w-[400px] w-auto bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[70vh] lg:max-h-[90vh] flex flex-col resize-y overflow-hidden">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
             
@@ -571,7 +575,8 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     const retailers = storesInZone.length - wholesalers;
 
     return (
-        <div className="absolute left-4 top-24 w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
+        // 🚀 FIXED: Mobile Margin Push Top
+        <div className="absolute left-4 right-4 lg:right-auto top-[140px] lg:top-24 lg:w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
                 <Globe className="text-blue-500" size={20}/>
@@ -602,13 +607,15 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
 
     if (isMinimized) return (
-        <div onClick={() => setIsMinimized(false)} className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
+        // 🚀 FIXED: Mobile Margin Push Top
+        <div onClick={() => setIsMinimized(false)} className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
             <ShieldCheck className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
     return (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
+        // 🚀 FIXED: Mobile Margin Push Top
+        <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
             <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
             <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
@@ -623,8 +630,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
     const [touchStartY, setTouchStartY] = useState(null);
-    
-    // 🚀 NEW: State for dynamically controlling visit frequency
     const [visitFreq, setVisitFreq] = useState(store.visitFreq || 7);
 
     useEffect(() => { 
@@ -652,7 +657,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return { totalRev, currentConsignment, activeItems };
     }, [store.name, transactions, inventory]);
 
-    // 🚀 NEW: Deeply extracted recent sales history
     const recentSales = useMemo(() => {
         return (transactions || [])
             .filter(t => t.customerName === store.name && t.type === 'SALE')
@@ -661,7 +665,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                 const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date).getTime();
                 return dateB - dateA;
             })
-            .slice(0, 5); // Grab the last 5 transactions
+            .slice(0, 5); 
     }, [transactions, store.name]);
 
     const handleToggleStoreType = async () => {
@@ -694,7 +698,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) {}
     };
 
-    // 🚀 NEW: Database update function for changing Visit Frequency
     const handleSaveVisitFreq = async (newFreq) => {
         const freq = Math.max(1, parseInt(newFreq) || 7);
         setVisitFreq(freq);
@@ -706,8 +709,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     };
 
     const getWhatsappLink = () => { if (!store.phone) return "#"; return `https://wa.me/${store.phone.replace(/\D/g, '').replace(/^0/, '62')}`; };
-    
-    // 🚀 NATIVE GOOGLE MAPS APP ROUTING
     const getGpsLink = () => { 
         if (store.latitude && store.longitude) return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`; 
         return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
@@ -722,7 +723,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         }
     };
 
-    // 🚀 NEW: Clean Location String (Strips out 'Uncategorized')
     const displayLocation = useMemo(() => {
         const parts = [];
         if (store.address && store.address.trim() !== '') parts.push(store.address);
@@ -765,7 +765,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     
                     {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
                     
-                    {/* 🚀 FIXED: Render Cleaned Location String */}
                     <p className="text-slate-400 text-xs flex items-center gap-1 mb-4 leading-relaxed"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
                     <div className="grid grid-cols-2 gap-3 mb-6">
@@ -783,7 +782,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         )}
                     </div>
 
-                    {/* 🚀 FIXED: Next Visit Math & Editable Timespan Controller */}
                     <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                         <div className="flex items-center gap-3">
                             <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -794,7 +792,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                 </p>
                             </div>
                             
-                            {/* Controller Box for Admins */}
                             {isAdmin && (
                                 <div className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-lg border border-slate-600 shadow-inner">
                                     <Clock size={12} className="text-slate-400 ml-1"/>
@@ -860,7 +857,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                 </div>
                             )}
 
-                            {/* 🚀 RECENT SALES HISTORY DROP-DOWN REPLACEMENT */}
                             <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                 <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
                                     Recent Sales
@@ -935,8 +931,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [uploadedFocus, setUploadedFocus] = useState(null);
     
     const [boundaries, setBoundaries] = useState([]);
-    
-    // 🚀 NEW: GPS STATE FOR USER LOCATION
     const [userLocation, setUserLocation] = useState(null);
 
     const userId = user?.uid || user?.id || "default";
@@ -1002,7 +996,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
                 if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
 
-                // 🚀 FIXED: Smart Date Math that handles Never-Visited stores correctly
                 const last = c.lastVisit ? new Date(c.lastVisit) : null;
                 const freq = parseInt(c.visitFreq) || 7;
                 let diffDays = 0;
@@ -1016,7 +1009,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
                     isConquered = daysSinceVisit <= 30;
                 } else {
-                    diffDays = -1; // Force overdue for never visited
+                    diffDays = -1; 
                     daysSinceVisit = 999;
                     isConquered = false;
                 }
@@ -1132,7 +1125,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
-            <div className="absolute top-4 left-4 right-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
+            {/* 🚀 FIXED: Mobile Margin Push Down */}
+            <div className="absolute top-[80px] lg:top-4 left-4 right-4 lg:left-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-700 p-2 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
                         <MapPin size={20} className="text-orange-500 ml-2 shrink-0"/>
@@ -1206,7 +1200,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
-                <ZoomControl position="topright" />
+                {/* 🚀 FIXED: Moved ZoomControl to Bottom Right so it doesn't overlap the app header */}
+                <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
                 <LayersControl position="bottomright">
