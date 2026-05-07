@@ -625,14 +625,14 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (CRASH-PROOFED)
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (HYPER CRASH-PROOFED)
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const sheetRef = useRef(null);
     const contentRef = useRef(null);
     
     const [isLinking, setIsLinking] = useState(false); 
-    const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
-    const [visitFreq, setVisitFreq] = useState(store.visitFreq || 7);
+    const [localScale, setLocalScale] = useState(store?.catchmentScale || 1.0);
+    const [visitFreq, setVisitFreq] = useState(store?.visitFreq || 7);
     const [showConsignDetails, setShowConsignDetails] = useState(false);
 
     // Gestures State
@@ -644,6 +644,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const isContentScrolling = useRef(false);
 
     useEffect(() => {
+        if (!store) return;
         if (window.innerWidth < 1024 && sheetRef.current) {
             const winH = window.innerHeight;
             currentSnapPoint.current = 0.5; 
@@ -651,12 +652,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             sheetRef.current.style.transform = `translateY(${winH - sheetHeight.current}px)`;
             sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
         }
-    }, [store.id]);
+    }, [store?.id]);
 
     useEffect(() => { 
+        if (!store) return;
         setLocalScale(store.catchmentScale || 1.0); 
         setVisitFreq(store.visitFreq || 7);
-    }, [store.id, store.catchmentScale, store.visitFreq]);
+    }, [store?.id, store?.catchmentScale, store?.visitFreq]);
 
     useEffect(() => {
         const contentDiv = contentRef.current;
@@ -719,49 +721,66 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         sheetRef.current.style.transform = `translateY(${translateVal}px)`;
     };
 
-    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
+    // 🚀 CRASH PROOFING: Ensure mapPoints is always an array before filtering
+    const availableHubs = useMemo(() => {
+        const safePoints = Array.isArray(mapPoints) ? mapPoints : [];
+        return safePoints.filter(c => c && c.storeType === 'Wholesaler' && c.id !== store?.id);
+    }, [mapPoints, store?.id]);
 
+    // 🚀 CRASH PROOFING: Deep defensive checks on all transaction arrays and math
     const stats = useMemo(() => {
-        const storeTrans = (transactions || []).filter(t => t.customerName === store.name);
-        const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
-        const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (t.total || 0), 0);
-        const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (t.amountPaid || 0), 0);
+        if (!store?.name) return { totalRev: 0, currentConsignment: 0, activeItems: [] };
+
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+        const storeTrans = safeTrans.filter(t => t && t.customerName === store.name);
+        
+        const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+        const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+        const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (Number(t.amountPaid) || 0), 0);
         const currentConsignment = Math.max(0, totalTitip - totalPaid);
+        
         const itemMap = {}; 
+        const safeInv = Array.isArray(inventory) ? inventory : [];
+
         storeTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                (t.items || []).forEach(i => { 
-                    if (!i || !i.productId) return; // 🚀 CRASH PROOFING
-                    const bks = convertToBks(i.qty || 0, i.unit || 'Bks', inventory ? inventory.find(p => p.id === i.productId) : null); 
-                    if (!itemMap[i.productId]) itemMap[i.productId] = { name: i.name || 'Unknown', qty: 0 }; 
+                const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                itemsList.forEach(i => { 
+                    if (!i || !i.productId) return; 
+                    const product = safeInv.find(p => p.id === i.productId);
+                    const bks = convertToBks(Number(i.qty) || 0, String(i.unit || 'Bks'), product); 
+                    if (!itemMap[i.productId]) itemMap[i.productId] = { name: String(i.name || 'Unknown'), qty: 0 }; 
                     itemMap[i.productId].qty += bks; 
                 });
             } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                (t.items || t.itemsPaid || []).forEach(i => { 
-                    if (!i || !i.productId) return; // 🚀 CRASH PROOFING
-                    const bks = convertToBks(i.qty || 0, i.unit || 'Bks', inventory ? inventory.find(p => p.id === i.productId) : null); 
+                const itemsList = Array.isArray(t.itemsPaid || t.items) ? (t.itemsPaid || t.items) : Object.values(t.itemsPaid || t.items || {});
+                itemsList.forEach(i => { 
+                    if (!i || !i.productId) return; 
+                    const product = safeInv.find(p => p.id === i.productId);
+                    const bks = convertToBks(Number(i.qty) || 0, String(i.unit || 'Bks'), product); 
                     if (itemMap[i.productId]) itemMap[i.productId].qty -= bks; 
                 });
             }
         });
         const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
         return { totalRev, currentConsignment, activeItems };
-    }, [store.name, transactions, inventory]);
+    }, [store?.name, transactions, inventory]);
 
     const recentSales = useMemo(() => {
-        return (transactions || [])
-            .filter(t => t.customerName === store.name && t.type === 'SALE')
+        if (!store?.name) return [];
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+        return safeTrans
+            .filter(t => t && t.customerName === store.name && t.type === 'SALE')
             .sort((a, b) => {
-                // 🚀 CRASH PROOFING: Protect against NaN and Invalid Dates
                 const dateA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.date || 0).getTime();
                 const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date || 0).getTime();
                 return (dateB || 0) - (dateA || 0);
             })
             .slice(0, 5); 
-    }, [transactions, store.name]);
+    }, [transactions, store?.name]);
 
     const handleToggleStoreType = async () => {
-        if (!db || !appId || isLinking) return;
+        if (!db || !appId || isLinking || !store?.id) return;
         setIsLinking(true);
         try {
             const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
@@ -770,62 +789,82 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             const updates = { storeType: newType };
             if (newType === 'Wholesaler') updates.suppliedBy = null;
             await updateDoc(ref, updates);
-        } catch (error) {} finally { setIsLinking(false); }
+        } catch (error) { console.error(error); } finally { setIsLinking(false); }
     };
 
     const handleAssignHub = async (hubId) => {
-        if (!db || !appId || isLinking) return;
+        if (!db || !appId || isLinking || !store?.id) return;
         setIsLinking(true);
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { suppliedBy: hubId === "none" ? null : hubId }); 
-        } catch (error) {} finally { setIsLinking(false); }
+        } catch (error) { console.error(error); } finally { setIsLinking(false); }
     };
 
     const handleSaveLocalScale = async () => {
-        if (!db || !appId) return;
+        if (!db || !appId || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { catchmentScale: localScale }); 
-        } catch (error) {}
+        } catch (error) { console.error(error); }
     };
 
     const handleSaveVisitFreq = async (newFreq) => {
         const freq = Math.max(1, parseInt(newFreq) || 7);
         setVisitFreq(freq);
-        if (!db || !appId || !user) return;
+        if (!db || !appId || !user || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { visitFreq: freq }); 
-        } catch (error) {}
+        } catch (error) { console.error(error); }
     };
 
-    // 🚀 CRASH PROOFING: Force phone variable to be a String before running regex replace
+    // 🚀 CRASH PROOFING: Force type strings to protect Regex
     const getWhatsappLink = () => { 
-        if (!store.phone) return "#"; 
+        if (!store?.phone) return "#"; 
         return `https://wa.me/${String(store.phone).replace(/\D/g, '').replace(/^0/, '62')}`; 
     };
     
-    // 🚀 CRASH PROOFING: Fixed malformed URL syntax for true Universal mapping
+    // 🚀 CRASH PROOFING: Use actual Google Maps routing API
     const getGpsLink = () => { 
-        if (store.latitude && store.longitude) return `https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`; 
-        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
+        if (store?.latitude && store?.longitude) {
+            return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`; 
+        }
+        const fallbackAddress = [store?.address, store?.city].filter(Boolean).join(', ');
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fallbackAddress)}`; 
     };
 
+    // 🚀 CRASH PROOFING: Safeguard Touch extraction
+    const handleTouchStart = (e) => { 
+        if (e.touches && e.touches[0]) setTouchStartY(e.touches[0].clientY); 
+    };
+    
+    const handleTouchMove = (e) => {
+        if (!touchStartY || !e.touches || !e.touches[0]) return;
+        if (e.touches[0].clientY - touchStartY > 50) {
+            setSelectedStore(null);
+            setTouchStartY(null);
+        }
+    };
+
+    // 🚀 CRASH PROOFING: Type-checking Address inputs before trimming
     const displayLocation = useMemo(() => {
+        if (!store) return 'Location details unavailable';
         const parts = [];
-        if (store.address && store.address.trim() !== '') parts.push(store.address);
-        if (store.city && store.city !== 'Uncategorized') parts.push(store.city);
-        if (store.region && store.region !== 'Uncategorized') parts.push(store.region);
+        if (typeof store.address === 'string' && store.address.trim() !== '') parts.push(store.address);
+        if (typeof store.city === 'string' && store.city !== 'Uncategorized') parts.push(store.city);
+        if (typeof store.region === 'string' && store.region !== 'Uncategorized') parts.push(store.region);
         return parts.length > 0 ? parts.join(', ') : 'Location details unavailable';
-    }, [store.address, store.city, store.region]);
+    }, [store?.address, store?.city, store?.region]);
+
+    if (!store) return null; // Ultimate fallback
 
     return (
         <>
             <div 
                 className="lg:hidden fixed inset-0 bg-black/50 z-[999] backdrop-blur-sm transition-opacity duration-300" 
                 onClick={() => setSelectedStore(null)}
-                style={{ opacity: selectedStore ? 1 : 0 }}
+                style={{ opacity: store ? 1 : 0 }}
             ></div>
             
             <div 
@@ -846,7 +885,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                 <div ref={contentRef} className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" style={{ touchAction: 'auto' }}>
                     
                     <div className="flex items-start justify-between mb-1 pr-8">
-                        <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name}</h2>
+                        <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name || 'Unknown Store'}</h2>
                     </div>
                     
                     {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
@@ -953,7 +992,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     
                                     <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
                                         {recentSales.length > 0 ? recentSales.map(tx => {
-                                            // 🚀 CRASH PROOFING: Bulletproof Date extraction
                                             let displayDate = "Unknown Date";
                                             let displayTime = "--:--";
                                             try {
@@ -971,10 +1009,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                             <span className="text-xs font-bold text-white block">{displayDate}</span>
                                                             <span className="text-[10px] text-slate-500">{displayTime}</span>
                                                         </div>
-                                                        <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
+                                                        <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        {(tx.items || []).map((item, i) => (
+                                                        {(Array.isArray(tx.items) ? tx.items : []).map((item, i) => (
                                                             <div key={i} className="flex justify-between text-[10px]">
                                                                 <span className="text-slate-300 truncate pr-2">- {item?.name || 'Item'}</span>
                                                                 <span className="text-orange-400 font-bold shrink-0">{item?.qty || 0} {item?.unit || 'Bks'}</span>
