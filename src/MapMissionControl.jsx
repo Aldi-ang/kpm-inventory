@@ -843,182 +843,189 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     if (!store) return null; 
 
     return (
-        // 🚀 FIXED: Removed the black backdrop so Map is fully visible and clickable
-        <div 
-            ref={sheetRef}
-            className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col transition-transform lg:animate-slide-in-left lg:transform-none"
-            style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none' }}
-            onClick={(e) => e.stopPropagation()} // Prevent map clicks from passing through
-        >
-            {/* 🚀 DRAG HANDLE (Mobile Only) */}
+        <>
             <div 
-                className="lg:hidden w-full flex justify-center pt-3 pb-3 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800"
-                style={{ touchAction: 'none' }} // Prevents browser scroll bounce when dragging handle
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-            >
-                <div className="w-16 h-1.5 bg-slate-700 rounded-full pointer-events-none"></div>
-            </div>
-
-            <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
-
-            {/* 🚀 SCROLLABLE CONTENT AREA */}
+                className="lg:hidden fixed inset-0 bg-black/50 z-[999] backdrop-blur-sm transition-opacity duration-300" 
+                onClick={() => setSelectedStore(null)}
+                style={{ opacity: store ? 1 : 0 }}
+            ></div>
+            
             <div 
-                ref={contentRef} 
-                className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" 
-                style={{ touchAction: 'pan-y' }} // Allows native internal scrolling
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
+                ref={sheetRef}
+                className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col transition-transform lg:animate-slide-in-left lg:transform-none"
+                style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none' }}
+                onClick={(e) => e.stopPropagation()} 
             >
-                
-                <div className="flex items-start justify-between mb-1 pr-8">
-                    <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name || 'Unknown Store'}</h2>
+                {/* DRAG HANDLE */}
+                <div 
+                    className="lg:hidden w-full flex justify-center pt-3 pb-3 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800"
+                    style={{ touchAction: 'none' }} 
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                >
+                    <div className="w-16 h-1.5 bg-slate-700 rounded-full pointer-events-none"></div>
                 </div>
-                
-                {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
-                
-                <p className="text-slate-400 text-xs flex items-center gap-1 mb-5 leading-relaxed truncate"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
-                        <Navigation size={14}/> Directions
-                    </a>
+                <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
+
+                {/* SCROLLABLE CONTENT AREA */}
+                <div 
+                    ref={contentRef} 
+                    className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" 
+                    style={{ touchAction: 'pan-y' }} 
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                >
                     
-                    <button onClick={() => setSelectedStore(null)} className="lg:hidden w-full py-3.5 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 shadow-md">
-                       <X size={14}/> Close
-                    </button>
+                    <div className="flex items-start justify-between mb-1 pr-8">
+                        <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name || 'Unknown Store'}</h2>
+                    </div>
+                    
+                    {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
+                    
+                    <p className="text-slate-400 text-xs flex items-center gap-1 mb-5 leading-relaxed truncate"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
-                    {isAdmin && store.phone ? (
-                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="hidden lg:flex w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
-                            <Phone size={14}/> WhatsApp
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
+                            <Navigation size={14}/> Directions
                         </a>
-                    ) : (
-                        <div className="hidden lg:flex w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
-                            <Phone size={14}/> No Phone
-                        </div>
-                    )}
-                </div>
-
-                <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
-                    <div className="flex items-center gap-3">
-                        <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
-                        <div className="flex-1">
-                            <p className="text-[10px] uppercase font-bold opacity-70 text-white">Next Visit Target</p>
-                            <p className="font-bold text-sm text-white">
-                                {!store.lastVisit ? 'Never Visited (Due Now)' : (store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`)}
-                            </p>
-                        </div>
                         
-                        {isAdmin && (
-                            <div className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-lg border border-slate-600 shadow-inner" onTouchStart={e => e.stopPropagation()}>
-                                <Clock size={12} className="text-slate-400 ml-1"/>
-                                <input 
-                                    type="number" 
-                                    min="1" 
-                                    value={visitFreq} 
-                                    onChange={(e) => setVisitFreq(e.target.value)} 
-                                    onBlur={(e) => handleSaveVisitFreq(e.target.value)}
-                                    className="w-8 text-center text-xs font-black bg-transparent text-white outline-none"
-                                />
-                                <span className="text-[9px] text-slate-400 font-bold pr-1 uppercase">Days</span>
+                        <button onClick={() => setSelectedStore(null)} className="lg:hidden w-full py-3.5 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 shadow-md">
+                           <X size={14}/> Close
+                        </button>
+
+                        {isAdmin && store.phone ? (
+                            <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="hidden lg:flex w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
+                                <Phone size={14}/> WhatsApp
+                            </a>
+                        ) : (
+                            <div className="hidden lg:flex w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+                                <Phone size={14}/> No Phone
                             </div>
                         )}
                     </div>
-                </div>
 
-                {isAdmin && (
-                    <>
-                        <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
-                                <div className="flex items-center gap-1">
-                                    <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none" onTouchStart={e => e.stopPropagation()} />
-                                    <span className="text-[10px] text-slate-500 font-bold">x</span>
+                    <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
+                        <div className="flex items-center gap-3">
+                            <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
+                            <div className="flex-1">
+                                <p className="text-[10px] uppercase font-bold opacity-70 text-white">Next Visit Target</p>
+                                <p className="font-bold text-sm text-white">
+                                    {!store.lastVisit ? 'Never Visited (Due Now)' : (store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`)}
+                                </p>
+                            </div>
+                            
+                            {isAdmin && (
+                                <div className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-lg border border-slate-600 shadow-inner" onTouchStart={e => e.stopPropagation()}>
+                                    <Clock size={12} className="text-slate-400 ml-1"/>
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        value={visitFreq} 
+                                        onChange={(e) => setVisitFreq(e.target.value)} 
+                                        onBlur={(e) => handleSaveVisitFreq(e.target.value)}
+                                        className="w-8 text-center text-xs font-black bg-transparent text-white outline-none"
+                                    />
+                                    <span className="text-[9px] text-slate-400 font-bold pr-1 uppercase">Days</span>
                                 </div>
-                            </div>
-                            <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all" onTouchStart={e => e.stopPropagation()} />
+                            )}
                         </div>
+                    </div>
 
-                        <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
-                            <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
-                        </div>
-
-                        {store.storeType !== 'Wholesaler' && (
-                            <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                                <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
-                                <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold" onTouchStart={e => e.stopPropagation()}>
-                                    <option value="none">-- Select Wholesale Hub --</option>
-                                    {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
-                                </select>
-                            </div>
-                        )}
-
-                        <div className="space-y-4 mb-2">
-                            {stats.currentConsignment > 0 && (
-                                <div className="p-4 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
-                                    <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowConsignDetails(!showConsignDetails)}>
-                                        <div><p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p><p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p></div>
-                                        <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
+                    {isAdmin && (
+                        <>
+                            <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none" onTouchStart={e => e.stopPropagation()} />
+                                        <span className="text-[10px] text-slate-500 font-bold">x</span>
                                     </div>
-                                    {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
-                                            {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
-                                            )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
-                                        </div>
-                                    )}
+                                </div>
+                                <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all" onTouchStart={e => e.stopPropagation()} />
+                            </div>
+
+                            <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
+                                <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
+                            </div>
+
+                            {store.storeType !== 'Wholesaler' && (
+                                <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
+                                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
+                                    <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold" onTouchStart={e => e.stopPropagation()}>
+                                        <option value="none">-- Select Wholesale Hub --</option>
+                                        {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
+                                    </select>
                                 </div>
                             )}
 
-                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
-                                    Recent Sales
-                                    <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
-                                </h3>
-                                
-                                <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
-                                    {recentSales.length > 0 ? recentSales.map(tx => {
-                                        let displayDate = "Unknown Date";
-                                        let displayTime = "--:--";
-                                        try {
-                                            const rawDate = tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000) : new Date(tx.date || 0);
-                                            if (!isNaN(rawDate.getTime()) && rawDate.getTime() > 0) {
-                                                displayDate = rawDate.toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'});
-                                                displayTime = rawDate.toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'});
-                                            }
-                                        } catch(err) {}
-
-                                        return (
-                                            <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
-                                                <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
-                                                    <div>
-                                                        <span className="text-xs font-bold text-white block">{displayDate}</span>
-                                                        <span className="text-[10px] text-slate-500">{displayTime}</span>
-                                                    </div>
-                                                    <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {(Array.isArray(tx.items) ? tx.items : []).map((item, i) => (
-                                                        <div key={i} className="flex justify-between text-[10px]">
-                                                            <span className="text-slate-300 truncate pr-2">- {item?.name || 'Item'}</span>
-                                                            <span className="text-orange-400 font-bold shrink-0">{item?.qty || 0} {item?.unit || 'Bks'}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )
-                                    }) : (
-                                        <div className="text-center py-4 opacity-50 flex flex-col items-center">
-                                            <TrendingUp size={20} className="text-slate-500 mb-1"/>
-                                            <p className="text-xs text-slate-400 italic">No recent sales data.</p>
+                            <div className="space-y-4 mb-2">
+                                {stats.currentConsignment > 0 && (
+                                    <div className="p-4 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
+                                        <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowConsignDetails(!showConsignDetails)}>
+                                            <div><p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p><p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p></div>
+                                            <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
                                         </div>
-                                    )}
+                                        {showConsignDetails && (
+                                            <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
+                                                {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
+                                                )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
+                                        Recent Sales
+                                        <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
+                                    </h3>
+                                    
+                                    <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
+                                        {recentSales.length > 0 ? recentSales.map(tx => {
+                                            let displayDate = "Unknown Date";
+                                            let displayTime = "--:--";
+                                            try {
+                                                const rawDate = tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000) : new Date(tx.date || 0);
+                                                if (!isNaN(rawDate.getTime()) && rawDate.getTime() > 0) {
+                                                    displayDate = rawDate.toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'});
+                                                    displayTime = rawDate.toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                                                }
+                                            } catch(err) {}
+
+                                            return (
+                                                <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
+                                                    <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                                        <div>
+                                                            <span className="text-xs font-bold text-white block">{displayDate}</span>
+                                                            <span className="text-[10px] text-slate-500">{displayTime}</span>
+                                                        </div>
+                                                        <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {(Array.isArray(tx.items) ? tx.items : []).map((item, i) => (
+                                                            <div key={i} className="flex justify-between text-[10px]">
+                                                                <span className="text-slate-300 truncate pr-2">- {item?.name || 'Item'}</span>
+                                                                <span className="text-orange-400 font-bold shrink-0">{item?.qty || 0} {item?.unit || 'Bks'}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }) : (
+                                            <div className="text-center py-4 opacity-50 flex flex-col items-center">
+                                                <TrendingUp size={20} className="text-slate-500 mb-1"/>
+                                                <p className="text-xs text-slate-400 italic">No recent sales data.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>
