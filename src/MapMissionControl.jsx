@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
 import { 
@@ -180,8 +180,8 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
     return (
-        // 🚀 FIXED: Pushed down for mobile to clear global header 
-        <div className="absolute top-[140px] lg:top-[80px] right-[10px] z-[999]">
+        // 🚀 FIXED: Mobile Margin Push Top (clear header better)
+        <div className="absolute top-[150px] lg:top-[80px] right-[10px] z-[999]">
             <button onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
                 <MapPin size={14}/> Set Home
             </button>
@@ -197,7 +197,8 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
                 navigator.clipboard.writeText(`${e.latlng.lat}, ${e.latlng.lng}`);
                 if(window.confirm(`Pin Dropped!\nCoords: ${e.latlng.lat}, ${e.latlng.lng}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
-                setSelectedStore(null); setSelectedZone(null); 
+                // Modified: Selecting a store handles clearing, don't clear on simple map click on mobile if sheet is open
+                if (window.innerWidth >= 1024) { setSelectedStore(null); setSelectedZone(null); }
             }
         }
     });
@@ -250,7 +251,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
     if (isMinimized) {
         return (
-            // 🚀 FIXED: Mobile Margin Push
+            // 🚀 FIXED: Mobile Margin Push Top (was collapsing with main header)
             <div className="absolute top-[140px] lg:top-20 left-4 z-[2000] animate-slide-in-left">
                 <button onClick={() => setIsMinimized(false)} className="bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3 hover:bg-slate-800 transition-colors font-mono font-bold text-xs uppercase tracking-widest">
                     <ShieldAlert size={18} className="animate-pulse" />
@@ -262,8 +263,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     }
 
     return (
-        // 🚀 FIXED: Width max constraint to prevent mobile bleeding, pushed top to clear app header
-        <div className="absolute top-[140px] lg:top-20 left-4 right-4 lg:right-auto lg:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100dvh-160px)] lg:max-h-[calc(100vh-100px)] overflow-hidden font-mono">
+        // 🚀 FIXED: Mobile Margin Push Top, constrained width on mobile
+        <div className="absolute top-[140px] lg:top-20 left-4 w-auto right-4 lg:right-auto lg:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-160px)] lg:max-h-[calc(100%-100px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <div className="absolute top-4 right-4 flex gap-3">
@@ -575,7 +576,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     const retailers = storesInZone.length - wholesalers;
 
     return (
-        // 🚀 FIXED: Mobile Margin Push Top
+        // 🚀 FIXED: Mobile Margin Push Top (was collapsing), constrained width on mobile
         <div className="absolute left-4 right-4 lg:right-auto top-[140px] lg:top-24 lg:w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
@@ -607,15 +608,15 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
 
     if (isMinimized) return (
-        // 🚀 FIXED: Mobile Margin Push Top
-        <div onClick={() => setIsMinimized(false)} className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
+        // 🚀 FIXED: Mobile Margin Push Top (clear header better)
+        <div onClick={() => setIsMinimized(false)} className="absolute top-[85px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
             <ShieldCheck className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
     return (
-        // 🚀 FIXED: Mobile Margin Push Top
-        <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
+        // 🚀 FIXED: Mobile Margin Push Top (clear header better)
+        <div className="absolute top-[85px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
             <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
             <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
@@ -624,21 +625,119 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 THE NEW GOOGLE MAPS BOTTOM SHEET ARCHITECTURE
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (MULTI-SNAP POINTS)
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
-    const [showConsignDetails, setShowConsignDetails] = useState(false);
+    const sheetRef = useRef(null);
+    const contentRef = useRef(null);
+    
     const [isLinking, setIsLinking] = useState(false); 
     const [localScale, setLocalScale] = useState(store.catchmentScale || 1.0);
-    const [touchStartY, setTouchStartY] = useState(null);
     const [visitFreq, setVisitFreq] = useState(store.visitFreq || 7);
+
+    // Gestures State
+    const touchY = useRef(0);
+    const startY = useRef(0);
+    const isDragging = useRef(false);
+    const sheetHeight = useRef(0); // Current calculated height
+    const currentSnapPoint = useRef(0.5); // Start at 50%
+    const isContentScrolling = useRef(false);
+
+    // 🚀 FIXED: Default logic. When selecting a store on mobile, default to 50% snap point instantly.
+    useEffect(() => {
+        if (window.innerWidth < 1024 && sheetRef.current) {
+            const winH = window.innerHeight;
+            currentSnapPoint.current = 0.5; // Default logic: Snap to 50%
+            sheetHeight.current = winH * 0.5;
+            sheetRef.current.style.transform = `translateY(${winH - sheetHeight.current}px)`;
+            sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        }
+    }, [store.id]);
 
     useEffect(() => { 
         setLocalScale(store.catchmentScale || 1.0); 
         setVisitFreq(store.visitFreq || 7);
     }, [store.id, store.catchmentScale, store.visitFreq]);
 
-    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
+    // Handle internal content scrolling logic vs sheet dragging logic
+    useEffect(() => {
+        const contentDiv = contentRef.current;
+        if (!contentDiv) return;
 
+        const handleScroll = () => {
+            // If scrolled down, allow content scrolling, don't drag sheet
+            if (contentDiv.scrollTop > 0) { isContentScrolling.current = true; } 
+            else { isContentScrolling.current = false; }
+        };
+        contentDiv.addEventListener('scroll', handleScroll);
+        return () => contentDiv.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // 🚀 FIXED: GESTURE ENGINE (POINTER EVENTS)
+    const onPointerDown = (e) => {
+        // Only trigger drag on the header/handle, or if content is at top and dragging down
+        if (isContentScrolling.current && e.target.closest('.scrollable-content')) return;
+        
+        // Don't drag if clicking buttons inside the header
+        if (e.target.closest('button') || e.target.closest('a')) return;
+
+        isDragging.current = true;
+        startY.current = e.clientY;
+        touchY.current = e.clientY;
+        
+        if (sheetRef.current) {
+            // Remove transitions while dragging for "liquid" feel
+            sheetRef.current.style.transition = 'none';
+        }
+        
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const onPointerMove = (e) => {
+        if (!isDragging.current || !sheetRef.current) return;
+        
+        const deltaY = e.clientY - touchY.current;
+        const winH = window.innerHeight;
+        
+        // Calculate new height, clamp between roughly 10% and 95%
+        let newHeight = sheetHeight.current - deltaY;
+        newHeight = Math.max(winH * 0.08, Math.min(winH * 0.95, newHeight));
+        
+        sheetHeight.current = newHeight;
+        
+        // Apply transform transform directly to DOM for native performance
+        const translateVal = winH - newHeight;
+        sheetRef.current.style.transform = `translateY(${translateVal}px)`;
+        
+        touchY.current = e.clientY;
+    };
+
+    const onPointerUp = (e) => {
+        if (!isDragging.current || !sheetRef.current) return;
+        isDragging.current = false;
+        e.currentTarget.releasePointerCapture(e.pointerId);
+
+        const winH = window.innerHeight;
+        const currentRelHeight = sheetHeight.current / winH;
+        
+        // Define requested Snap Points [10%, 50%, 90%]
+        const SNAPS = [0.10, 0.50, 0.90];
+        
+        // Find nearest snap point
+        let nearestSnap = SNAPS.reduce((prev, curr) => {
+            return (Math.abs(curr - currentRelHeight) < Math.abs(prev - currentRelHeight) ? curr : prev);
+        });
+
+        // Snap logic: Elastic snap back to nearest point
+        currentSnapPoint.current = nearestSnap;
+        sheetHeight.current = winH * nearestSnap;
+        
+        // Add elastic transition for snapping
+        sheetRef.current.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+        const translateVal = winH - sheetHeight.current;
+        sheetRef.current.style.transform = `translateY(${translateVal}px)`;
+    };
+
+    // Database Actions (keeping existing logic)
     const stats = useMemo(() => {
         const storeTrans = (transactions || []).filter(t => t.customerName === store.name);
         const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (t.total || 0), 0);
@@ -669,20 +768,23 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     }, [transactions, store.name]);
 
     const handleToggleStoreType = async () => {
-        if (!db || !appId) return;
+        if (!db || !appId || isLinking) return;
         setIsLinking(true);
         try {
             const newType = store.storeType === 'Wholesaler' ? 'Retailer' : 'Wholesaler';
             const userId = user?.uid || user?.id;
             const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id);
+            
+            // 🚀 FIXED: Separated the variables correctly
             const updates = { storeType: newType };
             if (newType === 'Wholesaler') updates.suppliedBy = null; 
+            
             await updateDoc(ref, updates);
         } catch (error) {} finally { setIsLinking(false); }
     };
-
+    
     const handleAssignHub = async (hubId) => {
-        if (!db || !appId) return;
+        if (!db || !appId || isLinking) return;
         setIsLinking(true);
         try { 
             const userId = user?.uid || user?.id;
@@ -714,14 +816,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${store.address || ''}, ${store.city || ''}`)}`; 
     };
 
-    const handleTouchStart = (e) => { setTouchStartY(e.touches[0].clientY); };
-    const handleTouchMove = (e) => {
-        if (!touchStartY) return;
-        if (e.touches[0].clientY - touchStartY > 50) {
-            setSelectedStore(null);
-            setTouchStartY(null);
-        }
-    };
+    const availableHubs = (mapPoints || []).filter(c => c.storeType === 'Wholesaler' && c.id !== store.id);
 
     const displayLocation = useMemo(() => {
         const parts = [];
@@ -733,55 +828,68 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     return (
         <>
+            {/* Mobile Backdrop */}
             <div 
-                className="lg:hidden fixed inset-0 bg-black/40 z-[999] backdrop-blur-sm transition-opacity" 
+                className="lg:hidden fixed inset-0 bg-black/50 z-[999] backdrop-blur-sm transition-opacity duration-300" 
                 onClick={() => setSelectedStore(null)}
-                onTouchStart={(e) => e.stopPropagation()} 
+                style={{ opacity: selectedStore ? 1 : 0 }}
             ></div>
             
+            {/* 🚀 FIXED: The Liquid Sheet Container */}
             <div 
-                className="fixed bottom-0 left-0 right-0 max-h-[85vh] lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-2xl z-[1000] flex flex-col lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] transition-transform transform translate-y-0 duration-300 animate-slide-up lg:animate-slide-in-left"
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                onWheel={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
+                ref={sheetRef}
+                className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col transition-transform lg:animate-slide-in-left lg:transform-none"
+                // Initial Mobile State (Hidden off screen)
+                style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none', touchAction: 'none' }}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
             >
-                <div 
-                    className="lg:hidden w-full flex justify-center pt-4 pb-2 shrink-0 cursor-pointer" 
-                    onClick={() => setSelectedStore(null)}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={() => setTouchStartY(null)}
-                >
-                    <div className="w-12 h-1.5 bg-slate-600 rounded-full"></div>
+                {/* 🚀 FIXED: Mobile Drag Handle Area */}
+                <div className="lg:hidden w-full flex justify-center pt-3 pb-3 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800">
+                    <div className="w-16 h-1.5 bg-slate-700 rounded-full"></div>
                 </div>
 
+                {/* Desktop Close Button */}
                 <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
-                <div className="p-6 lg:pt-8 overflow-y-auto custom-scrollbar flex-1 pb-10 lg:pb-6">
+                {/* 🚀 FIXED: Scrollable Content Container (Slider inside Slider logic) */}
+                <div ref={contentRef} className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" style={{ touchAction: 'auto' }}>
+                    
+                    {/* Header Summary (Always visible, part of 10% snap) */}
                     <div className="flex items-start justify-between mb-1 pr-8">
-                        <h2 className="text-2xl font-black leading-tight text-white">{store.name}</h2>
+                        <h2 className="text-2xl font-black leading-tight text-white truncate">{store.name}</h2>
                     </div>
                     
                     {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]"><Store size={10} /> WHOLESALE HUB</span>}
                     
-                    <p className="text-slate-400 text-xs flex items-center gap-1 mb-4 leading-relaxed"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
+                    <p className="text-slate-400 text-xs flex items-center gap-1 mb-5 leading-relaxed truncate"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
 
+                    {/* Action Grid (Part of 10% snap UX) */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
-                        <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
+                        <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
                             <Navigation size={14}/> Directions
                         </a>
+                        
+                        {/* Mobile: Dynamic Close (Google Maps style) */}
+                        <button onClick={() => setSelectedStore(null)} className="lg:hidden w-full py-3.5 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 shadow-md">
+                           <X size={14}/> Close
+                        </button>
+
+                        {/* Desktop WhatsApp (Replaces mobile close) */}
                         {isAdmin && store.phone ? (
-                            <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
+                            <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="hidden lg:flex w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
                                 <Phone size={14}/> WhatsApp
                             </a>
                         ) : (
-                            <div className="w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+                            <div className="hidden lg:flex w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
                                 <Phone size={14}/> No Phone
                             </div>
                         )}
                     </div>
 
+                    {/* Visit Status (Becomes visible at 50% snap) */}
                     <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                         <div className="flex items-center gap-3">
                             <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -809,92 +917,92 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         </div>
                     </div>
 
+                    {/* Admin/Details sections (Visible at 50% and 90% snaps) */}
                     {isAdmin && (
-                        <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
-                                <div className="flex items-center gap-1">
-                                    <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
-                                    <span className="text-[10px] text-slate-500 font-bold">x</span>
-                                </div>
-                            </div>
-                            <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
-                        </div>
-                    )}
-
-                    {isAdmin && (
-                        <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
-                            <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
-                        </div>
-                    )}
-
-                    {isAdmin && store.storeType !== 'Wholesaler' && (
-                        <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                            <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
-                            <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
-                                <option value="none">-- Select Wholesale Hub --</option>
-                                {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
-                            </select>
-                        </div>
-                    )}
-
-                    {isAdmin && (
-                        <div className="space-y-4 mb-2">
-                            {stats.currentConsignment > 0 && (
-                                <div className="p-3 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
-                                    <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowConsignDetails(!showConsignDetails)}>
-                                        <div><p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p><p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p></div>
-                                        <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
+                        <>
+                            <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
+                                        <span className="text-[10px] text-slate-500 font-bold">x</span>
                                     </div>
-                                    {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
-                                            {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
-                                            )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
-                                        </div>
-                                    )}
+                                </div>
+                                <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
+                            </div>
+
+                            <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
+                                <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
+                            </div>
+
+                            {store.storeType !== 'Wholesaler' && (
+                                <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
+                                    <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
+                                    <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
+                                        <option value="none">-- Select Wholesale Hub --</option>
+                                        {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
+                                    </select>
                                 </div>
                             )}
 
-                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
-                                    Recent Sales
-                                    <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
-                                </h3>
-                                
-                                <div className="space-y-3">
-                                    {recentSales.length > 0 ? recentSales.map(tx => (
-                                        <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
-                                            <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
-                                                <div>
-                                                    <span className="text-xs font-bold text-white block">
-                                                        {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-500">
-                                                        {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'})}
-                                                    </span>
-                                                </div>
-                                                <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
+                            {/* Complex details (Scrolled at 90% snap) */}
+                            <div className="space-y-4 mb-2">
+                                {stats.currentConsignment > 0 && (
+                                    <div className="p-4 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
+                                        <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowConsignDetails(!showConsignDetails)}>
+                                            <div><p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p><p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p></div>
+                                            <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
+                                        </div>
+                                        {showConsignDetails && (
+                                            <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
+                                                {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
+                                                )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
                                             </div>
-                                            <div className="space-y-1">
-                                                {(tx.items || []).map((item, i) => (
-                                                    <div key={i} className="flex justify-between text-[10px]">
-                                                        <span className="text-slate-300 truncate pr-2">- {item.name}</span>
-                                                        <span className="text-orange-400 font-bold shrink-0">{item.qty} {item.unit}</span>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
+                                        Recent Sales
+                                        <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
+                                    </h3>
+                                    
+                                    <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
+                                        {recentSales.length > 0 ? recentSales.map(tx => (
+                                            <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
+                                                <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                                    <div>
+                                                        <span className="text-xs font-bold text-white block">
+                                                            {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-500">
+                                                            {new Date(tx.timestamp?.seconds ? tx.timestamp.seconds * 1000 : tx.date).toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'})}
+                                                        </span>
                                                     </div>
-                                                ))}
+                                                    <span className="text-xs font-black text-emerald-400">{formatRupiah(tx.total)}</span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {(tx.items || []).map((item, i) => (
+                                                        <div key={i} className="flex justify-between text-[10px]">
+                                                            <span className="text-slate-300 truncate pr-2">- {item.name}</span>
+                                                            <span className="text-orange-400 font-bold shrink-0">{item.qty} {item.unit}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )) : (
-                                        <div className="text-center py-4 opacity-50 flex flex-col items-center">
-                                            <TrendingUp size={20} className="text-slate-500 mb-1"/>
-                                            <p className="text-xs text-slate-400 italic">No recent sales data.</p>
-                                        </div>
-                                    )}
+                                        )) : (
+                                            <div className="text-center py-4 opacity-50 flex flex-col items-center">
+                                                <TrendingUp size={20} className="text-slate-500 mb-1"/>
+                                                <p className="text-xs text-slate-400 italic">No recent sales data.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>
@@ -1105,7 +1213,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         setSelectedStore(store); 
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
-        map.flyTo([store.latitude, store.longitude], 15, { duration: 1.2 }); 
+        
+        // 🚀 FIXED: Dynamic zoom. If on mobile, zoom closer so the 50% sheet doesn't hide the pin.
+        const zoomLvl = window.innerWidth < 1024 ? 17 : 15;
+        map.flyTo([store.latitude, store.longitude], zoomLvl, { duration: 1.2 }); 
     };
 
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
@@ -1125,8 +1236,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
-            {/* 🚀 FIXED: Mobile Margin Push Down */}
-            <div className="absolute top-[80px] lg:top-4 left-4 right-4 lg:left-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
+            {/* 🚀 FIXED: Mobile Margin Push Down (was top-[80px], now top-[95px] to clear bell better) */}
+            <div className="absolute top-[95px] lg:top-4 left-4 right-4 lg:left-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-700 p-2 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
                         <MapPin size={20} className="text-orange-500 ml-2 shrink-0"/>
@@ -1200,7 +1311,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
             <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
-                {/* 🚀 FIXED: Moved ZoomControl to Bottom Right so it doesn't overlap the app header */}
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
@@ -1290,7 +1400,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
             </MapContainer>
 
-            {/* 🚀 GOOGLE MAPS STYLE BOTTOM SHEET */}
+            {/* 🚀 FIXED: GESTURE BOTTOM SHEET ENGINE */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
@@ -1325,10 +1435,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
                 .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-                
-                /* 🚀 BOTTOM SHEET SMOOTH ANIMATION */
-                @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
                 
                 /* 🚀 PULSING BLUE DOT ANIMATION */
                 @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(3.5); opacity: 0; } }
