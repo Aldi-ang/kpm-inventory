@@ -72,6 +72,16 @@ const compressCoords = (coords) => {
     return coords;
 };
 
+// 🚀 DISTANCE CALCULATOR (Haversine Formula)
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return (R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))).toFixed(1);
+};
+
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -173,8 +183,7 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     }, []);
 
     return (
-        // 🚀 FIXED: Moved up to bottom-[180px] to safely clear Map Layers
-        <div className="absolute bottom-[180px] lg:bottom-[100px] right-[10px] z-[999]">
+        <div className="absolute bottom-[130px] right-[10px] z-[999]">
             <button 
                 onClick={toggleTracking} 
                 className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors ${isTracking ? 'animate-pulse text-blue-500 border-blue-500' : 'border-slate-600 hover:bg-slate-700 hover:text-blue-400'}`}
@@ -259,7 +268,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 
     if (isMinimized) {
         return (
-            <div className="absolute top-[150px] lg:top-20 left-4 z-[2000] animate-slide-in-left">
+            <div className="absolute top-[140px] lg:top-20 left-4 z-[2000] animate-slide-in-left">
                 <button onClick={() => setIsMinimized(false)} className="bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3 hover:bg-slate-800 transition-colors font-mono font-bold text-xs uppercase tracking-widest">
                     <ShieldAlert size={18} className="animate-pulse" />
                     Sector Command
@@ -270,7 +279,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     }
 
     return (
-        <div className="absolute top-[150px] lg:top-20 left-4 w-auto right-4 lg:right-auto lg:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-170px)] lg:max-h-[calc(100%-100px)] overflow-hidden font-mono">
+        <div className="absolute top-[140px] lg:top-20 left-4 w-auto right-4 lg:right-auto lg:w-[380px] bg-slate-900/80 hover:bg-slate-900/95 transition-all duration-300 backdrop-blur-md border-2 border-slate-700 shadow-2xl rounded-2xl z-[2000] animate-slide-in-left flex flex-col max-h-[calc(100%-160px)] lg:max-h-[calc(100%-100px)] overflow-hidden font-mono">
             <div className="crt-overlay"></div>
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <div className="absolute top-4 right-4 flex gap-3">
@@ -581,7 +590,7 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     const retailers = storesInZone.length - wholesalers;
 
     return (
-        <div className="absolute left-4 right-4 lg:right-auto top-[150px] lg:top-24 lg:w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
+        <div className="absolute left-4 right-4 lg:right-auto top-[140px] lg:top-24 lg:w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
             <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
             <div className="flex items-center gap-2 mb-1">
                 <Globe className="text-blue-500" size={20}/>
@@ -612,13 +621,13 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
 
     if (isMinimized) return (
-        <div onClick={() => setIsMinimized(false)} className="absolute top-[100px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
+        <div onClick={() => setIsMinimized(false)} className="absolute top-[85px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
             <ShieldCheck className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
         </div>
     );
 
     return (
-        <div className="absolute top-[100px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
+        <div className="absolute top-[85px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
             <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
             <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
             <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
@@ -627,8 +636,8 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE (FLAWLESS LIQUID SCROLL)
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH 20% MINI-PLAYER
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, userLocation }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -638,13 +647,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [visitFreq, setVisitFreq] = useState(store?.visitFreq || 7);
     const [showConsignDetails, setShowConsignDetails] = useState(false);
 
-    // Initial setup for the sheet height
+    // 🚀 FIXED: Initialize to 22% (Mini-player size)
     useEffect(() => {
         if (!store) return;
         if (window.innerWidth < 1024 && sheetRef.current) {
             const winH = window.innerHeight;
-            const sheetH = winH * 0.90; // Fixed physical height of the DOM element
-            const targetVisible = winH * 0.50; // We want 50% of the screen visible at start
+            const sheetH = winH * 0.90; 
+            const targetVisible = winH * 0.22; 
             const initialTranslate = sheetH - targetVisible; 
             
             translateVal.current = initialTranslate;
@@ -659,11 +668,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setVisitFreq(store.visitFreq || 7);
     }, [store?.id, store?.catchmentScale, store?.visitFreq]);
 
-    // 🚀 DRAG HANDLERS (Only attached to the top Header area)
     const onHandleTouchStart = (e) => {
         touchY.current = e.touches[0].clientY;
         if (sheetRef.current) {
-            sheetRef.current.style.transition = 'none'; // Instant follow finger
+            sheetRef.current.style.transition = 'none'; 
         }
     };
 
@@ -677,7 +685,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
         translateVal.current += deltaY;
         
-        // Clamp limits: Cannot drag higher than 0 (fully open), cannot drag lower than sheetH (fully closed)
         if (translateVal.current < 0) translateVal.current = 0;
         if (translateVal.current > sheetH) translateVal.current = sheetH;
 
@@ -693,14 +700,14 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const visibleHeight = sheetH - translateVal.current;
         const relHeight = visibleHeight / winH; 
 
-        // 🚀 10% THRESHOLD: Close if dragged down far enough
-        if (relHeight < 0.10) {
+        // 🚀 Close threshold (below 15%)
+        if (relHeight < 0.15) {
             setSelectedStore(null);
             return;
         }
 
-        // Snap to nearest checkpoint (50% or 90%)
-        const snapPoints = [0.50, 0.90];
+        // 🚀 Snap Points: 22% (Mini), 50% (Details), 90% (Full)
+        const snapPoints = [0.22, 0.50, 0.90];
         const nearestSnap = snapPoints.reduce((prev, curr) => 
             Math.abs(curr - relHeight) < Math.abs(prev - relHeight) ? curr : prev
         );
@@ -815,6 +822,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return `https://wa.me/${String(store.phone).replace(/\D/g, '').replace(/^0/, '62')}`; 
     };
     
+    // 🚀 FIXED: Deep Link to Native Google Maps
     const getGpsLink = () => { 
         if (store?.latitude && store?.longitude) {
             return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`; 
@@ -832,23 +840,21 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         return parts.length > 0 ? parts.join(', ') : 'Location details unavailable';
     }, [store?.address, store?.city, store?.region]);
 
-    if (!store) return null; 
-
-    // Detect if screen is small enough to need the Mobile gesture sheet
     const isMobile = window.innerWidth < 1024;
+    const distance = userLocation && store?.latitude ? getDistance(userLocation[0], userLocation[1], store.latitude, store.longitude) : null;
+
+    if (!store) return null; 
 
     return (
         <div 
             ref={sheetRef}
             className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col lg:animate-slide-in-left lg:transform-none"
-            // 🚀 MAGIC: Fixes the height on mobile so the scrollbar calculates perfectly to the bottom
             style={isMobile ? { height: '90vh', transform: 'translateY(100%)' } : {}}
             onClick={(e) => e.stopPropagation()} 
         >
-            {/* 🚀 DRAG ZONE (Handle + Header Area) */}
+            {/* 🚀 DRAG ZONE (Handle + Header Area - Mini Player) */}
             <div 
                 className="shrink-0 flex flex-col pt-3 px-6 pb-4 border-b border-slate-800 bg-slate-900 rounded-t-3xl lg:cursor-default"
-                // touchAction 'none' here disables the iOS body bounce only when dragging this header
                 style={{ touchAction: isMobile ? 'none' : 'auto' }}
                 onTouchStart={isMobile ? onHandleTouchStart : undefined}
                 onTouchMove={isMobile ? onHandleTouchMove : undefined}
@@ -862,16 +868,17 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                 
                 {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)] pointer-events-none"><Store size={10} /> WHOLESALE HUB</span>}
                 
-                <p className="text-slate-400 text-xs flex items-center gap-1 leading-relaxed truncate pointer-events-none"><MapPin size={12} className="shrink-0 mt-0.5"/> {displayLocation}</p>
-            </div>
+                {/* 🚀 FIXED: Displays Real Distance on the Map Player */}
+                <p className="text-slate-400 text-xs flex items-center gap-1.5 mb-5 leading-relaxed truncate font-bold pointer-events-none">
+                    <Navigation size={12} className={distance ? "text-blue-400 shrink-0 mt-0.5" : "shrink-0 mt-0.5"}/> 
+                    {distance ? <span className="text-blue-400">{distance} km away</span> : 'Location loaded'}
+                    <span className="text-slate-600 px-1">•</span>
+                    <span className="truncate">{store.city || 'Uncategorized'}</span>
+                </p>
 
-            <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
-
-            {/* 🚀 SCROLL ZONE (Native Scrolling, No Drag Interferences) */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pb-[15vh] lg:pb-6">
-                
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-xs text-white shadow-md">
+                {/* Always show the Navigate and Close buttons in the Mini Player area */}
+                <div className="grid grid-cols-2 gap-3">
+                    <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]">
                         <Navigation size={14}/> Directions
                     </a>
                     
@@ -889,7 +896,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         </div>
                     )}
                 </div>
+            </div>
 
+            <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
+
+            {/* 🚀 SCROLL ZONE (Native Scrolling, No Drag Interferences) */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pb-[15vh] lg:pb-6">
+                
                 <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                     <div className="flex items-center gap-3">
                         <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
@@ -923,11 +936,11 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
                                 <div className="flex items-center gap-1">
-                                    <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none"/>
+                                    <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none" />
                                     <span className="text-[10px] text-slate-500 font-bold">x</span>
                                 </div>
                             </div>
-                            <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"/>
+                            <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all" />
                         </div>
 
                         <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
@@ -938,7 +951,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         {store.storeType !== 'Wholesaler' && (
                             <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
                                 <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
-                                <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
+                                <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold" >
                                     <option value="none">-- Select Wholesale Hub --</option>
                                     {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
                                 </select>
@@ -953,7 +966,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                         <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
                                     </div>
                                     {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
+                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
                                             {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
                                                 <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
                                             )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
@@ -968,7 +981,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
                                 </h3>
                                 
-                                <div className="space-y-3">
+                                <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
                                     {recentSales.length > 0 ? recentSales.map(tx => {
                                         let displayDate = "Unknown Date";
                                         let displayTime = "--:--";
@@ -1225,10 +1238,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        // 🚀 FULL-PAGE OVERSCROLL PREVENTION (Kills the white background bounce)
         <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             
-            {/* INJECT GLOBAL STYLE TO FORCE iOS TO STOP BOUNCING THE ENTIRE WEBPAGE */}
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
             `}</style>
@@ -1246,7 +1257,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
-            {/* 🚀 Top Controls safely pushed down to 150px to clear the Bell and Main App Header */}
             <div className="absolute top-[150px] lg:top-4 left-4 right-4 lg:left-4 lg:right-auto lg:w-[400px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-slate-700 p-2 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
@@ -1386,6 +1396,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
                 ))}
 
+                {/* 🚀 NEW: ROUTE PREVIEW LASER LINE */}
+                {activeStore && userLocation && (
+                    <Polyline 
+                        positions={[userLocation, [activeStore.latitude, activeStore.longitude]]} 
+                        pathOptions={{ color: '#38bdf8', weight: 4, dashArray: '10, 10', className: 'route-preview-line' }} 
+                    />
+                )}
+
                 {conquestMode && mapPoints.map(store => {
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
@@ -1410,13 +1428,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
             </MapContainer>
 
-            {/* 🚀 FIXED: GESTURE BOTTOM SHEET ENGINE */}
+            {/* 🚀 FIXED: GESTURE BOTTOM SHEET ENGINE WITH 22% MINI PLAYER */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
                     inventory={inventory} db={db} appId={appId} user={user} 
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} 
+                    userLocation={userLocation}
                 />
             )}
             
@@ -1436,6 +1455,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
+                
+                /* 🚀 ROUTE PREVIEW LASER ANIMATION */
+                .route-preview-line { animation: flow 20s linear infinite; stroke-linecap: round; }
+                
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 .venn-heatmap-circle { mix-blend-mode: screen; }
                 
