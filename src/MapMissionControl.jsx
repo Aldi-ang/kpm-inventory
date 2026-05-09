@@ -141,27 +141,31 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
+// 🚀 FIXED: Locate Me Button logic completely re-engineered
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
-    const [isTracking, setIsTracking] = useState(false);
     const watchId = useRef(null);
 
-    const toggleTracking = () => {
-        if (isTracking) {
-            if (watchId.current) navigator.geolocation.clearWatch(watchId.current);
-            setIsTracking(false);
-        } else {
-            setIsTracking(true);
+    const handleLocateClick = () => {
+        // If we already have the location, just snap to it instantly
+        if (userLocation) {
+            map.flyTo(userLocation, 16, { duration: 1.2 });
+        }
+
+        // Keep GPS actively tracking in the background
+        if (!watchId.current) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     setUserLocation(coords);
-                    map.flyTo(coords, 16, { duration: 1.2 });
+                    // Only auto-fly on the very first GPS lock
+                    if (!userLocation) {
+                        map.flyTo(coords, 16, { duration: 1.2 });
+                    }
                 },
                 (err) => {
                     console.error(err);
-                    alert("Please enable location permissions in your iPhone Settings to use live tracking.");
-                    setIsTracking(false);
+                    alert("Please enable location permissions in your iPhone Settings.");
                 },
                 { enableHighAccuracy: true, maximumAge: 5000 }
             );
@@ -169,18 +173,18 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     };
 
     useEffect(() => {
+        // Cleanup tracking when component closes
         return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
     }, []);
 
     return (
-        // 🚀 FIXED: Moved way up to clear map layers 
         <div className="absolute bottom-[240px] lg:bottom-[120px] right-[10px] z-[999]">
             <button 
-                onClick={toggleTracking} 
-                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors ${isTracking ? 'animate-pulse text-blue-500 border-blue-500' : 'border-slate-600 hover:bg-slate-700 hover:text-blue-400'}`}
-                title="Live Location Tracking"
+                onClick={handleLocateClick} 
+                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
+                title="Locate Me"
             >
-                <LocateFixed size={24} />
+                <LocateFixed size={24} className={watchId.current ? "text-blue-400" : "text-slate-300"} />
             </button>
         </div>
     );
@@ -190,7 +194,6 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
     return (
-        // 🚀 FIXED: Restored to top-20 since the main header is out of the way
         <div className="absolute top-[80px] lg:top-[80px] right-[10px] z-[999]">
             <button onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
                 <MapPin size={14}/> Set Home
@@ -319,7 +322,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     const rev = zoneRevenues[sector.id] || 0;
                     const ratio = rev / maxRev;
                     const barColor = ratio > 0.6 ? 'bg-emerald-500' : ratio > 0.2 ? 'bg-orange-500' : 'bg-red-500';
-                    const textColor = ratio > 0.6 ? 'textemerald-400' : ratio > 0.2 ? 'text-orange-400' : 'text-red-400';
+                    const textColor = ratio > 0.6 ? 'text-emerald-400' : ratio > 0.2 ? 'text-orange-400' : 'text-red-400';
                     const isSelected = selectedZone?.id === sector.id;
 
                     return (
@@ -628,8 +631,8 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH 22% MINI-PLAYER
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, userLocation }) => {
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH 20% MINI-PLAYER
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -1242,7 +1245,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             )}
 
             {/* 🚀 FIXED: Squeezed top header perfectly between the App Menu and Notification Bell */}
-            <div className="absolute top-2 md:top-4 left-[64px] right-[60px] lg:left-24 lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
+            <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
                         <MapPin size={16} className="text-orange-500 shrink-0"/>
@@ -1381,13 +1384,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
                 ))}
 
-                {activeStore && userLocation && (
-                    <Polyline 
-                        positions={[userLocation, [activeStore.latitude, activeStore.longitude]]} 
-                        pathOptions={{ color: '#38bdf8', weight: 4, dashArray: '10, 10', className: 'route-preview-line' }} 
-                    />
-                )}
-
                 {conquestMode && mapPoints.map(store => {
                     let baseRadius = 300; 
                     if (store.storeType === 'Wholesaler') baseRadius = 2500; 
@@ -1418,7 +1414,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     inventory={inventory} db={db} appId={appId} user={user} 
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} 
-                    userLocation={userLocation}
                 />
             )}
             
