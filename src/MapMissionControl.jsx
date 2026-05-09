@@ -141,34 +141,46 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
+// 🚀 FIXED 1: Live Tracker Engine & Safe UI Positioning
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
-    const [isLocating, setIsLocating] = useState(false);
+    const [isTracking, setIsTracking] = useState(false);
+    const watchId = useRef(null);
 
-    const handleLocate = () => {
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const coords = [pos.coords.latitude, pos.coords.longitude];
-                setUserLocation(coords);
-                map.flyTo(coords, 15, { duration: 1.2 });
-                setIsLocating(false);
-            },
-            (err) => {
-                console.error(err);
-                alert("Please enable location permissions in your iPhone Settings to use this feature.");
-                setIsLocating(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
+    const toggleTracking = () => {
+        if (isTracking) {
+            if (watchId.current) navigator.geolocation.clearWatch(watchId.current);
+            setIsTracking(false);
+        } else {
+            setIsTracking(true);
+            watchId.current = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const coords = [pos.coords.latitude, pos.coords.longitude];
+                    setUserLocation(coords);
+                    map.flyTo(coords, 16, { duration: 1.2 });
+                },
+                (err) => {
+                    console.error(err);
+                    alert("Please enable location permissions in your iPhone Settings to use live tracking.");
+                    setIsTracking(false);
+                },
+                { enableHighAccuracy: true, maximumAge: 5000 } // Real-time GPS stream
+            );
+        }
     };
 
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
+    }, []);
+
     return (
-        <div className="absolute bottom-[100px] right-[10px] z-[999]">
+        // 🚀 Repositioned to bottom-[130px] so it is safely above Leaflet Layers
+        <div className="absolute bottom-[130px] right-[10px] z-[999]">
             <button 
-                onClick={handleLocate} 
-                className={`bg-slate-800 text-white border border-slate-600 p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-slate-700 hover:text-blue-400 transition-colors ${isLocating ? 'animate-pulse text-blue-500 border-blue-500' : ''}`}
-                title="Show My Location"
+                onClick={toggleTracking} 
+                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors ${isTracking ? 'animate-pulse text-blue-500 border-blue-500' : 'border-slate-600 hover:bg-slate-700 hover:text-blue-400'}`}
+                title="Live Location Tracking"
             >
                 <LocateFixed size={24} />
             </button>
@@ -196,9 +208,7 @@ const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelecte
                 navigator.clipboard.writeText(`${e.latlng.lat}, ${e.latlng.lng}`);
                 if(window.confirm(`Pin Dropped!\nCoords: ${e.latlng.lat}, ${e.latlng.lng}\n\nCreate new store here?`)) setIsAddingMode(false);
             } else {
-                // 🚀 FIXED: Allow tapping the map to close the sheet/zone safely on ALL devices
-                setSelectedStore(null); 
-                setSelectedZone(null); 
+                if (window.innerWidth >= 1024) { setSelectedStore(null); setSelectedZone(null); }
             }
         }
     });
@@ -650,14 +660,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setVisitFreq(store.visitFreq || 7);
     }, [store?.id, store?.catchmentScale, store?.visitFreq]);
 
-    // 🚀 FIXED: Mobile Touch Drag Logic (Liquid slider without hijacking native scroll)
+    // 🚀 FIXED 3: Liquid Touch Engine with Swipe-to-Close and No Background Bounce
     const onTouchStart = (e) => {
         if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('select')) return;
 
         const contentDiv = contentRef.current;
         const isScrollable = e.target.closest('.scrollable-content');
 
-        // Let native scrolling handle it if the content is scrolled down
         if (isScrollable && contentDiv && contentDiv.scrollTop > 0) {
             isDragging.current = false;
             return;
@@ -680,7 +689,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const contentDiv = contentRef.current;
         const isScrollable = e.target.closest('.scrollable-content');
 
-        // If touching content and moving up, let native scroll take over if expanded
         if (isScrollable && contentDiv) {
             if (deltaY < 0 && sheetHeight.current >= window.innerHeight * 0.90) {
                 isDragging.current = false;
@@ -690,7 +698,9 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
         const winH = window.innerHeight;
         let newHeight = sheetHeight.current - deltaY;
-        newHeight = Math.max(winH * 0.08, Math.min(winH * 0.95, newHeight)); // Constrain height
+        
+        // Prevent dragging up past 95%
+        newHeight = Math.min(winH * 0.95, newHeight); 
         
         sheetHeight.current = newHeight;
         const translateVal = winH - newHeight;
@@ -698,7 +708,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         
         touchY.current = currentY;
 
-        // Prevent body bounce while actively dragging sheet
+        // CRITICAL: Prevent body bounce while actively dragging sheet
         if (!isScrollable || sheetHeight.current < window.innerHeight * 0.90) {
             if (e.cancelable) e.preventDefault();
         }
@@ -710,14 +720,20 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
         const winH = window.innerHeight;
         const currentRelHeight = sheetHeight.current / winH;
-        const SNAPS = [0.10, 0.50, 0.90]; // The 3 Checkpoints
         
+        // 🚀 FIXED: Swipe Down to Close Threshold (25%)
+        if (currentRelHeight < 0.25) {
+            setSelectedStore(null);
+            return;
+        }
+
+        const SNAPS = [0.50, 0.90]; 
         let nearestSnap = SNAPS.reduce((prev, curr) => {
             return (Math.abs(curr - currentRelHeight) < Math.abs(prev - currentRelHeight) ? curr : prev);
         });
 
         sheetHeight.current = winH * nearestSnap;
-        sheetRef.current.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)'; // Elastic snap back
+        sheetRef.current.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)'; 
         const translateVal = winH - sheetHeight.current;
         sheetRef.current.style.transform = `translateY(${translateVal}px)`;
     };
@@ -844,22 +860,18 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     return (
         <>
-            <div 
-                className="lg:hidden fixed inset-0 bg-black/50 z-[999] backdrop-blur-sm transition-opacity duration-300" 
-                onClick={() => setSelectedStore(null)}
-                style={{ opacity: store ? 1 : 0 }}
-            ></div>
+            {/* 🚀 FIXED 2: Overlay entirely removed so the map is fully interactive behind the panel */}
             
             <div 
                 ref={sheetRef}
                 className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col transition-transform lg:animate-slide-in-left lg:transform-none"
-                style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none' }}
+                style={{ transform: window.innerWidth < 1024 ? `translateY(100%)` : 'none', pointerEvents: 'auto' }}
                 onClick={(e) => e.stopPropagation()} 
             >
-                {/* DRAG HANDLE */}
+                {/* 🚀 DRAG HANDLE */}
                 <div 
-                    className="lg:hidden w-full flex justify-center pt-3 pb-3 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800"
-                    style={{ touchAction: 'none' }} 
+                    className="lg:hidden w-full flex justify-center pt-4 pb-4 shrink-0 cursor-grab active:cursor-grabbing border-b border-slate-800"
+                    style={{ touchAction: 'none' }} // Stops iOS Safari bounce perfectly
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
                     onTouchEnd={onTouchEnd}
@@ -869,7 +881,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
-                {/* SCROLLABLE CONTENT AREA */}
+                {/* 🚀 SCROLLABLE CONTENT AREA */}
                 <div 
                     ref={contentRef} 
                     className="p-6 lg:pt-8 overflow-y-auto scrollable-content custom-scrollbar flex-1 pb-10 lg:pb-6" 
@@ -1243,7 +1255,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50]">
+        // 🚀 FIXED 4: Added 'overscroll-none' to entirely kill iOS body bounce behavior
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
             {salesHeatmapMode && (
@@ -1352,7 +1365,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                {/* 🚀 FIXED: Render Location Tracking Button directly on Map */}
+                {/* 🚀 FIXED 1: Live Tracker Render */}
                 <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
                 {userLocation && (
                     <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
@@ -1421,7 +1434,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
             </MapContainer>
 
-            {/* 🚀 FIXED: LIQUID GESTURE BOTTOM SHEET */}
+            {/* 🚀 FIXED 3: Liquid Swipe & Render */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
@@ -1440,6 +1453,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 .custom-icon { z-index: 500 !important; }
                 .custom-icon:hover { z-index: 10000 !important; }
                 
+                /* CRT SCANLINE EFFECT FOR TACTICAL HUD */
                 .crt-overlay {
                     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
                     background-size: 100% 4px; pointer-events: none; position: absolute; inset: 0; z-index: 50; opacity: 0.3;
@@ -1456,6 +1470,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
                 .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 
+                /* 🚀 PULSING BLUE DOT ANIMATION */
                 @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(3.5); opacity: 0; } }
 
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
