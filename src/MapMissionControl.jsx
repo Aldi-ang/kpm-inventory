@@ -183,13 +183,18 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     );
 };
 
+// 🚀 FIXED: Moved "Set Home" to the bottom-left and gave it a sleek dark-mode design
 const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
     return (
-        <div className="absolute top-[80px] lg:top-[80px] right-[10px] z-[999]">
-            <button onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} className="bg-white text-slate-800 border-2 border-slate-300 px-3 py-2 rounded-lg text-xs font-bold shadow-xl flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-600 transition-colors">
-                <MapPin size={14}/> Set Home
+        <div className="absolute bottom-[30px] left-[14px] z-[999]">
+            <button 
+                onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} 
+                className="bg-slate-900/90 backdrop-blur-md text-slate-300 border border-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all group"
+            >
+                <MapPin size={16} className="text-orange-500 group-hover:text-white animate-pulse" /> 
+                Set Home
             </button>
         </div>
     );
