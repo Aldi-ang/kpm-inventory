@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
 
-// 🚀 ADDED 'allowRetur' PROP TO THE DEFINITION
 const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true }) => {
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
@@ -13,7 +12,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [merchantMood, setMerchantMood] = useState("idle");
     const [doorsOpen, setDoorsOpen] = useState(false);
 
-    // 🚀 RETUR ENGINE: Track if we are processing Bad Stock
+    // 🚀 RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(false);
 
     // --- FORM STATE ---
@@ -25,7 +24,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
-    // 🚀 THE FIFO DEBT ENGINE (Monitors Jatuh Tempo in Real-Time) 🚀
+    // 🚀 TIER RESTRICTION LOGIC: Only Tier 1, Tier 2, and Admins can override GPS
+    const canOverrideGps = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+
+    // 🚀 THE FIFO DEBT ENGINE 
     const debtInfo = React.useMemo(() => {
         if (!customerName) return null;
         const custTrans = transactions.filter(t => 
@@ -95,6 +97,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [gpsStatus, setGpsStatus] = useState('idle'); 
     const [distanceToStore, setDistanceToStore] = useState(null);
     const [agentLocation, setAgentLocation] = useState(null);
+    const [manualOverride, setManualOverride] = useState(false); 
     
     // THE NOO MODAL STATE
     const [showNooModal, setShowNooModal] = useState(false);
@@ -104,7 +107,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
-    // --- NEW: TRANSACTION LIVE PROOF STATE ---
     const [txProofPhoto, setTxProofPhoto] = useState(null);
 
     const handleTxPhotoCapture = (e) => {
@@ -140,6 +142,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return R * c; 
     };
 
+    // 🚀 GEOFENCE AUTO-LOCK ENGINE
     const verifyLocation = (useLowAccuracy = false) => {
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
@@ -153,9 +156,29 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
                             const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
                             setDistanceToStore(Math.round(dist));
-                            setGpsStatus(dist <= 50 ? 'verified' : 'too_far');
+                            setGpsStatus(dist <= 50 ? 'verified' : 'manual_override');
                         } else {
                             setGpsStatus('bypass'); 
+                        }
+                    } else if (!manualOverride && customers.length > 0) {
+                        let closestStore = null;
+                        let minDistance = Infinity;
+
+                        customers.forEach(c => {
+                            if (c.latitude && c.longitude && c.status !== 'PENDING') {
+                                const dist = calculateDistance(lat, lon, c.latitude, c.longitude);
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    closestStore = c;
+                                }
+                            }
+                        });
+
+                        if (closestStore && minDistance <= 50) {
+                            setDistanceToStore(Math.round(minDistance));
+                            handleCustomerSelect(closestStore, Math.round(minDistance));
+                        } else {
+                            setGpsStatus('idle');
                         }
                     } else if (customerName.trim().length > 0) {
                         setGpsStatus('walk_in'); 
@@ -180,11 +203,13 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         } else if (customerName.trim().length > 2) {
             const timer = setTimeout(() => { verifyLocation(); }, 1000); 
             return () => clearTimeout(timer);
+        } else if (!manualOverride && customers.length > 0) {
+            verifyLocation();
         } else {
             setGpsStatus('idle');
             setAgentLocation(null);
         }
-    }, [selectedCustomerInfo, customerName]);
+    }, [selectedCustomerInfo, customerName, customers.length, manualOverride]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
@@ -236,11 +261,16 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setTimeout(() => setMerchantMood("idle"), 2500);
     };
 
-    const handleCustomerSelect = (cust) => {
+    const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
+
+        if (autoLockedDistance !== null) {
+            setDistanceToStore(autoLockedDistance);
+            setGpsStatus('verified'); 
+        }
 
         const rawTier = cust.priceTier || cust.tier || cust.pricingTier || '';
         const tierUpper = rawTier.toUpperCase();
@@ -260,6 +290,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         setSelectedCustomerInfo(null); 
         setLockedTier('Ecer'); 
         updateCartPricing('Ecer');
+        setManualOverride(true); 
     };
 
     const updateCartPricing = (tier) => {
@@ -280,7 +311,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     };
 
     const addToCart = (product) => {
-        // 🚀 SMART BLOCKER: Prevent selling things they don't have!
         if (!isReturMode && product.stock <= 0) {
             alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
             return;
@@ -290,7 +320,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             const existing = prev.find(i => i.productId === product.id);
             
             if (existing) {
-                // 🚀 SMART BLOCKER: Prevent clicking past their max stock!
                 if (!isReturMode && existing.qty >= product.stock) {
                     alert(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
                     return prev;
@@ -319,7 +348,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             if (item.productId === id) {
                 let finalVal = val;
                 
-                // 🚀 SMART BLOCKER: Prevent typing a number higher than their stock!
                 if (field === 'qty' && !isReturMode) {
                     const maxStock = item.product.stock || 0;
                     if (val > maxStock) {
@@ -412,7 +440,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             setGpsStatus('idle');
             setAgentLocation(null);
             setTxProofPhoto(null); 
-            setIsReturMode(false); // Reset Retur Mode
+            setIsReturMode(false); 
+            setManualOverride(false); 
             setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
@@ -438,6 +467,10 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
+    // 🚀 NEW: Restricts Final Submit if Tier 3/4 is Out of Range
+    const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
+    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted;
+
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-40 pointer-events-none"></div>
@@ -461,7 +494,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                     </div>
                 )}
                 
-                {/* 🚀 THE SECURED RETUR SWITCH 🚀 */}
                 <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-lg ${isReturMode ? 'bg-red-900/40 border-red-500' : 'bg-[#2a241e] border-[#8b7256]'} ${!allowRetur ? 'opacity-60 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-lg shadow-sm ${isReturMode ? 'bg-red-500/20 text-red-400' : 'bg-[#3e3226] text-[#ffca28]'}`}>
@@ -496,7 +528,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
                         />
                         {customerName.length > 0 && (
-                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
                         )}
                     </div>
                     
@@ -509,12 +541,24 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                         <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
                                     </div>
                                 )}
-                                {gpsStatus === 'verified' && <span className="text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Location Verified ({distanceToStore}m)</span>}
-                                {gpsStatus === 'too_far' && (
+                                
+                                {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
+                                
+                                {/* 🚀 FIXED: TIER-RESTRICTED OUT OF RANGE BADGE */}
+                                {gpsStatus === 'manual_override' && (
                                     <div className="flex items-center gap-2 w-full">
-                                        <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded"><MapPin size={12}/> Geofence Blocked ({distanceToStore}m)</span>
+                                        {canOverrideGps ? (
+                                            <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
+                                                <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
+                                            </span>
+                                        ) : (
+                                            <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
+                                                <Lock size={12}/> Locked: Out of Range ({distanceToStore}m)
+                                            </span>
+                                        )}
                                     </div>
                                 )}
+                                
                                 {gpsStatus === 'bypass' && <span className="text-orange-400 flex items-center gap-1"><MapPin size={12}/> Unmapped Store (Bypass Allowed)</span>}
                                 {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                             </div>
@@ -663,13 +707,14 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         </span>
                     </div>
                     
+                    {/* 🚀 FIXED: TIERS 3 & 4 CANNOT CLICK SUBMIT IF OUT OF RANGE */}
                     <button
                         onClick={handleFinalDeal}
-                        disabled={cart.length === 0 || !customerName.trim() || gpsStatus === 'too_far' || gpsStatus === 'checking' || !txProofPhoto}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${cart.length > 0 && customerName.trim() && gpsStatus !== 'too_far' && gpsStatus !== 'checking' && txProofPhoto ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        disabled={!canSubmitSale}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
                         {gpsStatus === 'checking' ? 'Awaiting GPS...' :
-                         gpsStatus === 'too_far' ? 'Return to Store' :
+                         isGpsRestricted ? <><Lock size={20}/> LOC. RESTRICTED</> :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
                          customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
                     </button>
@@ -721,7 +766,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
             </div>
             <div className="hide-on-print hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
 
-            {/* --- THE NOO (NEW OPEN OUTLET) REGISTRATION MODAL --- */}
+            {/* --- THE NOO REGISTRATION MODAL --- */}
             {showNooModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
                     <div className="bg-slate-900 w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
