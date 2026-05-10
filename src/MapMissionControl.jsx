@@ -189,16 +189,15 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
         <div className="absolute bottom-[30px] left-[14px] z-[999]">
             <button 
                 onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} 
-                className="bg-slate-900/90 backdrop-blur-md text-slate-300 border border-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex items-center gap-2 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all group"
+                className="bg-slate-900/90 backdrop-blur-md text-slate-300 border border-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex items-center gap-2 hover:bg-slate-800 hover:text-white transition-all group"
             >
-                <MapPin size={16} className="text-orange-500 group-hover:text-white animate-pulse" /> 
+                <MapPin size={16} className="text-slate-400 group-hover:text-white" /> 
                 Set Home
             </button>
         </div>
     );
 };
 
-// 🚀 FIXED: MapClicker now perfectly moves the draggable pin to wherever the user taps!
 const MapClicker = ({ isAddingMode, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
@@ -212,7 +211,6 @@ const MapClicker = ({ isAddingMode, setDragPinCoords, setSelectedStore, setSelec
     return null;
 };
 
-// 🚀 NEW: The Draggable Pin Component
 const DraggableAddMarker = ({ position, setPosition }) => {
     const markerRef = useRef(null);
     const eventHandlers = useMemo(
@@ -1077,7 +1075,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [boundaries, setBoundaries] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
     
-    // 🚀 NEW: DRAG PIN STATE
+    // 🚀 DRAG PIN STATE
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
@@ -1342,26 +1340,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             </button>
                         )}
                         
-                        {/* 🚀 THE NEW DRAGGABLE PIN TOGGLE */}
-                        <button onClick={() => {
-                            if (!isAddingMode) {
-                                let center = [-7.6145, 110.7122];
-                                if (mapRef.current) {
-                                    const c = mapRef.current.getCenter();
-                                    center = [c.lat, c.lng];
-                                } else if (userLocation) {
-                                    center = userLocation;
-                                }
-                                setDragPinCoords(center);
-                                setIsAddingMode(true);
-                            } else {
-                                setDragPinCoords(null);
-                                setIsAddingMode(false);
-                            }
-                        }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${isAddingMode ? 'bg-orange-600 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-orange-500 hover:text-white'}`}>
-                            {isAddingMode ? "Cancel Pin Drop" : "Drop New Store Pin"} <MapPin size={16}/>
-                        </button>
-
                         <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                             {showBorders ? "Regional Borders: ON" : "Regional Borders"} <Globe size={16}/>
                         </button>
@@ -1390,6 +1368,29 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </div>
                 </div>
             </div>
+
+            {/* 🚀 FIXED: DEDICATED ADD STORE BUTTON (No longer hidden in the menu!) */}
+            {!isAddingMode && (
+                <div className="absolute bottom-[90px] left-[14px] z-[999]">
+                    <button 
+                        onClick={() => {
+                            let center = [-7.6145, 110.7122];
+                            if (mapRef.current) {
+                                const c = mapRef.current.getCenter();
+                                center = [c.lat, c.lng];
+                            } else if (userLocation) {
+                                center = userLocation;
+                            }
+                            setDragPinCoords(center);
+                            setIsAddingMode(true);
+                        }} 
+                        className="bg-orange-600/95 backdrop-blur-md text-white border-2 border-orange-400 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(249,115,22,0.6)] flex items-center gap-2 hover:bg-orange-500 transition-all hover:scale-105 active:scale-95"
+                    >
+                        <MapPin size={18} className="animate-bounce" /> 
+                        Drop New Pin
+                    </button>
+                </div>
+            )}
 
            {showTacticalDash && (
                 <TacticalDashboard 
@@ -1432,10 +1433,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 
-                {/* 🚀 FIXED: MapClicker now moves the draggable pin to your finger tap! */}
                 <MapClicker isAddingMode={isAddingMode} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {/* 🚀 NEW: The actual draggable pin on the map */}
                 {isAddingMode && dragPinCoords && (
                     <DraggableAddMarker position={dragPinCoords} setPosition={setDragPinCoords} />
                 )}
