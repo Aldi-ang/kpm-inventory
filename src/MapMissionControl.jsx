@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
-    import { 
+import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
@@ -1079,11 +1079,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
-    // 🚀 NEW: Add Store Form State & Save Logic
-    const [pendingNewStore, setPendingNewStore] = useState(null);
-    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
-    const [isSavingStore, setIsSavingStore] = useState(false);
-
     // 🚀 NEW: Tier Restriction Logic for Map Pin Dropping
     const canAddManualPin = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
 
@@ -1092,10 +1087,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [isSavingStore, setIsSavingStore] = useState(false);
 
     const handleSaveNewStore = async () => {
-        // 🚀 FIXED: Address is no longer required for Tier 1 & 2!
         if (!newStoreForm.name) return alert("Store Name is required!");
         setIsSavingStore(true);
         try {
+            const userId = user?.uid || user?.id || "default";
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             
             await setDoc(newRef, {
@@ -1124,7 +1119,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             setIsSavingStore(false);
         }
     };
-    
 
     const userId = user?.uid || user?.id || "default";
 
@@ -1324,7 +1318,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     
                     <button 
                         onClick={() => {
-                            // 🚀 THE FIX: Opens the Registration Modal instead of copy/pasting!
                             setPendingNewStore(dragPinCoords);
                             setIsAddingMode(false);
                             setDragPinCoords(null);
@@ -1367,7 +1360,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 <input value={newStoreForm.phone} onChange={e => setNewStoreForm({...newStoreForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500" placeholder="e.g. 08123456789" />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Address <span className="text-red-500">*</span></label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Address</label>
                                 <textarea value={newStoreForm.address} onChange={e => setNewStoreForm({...newStoreForm, address: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500 min-h-[80px]" placeholder="Include street, area..." />
                             </div>
                             <div>
@@ -1464,7 +1457,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {/* 🚀 FIXED: DEDICATED ADD STORE BUTTON (Restricted to Tier 1 & 2) */}
+            {/* 🚀 DEDICATED ADD STORE BUTTON (Restricted to Tier 1 & 2) */}
             {!isAddingMode && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
@@ -1486,7 +1479,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </button>
                 </div>
             )}
-
 
            {showTacticalDash && (
                 <TacticalDashboard 
