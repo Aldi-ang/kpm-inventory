@@ -381,9 +381,37 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }
     };
 
+    // 🚀 ANTI-DUPLICATE NOO ENGINE
     const submitNooRegistration = () => {
         if (!nooForm.phone || !nooForm.address || !nooForm.photoUrl) {
             return alert("All fields (Phone, Address, Photo) are required to register a new outlet and unlock pricing!");
+        }
+
+        // 1. EXACT NAME SCANNER
+        const duplicateName = customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim());
+        if (duplicateName) {
+            return alert(`DUPLICATE DETECTED!\n\nA store named "${duplicateName.name}" is already in the database. Please select it from the dropdown instead of creating a new one.`);
+        }
+
+        // 2. PROXIMITY SCANNER (15 Meters)
+        let tooClose = null;
+        let tooCloseDistance = Infinity;
+
+        if (agentLocation) {
+            customers.forEach(c => {
+                if (c.latitude && c.longitude) {
+                    const dist = calculateDistance(agentLocation.latitude, agentLocation.longitude, c.latitude, c.longitude);
+                    if (dist < 15 && dist < tooCloseDistance) { 
+                        tooClose = c;
+                        tooCloseDistance = dist;
+                    }
+                }
+            });
+        }
+
+        if (tooClose) {
+            const confirmProximity = window.confirm(`⚠️ EXTREME PROXIMITY WARNING!\n\nYou are attempting to register a new store, but you are standing only ${Math.round(tooCloseDistance)} meters away from an existing store: "${tooClose.name}".\n\nAre you absolutely sure this is a different building/customer?`);
+            if (!confirmProximity) return; // Abort if they realize their mistake
         }
         
         const tempStore = {

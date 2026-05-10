@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock
+    Navigation, LocateFixed, Clock, CheckCircle
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -141,7 +141,6 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-// 🚀 FIXED: Raised Desktop position (lg:bottom-[160px]) to perfectly clear the Leaflet Layers stack
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -183,7 +182,6 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     );
 };
 
-// 🚀 FIXED: Moved "Set Home" to the bottom-left and gave it a sleek dark-mode design
 const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
@@ -200,19 +198,60 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     );
 };
 
-const MapClicker = ({ isAddingMode, setNewPinCoords, setIsAddingMode, setSelectedStore, setSelectedZone }) => {
+// 🚀 FIXED: MapClicker now perfectly moves the draggable pin to wherever the user taps!
+const MapClicker = ({ isAddingMode, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
             if (isAddingMode) {
-                setNewPinCoords(e.latlng);
-                navigator.clipboard.writeText(`${e.latlng.lat}, ${e.latlng.lng}`);
-                if(window.confirm(`Pin Dropped!\nCoords: ${e.latlng.lat}, ${e.latlng.lng}\n\nCreate new store here?`)) setIsAddingMode(false);
+                setDragPinCoords(e.latlng);
             } else {
                 if (window.innerWidth >= 1024) { setSelectedStore(null); setSelectedZone(null); }
             }
         }
     });
     return null;
+};
+
+// 🚀 NEW: The Draggable Pin Component
+const DraggableAddMarker = ({ position, setPosition }) => {
+    const markerRef = useRef(null);
+    const eventHandlers = useMemo(
+        () => ({
+            dragend() {
+                const marker = markerRef.current;
+                if (marker != null) {
+                    setPosition(marker.getLatLng());
+                }
+            },
+        }),
+        [setPosition]
+    );
+
+    if (!position) return null;
+
+    const targetIcon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div style="background-color: #f97316; width: 44px; height: 44px; border-radius: 50%; border: 4px solid white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 25px rgba(249,115,22,0.8);">📍</div>`,
+        iconSize: [44, 44],
+        iconAnchor: [22, 44]
+    });
+
+    return (
+        <Marker
+            draggable={true}
+            eventHandlers={eventHandlers}
+            position={position}
+            ref={markerRef}
+            icon={targetIcon}
+            zIndexOffset={10000}
+        >
+            <LeafletTooltip permanent direction="top" offset={[0, -44]} className="custom-leaflet-tooltip">
+                <div className="bg-orange-600 text-white font-black text-[10px] px-3 py-1.5 rounded-lg border-2 border-white shadow-xl animate-bounce">
+                    DRAG ME
+                </div>
+            </LeafletTooltip>
+        </Marker>
+    );
 };
 
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isActive }) => {
@@ -629,7 +668,6 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH FLAWLESS IOS NATIVE SCROLL
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
@@ -660,7 +698,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setVisitFreq(store.visitFreq || 7);
     }, [store?.id, store?.catchmentScale, store?.visitFreq]);
 
-    // 🚀 DRAG LOGIC STRICTLY FOR THE TOP HEADER
     const onHandleTouchStart = (e) => {
         touchY.current = e.touches[0].clientY;
         if (sheetRef.current) {
@@ -693,7 +730,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const visibleHeight = sheetH - translateVal.current;
         const relHeight = visibleHeight / winH; 
 
-        // 🚀 Close threshold: 10%
         if (relHeight < 0.10) {
             setSelectedStore(null);
             return;
@@ -842,7 +878,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             style={isMobile ? { height: '85vh', transform: 'translateY(100%)' } : {}}
             onClick={(e) => e.stopPropagation()} 
         >
-            {/* 🚀 DRAG ZONE (Handle + Header Area - Mini Player) */}
             <div 
                 className="shrink-0 flex flex-col pt-3 px-6 pb-4 border-b border-slate-800 bg-slate-900 rounded-t-3xl lg:cursor-default"
                 style={{ touchAction: isMobile ? 'none' : 'auto' }}
@@ -886,7 +921,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
             <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
-            {/* 🚀 FIXED: SCROLL ZONE (Native iOS scroll, NO custom drag logic here!) */}
             <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar px-6 pt-2 pb-[10vh] lg:pb-6">
                 
                 <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
@@ -952,7 +986,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                         <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
                                     </div>
                                     {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
+                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
                                             {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
                                                 <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
                                             )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
@@ -967,7 +1001,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
                                 </h3>
                                 
-                                <div className="space-y-3">
+                                <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
                                     {recentSales.length > 0 ? recentSales.map(tx => {
                                         let displayDate = "Unknown Date";
                                         let displayTime = "--:--";
@@ -1021,7 +1055,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [selectedZone, setSelectedZone] = useState(null); 
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
     const [isAddingMode, setIsAddingMode] = useState(false); 
-    const [newPinCoords, setNewPinCoords] = useState(null);
     const [showControls, setShowControls] = useState(false);
 
     const [conquestMode, setConquestMode] = useState(false); 
@@ -1043,6 +1076,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const [boundaries, setBoundaries] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
+    
+    // 🚀 NEW: DRAG PIN STATE
+    const mapRef = useRef(null);
+    const [dragPinCoords, setDragPinCoords] = useState(null);
 
     const userId = user?.uid || user?.id || "default";
 
@@ -1213,6 +1250,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     
     const handlePinClick = (store, map) => { 
+        if (isAddingMode) return; // Prevent opening stores when dropping pins
         setSelectedStore(store); 
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
@@ -1224,15 +1262,42 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50]">
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             
-            {/* 🚀 FORCE iOS TO STOP BOUNCING THE BACKGROUND MAP */}
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
             `}</style>
 
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
+            {/* 🚀 TARGETING HUD */}
+            {isAddingMode && dragPinCoords && (
+                <div className="absolute top-[80px] left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-3 items-center w-full max-w-[320px] pointer-events-auto">
+                    <div className="bg-orange-600/95 backdrop-blur text-white px-6 py-2.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_10px_30px_rgba(249,115,22,0.5)] border-2 border-orange-400 text-center flex items-center justify-center gap-2 w-full">
+                        <MapPin size={16} className="animate-bounce" /> Drag pin to exact location
+                    </div>
+                    
+                    <button 
+                        onClick={() => {
+                            navigator.clipboard.writeText(`${dragPinCoords.lat}, ${dragPinCoords.lng}`);
+                            if(window.confirm(`Pin Confirmed!\nCoords: ${dragPinCoords.lat.toFixed(5)}, ${dragPinCoords.lng.toFixed(5)}\n\nCreate new store here?`)) {
+                                setIsAddingMode(false);
+                                setDragPinCoords(null);
+                            }
+                        }}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm shadow-[0_10px_30px_rgba(16,185,129,0.4)] border-2 border-emerald-300 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <CheckCircle size={20} /> Confirm Location
+                    </button>
+                    <button 
+                        onClick={() => { setIsAddingMode(false); setDragPinCoords(null); }}
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg border-2 border-slate-600 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            )}
+
             {salesHeatmapMode && (
                 <div className="absolute bottom-[100px] lg:bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Heatmap</span>
@@ -1244,8 +1309,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
-            {/* 🚀 FIXED: Squeezed top header perfectly. left-70px clears Menu, right-60px clears Bell */}
-            <div className="absolute top-[12px] left-[70px] right-[60px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
+            <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
                         <MapPin size={16} className="text-orange-500 shrink-0"/>
@@ -1277,6 +1341,27 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 Map Boundaries Setup <Download size={16}/>
                             </button>
                         )}
+                        
+                        {/* 🚀 THE NEW DRAGGABLE PIN TOGGLE */}
+                        <button onClick={() => {
+                            if (!isAddingMode) {
+                                let center = [-7.6145, 110.7122];
+                                if (mapRef.current) {
+                                    const c = mapRef.current.getCenter();
+                                    center = [c.lat, c.lng];
+                                } else if (userLocation) {
+                                    center = userLocation;
+                                }
+                                setDragPinCoords(center);
+                                setIsAddingMode(true);
+                            } else {
+                                setDragPinCoords(null);
+                                setIsAddingMode(false);
+                            }
+                        }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${isAddingMode ? 'bg-orange-600 text-white border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-orange-500 hover:text-white'}`}>
+                            {isAddingMode ? "Cancel Pin Drop" : "Drop New Store Pin"} <MapPin size={16}/>
+                        </button>
+
                         <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                             {showBorders ? "Regional Borders: ON" : "Regional Borders"} <Globe size={16}/>
                         </button>
@@ -1318,23 +1403,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
 
-            <MapContainer center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
+            <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
-               <LayersControl position="bottomright">
+                <LayersControl position="bottomright">
                     <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
                         <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-                    
-                    {/* 🚀 NEW: Ultra-fast Google Maps Layers for Field Navigation */}
                     <LayersControl.BaseLayer name="Google Maps (Streets)">
                         <TileLayer url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" attribution='© Google' />
                     </LayersControl.BaseLayer>
                     <LayersControl.BaseLayer name="Google Maps (Hybrid)">
                         <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution='© Google' />
                     </LayersControl.BaseLayer>
-
                     <LayersControl.BaseLayer name="Detailed Streets (Esri)">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
                     </LayersControl.BaseLayer>
@@ -1349,7 +1431,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 )}
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
-                <MapClicker isAddingMode={isAddingMode} setNewPinCoords={setNewPinCoords} setIsAddingMode={setIsAddingMode} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
+                
+                {/* 🚀 FIXED: MapClicker now moves the draggable pin to your finger tap! */}
+                <MapClicker isAddingMode={isAddingMode} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
+                
+                {/* 🚀 NEW: The actual draggable pin on the map */}
+                {isAddingMode && dragPinCoords && (
+                    <DraggableAddMarker position={dragPinCoords} setPosition={setDragPinCoords} />
+                )}
                 
                 {showBorders && sortedBoundaries.map((boundary) => {
                     const geoData = boundary.feature || boundary.geometry;
