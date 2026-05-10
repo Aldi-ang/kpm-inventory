@@ -1091,8 +1091,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
-    // 🚀 Tier Restriction Logic for Map Pin Dropping
-    const canAddManualPin = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+    // 🚀 FIXED: Checks the direct 'isAdmin' prop so the Boss is never locked out!
+    const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
     const [pendingNewStore, setPendingNewStore] = useState(null);
     const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
