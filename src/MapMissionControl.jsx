@@ -667,7 +667,6 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 FIXED: Passed down 'setEditingStoreId', 'setDragPinCoords', and 'canOverrideGps' props
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
@@ -913,7 +912,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         </div>
                     )}
 
-                    {/* 🚀 NEW: Edit Location Button (Closes Sheet & Turns Store Into Draggable Pin) */}
                     {canOverrideGps && (
                         <button onClick={() => {
                             setDragPinCoords({ lat: store.latitude, lng: store.longitude });
@@ -1058,11 +1056,26 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 // --- MAIN WRAPPER (APP IN APP) ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
 
+    const userId = user?.uid || user?.id || "default";
+
+    // 🚀 FIXED: Initialize Tiers early so filter maps correctly!
+    const activeTiers = useMemo(() => tierSettings || [
+        { id: 'Retail', label: 'Retail', color: '#38bdf8', iconType: 'emoji', value: '🏪' },
+        { id: 'Grosir', label: 'Grosir', color: '#f59e0b', iconType: 'emoji', value: '🏢' },
+        { id: 'Ecer', label: 'Ecer', color: '#ef4444', iconType: 'emoji', value: '🚶' },
+        { id: 'Platinum', label: 'Platinum', color: '#8b5cf6', iconType: 'emoji', value: '🏆' }
+    ], [tierSettings]);
+
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
-    const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
     
-    // 🚀 NEW: Editing Modes
+    // 🚀 FIXED: Dynamic filter initialization ensures everything shows
+    const [filterTier, setFilterTier] = useState(() => activeTiers.map(t => t.id)); 
+    
+    useEffect(() => {
+        setFilterTier(activeTiers.map(t => t.id));
+    }, [activeTiers]);
+
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [editingStoreId, setEditingStoreId] = useState(null); 
     
@@ -1087,22 +1100,19 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [boundaries, setBoundaries] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
     
-    // 🚀 DRAG PIN STATE
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
-    // 🚀 FIXED: Checks the direct 'isAdmin' prop so the Boss is never locked out!
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
     const [pendingNewStore, setPendingNewStore] = useState(null);
-    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
+    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
     const [isSavingStore, setIsSavingStore] = useState(false);
 
     const handleSaveNewStore = async () => {
         if (!newStoreForm.name) return alert("Store Name is required!");
         setIsSavingStore(true);
         try {
-            const userId = user?.uid || user?.id || "default";
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             
             await setDoc(newRef, {
@@ -1131,8 +1141,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             setIsSavingStore(false);
         }
     };
-
-    const userId = user?.uid || user?.id || "default";
 
     useEffect(() => {
         const loadBorders = async () => {
@@ -1175,13 +1183,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         });
     }, [boundaries]);
 
-    const activeTiers = tierSettings || [
-        { id: 'Platinum', label: 'Platinum', color: '#f59e0b', iconType: 'emoji', value: '🏆' },
-        { id: 'Gold', label: 'Gold', color: '#fbbf24', iconType: 'emoji', value: '🥇' },
-        { id: 'Silver', label: 'Silver', color: '#94a3b8', iconType: 'emoji', value: '🥈' },
-        { id: 'Bronze', label: 'Bronze', color: '#78350f', iconType: 'emoji', value: '🥉' }
-    ];
-
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = (customers || [])
@@ -1221,7 +1222,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const filtered = validStores.filter(c => {
             if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
             if (selectedCity !== "All" && c.city !== selectedCity) return false;
-            if (!filterTier.includes(c.tier || 'Silver')) return false;
+            if (!filterTier.includes(c.tier || c.priceTier || 'Retail')) return false;
             return true;
         });
 
@@ -1301,7 +1302,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     
     const handlePinClick = (store, map) => { 
-        if (isAddingMode || editingStoreId) return; // Prevent opening stores when editing/adding
+        if (isAddingMode || editingStoreId) return; 
         setSelectedStore(store); 
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
@@ -1321,7 +1322,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
-            {/* 🚀 TARGETING HUD (Handles Both ADD and EDIT) */}
+            {/* 🚀 TARGETING HUD */}
             {(isAddingMode || editingStoreId) && dragPinCoords && (
                 <div className="absolute top-[80px] left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-3 items-center w-full max-w-[320px] pointer-events-auto">
                     <div className="bg-orange-600/95 backdrop-blur text-white px-6 py-2.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_10px_30px_rgba(249,115,22,0.5)] border-2 border-orange-400 text-center flex items-center justify-center gap-2 w-full">
@@ -1331,14 +1332,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <button 
                         onClick={async () => {
                             if (editingStoreId) {
-                                // 🚀 SAVE EDITED STORE
                                 try {
-                                    const userId = user?.uid || user?.id || "default";
                                     const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
-                                    await updateDoc(storeRef, {
-                                        latitude: dragPinCoords.lat,
-                                        longitude: dragPinCoords.lng
-                                    });
+                                    await updateDoc(storeRef, { latitude: dragPinCoords.lat, longitude: dragPinCoords.lng });
                                     alert("✅ Location Corrected!");
                                     setEditingStoreId(null);
                                     setDragPinCoords(null);
@@ -1347,11 +1343,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     alert("Failed to update location: " + e.message);
                                 }
                             } else {
-                                // 🚀 SAVE NEW STORE
                                 setPendingNewStore(dragPinCoords);
                                 setIsAddingMode(false);
                                 setDragPinCoords(null);
-                                setNewStoreForm({ name: '', phone: '', address: '', tier: 'Retail' });
+                                setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
                             }
                         }}
                         className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm shadow-[0_10px_30px_rgba(16,185,129,0.4)] border-2 border-emerald-300 transition-transform active:scale-95 flex items-center justify-center gap-2"
@@ -1397,9 +1392,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pricing Tier</label>
                                 <select value={newStoreForm.tier} onChange={e => setNewStoreForm({...newStoreForm, tier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500">
-                                    <option value="Retail">Retail (Standard)</option>
-                                    <option value="Grosir">Grosir (Wholesale)</option>
-                                    <option value="Ecer">Ecer (Walk-in)</option>
+                                    {activeTiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 </select>
                             </div>
                             
@@ -1488,7 +1481,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {/* 🚀 DEDICATED ADD STORE BUTTON (Restricted to Tier 1 & 2) */}
+            {/* 🚀 DEDICATED ADD STORE BUTTON */}
             {!isAddingMode && !editingStoreId && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
