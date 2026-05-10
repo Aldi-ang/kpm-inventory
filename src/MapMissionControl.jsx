@@ -1079,6 +1079,46 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
+    // 🚀 NEW: Add Store Form State & Save Logic
+    const [pendingNewStore, setPendingNewStore] = useState(null);
+    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
+    const [isSavingStore, setIsSavingStore] = useState(false);
+
+    const handleSaveNewStore = async () => {
+        if (!newStoreForm.name || !newStoreForm.address) return alert("Store Name and Address are required!");
+        setIsSavingStore(true);
+        try {
+            // Generate a new document reference to get a unique ID
+            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+            
+            await setDoc(newRef, {
+                id: newRef.id,
+                name: newStoreForm.name.toUpperCase(),
+                phone: newStoreForm.phone,
+                address: newStoreForm.address,
+                tier: newStoreForm.tier,
+                priceTier: newStoreForm.tier,
+                storeType: 'Retailer',
+                latitude: pendingNewStore.lat,
+                longitude: pendingNewStore.lng,
+                status: 'Active',
+                visitFreq: 7, // Default visit target
+                createdAt: new Date().toISOString()
+            });
+            
+            if (logAudit) logAudit("STORE_CREATED_MAP", `Added store ${newStoreForm.name} via map pin.`);
+            if (triggerCapy) triggerCapy(`New target secured: ${newStoreForm.name} 📍`);
+            
+            // Close the modal (The map will instantly update via Firebase real-time sync!)
+            setPendingNewStore(null);
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save store: " + e.message);
+        } finally {
+            setIsSavingStore(false);
+        }
+    };
+
     const userId = user?.uid || user?.id || "default";
 
     useEffect(() => {
@@ -1277,11 +1317,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     
                     <button 
                         onClick={() => {
-                            navigator.clipboard.writeText(`${dragPinCoords.lat}, ${dragPinCoords.lng}`);
-                            if(window.confirm(`Pin Confirmed!\nCoords: ${dragPinCoords.lat.toFixed(5)}, ${dragPinCoords.lng.toFixed(5)}\n\nCreate new store here?`)) {
-                                setIsAddingMode(false);
-                                setDragPinCoords(null);
-                            }
+                            // 🚀 THE FIX: Opens the Registration Modal instead of copy/pasting!
+                            setPendingNewStore(dragPinCoords);
+                            setIsAddingMode(false);
+                            setDragPinCoords(null);
+                            setNewStoreForm({ name: '', phone: '', address: '', tier: 'Retail' });
                         }}
                         className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm shadow-[0_10px_30px_rgba(16,185,129,0.4)] border-2 border-emerald-300 transition-transform active:scale-95 flex items-center justify-center gap-2"
                     >
@@ -1293,6 +1333,54 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     >
                         Cancel
                     </button>
+                </div>
+            )}
+
+            {/* 🚀 NEW STORE REGISTRATION MODAL */}
+            {pendingNewStore && (
+                <div className="absolute inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border-2 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)] rounded-2xl w-full max-w-sm p-6 animate-slide-down relative">
+                        <button onClick={() => setPendingNewStore(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
+                        
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="bg-orange-500/20 p-2 rounded-full"><Store className="text-orange-500" size={24}/></div>
+                            <div>
+                                <h3 className="text-white font-black uppercase tracking-widest">Register Target</h3>
+                                <p className="text-blue-400 font-mono text-[10px]">{pendingNewStore.lat.toFixed(5)}, {pendingNewStore.lng.toFixed(5)}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Store Name <span className="text-red-500">*</span></label>
+                                <input value={newStoreForm.name} onChange={e => setNewStoreForm({...newStoreForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500" placeholder="e.g. TOKO MAJU" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Phone / WhatsApp</label>
+                                <input value={newStoreForm.phone} onChange={e => setNewStoreForm({...newStoreForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500" placeholder="e.g. 08123456789" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Address <span className="text-red-500">*</span></label>
+                                <textarea value={newStoreForm.address} onChange={e => setNewStoreForm({...newStoreForm, address: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500 min-h-[80px]" placeholder="Include street, area..." />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pricing Tier</label>
+                                <select value={newStoreForm.tier} onChange={e => setNewStoreForm({...newStoreForm, tier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500">
+                                    <option value="Retail">Retail (Standard)</option>
+                                    <option value="Grosir">Grosir (Wholesale)</option>
+                                    <option value="Ecer">Ecer (Walk-in)</option>
+                                </select>
+                            </div>
+                            
+                            <button 
+                                onClick={handleSaveNewStore}
+                                disabled={isSavingStore}
+                                className={`w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg ${isSavingStore ? 'bg-slate-700 text-slate-500' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'}`}
+                            >
+                                {isSavingStore ? 'Saving...' : 'Deploy Target'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
