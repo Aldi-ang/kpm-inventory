@@ -1322,21 +1322,24 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
-                <LayersControl position="bottomright">
+               <LayersControl position="bottomright">
                     <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
                         <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Midnight Canvas (Esri)">
-                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
+                    
+                    {/* 🚀 NEW: Ultra-fast Google Maps Layers for Field Navigation */}
+                    <LayersControl.BaseLayer name="Google Maps (Streets)">
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" attribution='© Google' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Google Maps (Hybrid)">
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution='© Google' />
+                    </LayersControl.BaseLayer>
+
+                    <LayersControl.BaseLayer name="Detailed Streets (Esri)">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
                     </LayersControl.BaseLayer>
                     <LayersControl.BaseLayer name="Light Canvas (Carto)">
                         <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Standard (OSM)">
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OSM' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satellite (Esri)">
-                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='© Esri'/>
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
