@@ -141,27 +141,21 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-// 🚀 FIXED: Locate Me Button logic completely re-engineered
+// 🚀 FIXED: "Locate Me" button raised to safely clear Map Layers and acts instantly
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
 
     const handleLocateClick = () => {
-        // If we already have the location, just snap to it instantly
         if (userLocation) {
             map.flyTo(userLocation, 16, { duration: 1.2 });
         }
-
-        // Keep GPS actively tracking in the background
         if (!watchId.current) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     setUserLocation(coords);
-                    // Only auto-fly on the very first GPS lock
-                    if (!userLocation) {
-                        map.flyTo(coords, 16, { duration: 1.2 });
-                    }
+                    if (!userLocation) map.flyTo(coords, 16, { duration: 1.2 });
                 },
                 (err) => {
                     console.error(err);
@@ -173,12 +167,11 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     };
 
     useEffect(() => {
-        // Cleanup tracking when component closes
         return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
     }, []);
 
     return (
-        <div className="absolute bottom-[240px] lg:bottom-[120px] right-[10px] z-[999]">
+        <div className="absolute bottom-[200px] lg:bottom-[120px] right-[10px] z-[999]">
             <button 
                 onClick={handleLocateClick} 
                 className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
@@ -631,7 +624,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH 20% MINI-PLAYER
+// 🚀 REWORKED: NATIVE GESTURE BOTTOM SHEET ENGINE WITH FLAWLESS IOS NATIVE SCROLL
 const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
@@ -646,8 +639,8 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         if (!store) return;
         if (window.innerWidth < 1024 && sheetRef.current) {
             const winH = window.innerHeight;
-            const sheetH = winH * 0.90; 
-            const targetVisible = winH * 0.22; 
+            const sheetH = winH * 0.85; 
+            const targetVisible = winH * 0.50; 
             const initialTranslate = sheetH - targetVisible; 
             
             translateVal.current = initialTranslate;
@@ -662,6 +655,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setVisitFreq(store.visitFreq || 7);
     }, [store?.id, store?.catchmentScale, store?.visitFreq]);
 
+    // 🚀 DRAG LOGIC STRICTLY FOR THE TOP HEADER
     const onHandleTouchStart = (e) => {
         touchY.current = e.touches[0].clientY;
         if (sheetRef.current) {
@@ -675,7 +669,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         touchY.current = y;
 
         const winH = window.innerHeight;
-        const sheetH = winH * 0.90;
+        const sheetH = winH * 0.85;
 
         translateVal.current += deltaY;
         
@@ -689,17 +683,18 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     const onHandleTouchEnd = () => {
         const winH = window.innerHeight;
-        const sheetH = winH * 0.90;
+        const sheetH = winH * 0.85;
         
         const visibleHeight = sheetH - translateVal.current;
         const relHeight = visibleHeight / winH; 
 
-        if (relHeight < 0.15) {
+        // 🚀 Close threshold: 10%
+        if (relHeight < 0.10) {
             setSelectedStore(null);
             return;
         }
 
-        const snapPoints = [0.22, 0.50, 0.90];
+        const snapPoints = [0.22, 0.50, 0.85];
         const nearestSnap = snapPoints.reduce((prev, curr) => 
             Math.abs(curr - relHeight) < Math.abs(prev - relHeight) ? curr : prev
         );
@@ -839,7 +834,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         <div 
             ref={sheetRef}
             className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col lg:animate-slide-in-left lg:transform-none"
-            style={isMobile ? { height: '90vh', transform: 'translateY(100%)' } : {}}
+            style={isMobile ? { height: '85vh', transform: 'translateY(100%)' } : {}}
             onClick={(e) => e.stopPropagation()} 
         >
             {/* 🚀 DRAG ZONE (Handle + Header Area - Mini Player) */}
@@ -858,7 +853,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                 
                 {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)] pointer-events-none"><Store size={10} /> WHOLESALE HUB</span>}
                 
-                {/* 🚀 FIXED: Removed the faulty Distance string, keeping UI clean */}
                 <p className="text-slate-400 text-xs flex items-center gap-1.5 mb-5 leading-relaxed truncate font-bold pointer-events-none">
                     <MapPin size={14} className="shrink-0 mt-0.5 text-orange-500"/>
                     <span className="truncate">{displayLocation}</span>
@@ -887,8 +881,8 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
             <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
 
-            {/* 🚀 SCROLL ZONE */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pb-[15vh] lg:pb-6">
+            {/* 🚀 FIXED: SCROLL ZONE (Native iOS scroll, NO custom drag logic here!) */}
+            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar px-6 pt-2 pb-[10vh] lg:pb-6">
                 
                 <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
                     <div className="flex items-center gap-3">
@@ -953,7 +947,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                         <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
                                     </div>
                                     {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
+                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in">
                                             {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
                                                 <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
                                             )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
@@ -968,7 +962,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
                                 </h3>
                                 
-                                <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
+                                <div className="space-y-3">
                                     {recentSales.length > 0 ? recentSales.map(tx => {
                                         let displayDate = "Unknown Date";
                                         let displayTime = "--:--";
@@ -1225,8 +1219,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50]">
             
+            {/* 🚀 FORCE iOS TO STOP BOUNCING THE BACKGROUND MAP */}
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
             `}</style>
@@ -1244,8 +1239,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
-            {/* 🚀 FIXED: Squeezed top header perfectly between the App Menu and Notification Bell */}
-            <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
+            {/* 🚀 FIXED: Squeezed top header perfectly. left-70px clears Menu, right-60px clears Bell */}
+            <div className="absolute top-[12px] left-[70px] right-[60px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
                         <MapPin size={16} className="text-orange-500 shrink-0"/>
@@ -1433,8 +1428,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
-                
-                .route-preview-line { animation: flow 20s linear infinite; stroke-linecap: round; }
                 
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 .venn-heatmap-circle { mix-blend-mode: screen; }
