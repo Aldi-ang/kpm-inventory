@@ -198,10 +198,11 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
     );
 };
 
-const MapClicker = ({ isAddingMode, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
+const MapClicker = ({ isAddingMode, editingStoreId, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
-            if (isAddingMode) {
+            // Only allow pin updates if we are actively Adding or Editing
+            if (isAddingMode || editingStoreId) {
                 setDragPinCoords(e.latlng);
             } else {
                 if (window.innerWidth >= 1024) { setSelectedStore(null); setSelectedZone(null); }
@@ -666,7 +667,8 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride }) => {
+// 🚀 FIXED: Passed down 'setEditingStoreId', 'setDragPinCoords', and 'canOverrideGps' props
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -901,18 +903,25 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                         <Navigation size={14}/> Directions
                     </a>
                     
-                    <button onClick={() => setSelectedStore(null)} className="lg:hidden w-full py-3.5 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 shadow-md">
-                       <X size={14}/> Close
-                    </button>
-
                     {isAdmin && store.phone ? (
-                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="hidden lg:flex w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
+                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
                             <Phone size={14}/> WhatsApp
                         </a>
                     ) : (
-                        <div className="hidden lg:flex w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+                        <div className="w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
                             <Phone size={14}/> No Phone
                         </div>
+                    )}
+
+                    {/* 🚀 NEW: Edit Location Button (Closes Sheet & Turns Store Into Draggable Pin) */}
+                    {canOverrideGps && (
+                        <button onClick={() => {
+                            setDragPinCoords({ lat: store.latitude, lng: store.longitude });
+                            setEditingStoreId(store.id);
+                            setSelectedStore(null); 
+                        }} className="col-span-2 w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-orange-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-orange-400 transition-colors shadow-md">
+                            <MapPin size={14}/> Correct Pin Location
+                        </button>
                     )}
                 </div>
             </div>
@@ -1052,9 +1061,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
     const [filterTier, setFilterTier] = useState(['Platinum', 'Gold', 'Silver', 'Bronze']); 
+    
+    // 🚀 NEW: Editing Modes
     const [isAddingMode, setIsAddingMode] = useState(false); 
+    const [editingStoreId, setEditingStoreId] = useState(null); 
+    
     const [showControls, setShowControls] = useState(false);
-
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
     const [showBorders, setShowBorders] = useState(false); 
@@ -1079,7 +1091,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
-    // 🚀 NEW: Tier Restriction Logic for Map Pin Dropping
+    // 🚀 Tier Restriction Logic for Map Pin Dropping
     const canAddManualPin = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
 
     const [pendingNewStore, setPendingNewStore] = useState(null);
@@ -1289,7 +1301,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
     
     const handlePinClick = (store, map) => { 
-        if (isAddingMode) return; // Prevent opening stores when dropping pins
+        if (isAddingMode || editingStoreId) return; // Prevent opening stores when editing/adding
         setSelectedStore(store); 
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
@@ -1309,26 +1321,45 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
-            {/* 🚀 TARGETING HUD */}
-            {isAddingMode && dragPinCoords && (
+            {/* 🚀 TARGETING HUD (Handles Both ADD and EDIT) */}
+            {(isAddingMode || editingStoreId) && dragPinCoords && (
                 <div className="absolute top-[80px] left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-3 items-center w-full max-w-[320px] pointer-events-auto">
                     <div className="bg-orange-600/95 backdrop-blur text-white px-6 py-2.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_10px_30px_rgba(249,115,22,0.5)] border-2 border-orange-400 text-center flex items-center justify-center gap-2 w-full">
-                        <MapPin size={16} className="animate-bounce" /> Drag pin to exact location
+                        <MapPin size={16} className="animate-bounce" /> {editingStoreId ? "Drag to correct location" : "Drag pin to exact location"}
                     </div>
                     
                     <button 
-                        onClick={() => {
-                            setPendingNewStore(dragPinCoords);
-                            setIsAddingMode(false);
-                            setDragPinCoords(null);
-                            setNewStoreForm({ name: '', phone: '', address: '', tier: 'Retail' });
+                        onClick={async () => {
+                            if (editingStoreId) {
+                                // 🚀 SAVE EDITED STORE
+                                try {
+                                    const userId = user?.uid || user?.id || "default";
+                                    const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
+                                    await updateDoc(storeRef, {
+                                        latitude: dragPinCoords.lat,
+                                        longitude: dragPinCoords.lng
+                                    });
+                                    alert("✅ Location Corrected!");
+                                    setEditingStoreId(null);
+                                    setDragPinCoords(null);
+                                    if (logAudit) logAudit("STORE_EDITED_MAP", `Corrected pin for store ID: ${editingStoreId}`);
+                                } catch(e) {
+                                    alert("Failed to update location: " + e.message);
+                                }
+                            } else {
+                                // 🚀 SAVE NEW STORE
+                                setPendingNewStore(dragPinCoords);
+                                setIsAddingMode(false);
+                                setDragPinCoords(null);
+                                setNewStoreForm({ name: '', phone: '', address: '', tier: 'Retail' });
+                            }
                         }}
                         className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm shadow-[0_10px_30px_rgba(16,185,129,0.4)] border-2 border-emerald-300 transition-transform active:scale-95 flex items-center justify-center gap-2"
                     >
-                        <CheckCircle size={20} /> Confirm Location
+                        <CheckCircle size={20} /> {editingStoreId ? "Save New Location" : "Confirm Location"}
                     </button>
                     <button 
-                        onClick={() => { setIsAddingMode(false); setDragPinCoords(null); }}
+                        onClick={() => { setIsAddingMode(false); setEditingStoreId(null); setDragPinCoords(null); }}
                         className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg border-2 border-slate-600 transition-colors"
                     >
                         Cancel
@@ -1458,7 +1489,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             </div>
 
             {/* 🚀 DEDICATED ADD STORE BUTTON (Restricted to Tier 1 & 2) */}
-            {!isAddingMode && canAddManualPin && (
+            {!isAddingMode && !editingStoreId && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
                         onClick={() => {
@@ -1521,9 +1552,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                 <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 
-                <MapClicker isAddingMode={isAddingMode} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
+                <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
-                {isAddingMode && dragPinCoords && (
+                {(isAddingMode || editingStoreId) && dragPinCoords && (
                     <DraggableAddMarker position={dragPinCoords} setPosition={setDragPinCoords} />
                 )}
                 
@@ -1592,7 +1623,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
                     inventory={inventory} db={db} appId={appId} user={user} 
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
-                    liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride} 
+                    liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
+                    setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
                 />
             )}
             
