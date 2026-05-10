@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
+import { doc, setDoc, collection } from 'firebase/firestore'; // 🚀 Added Firebase
 
-const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true }) => {
-    const [mobileTab, setMobileTab] = useState('products');
+// 🚀 Added db and appId to props
+const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
     const [activeCategory, setActiveCategory] = useState("ALL");
@@ -373,30 +374,40 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         }));
     };
 
-    const handlePhotoCapture = (e) => {
+   const handlePhotoCapture = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            setNooForm(prev => ({ ...prev, photoUrl: url, photoFile: file }));
-        }
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600; 
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+                setNooForm(prev => ({ ...prev, photoUrl: compressedDataUrl })); 
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     };
 
-    // 🚀 ANTI-DUPLICATE NOO ENGINE
-    const submitNooRegistration = () => {
+    const validateNoo = () => {
         if (!nooForm.phone || !nooForm.address || !nooForm.photoUrl) {
-            return alert("All fields (Phone, Address, Photo) are required to register a new outlet and unlock pricing!");
+            alert("All fields (Phone, Address, Photo) are required to register a new outlet!");
+            return false;
         }
-
-        // 1. EXACT NAME SCANNER
         const duplicateName = customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim());
         if (duplicateName) {
-            return alert(`DUPLICATE DETECTED!\n\nA store named "${duplicateName.name}" is already in the database. Please select it from the dropdown instead of creating a new one.`);
+            alert(`DUPLICATE DETECTED!\n\nA store named "${duplicateName.name}" is already in the database.`);
+            return false;
         }
-
-        // 2. PROXIMITY SCANNER (15 Meters)
         let tooClose = null;
         let tooCloseDistance = Infinity;
-
         if (agentLocation) {
             customers.forEach(c => {
                 if (c.latitude && c.longitude) {
@@ -408,27 +419,58 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 }
             });
         }
-
         if (tooClose) {
             const confirmProximity = window.confirm(`⚠️ EXTREME PROXIMITY WARNING!\n\nYou are attempting to register a new store, but you are standing only ${Math.round(tooCloseDistance)} meters away from an existing store: "${tooClose.name}".\n\nAre you absolutely sure this is a different building/customer?`);
-            if (!confirmProximity) return; // Abort if they realize their mistake
+            if (!confirmProximity) return false;
         }
-        
-        const tempStore = {
-            id: 'NOO_TEMP',
-            name: customerName,
-            isNooRegistration: true,
-            ...nooForm,
-            latitude: agentLocation?.latitude,
-            longitude: agentLocation?.longitude
-        };
+        return true;
+    };
 
+    const submitNooRegistration = () => {
+        if (!validateNoo()) return;
+        const tempStore = { id: 'NOO_TEMP', name: customerName, isNooRegistration: true, ...nooForm, latitude: agentLocation?.latitude, longitude: agentLocation?.longitude };
         setSelectedCustomerInfo(tempStore);
         setLockedTier(nooForm.requestedTier);
         updateCartPricing(nooForm.requestedTier);
         setShowNooModal(false);
         setGpsStatus('verified'); 
         triggerMerchantSpeak('expensive');
+    };
+
+    const submitNooOnly = async () => {
+        if (!validateNoo()) return;
+        if (!db || !appId) return alert("Database connection missing!");
+        
+        try {
+            const userId = user?.uid || user?.id || 'default';
+            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+            
+            await setDoc(newRef, {
+                id: newRef.id,
+                name: customerName.toUpperCase().trim(),
+                phone: nooForm.phone,
+                address: nooForm.address,
+                tier: nooForm.requestedTier,
+                priceTier: nooForm.requestedTier,
+                storeType: 'Retailer',
+                latitude: agentLocation?.latitude,
+                longitude: agentLocation?.longitude,
+                status: 'Active',
+                visitFreq: 7,
+                photoData: nooForm.photoUrl,
+                createdAt: new Date().toISOString()
+            });
+            
+            alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
+            setShowNooModal(false);
+            setCustomerName("");
+            setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
+            setGpsStatus('idle');
+            setAgentLocation(null);
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save NOO: " + e.message);
+        }
     };
 
     const handleFinalDeal = async () => {
@@ -862,9 +904,12 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-slate-700 bg-black/40">
-                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
-                                {agentLocation ? 'Submit & Unlock Pricing' : 'Acquiring Satellites...'}
+                        <div className="p-5 border-t border-slate-700 bg-black/40 flex flex-col gap-3">
+                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                                {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
+                            </button>
+                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-slate-800 border-slate-600 hover:border-emerald-500 hover:text-emerald-400 text-slate-300' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}`}>
+                                Register Only (No Sale)
                             </button>
                         </div>
                     </div>

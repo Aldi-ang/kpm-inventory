@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
 
-import { 
+    import { 
     MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
@@ -1084,32 +1084,38 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
     const [isSavingStore, setIsSavingStore] = useState(false);
 
+    // 🚀 NEW: Tier Restriction Logic for Map Pin Dropping
+    const canAddManualPin = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+
+    const [pendingNewStore, setPendingNewStore] = useState(null);
+    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: 'Retail' });
+    const [isSavingStore, setIsSavingStore] = useState(false);
+
     const handleSaveNewStore = async () => {
-        if (!newStoreForm.name || !newStoreForm.address) return alert("Store Name and Address are required!");
+        // 🚀 FIXED: Address is no longer required for Tier 1 & 2!
+        if (!newStoreForm.name) return alert("Store Name is required!");
         setIsSavingStore(true);
         try {
-            // Generate a new document reference to get a unique ID
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             
             await setDoc(newRef, {
                 id: newRef.id,
                 name: newStoreForm.name.toUpperCase(),
-                phone: newStoreForm.phone,
-                address: newStoreForm.address,
+                phone: newStoreForm.phone || "",
+                address: newStoreForm.address || "",
                 tier: newStoreForm.tier,
                 priceTier: newStoreForm.tier,
                 storeType: 'Retailer',
                 latitude: pendingNewStore.lat,
                 longitude: pendingNewStore.lng,
                 status: 'Active',
-                visitFreq: 7, // Default visit target
+                visitFreq: 7, 
                 createdAt: new Date().toISOString()
             });
             
             if (logAudit) logAudit("STORE_CREATED_MAP", `Added store ${newStoreForm.name} via map pin.`);
             if (triggerCapy) triggerCapy(`New target secured: ${newStoreForm.name} 📍`);
             
-            // Close the modal (The map will instantly update via Firebase real-time sync!)
             setPendingNewStore(null);
         } catch (e) {
             console.error(e);
@@ -1118,6 +1124,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             setIsSavingStore(false);
         }
     };
+    
 
     const userId = user?.uid || user?.id || "default";
 
@@ -1457,8 +1464,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             </div>
 
-            {/* 🚀 FIXED: DEDICATED ADD STORE BUTTON (No longer hidden in the menu!) */}
-            {!isAddingMode && (
+            {/* 🚀 FIXED: DEDICATED ADD STORE BUTTON (Restricted to Tier 1 & 2) */}
+            {!isAddingMode && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
                         onClick={() => {
@@ -1479,6 +1486,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </button>
                 </div>
             )}
+
 
            {showTacticalDash && (
                 <TacticalDashboard 
