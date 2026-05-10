@@ -141,7 +141,7 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-// 🚀 FIXED: "Locate Me" button raised to safely clear Map Layers and acts instantly
+// 🚀 FIXED: Raised Desktop position (lg:bottom-[160px]) to perfectly clear the Leaflet Layers stack
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -171,7 +171,7 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     }, []);
 
     return (
-        <div className="absolute bottom-[200px] lg:bottom-[120px] right-[10px] z-[999]">
+        <div className="absolute bottom-[200px] lg:bottom-[160px] right-[10px] z-[999]">
             <button 
                 onClick={handleLocateClick} 
                 className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
