@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -13,14 +13,11 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-
-
-// 🚀 SMART MAP CONTROLLER: Home Memory & Manual Override
+// 🚀 SMART MAP CONTROLLER
 const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
 
-    // Initial Load: Try saved home, otherwise fallback to route center
     React.useEffect(() => {
         if (isFirstRun.current) { 
             isFirstRun.current = false;
@@ -30,7 +27,6 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
         }
     }, [map, savedHome, defaultCenter]);
     
-    // 🚀 Fly to Home (Recenter Trigger)
     React.useEffect(() => {
         if (trigger > 0) {
             if (savedHome) map.flyTo(savedHome.center, savedHome.zoom, { duration: 1.2 });
@@ -38,7 +34,6 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
         }
     }, [trigger]);
 
-    // 🚀 Save Current View as Home (Save Trigger)
     React.useEffect(() => {
         if (saveTrigger > 0) {
             const center = [map.getCenter().lat, map.getCenter().lng];
@@ -51,11 +46,10 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
 };
 
 
-// 🚀 FIX: Added `isAdmin` prop to enforce security
-const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin }) => {
+const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 MAP STATE: Triggers & Home Memory Engine
+    // MAP STATE
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
     const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
@@ -66,7 +60,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
     
-    // --- CHECK-IN STATE ---
+    // CHECK-IN STATE
     const [checkInCustomer, setCheckInCustomer] = useState(null); 
     const [visitNote, setVisitNote] = useState("");
     const [visitTag, setVisitTag] = useState("Routine Check");
@@ -75,19 +69,18 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // 🚀 TRIP PLANNER: ASSIGNMENT & SEQUENCE ENGINE
+    // TRIP PLANNER
     const [agentsList, setAgentsList] = useState([]);
     const [selectedAgent, setSelectedAgent] = useState('All');
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
-    // 🚀 IRONCLAD MEMORY: Load assignments from Firebase, with a LocalStorage fallback for stale parent data
+    // MEMORY
     useEffect(() => {
         const initialAssignments = {};
         const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
         
         (customers || []).forEach(c => {
-            // If Firebase has it, use it. If Firebase is stale, force our local cache memory.
             if (c.assignedAgent) {
                 initialAssignments[c.id] = c.assignedAgent;
             } else if (localCache[c.id] && localCache[c.id] !== 'Unassigned') {
@@ -97,28 +90,23 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setAssignments(initialAssignments);
     }, [customers]);
 
-    // 🚀 IRONCLAD MEMORY: Permanently save to Firebase AND LocalStorage cache
     const handleAssignAgent = async (customerId, agentName) => {
-        if (!isAdmin) return; // Hard security block
-        const userId = user?.uid || user?.id || 'default'; // Failsafe ID extraction
+        if (!isAdmin) return;
+        const userId = user?.uid || user?.id || 'default';
         
-        // 1. Instant UI Update
         setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
 
-        // 2. LocalStorage Cache (Survives tab switching and stale parent re-renders)
         const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
         if (agentName === 'Unassigned') delete localCache[customerId];
         else localCache[customerId] = agentName;
         localStorage.setItem('tripBuilderCache', JSON.stringify(localCache));
 
-        // 3. Mutate Parent Array (Double redundancy)
         const targetCustomer = customers.find(c => c.id === customerId);
         if (targetCustomer) {
             if (agentName === 'Unassigned') delete targetCustomer.assignedAgent;
             else targetCustomer.assignedAgent = agentName;
         }
 
-        // 4. Firebase Database Update
         try {
             const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, customerId);
             await updateDoc(customerRef, {
@@ -131,34 +119,24 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         }
     };
 
-    // Fetch actual Fleet Personnel from Database
     useEffect(() => {
         const fetchAgents = async () => {
             if (!user || !appId) return;
             const userId = user?.uid || user?.id || 'default';
-            
             try {
-                // 🚀 FIX: Fetch both Motorists and Canvas teams simultaneously
                 const [motoristsSnap, canvasSnap] = await Promise.all([
                     getDocs(collection(db, `artifacts/${appId}/users/${userId}/motorists`)),
                     getDocs(collection(db, `artifacts/${appId}/users/${userId}/canvas`))
                 ]);
-                
                 const loadedMotorists = motoristsSnap.docs.map(doc => doc.data().name).filter(Boolean);
                 const loadedCanvas = canvasSnap.docs.map(doc => doc.data().name).filter(Boolean);
-                
-                // Combine them into one master list and sort alphabetically
                 const allAgents = [...loadedMotorists, ...loadedCanvas].sort();
-                
                 setAgentsList(allAgents);
-            } catch (error) {
-                console.error("Failed to load Fleet Personnel:", error);
-            }
+            } catch (error) { console.error("Failed to load Fleet Personnel:", error); }
         };
         fetchAgents();
     }, [db, appId, user]);
 
-    // Build the initial route and filter by assigned agent
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
         if (selectedAgent !== 'All') {
@@ -167,7 +145,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(baseRoute);
     }, [customers, selectedDay, selectedAgent, assignments]);
 
-    // Function to swap sequence order
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
         if (direction === 'up' && index > 0) {
@@ -178,7 +155,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
-    // 🚀 ROUTING UPGRADE: Jump a store directly to a specific position number
     const jumpToSequence = (oldIndex, newIndex) => {
         if (oldIndex === newIndex) return;
         const newRoute = [...orderedRoute];
@@ -187,10 +163,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
-    // 🚀 MULTI-AGENT COLOR & SEQUENCE ENGINE
     const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
     
-    // Calculates per-agent stop numbers and colors dynamically
     const storeMetrics = React.useMemo(() => {
         const counters = {};
         const metrics = {};
@@ -198,27 +172,22 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         orderedRoute.forEach(store => {
             const agent = assignments[store.id] || 'Unassigned';
             if (!counters[agent]) counters[agent] = 0;
-            counters[agent]++; // Count up specifically for this agent
+            counters[agent]++; 
             
-            let color = '#64748b'; // Default Slate Gray for Unassigned
+            let color = '#64748b'; 
             if (agent !== 'Unassigned') {
                 const agentIdx = agentsList.indexOf(agent);
                 color = AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
             }
-            
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
         return metrics;
     }, [orderedRoute, assignments, agentsList]);
 
-    // 🚀 OSRM ROUTING ENGINE FOR JOURNEY PLAN
     useEffect(() => {
         const fetchRoute = async () => {
-            // 🚀 UPGRADE: Only draw route lines if viewing a SINGLE agent.
-            // Drawing one continuous line across 5 different trucks creates a chaotic spiderweb!
             if (selectedAgent === 'All') return setStreetRoute(null);
 
-            // Must use orderedRoute so the map draws the lines in the exact sequence!
             const validStops = orderedRoute.filter(c => c && typeof c.latitude === 'number' && typeof c.longitude === 'number' && !isNaN(c.latitude) && !isNaN(c.longitude));
             if (validStops.length < 2) return setStreetRoute(null);
             
@@ -230,82 +199,40 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
                     setStreetRoute(flippedCoords);
                 }
-            } catch (error) {
-                console.error("OSRM Routing failed:", error);
-            }
+            } catch (error) { console.error("OSRM Routing failed:", error); }
         };
         fetchRoute();
-    }, [orderedRoute]); // 🚀 FIX: Updated to the new Trip Builder array to prevent ReferenceError crashes!
+    }, [orderedRoute]); 
     
-    // Determine map center based on the first valid store of the sequence
     const validStore = orderedRoute.find(c => c.latitude && c.longitude && !isNaN(c.latitude));
     const mapCenter = validStore ? [validStore.latitude, validStore.longitude] : [-7.6145, 110.7122];
 
-    const handleOpenLocation = (customer) => {
-        if (customer.embedHtml) {
-            if (customer.embedHtml.includes('<iframe')) {
-                const match = customer.embedHtml.match(/src="([^"]+)"/);
-                if (match && match[1]) { window.open(match[1], '_blank'); return; }
-            } else { window.open(customer.embedHtml, '_blank'); return; }
-        }
-        if (customer.gmapsUrl) { window.open(customer.gmapsUrl, '_blank'); return; }
-        if (customer.latitude && customer.longitude) {
-            window.open(`http://googleusercontent.com/maps.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
-        } else {
-            alert("No Location Link or GPS Coordinates found.");
-        }
-    };
-
-    // --- LOGIC: HANDLE CLICK ON TICK BUTTON ---
-    const handleTickClick = (customer) => {
-        const isVisited = customer.lastVisit === todayDate;
-
-        if (isVisited) {
-            // SCENARIO 1: UNDO VISIT (Accidental Click)
-            if (window.confirm(`Undo visit for ${customer.name}? This will clear today's report.`)) {
-                handleUndoCheckIn(customer);
-            }
-        } else {
-            // SCENARIO 2: NEW VISIT (Open Report)
-            setCheckInCustomer(customer);
-            setVisitNote("");
-            setVisitTag("Routine Check");
-        }
-    };
-
-    // --- UNDO FUNCTION ---
     const handleUndoCheckIn = async (customer) => {
         if (!user) return;
         try {
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, customer.id);
-            
-            // Remove the visit data from the database
             await updateDoc(customerRef, {
-                lastVisit: null,       // Reset date
-                lastVisitNote: deleteField(), // Remove note
-                lastVisitTag: deleteField(),  // Remove tag
+                lastVisit: null,
+                lastVisitNote: deleteField(),
+                lastVisitTag: deleteField(),
                 updatedAt: serverTimestamp()
             });
 
             if (logAudit) await logAudit("VISIT_UNDO", `Undid visit for ${customer.name}`);
-            if (triggerCapy) triggerCapy("Visit Cancelled. ↩️");
-
+            if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
         } catch (error) {
             console.error("Undo Error:", error);
             alert("Failed to undo: " + error.message);
         }
     };
 
-    // --- SUBMIT REPORT FUNCTION ---
     const confirmCheckIn = async (e) => {
         e.preventDefault();
         if (!user || !checkInCustomer) return;
         
         setIsSubmitting(true);
-
         try {
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, checkInCustomer.id);
-            
             await updateDoc(customerRef, {
                 lastVisit: todayDate,
                 lastVisitNote: `[${visitTag}] ${visitNote}`,
@@ -314,11 +241,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             });
 
             if (logAudit) await logAudit("VISIT_REPORT", `Visited ${checkInCustomer.name} - ${visitTag}: ${visitNote}`);
-            if (triggerCapy) triggerCapy(`Visit recorded: ${visitTag} ✅`);
+            if (triggerCapy) triggerCapy(`Bounty Claimed! ✅`);
             
             setCheckInCustomer(null);
             setIsSubmitting(false);
-
         } catch (error) {
             console.error("Check-in Error:", error);
             alert("Failed to save report: " + error.message);
@@ -326,64 +252,89 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         }
     };
 
-    const QUICK_TAGS = [
-        "Repeat Order 📦",
-        "Stock Full (No Order) 🛑",
-        "Competitor Issue ⚠️",
-        "New Request 📝",
-        "Store Closed 🔒"
-    ];
+    const QUICK_TAGS = ["Repeat Order 📦", "Stock Full (No Order) 🛑", "Competitor Issue ⚠️", "New Request 📝", "Store Closed 🔒"];
+
+    // 🚀 GAMIFIED LOGIC: Progress Bar Calculation
+    const conqueredCount = orderedRoute.filter(c => c.lastVisit === todayDate).length;
+    const progressPercent = orderedRoute.length > 0 ? Math.round((conqueredCount / orderedRoute.length) * 100) : 0;
+
+    // 🚀 GAMIFIED LOGIC: Auto-Sort Bounties (Visited at the bottom)
+    const sortedRoute = [...orderedRoute].sort((a, b) => {
+        const aVis = a.lastVisit === todayDate ? 1 : 0;
+        const bVis = b.lastVisit === todayDate ? 1 : 0;
+        return aVis - bVis; // 0 goes first, 1 goes to bottom
+    });
+
+    // 🚀 CROSS-LINK JUMPS
+    const jumpToTerminal = (storeName) => {
+        // We set a flag in local storage that the Sales terminal could potentially read in the future,
+        // but for now, we just jump them to the tab to engage manually.
+        if (setActiveTab) setActiveTab('sales');
+    };
+
+    const jumpToMap = (storeId) => {
+        if (setActiveTab) setActiveTab('map_war_room');
+    };
 
     return (
-        <div className="space-y-6 animate-fade-in relative">
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/10">
-                <div>
-                    <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2">
-                        <Truck size={24} className="text-orange-500"/> Journey Builder
+        <div className="space-y-6 animate-fade-in relative font-mono">
+            {/* 🚀 TACTICAL HUD HEADER */}
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <div className="w-full lg:w-1/3">
+                    <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-widest mb-3">
+                        <Target size={28} className="text-orange-500 animate-pulse"/> 
+                        Mission Feed
                     </h2>
-                    <p className="text-xs text-slate-500 font-mono mt-1">
-                        {orderedRoute.length} STOPS IN CURRENT SEQUENCE
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
                     
-                    {/* 🚀 NEW AGENT FILTER */}
-                    <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
-                        <span className="text-xs text-slate-400 pl-2 font-bold uppercase">Fleet:</span>
+                    {/* GAMIFIED PROGRESS BAR */}
+                    <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-orange-400">
+                            <span>Elimination Status</span>
+                            <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+                            <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    {/* AGENT FILTER */}
+                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto">
+                        <Truck size={16} className="text-emerald-400 ml-1"/>
                         <select
                             value={selectedAgent}
                             onChange={(e) => setSelectedAgent(e.target.value)}
-                            className="bg-slate-800 text-emerald-400 font-bold text-sm outline-none cursor-pointer border-none"
+                            className="bg-transparent text-emerald-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full"
                             style={{ colorScheme: 'dark' }}
                         >
-                            <option value="All" className="bg-slate-900 text-white">All Unassigned & Assigned</option>
-                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Route</option>)}
+                            <option value="All" className="bg-slate-900 text-white">Global Feed (All)</option>
+                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Loadout</option>)}
                         </select>
                     </div>
 
-                    <Calendar size={16} className="text-slate-400 ml-2"/>
-                    <select
-                        value={selectedDay}
-                        onChange={(e) => setSelectedDay(e.target.value)}
-                        className="bg-slate-800 text-white border border-slate-700 p-2 rounded-lg font-bold text-sm outline-none focus:border-orange-500 cursor-pointer"
-                        style={{ colorScheme: 'dark' }}
-                    >
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                            <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
-                        ))}
-                    </select>
+                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto">
+                        <Calendar size={16} className="text-blue-400 ml-1"/>
+                        <select
+                            value={selectedDay}
+                            onChange={(e) => setSelectedDay(e.target.value)}
+                            className="bg-transparent text-blue-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full"
+                            style={{ colorScheme: 'dark' }}
+                        >
+                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                                <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
             {/* 🚀 JOURNEY MAP RADAR */}
-            <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl mb-2 relative z-0">
-                
-                {/* 🚀 MAP CONTROLS: Ultimate z-[9999] force to pierce through Leaflet's engine */}
+            <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
-                        className="bg-slate-800 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
+                        className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
                         title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
@@ -391,7 +342,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </button>
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
-                        className="bg-slate-800 p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
+                        className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
                         title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
@@ -400,12 +351,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </div>
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
-                    {/* 🚀 INJECT LOCKED CAMERA ENGINE */}
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
                     {streetRoute && (
-                        <Polyline positions={streetRoute} pathOptions={{ color: '#10b981', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
+                        <Polyline positions={streetRoute} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
                     )}
 
                     {orderedRoute.map((store) => {
@@ -414,13 +364,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const isVisited = store.lastVisit === todayDate;
                         const iconHtml = isVisited ? '✅' : '📍';
                         
-                        // 🚀 GET PER-AGENT DATA (Multi-Color Engine)
                         const metric = storeMetrics[store.id];
                         const ringColor = isVisited ? '#10b981' : metric.color;
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         
-                        // 🚀 UPGRADE: Custom Icon with Dark Frosted Glass Text Label
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
@@ -437,11 +385,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
-                                {/* 🚀 UPGRADE: Solid Background & Interactive Map Routing */}
                                 <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
-                                    <div className="bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-600 w-[220px]">
+                                    <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
                                         <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
-                                            <p className="font-bold text-white text-sm leading-tight pr-2">{store.name}</p>
+                                            <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
                                             <span 
                                                 className="text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 uppercase tracking-widest"
                                                 style={{ backgroundColor: `${ringColor}33`, color: ringColor }}
@@ -451,11 +398,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                         </div>
                                         
                                         <div className="space-y-3">
-                                            {/* Sequence Jump Dropdown */}
                                             <div>
                                                 <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Global Position:</label>
                                                 <select
-                                                    className="w-full bg-slate-900 text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
+                                                    className="w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
                                                     value={globalIdx}
                                                     onChange={(e) => jumpToSequence(globalIdx, Number(e.target.value))}
                                                     style={{ colorScheme: 'dark' }}
@@ -466,11 +412,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 </select>
                                             </div>
 
-                                            {/* Fleet Assignment Dropdown */}
                                             <div>
                                                 <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                 <select 
-                                                    className={`w-full bg-slate-900 text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400 focus:border-emerald-400' : 'border-slate-700 text-slate-300 focus:border-orange-500'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                    className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                                     value={assignments[store.id] || 'Unassigned'}
                                                     onChange={(e) => handleAssignAgent(store.id, e.target.value)}
                                                     style={{ colorScheme: 'dark' }}
@@ -489,119 +434,130 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </MapContainer>
             </div>
 
-            {/* CARDS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {orderedRoute.map((customer, idx) => {
+            {/* 🚀 GAMIFIED BOUNTY CARDS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-4">
+                {sortedRoute.map((customer) => {
                     const isVisited = customer.lastVisit === todayDate;
+                    const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
+                    const tierLabel = customer.priceTier || customer.tier || 'Retail';
 
                     return (
-                        <div key={customer.id} className={`bg-white dark:bg-slate-800 rounded-xl border shadow-sm overflow-hidden group hover:shadow-lg transition-all flex flex-col ${isVisited ? 'border-emerald-500/50 dark:border-emerald-500/30' : 'dark:border-slate-700 hover:border-orange-500'}`}>
+                        <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                             
-                            {/* 🚀 TRIP BUILDER CONTROLS */}
-                            <div className="bg-slate-900 border-b border-slate-700 p-2 flex justify-between items-center z-10">
-                                <div className="flex gap-1">
-                                    <button onClick={() => moveStore(idx, 'up')} disabled={idx === 0} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↑</button>
-                                    <button onClick={() => moveStore(idx, 'down')} disabled={idx === orderedRoute.length - 1} className="w-7 h-7 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-white flex items-center justify-center font-bold">↓</button>
+                            {/* 🚀 MASSIVE CLAIMED STAMP OVERLAY */}
+                            {isVisited && (
+                                <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
+                                    <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-8 py-3 rounded-xl font-black text-3xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
+                                        CLAIMED
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SEQUENCE & FLEET CONTROLS (Top Bar) */}
+                            <div className="bg-black border-b border-slate-800 p-2 flex justify-between items-center z-10">
+                                <div className="flex gap-1 relative z-20">
+                                    <button onClick={() => moveStore(originalIdx, 'up')} disabled={originalIdx === 0 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
+                                    <button onClick={() => moveStore(originalIdx, 'down')} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
                                 </div>
                                 <select 
-                                    className={`bg-slate-900 text-xs font-bold uppercase p-1.5 rounded outline-none border transition-all ${assignments[customer.id] ? 'border-emerald-500 text-emerald-500' : 'border-slate-600 text-slate-400'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed bg-slate-950'}`}
+                                    className={`bg-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
                                     value={assignments[customer.id] || 'Unassigned'}
                                     onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                     style={{ colorScheme: 'dark' }}
-                                    disabled={!isAdmin}
-                                    title={isAdmin ? "Assign Agent" : "Access Denied: Admin Only"}
+                                    disabled={!isAdmin || isVisited}
                                 >
-                                    <option value="Unassigned" className="bg-slate-900 text-white">Unassigned</option>
-                                    {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
+                                    <option value="Unassigned">UNASSIGNED</option>
+                                    {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
                                 </select>
                             </div>
 
-                            {/* IMAGE & BADGE HEADER */}
-                            <div className="h-32 bg-slate-200 dark:bg-slate-700 relative">
+                            {/* TARGET IMAGE HEADER */}
+                            <div className="h-40 bg-black relative shrink-0 border-b border-slate-800">
                                 {customer.storeImage ? (
-                                    <img 
-                                        key={customer.storeImage} 
-                                        src={customer.storeImage} 
-                                        className={`w-full h-full object-cover ${isVisited ? 'grayscale' : ''}`}
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
-                                        }}
-                                    />
+                                    <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                        <Store size={32} opacity={0.5}/>
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                                        <Store size={40} className="mb-2 opacity-50"/>
+                                        <span className="text-[10px] font-black tracking-widest uppercase">No Intel Found</span>
                                     </div>
                                 )}
-                                <div 
-                                    className={`absolute top-2 left-2 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 uppercase tracking-widest shadow-lg`}
-                                    style={{ backgroundColor: isVisited ? 'rgba(16, 185, 129, 0.9)' : `${storeMetrics[customer.id]?.color}F0` }}
-                                >
-                                    {isVisited ? 'VISITED' : `${storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} #${storeMetrics[customer.id]?.stopNumber}`}
-                                </div>
                                 
-                                {customer.lastVisitNote && !isVisited && (
-                                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-1 px-2 text-[9px] text-white truncate border-t border-white/10">
-                                        Last: {customer.lastVisitNote}
+                                {/* HUD Badges */}
+                                <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                    <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-2">
+                                        <span style={{ color: storeMetrics[customer.id]?.color }} className="text-sm">●</span>
+                                        {storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} 
+                                        <span className="opacity-50">|</span> #{storeMetrics[customer.id]?.stopNumber}
                                     </div>
-                                )}
+                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[9px] font-black px-2 py-1 rounded w-max uppercase tracking-widest shadow-lg">
+                                        {tierLabel} TIER
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* CONTENT BODY */}
-                            <div className="p-5 flex-1 flex flex-col">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className={`font-bold text-lg leading-tight transition-colors ${isVisited ? 'text-emerald-600 line-through decoration-2' : 'dark:text-white group-hover:text-orange-500'}`}>
-                                        {customer.name}
-                                    </h3>
-                                </div>
+                            {/* BOUNTY DETAILS */}
+                            <div className="p-5 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
+                                <h3 className="font-black text-xl text-white uppercase tracking-wider mb-3 leading-tight line-clamp-2">
+                                    {customer.name}
+                                </h3>
                                 
-                                <div className="space-y-2 mb-6 flex-1">
-                                    <p className="text-xs text-slate-500 flex items-start gap-2">
-                                        <MapPin size={12} className="mt-0.5 shrink-0"/>
-                                        {customer.address || "No address provided"}
-                                    </p>
-                                    {(customer.city || customer.region) && (
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase pl-5">
-                                            {customer.city} {customer.region ? `• ${customer.region}` : ''}
-                                        </p>
-                                    )}
-                                    {customer.phone && (
-                                        <p className="text-xs text-emerald-600 flex items-center gap-2 pt-1 font-bold">
-                                            <Phone size={12}/> {customer.phone}
-                                        </p>
-                                    )}
+                                <div className="space-y-3 mb-6 flex-1">
+                                    <div className="flex items-start gap-3 text-slate-400 bg-black/40 p-3 rounded-lg border border-white/5">
+                                        <MapPin size={16} className="shrink-0 text-blue-500 mt-0.5"/>
+                                        <div>
+                                            <p className="text-xs font-bold leading-relaxed">{customer.address || "Address classification unknown"}</p>
+                                            {(customer.city || customer.region) && (
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                                                    {customer.city} {customer.region ? `// ${customer.region}` : ''}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* ACTIONS FOOTER */}
-                                <div className="flex gap-2 pt-4 border-t dark:border-slate-700">
-                                    <button 
-                                        onClick={() => handleOpenLocation(customer)}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"
-                                    >
-                                        <Navigation size={14}/> 
-                                        {customer.embedHtml ? "Street View" : "Directions"}
-                                    </button>
-                                    
-                                    {/* TICK / UNTICK BUTTON */}
-                                    <button 
-                                        onClick={() => handleTickClick(customer)}
-                                        className={`px-4 rounded-lg transition-all border flex items-center justify-center group/btn relative ${
-                                            isVisited 
-                                            ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-red-500 hover:border-red-500' 
-                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-white hover:bg-emerald-500 border-slate-200 dark:border-slate-600 hover:border-emerald-500'
-                                        }`}
-                                        title={isVisited ? "Click to UNDO" : "Mark as Visited"}
-                                    >
-                                        {/* Icon changes on hover if visited (Desktop mainly, but helpful visual) */}
-                                        {isVisited ? (
-                                            <>
-                                                <CheckCircle size={18} className="group-hover/btn:hidden"/>
-                                                <RotateCcw size={18} className="hidden group-hover/btn:block animate-spin-slow"/> 
-                                            </>
-                                        ) : (
-                                            <CheckCircle size={18}/>
-                                        )}
-                                    </button>
+                                {/* 🚀 COMBAT ACTION BUTTONS */}
+                                <div className="flex flex-col gap-2 mt-auto relative z-20">
+                                    {!isVisited ? (
+                                        <>
+                                            {/* Primary Engage (Throws to Terminal) */}
+                                            <button 
+                                                onClick={() => jumpToTerminal(customer.name)}
+                                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                            >
+                                                <Crosshair size={18}/> Engage Target
+                                            </button>
+                                            
+                                            <div className="flex gap-2">
+                                                {/* Secondary Map Radar */}
+                                                <button 
+                                                    onClick={() => jumpToMap(customer.id)}
+                                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600"
+                                                >
+                                                    <Globe size={14}/> Radar
+                                                </button>
+                                                
+                                                {/* Exception Logging (Closed/Refused) */}
+                                                <button 
+                                                    onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
+                                                    className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600 hover:border-red-500/50"
+                                                >
+                                                    <AlertTriangle size={14}/> Log Exception
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        /* 🚀 VISITED STATE: Undo Button */
+                                        <button 
+                                            onClick={() => {
+                                                if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
+                                                    handleUndoCheckIn(customer);
+                                                }
+                                            }}
+                                            className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                        >
+                                            <RotateCcw size={16}/> Reverse Clearance
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -609,34 +565,34 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 })}
             </div>
 
-            {/* --- VISIT REPORT MODAL --- */}
+            {/* --- EXCEPTION / VISIT REPORT MODAL --- */}
             {checkInCustomer && (
-                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border dark:border-slate-700 flex flex-col overflow-hidden">
+                <div className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-mono">
+                    <div className="bg-slate-900 w-full max-w-lg rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] border-2 border-orange-500/50 flex flex-col overflow-hidden">
                         
-                        <div className="bg-slate-100 dark:bg-slate-800 p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                        <div className="bg-black/60 p-5 border-b border-slate-800 flex justify-between items-center">
                             <div>
-                                <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-                                    <Store size={18} className="text-orange-500"/>
-                                    Visit Report: {checkInCustomer.name}
+                                <h3 className="font-black text-xl text-white flex items-center gap-3 uppercase tracking-widest">
+                                    <AlertTriangle size={20} className="text-orange-500"/>
+                                    Exception Log
                                 </h3>
-                                <p className="text-xs text-slate-500">Record visit details for {new Date().toLocaleDateString()}</p>
+                                <p className="text-[10px] text-slate-400 tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
                             </div>
-                            <button onClick={() => setCheckInCustomer(null)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
+                            <button onClick={() => setCheckInCustomer(null)} className="text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
                         </div>
 
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Visit Outcome</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Exception Reason</label>
                                 <div className="flex flex-wrap gap-2">
                                     {QUICK_TAGS.map(tag => (
                                         <button 
                                             key={tag}
                                             onClick={() => setVisitTag(tag)}
-                                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                                            className={`px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
                                                 visitTag === tag 
-                                                ? 'bg-orange-500 text-white border-orange-500 shadow-md' 
-                                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-orange-400'
+                                                ? 'bg-orange-600 text-white border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)]' 
+                                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
                                             }`}
                                         >
                                             {tag}
@@ -646,12 +602,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block flex items-center gap-2">
-                                    <MessageSquare size={14}/> Field Notes
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                                    <MessageSquare size={14}/> Field Intel (Notes)
                                 </label>
                                 <textarea 
-                                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 dark:text-white text-sm focus:border-orange-500 outline-none min-h-[100px]"
-                                    placeholder="Describe repeat orders, stock levels, or customer feedback..."
+                                    className="w-full p-4 rounded-xl bg-black border border-slate-700 text-white text-sm focus:border-orange-500 outline-none min-h-[120px] font-sans"
+                                    placeholder="Provide intelligence on why the target was skipped or closed..."
                                     value={visitNote}
                                     onChange={(e) => setVisitNote(e.target.value)}
                                     autoFocus
@@ -659,19 +615,19 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t dark:border-slate-700 flex justify-end gap-3">
+                        <div className="p-5 bg-black/60 border-t border-slate-800 flex gap-3">
                             <button 
                                 onClick={() => setCheckInCustomer(null)}
-                                className="px-6 py-2 rounded-xl bg-white dark:bg-slate-700 border dark:border-slate-600 font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-100"
+                                className="flex-1 py-4 rounded-xl bg-slate-800 border border-slate-700 font-bold text-slate-400 hover:text-white hover:bg-slate-700 uppercase tracking-widest text-[10px] transition-colors"
                             >
-                                Cancel
+                                Abort
                             </button>
                             <button 
                                 onClick={confirmCheckIn}
                                 disabled={isSubmitting}
-                                className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
+                                className="flex-[2] py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(249,115,22,0.4)] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
-                                <Save size={16}/> {isSubmitting ? 'Saving...' : 'Confirm Visit'}
+                                <Save size={16}/> {isSubmitting ? 'Transmitting...' : 'Submit Intel'}
                             </button>
                         </div>
                     </div>
