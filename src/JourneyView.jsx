@@ -45,11 +45,52 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
+// 🚀 GEOFENCE MATH ENGINES
+const isPointInPolygon = (point, polygon) => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        let xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
+        let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
+const checkPointInGeoJSON = (lng, lat, geometry) => {
+    if (!geometry || !geometry.coordinates) return false;
+    const point = [lng, lat];
+    if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
+    if (geometry.type === 'MultiPolygon') {
+        for (let poly of geometry.coordinates) { if (isPointInPolygon(point, poly[0])) return true; }
+    }
+    return false;
+};
+
+// 🚀 NEW: AUTO-SECTORING GEOFENCE LOGIC
+const getStoreSector = (lng, lat, fallbackRegion, fallbackCity, boundaries) => {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return 'Unknown Location';
+    
+    // 1. Strict Geofence Check (If pin is inside a border, it BELONGS to that border)
+    if (boundaries && boundaries.length > 0) {
+        for (let b of boundaries) {
+            const geo = b.feature || b.geometry;
+            if (geo && checkPointInGeoJSON(lng, lat, geo)) {
+                return b.name; 
+            }
+        }
+    }
+    
+    // 2. Fallback (If store is placed outside all drawn maps)
+    let fallback = fallbackRegion || fallbackCity || 'Unmapped Zone';
+    // Auto-Correct messy data like "Jalan Pemuda"
+    if (fallback.toLowerCase().includes('pemuda')) fallback = 'Muntilan';
+    
+    return `${fallback} (Off-Grid)`;
+};
+
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
-    
-    // 🚀 NEW: State for Collapsible Sectors
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     // MAP STATE
@@ -65,7 +106,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
 
-    // 🚀 FIXED: LOAD GEO-BOUNDARIES FROM LOCAL CACHE INSTANTLY
+    // LOAD GEO-BOUNDARIES
     useEffect(() => {
         const loadBorders = async () => {
             const CACHE_KEY = `cello_map_bnd_${appId}`;
@@ -154,9 +195,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 updatedAt: serverTimestamp()
             });
             if (logAudit) logAudit("AGENT_ASSIGNED", `Assigned ${agentName} to store.`);
-        } catch (error) {
-            console.error("Failed to save assignment to Firebase:", error);
-        }
+        } catch (error) { console.error("Failed to save assignment to Firebase:", error); }
     };
 
     useEffect(() => {
@@ -177,14 +216,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
+    // 🚀 FIXED: DYNAMIC GEOFENCE EXTRACTOR FOR DROPDOWN
     const availableRegions = useMemo(() => {
         const regions = new Set();
         (customers || []).forEach(c => {
-            if (c.region) regions.add(c.region);
-            else if (c.city) regions.add(c.city);
+            regions.add(getStoreSector(c.longitude, c.latitude, c.region, c.city, boundaries));
         });
         return Array.from(regions).sort();
-    }, [customers]);
+    }, [customers, boundaries]);
 
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
@@ -193,12 +232,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
         }
         
+        // 🚀 FIXED: DYNAMIC GEOFENCE FILTER
         if (selectedKecamatan !== 'All') {
-            baseRoute = baseRoute.filter(c => c.region === selectedKecamatan || c.city === selectedKecamatan);
+            baseRoute = baseRoute.filter(c => {
+                const sector = getStoreSector(c.longitude, c.latitude, c.region, c.city, boundaries);
+                return sector === selectedKecamatan;
+            });
         }
         
         setOrderedRoute(baseRoute);
-    }, [customers, selectedDay, selectedAgent, selectedKecamatan, assignments]);
+    }, [customers, selectedDay, selectedAgent, selectedKecamatan, assignments, boundaries]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
@@ -207,14 +250,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         } else if (direction === 'down' && index < newRoute.length - 1) {
             [newRoute[index + 1], newRoute[index]] = [newRoute[index], newRoute[index + 1]];
         }
-        setOrderedRoute(newRoute);
-    };
-
-    const jumpToSequence = (oldIndex, newIndex) => {
-        if (oldIndex === newIndex) return;
-        const newRoute = [...orderedRoute];
-        const [movedStore] = newRoute.splice(oldIndex, 1);
-        newRoute.splice(newIndex, 0, movedStore);
         setOrderedRoute(newRoute);
     };
 
@@ -318,14 +353,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         return aVis - bVis; 
     });
 
+    // 🚀 FIXED: GEOFENCE-BASED AUTO SECTOR GROUPING
     const groupedRoute = useMemo(() => {
         return sortedRoute.reduce((acc, customer) => {
-            const sector = customer.region || customer.city || 'Unassigned Sector';
+            const sector = getStoreSector(customer.longitude, customer.latitude, customer.region, customer.city, boundaries);
             if (!acc[sector]) acc[sector] = [];
             acc[sector].push(customer);
             return acc;
         }, {});
-    }, [sortedRoute]);
+    }, [sortedRoute, boundaries]);
 
     const jumpToTerminal = (storeName) => {
         if (setActiveTab) setActiveTab('sales');
@@ -335,7 +371,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (setActiveTab) setActiveTab('map_war_room');
     };
 
-    // 🚀 NEW: Accordion Toggle Function
     const toggleSectorCollapse = (sectorName) => {
         setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
     };
@@ -410,7 +445,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             </div>
 
             {/* 🚀 JOURNEY MAP RADAR */}
-            <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
+            <div className="w-full h-72 lg:h-[450px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
@@ -442,7 +477,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    {/* 🚀 RENDER GEO-BOUNDARIES */}
+                    {/* 🚀 MAP BOUNDARIES & WATERMARKS */}
                     {showBorders && boundaries.map((boundary) => {
                         const geoData = boundary.feature || boundary.geometry;
                         if (!geoData || !geoData.type) return null;
@@ -454,13 +489,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             <GeoJSON 
                                 key={`journey-bnd-${boundary.id}`}
                                 data={geoData}
-                                style={{ 
-                                    color: boundary.color || '#38bdf8', 
-                                    weight: isSelected ? 3 : 1.5, 
-                                    opacity: 0.6, 
-                                    fillOpacity: isSelected ? 0.2 : 0.05, 
-                                    fillColor: fillColor, 
-                                    dashArray: '5, 5' 
+                                style={{ color: boundary.color || '#38bdf8', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
+                                onEachFeature={(f, layer) => {
+                                    // 🚀 NEW: Permanent Watermark Label directly on the map!
+                                    const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; opacity: 0.8; white-space: nowrap;">${boundary.name}</div>`;
+                                    layer.bindTooltip(ttContent, { permanent: true, direction: "center", className: "region-watermark-label" });
                                 }}
                             />
                         );
@@ -481,11 +514,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         
-                        // 🚀 UPGRADE 1: DECLUTTERED MAP ICON (Minimalist Circle)
+                        // 🚀 COMPACTED MAP PINS (Decluttered)
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
-                                <div style="background-color: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 10px ${ringColor}80;">
+                                <div style="background-color: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 10px ${ringColor}80; transition: transform 0.2s;">
                                     ${iconHtml}
                                 </div>
                             `,
@@ -495,7 +528,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
-                                {/* 🚀 TOOLTIP: Shows text ONLY on hover to avoid map clutter */}
+                                {/* 🚀 HOVER TOOLTIP FOR CLEAN NAMES */}
                                 <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
                                         <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
@@ -551,12 +584,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </MapContainer>
             </div>
 
-            {/* 🚀 UPGRADE 2: COLLAPSIBLE SECTOR-GROUPED BOUNTY CARDS */}
-            <div className="pt-4 space-y-8">
+            {/* 🚀 GAMIFIED SECTOR-GROUPED BOUNTY CARDS GRID */}
+            <div className="pt-4 space-y-12">
                 {Object.keys(groupedRoute).sort().map(sectorName => {
                     const sectorStores = groupedRoute[sectorName];
                     const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate).length;
-                    const isCollapsed = collapsedSectors[sectorName]; // Check if this sector is folded
+                    const isCollapsed = collapsedSectors[sectorName]; 
                     
                     return (
                         <div key={sectorName} className="animate-fade-in-up bg-black/20 p-4 rounded-3xl border border-white/5">
@@ -584,7 +617,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                             {/* 🚀 SECTOR GRID (Hidden if collapsed) */}
                             {!isCollapsed && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
                                     {sectorStores.map((customer) => {
                                         const isVisited = customer.lastVisit === todayDate;
                                         const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
@@ -596,20 +629,20 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 {/* MASSIVE CLAIMED STAMP OVERLAY */}
                                                 {isVisited && (
                                                     <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
-                                                        <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-8 py-3 rounded-xl font-black text-3xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
+                                                        <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-6 py-2 rounded-xl font-black text-xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
                                                             CLAIMED
                                                         </div>
                                                     </div>
                                                 )}
 
                                                 {/* SEQUENCE & FLEET CONTROLS (Top Bar) */}
-                                                <div className="bg-black border-b border-slate-800 p-2 flex justify-between items-center z-10">
+                                                <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
                                                     <div className="flex gap-1 relative z-20">
-                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
                                                     </div>
                                                     <select 
-                                                        className={`bg-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                        className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
                                                         value={assignments[customer.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
@@ -620,46 +653,41 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </select>
                                                 </div>
 
-                                                {/* TARGET IMAGE HEADER */}
-                                                <div className="h-40 bg-black relative shrink-0 border-b border-slate-800">
+                                                {/* 🚀 COMPACT TARGET IMAGE HEADER */}
+                                                <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
                                                     {customer.storeImage ? (
                                                         <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                                     ) : (
                                                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-                                                            <Store size={40} className="mb-2 opacity-50"/>
-                                                            <span className="text-[10px] font-black tracking-widest uppercase">No Intel Found</span>
+                                                            <Store size={24} className="mb-1 opacity-50"/>
+                                                            <span className="text-[8px] font-black tracking-widest uppercase">No Intel</span>
                                                         </div>
                                                     )}
                                                     
                                                     {/* HUD Badges */}
-                                                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                                        <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-2">
-                                                            <span style={{ color: storeMetrics[customer.id]?.color }} className="text-sm">●</span>
+                                                    <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                                                        <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
+                                                            <span style={{ color: storeMetrics[customer.id]?.color }}>●</span>
                                                             {storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} 
                                                             <span className="opacity-50">|</span> #{storeMetrics[customer.id]?.stopNumber}
                                                         </div>
-                                                        <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[9px] font-black px-2 py-1 rounded w-max uppercase tracking-widest shadow-lg">
+                                                        <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
                                                             {tierLabel} TIER
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                {/* BOUNTY DETAILS */}
-                                                <div className="p-5 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                                    <h3 className="font-black text-xl text-white uppercase tracking-wider mb-3 leading-tight line-clamp-2">
+                                                {/* 🚀 COMPACT BOUNTY DETAILS */}
+                                                <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
+                                                    <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
                                                         {customer.name}
                                                     </h3>
                                                     
-                                                    <div className="space-y-3 mb-6 flex-1">
-                                                        <div className="flex items-start gap-3 text-slate-400 bg-black/40 p-3 rounded-lg border border-white/5">
-                                                            <MapPin size={16} className="shrink-0 text-blue-500 mt-0.5"/>
+                                                    <div className="space-y-2 mb-4 flex-1">
+                                                        <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
+                                                            <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
                                                             <div>
-                                                                <p className="text-xs font-bold leading-relaxed">{customer.address || "Address classification unknown"}</p>
-                                                                {(customer.city || customer.region) && (
-                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                                                                        {customer.city} {customer.region ? `// ${customer.region}` : ''}
-                                                                    </p>
-                                                                )}
+                                                                <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address || "Address classification unknown"}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -670,25 +698,25 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                             <>
                                                                 <button 
                                                                     onClick={() => jumpToTerminal(customer.name)}
-                                                                    className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                                    className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
                                                                 >
-                                                                    <Crosshair size={18}/> Engage Target
+                                                                    <Crosshair size={14}/> Engage Target
                                                                 </button>
                                                                 
                                                                 <div className="flex gap-2">
                                                                     <button 
                                                                         onClick={() => jumpToMap(customer.id)}
-                                                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600"
+                                                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
                                                                     >
-                                                                        <Globe size={14}/> Radar
+                                                                        <Globe size={12}/> Radar
                                                                     </button>
                                                                     
                                                                     <button 
                                                                         onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
-                                                                        className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600 hover:border-red-500/50"
+                                                                        className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
                                                                     >
-                                                                        <AlertTriangle size={14}/> Log Exception
-                                                                </button>
+                                                                        <AlertTriangle size={12}/> Log Exception
+                                                                    </button>
                                                                 </div>
                                                             </>
                                                         ) : (
@@ -698,9 +726,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                                         handleUndoCheckIn(customer);
                                                                     }
                                                                 }}
-                                                                className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                                                className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-3 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
                                                             >
-                                                                <RotateCcw size={16}/> Reverse Clearance
+                                                                <RotateCcw size={14}/> Reverse Clearance
                                                             </button>
                                                         )}
                                                     </div>
@@ -715,7 +743,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 })}
             </div>
 
-            {/* --- EXCEPTION / VISIT REPORT MODAL --- */}
+            {/* --- EXCEPTION MODAL AND CSS --- */}
             {checkInCustomer && (
                 <div className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-mono">
                     <div className="bg-slate-900 w-full max-w-lg rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] border-2 border-orange-500/50 flex flex-col overflow-hidden">
@@ -783,6 +811,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </div>
                 </div>
             )}
+            
+            <style>{`
+                .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
+                .leaflet-tooltip.custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+                .leaflet-tooltip.custom-leaflet-tooltip::before, .leaflet-tooltip.custom-leaflet-tooltip::after { display: none !important; }
+                
+                /* 🚀 NEW: Watermark Styling */
+                .region-watermark-label { background: transparent !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; }
+                .region-watermark-label::before, .region-watermark-label::after { display: none !important; }
+            `}</style>
         </div>
     );
 };
