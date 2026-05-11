@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -47,20 +47,58 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
 
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-    
-    // 🚀 NEW: SECTOR FILTER STATE
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
+    
+    // 🚀 NEW: State for Collapsible Sectors
+    const [collapsedSectors, setCollapsedSectors] = useState({});
 
     // MAP STATE
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
+    const [showBorders, setShowBorders] = useState(true);
     const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
+    const [boundaries, setBoundaries] = useState([]);
 
     const handleSaveHome = (viewData) => {
         setSavedHome(viewData);
         localStorage.setItem('journeyHomeView', JSON.stringify(viewData));
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
+
+    // 🚀 FIXED: LOAD GEO-BOUNDARIES FROM LOCAL CACHE INSTANTLY
+    useEffect(() => {
+        const loadBorders = async () => {
+            const CACHE_KEY = `cello_map_bnd_${appId}`;
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                try { setBoundaries(JSON.parse(cachedData).filter(b => !b.isHidden)); } catch(e) {}
+            }
+
+            const userId = user?.uid || user?.id || 'default';
+            if (!db || !appId || !userId) return;
+            try {
+                const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+                const loaded = [];
+                snap.forEach(doc => {
+                    if (doc.id.startsWith('bnd_')) {
+                        const data = doc.data();
+                        if (data && data.geometryString) {
+                            try {
+                                data.geometry = JSON.parse(data.geometryString);
+                                loaded.push(data);
+                            } catch(e) {}
+                        }
+                    }
+                });
+                if (loaded.length > 0) {
+                    const activeBorders = loaded.filter(b => !b.isHidden);
+                    setBoundaries(activeBorders);
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(loaded));
+                }
+            } catch(e) {}
+        };
+        loadBorders();
+    }, [db, appId, user]);
     
     // CHECK-IN STATE
     const [checkInCustomer, setCheckInCustomer] = useState(null); 
@@ -139,7 +177,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 NEW: Extract Unique Kecamatans for the Filter
     const availableRegions = useMemo(() => {
         const regions = new Set();
         (customers || []).forEach(c => {
@@ -149,7 +186,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         return Array.from(regions).sort();
     }, [customers]);
 
-    // 🚀 UPDATED: Build route and apply ALL filters (Day, Agent, and Sector)
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
         
@@ -282,12 +318,26 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         return aVis - bVis; 
     });
 
+    const groupedRoute = useMemo(() => {
+        return sortedRoute.reduce((acc, customer) => {
+            const sector = customer.region || customer.city || 'Unassigned Sector';
+            if (!acc[sector]) acc[sector] = [];
+            acc[sector].push(customer);
+            return acc;
+        }, {});
+    }, [sortedRoute]);
+
     const jumpToTerminal = (storeName) => {
         if (setActiveTab) setActiveTab('sales');
     };
 
     const jumpToMap = (storeId) => {
         if (setActiveTab) setActiveTab('map_war_room');
+    };
+
+    // 🚀 NEW: Accordion Toggle Function
+    const toggleSectorCollapse = (sectorName) => {
+        setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
     };
 
     return (
@@ -312,10 +362,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </div>
                 </div>
                 
-                {/* 🚀 UPDATED FILTERS: Sector added, text changed */}
                 <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
                     
-                    {/* SECTOR / KECAMATAN FILTER */}
+                    {/* SECTOR FILTER */}
                     <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
                         <MapPin size={16} className="text-orange-400 ml-1 shrink-0"/>
                         <select
@@ -364,6 +413,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             <div className="w-full h-72 lg:h-96 bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
+                        onClick={() => setShowBorders(!showBorders)}
+                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700'}`}
+                        title="Toggle Regional Borders"
+                    >
+                        <Layers size={20} className="transition-transform"/>
+                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Borders</span>
+                    </button>
+                    <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
                         className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
                         title="Save Current Map View as Default Home"
@@ -385,6 +442,30 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
+                    {/* 🚀 RENDER GEO-BOUNDARIES */}
+                    {showBorders && boundaries.map((boundary) => {
+                        const geoData = boundary.feature || boundary.geometry;
+                        if (!geoData || !geoData.type) return null;
+                        
+                        const isSelected = selectedKecamatan === boundary.name;
+                        const fillColor = isSelected ? '#f97316' : boundary.color || '#38bdf8';
+                        
+                        return (
+                            <GeoJSON 
+                                key={`journey-bnd-${boundary.id}`}
+                                data={geoData}
+                                style={{ 
+                                    color: boundary.color || '#38bdf8', 
+                                    weight: isSelected ? 3 : 1.5, 
+                                    opacity: 0.6, 
+                                    fillOpacity: isSelected ? 0.2 : 0.05, 
+                                    fillColor: fillColor, 
+                                    dashArray: '5, 5' 
+                                }}
+                            />
+                        );
+                    })}
+
                     {streetRoute && (
                         <Polyline positions={streetRoute} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
                     )}
@@ -400,22 +481,27 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         
+                        // 🚀 UPGRADE 1: DECLUTTERED MAP ICON (Minimalist Circle)
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
-                                <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; pointer-events: none;">
-                                    <div style="background-color: #1e293b; width: 30px; height: 30px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px ${ringColor}80; flex-shrink: 0; pointer-events: auto;">${iconHtml}</div>
-                                    <div style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; border: 1px solid ${ringColor}; color: white; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.6); text-transform: uppercase; letter-spacing: 0.05em; pointer-events: auto;">
-                                        <span style="color: ${ringColor}; margin-right: 4px;">#${stopNum}</span> ${store.name}
-                                    </div>
+                                <div style="background-color: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 10px ${ringColor}80;">
+                                    ${iconHtml}
                                 </div>
                             `,
-                            iconSize: [200, 30],
-                            iconAnchor: [15, 15]
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14]
                         });
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
+                                {/* 🚀 TOOLTIP: Shows text ONLY on hover to avoid map clutter */}
+                                <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
+                                    <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
+                                        <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
+                                    </div>
+                                </LeafletTooltip>
+
                                 <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
                                     <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
                                         <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
@@ -465,132 +551,165 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </MapContainer>
             </div>
 
-            {/* 🚀 GAMIFIED BOUNTY CARDS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-4">
-                {sortedRoute.map((customer) => {
-                    const isVisited = customer.lastVisit === todayDate;
-                    const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
-                    const tierLabel = customer.priceTier || customer.tier || 'Retail';
-
+            {/* 🚀 UPGRADE 2: COLLAPSIBLE SECTOR-GROUPED BOUNTY CARDS */}
+            <div className="pt-4 space-y-8">
+                {Object.keys(groupedRoute).sort().map(sectorName => {
+                    const sectorStores = groupedRoute[sectorName];
+                    const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate).length;
+                    const isCollapsed = collapsedSectors[sectorName]; // Check if this sector is folded
+                    
                     return (
-                        <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
+                        <div key={sectorName} className="animate-fade-in-up bg-black/20 p-4 rounded-3xl border border-white/5">
                             
-                            {/* 🚀 MASSIVE CLAIMED STAMP OVERLAY */}
-                            {isVisited && (
-                                <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
-                                    <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-8 py-3 rounded-xl font-black text-3xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
-                                        CLAIMED
+                            {/* 🚀 INTERACTIVE SECTOR HEADER */}
+                            <div 
+                                onClick={() => toggleSectorCollapse(sectorName)}
+                                className="flex items-center justify-between mb-2 cursor-pointer hover:bg-slate-800/50 p-3 rounded-2xl transition-colors border border-transparent hover:border-slate-700"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-orange-500/20 p-2.5 rounded-xl border border-orange-500/30">
+                                        <MapPin className="text-orange-500" size={24} />
                                     </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none">{sectorName}</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                            Sector Status: <span className={completedInSector === sectorStores.length ? 'text-emerald-500' : 'text-orange-400'}>{completedInSector} / {sectorStores.length} Cleared</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800 p-2 rounded-full border border-slate-700 text-slate-400">
+                                    <ChevronDown className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} size={20} />
+                                </div>
+                            </div>
+
+                            {/* 🚀 SECTOR GRID (Hidden if collapsed) */}
+                            {!isCollapsed && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
+                                    {sectorStores.map((customer) => {
+                                        const isVisited = customer.lastVisit === todayDate;
+                                        const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
+                                        const tierLabel = customer.priceTier || customer.tier || 'Retail';
+
+                                        return (
+                                            <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
+                                                
+                                                {/* MASSIVE CLAIMED STAMP OVERLAY */}
+                                                {isVisited && (
+                                                    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
+                                                        <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-8 py-3 rounded-xl font-black text-3xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
+                                                            CLAIMED
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* SEQUENCE & FLEET CONTROLS (Top Bar) */}
+                                                <div className="bg-black border-b border-slate-800 p-2 flex justify-between items-center z-10">
+                                                    <div className="flex gap-1 relative z-20">
+                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
+                                                    </div>
+                                                    <select 
+                                                        className={`bg-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                        value={assignments[customer.id] || 'Unassigned'}
+                                                        onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
+                                                        style={{ colorScheme: 'dark' }}
+                                                        disabled={!isAdmin || isVisited}
+                                                    >
+                                                        <option value="Unassigned">UNASSIGNED</option>
+                                                        {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
+                                                    </select>
+                                                </div>
+
+                                                {/* TARGET IMAGE HEADER */}
+                                                <div className="h-40 bg-black relative shrink-0 border-b border-slate-800">
+                                                    {customer.storeImage ? (
+                                                        <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
+                                                    ) : (
+                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                                                            <Store size={40} className="mb-2 opacity-50"/>
+                                                            <span className="text-[10px] font-black tracking-widest uppercase">No Intel Found</span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* HUD Badges */}
+                                                    <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                                        <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-2">
+                                                            <span style={{ color: storeMetrics[customer.id]?.color }} className="text-sm">●</span>
+                                                            {storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} 
+                                                            <span className="opacity-50">|</span> #{storeMetrics[customer.id]?.stopNumber}
+                                                        </div>
+                                                        <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[9px] font-black px-2 py-1 rounded w-max uppercase tracking-widest shadow-lg">
+                                                            {tierLabel} TIER
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* BOUNTY DETAILS */}
+                                                <div className="p-5 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
+                                                    <h3 className="font-black text-xl text-white uppercase tracking-wider mb-3 leading-tight line-clamp-2">
+                                                        {customer.name}
+                                                    </h3>
+                                                    
+                                                    <div className="space-y-3 mb-6 flex-1">
+                                                        <div className="flex items-start gap-3 text-slate-400 bg-black/40 p-3 rounded-lg border border-white/5">
+                                                            <MapPin size={16} className="shrink-0 text-blue-500 mt-0.5"/>
+                                                            <div>
+                                                                <p className="text-xs font-bold leading-relaxed">{customer.address || "Address classification unknown"}</p>
+                                                                {(customer.city || customer.region) && (
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                                                                        {customer.city} {customer.region ? `// ${customer.region}` : ''}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* COMBAT ACTION BUTTONS */}
+                                                    <div className="flex flex-col gap-2 mt-auto relative z-20">
+                                                        {!isVisited ? (
+                                                            <>
+                                                                <button 
+                                                                    onClick={() => jumpToTerminal(customer.name)}
+                                                                    className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                                >
+                                                                    <Crosshair size={18}/> Engage Target
+                                                                </button>
+                                                                
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        onClick={() => jumpToMap(customer.id)}
+                                                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600"
+                                                                    >
+                                                                        <Globe size={14}/> Radar
+                                                                    </button>
+                                                                    
+                                                                    <button 
+                                                                        onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
+                                                                        className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600 hover:border-red-500/50"
+                                                                    >
+                                                                        <AlertTriangle size={14}/> Log Exception
+                                                                </button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
+                                                                        handleUndoCheckIn(customer);
+                                                                    }
+                                                                }}
+                                                                className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                                            >
+                                                                <RotateCcw size={16}/> Reverse Clearance
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
-
-                            {/* SEQUENCE & FLEET CONTROLS (Top Bar) */}
-                            <div className="bg-black border-b border-slate-800 p-2 flex justify-between items-center z-10">
-                                <div className="flex gap-1 relative z-20">
-                                    <button onClick={() => moveStore(originalIdx, 'up')} disabled={originalIdx === 0 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
-                                    <button onClick={() => moveStore(originalIdx, 'down')} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-8 h-8 bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
-                                </div>
-                                <select 
-                                    className={`bg-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
-                                    value={assignments[customer.id] || 'Unassigned'}
-                                    onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
-                                    style={{ colorScheme: 'dark' }}
-                                    disabled={!isAdmin || isVisited}
-                                >
-                                    <option value="Unassigned">UNASSIGNED</option>
-                                    {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                            </div>
-
-                            {/* TARGET IMAGE HEADER */}
-                            <div className="h-40 bg-black relative shrink-0 border-b border-slate-800">
-                                {customer.storeImage ? (
-                                    <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-                                        <Store size={40} className="mb-2 opacity-50"/>
-                                        <span className="text-[10px] font-black tracking-widest uppercase">No Intel Found</span>
-                                    </div>
-                                )}
-                                
-                                {/* HUD Badges */}
-                                <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                    <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-2">
-                                        <span style={{ color: storeMetrics[customer.id]?.color }} className="text-sm">●</span>
-                                        {storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} 
-                                        <span className="opacity-50">|</span> #{storeMetrics[customer.id]?.stopNumber}
-                                    </div>
-                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[9px] font-black px-2 py-1 rounded w-max uppercase tracking-widest shadow-lg">
-                                        {tierLabel} TIER
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* BOUNTY DETAILS */}
-                            <div className="p-5 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                <h3 className="font-black text-xl text-white uppercase tracking-wider mb-3 leading-tight line-clamp-2">
-                                    {customer.name}
-                                </h3>
-                                
-                                <div className="space-y-3 mb-6 flex-1">
-                                    <div className="flex items-start gap-3 text-slate-400 bg-black/40 p-3 rounded-lg border border-white/5">
-                                        <MapPin size={16} className="shrink-0 text-blue-500 mt-0.5"/>
-                                        <div>
-                                            <p className="text-xs font-bold leading-relaxed">{customer.address || "Address classification unknown"}</p>
-                                            {(customer.city || customer.region) && (
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                                                    {customer.city} {customer.region ? `// ${customer.region}` : ''}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 🚀 COMBAT ACTION BUTTONS */}
-                                <div className="flex flex-col gap-2 mt-auto relative z-20">
-                                    {!isVisited ? (
-                                        <>
-                                            {/* Primary Engage (Throws to Terminal) */}
-                                            <button 
-                                                onClick={() => jumpToTerminal(customer.name)}
-                                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
-                                            >
-                                                <Crosshair size={18}/> Engage Target
-                                            </button>
-                                            
-                                            <div className="flex gap-2">
-                                                {/* Secondary Map Radar */}
-                                                <button 
-                                                    onClick={() => jumpToMap(customer.id)}
-                                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600"
-                                                >
-                                                    <Globe size={14}/> Radar
-                                                </button>
-                                                
-                                                {/* Exception Logging (Closed/Refused) */}
-                                                <button 
-                                                    onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
-                                                    className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-slate-600 hover:border-red-500/50"
-                                                >
-                                                    <AlertTriangle size={14}/> Log Exception
-                                                </button>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        /* 🚀 VISITED STATE: Undo Button */
-                                        <button 
-                                            onClick={() => {
-                                                if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
-                                                    handleUndoCheckIn(customer);
-                                                }
-                                            }}
-                                            className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
-                                        >
-                                            <RotateCcw size={16}/> Reverse Clearance
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
                         </div>
                     );
                 })}
