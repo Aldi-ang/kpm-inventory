@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
@@ -45,10 +45,12 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
+    // 🚀 NEW: SECTOR FILTER STATE
+    const [selectedKecamatan, setSelectedKecamatan] = useState('All');
+
     // MAP STATE
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -137,13 +139,30 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
+    // 🚀 NEW: Extract Unique Kecamatans for the Filter
+    const availableRegions = useMemo(() => {
+        const regions = new Set();
+        (customers || []).forEach(c => {
+            if (c.region) regions.add(c.region);
+            else if (c.city) regions.add(c.city);
+        });
+        return Array.from(regions).sort();
+    }, [customers]);
+
+    // 🚀 UPDATED: Build route and apply ALL filters (Day, Agent, and Sector)
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
+        
         if (selectedAgent !== 'All') {
             baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
         }
+        
+        if (selectedKecamatan !== 'All') {
+            baseRoute = baseRoute.filter(c => c.region === selectedKecamatan || c.city === selectedKecamatan);
+        }
+        
         setOrderedRoute(baseRoute);
-    }, [customers, selectedDay, selectedAgent, assignments]);
+    }, [customers, selectedDay, selectedAgent, selectedKecamatan, assignments]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
@@ -165,7 +184,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
     
-    const storeMetrics = React.useMemo(() => {
+    const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
         
@@ -254,21 +273,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const QUICK_TAGS = ["Repeat Order 📦", "Stock Full (No Order) 🛑", "Competitor Issue ⚠️", "New Request 📝", "Store Closed 🔒"];
 
-    // 🚀 GAMIFIED LOGIC: Progress Bar Calculation
     const conqueredCount = orderedRoute.filter(c => c.lastVisit === todayDate).length;
     const progressPercent = orderedRoute.length > 0 ? Math.round((conqueredCount / orderedRoute.length) * 100) : 0;
 
-    // 🚀 GAMIFIED LOGIC: Auto-Sort Bounties (Visited at the bottom)
     const sortedRoute = [...orderedRoute].sort((a, b) => {
         const aVis = a.lastVisit === todayDate ? 1 : 0;
         const bVis = b.lastVisit === todayDate ? 1 : 0;
-        return aVis - bVis; // 0 goes first, 1 goes to bottom
+        return aVis - bVis; 
     });
 
-    // 🚀 CROSS-LINK JUMPS
     const jumpToTerminal = (storeName) => {
-        // We set a flag in local storage that the Sales terminal could potentially read in the future,
-        // but for now, we just jump them to the tab to engage manually.
         if (setActiveTab) setActiveTab('sales');
     };
 
@@ -279,7 +293,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     return (
         <div className="space-y-6 animate-fade-in relative font-mono">
             {/* 🚀 TACTICAL HUD HEADER */}
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                 <div className="w-full lg:w-1/3">
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-widest mb-3">
                         <Target size={28} className="text-orange-500 animate-pulse"/> 
@@ -298,27 +312,44 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                    {/* AGENT FILTER */}
-                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto">
-                        <Truck size={16} className="text-emerald-400 ml-1"/>
+                {/* 🚀 UPDATED FILTERS: Sector added, text changed */}
+                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
+                    
+                    {/* SECTOR / KECAMATAN FILTER */}
+                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
+                        <MapPin size={16} className="text-orange-400 ml-1 shrink-0"/>
                         <select
-                            value={selectedAgent}
-                            onChange={(e) => setSelectedAgent(e.target.value)}
-                            className="bg-transparent text-emerald-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full"
+                            value={selectedKecamatan}
+                            onChange={(e) => setSelectedKecamatan(e.target.value)}
+                            className="bg-transparent text-orange-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
                             style={{ colorScheme: 'dark' }}
                         >
-                            <option value="All" className="bg-slate-900 text-white">Global Feed (All)</option>
-                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Loadout</option>)}
+                            <option value="All" className="bg-slate-900 text-white">All Sectors</option>
+                            {availableRegions.map(r => <option key={r} value={r} className="bg-slate-900 text-white">{r}</option>)}
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto">
-                        <Calendar size={16} className="text-blue-400 ml-1"/>
+                    {/* AGENT FILTER */}
+                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
+                        <Truck size={16} className="text-emerald-400 ml-1 shrink-0"/>
+                        <select
+                            value={selectedAgent}
+                            onChange={(e) => setSelectedAgent(e.target.value)}
+                            className="bg-transparent text-emerald-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
+                            style={{ colorScheme: 'dark' }}
+                        >
+                            <option value="All" className="bg-slate-900 text-white">Global Feed (All)</option>
+                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Bounties</option>)}
+                        </select>
+                    </div>
+
+                    {/* DAY FILTER */}
+                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
+                        <Calendar size={16} className="text-blue-400 ml-1 shrink-0"/>
                         <select
                             value={selectedDay}
                             onChange={(e) => setSelectedDay(e.target.value)}
-                            className="bg-transparent text-blue-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full"
+                            className="bg-transparent text-blue-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
                             style={{ colorScheme: 'dark' }}
                         >
                             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
