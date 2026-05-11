@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -45,7 +45,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 GEOFENCE MATH ENGINES (Ray-Casting Algorithm)
+// 🚀 GEOFENCE MATH ENGINES 
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -71,15 +71,12 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 
-// 🚀 NEW: AUTO-SECTORING HIERARCHY ENGINE
 const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) => {
-    // Default context for Indonesia
     let h = { Provinsi: 'JAWA TENGAH', Kabupaten: 'MAGELANG', Kecamatan: '' }; 
     const fLng = parseFloat(lng);
     const fLat = parseFloat(lat);
     let foundGeofence = false;
 
-    // 1. Strict Map Physics Check
     if (!isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
         const sortedBnd = [...boundaries].sort((a,b) => {
             const w = { 'Desa': 4, 'Kecamatan': 3, 'Kabupaten': 2, 'Provinsi': 1 };
@@ -92,7 +89,7 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
                 if (b.level === 'Provinsi') h.Provinsi = b.name.toUpperCase();
                 else if (b.level === 'Kabupaten') h.Kabupaten = b.name.toUpperCase();
                 else {
-                    h.Kecamatan = b.name.toUpperCase(); // Snap to specific boundary
+                    h.Kecamatan = b.name.toUpperCase(); 
                     foundGeofence = true;
                     break; 
                 }
@@ -100,7 +97,6 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
         }
     }
     
-    // 2. Auto-Correction Fallback if completely off-map
     if (!foundGeofence) {
         let fallbackKec = fallbackCity || 'UNMAPPED';
         let fallbackKab = fallbackRegion || 'MAGELANG';
@@ -111,19 +107,21 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
         h.Kecamatan = fallbackKec.toUpperCase();
         h.Kabupaten = fallbackKab.toUpperCase();
     }
-
     return h;
 };
 
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
+    const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 NEW: CASCADING REGIONAL FILTERS
+    // CASCADING REGIONAL FILTERS
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
-    
     const [collapsedSectors, setCollapsedSectors] = useState({});
+
+    // 🚀 NEW: CMDR PAINTBRUSH STATE
+    const [activeBrush, setActiveBrush] = useState(null);
 
     // MAP STATE
     const [recenterTrigger, setRecenterTrigger] = useState(0);
@@ -179,8 +177,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [visitTag, setVisitTag] = useState("Routine Check");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [streetRoute, setStreetRoute] = useState(null);
-
-    const todayDate = new Date().toISOString().split('T')[0];
 
     // TRIP PLANNER
     const [agentsList, setAgentsList] = useState([]);
@@ -248,7 +244,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 NEW: BUILD DYNAMIC DROPDOWN LISTS
     const hierarchyData = useMemo(() => {
         const provs = new Set();
         const kabs = new Set();
@@ -256,32 +251,23 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         
         (customers || []).forEach(c => {
             const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, boundaries);
-            c._hierarchy = h; // Inject exact location into object
+            c._hierarchy = h; 
             provs.add(h.Provinsi);
             
-            if (selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) {
-                kabs.add(h.Kabupaten);
-            }
+            if (selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) kabs.add(h.Kabupaten);
             if ((selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) &&
                 (selectedKabupaten === 'All' || h.Kabupaten === selectedKabupaten)) {
                 kecs.add(h.Kecamatan);
             }
         });
         
-        return {
-            provs: Array.from(provs).sort(),
-            kabs: Array.from(kabs).sort(),
-            kecs: Array.from(kecs).sort()
-        };
+        return { provs: Array.from(provs).sort(), kabs: Array.from(kabs).sort(), kecs: Array.from(kecs).sort() };
     }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
 
-    // 🚀 APPLY ALL FILTERS
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
         
         if (selectedAgent !== 'All') baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
-        
-        // Cascading Geographical Filter
         if (selectedProvinsi !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Provinsi === selectedProvinsi);
         if (selectedKabupaten !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kabupaten === selectedKabupaten);
         if (selectedKecamatan !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kecamatan === selectedKecamatan);
@@ -307,6 +293,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
+    // 🚀 MULTI-AGENT COLORS
     const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
     
     const storeMetrics = useMemo(() => {
@@ -327,6 +314,28 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         });
         return metrics;
     }, [orderedRoute, assignments, agentsList]);
+
+    // 🚀 NEW: 7-DAY COUNTDOWN ENGINE
+    const getBountyStatus = (customer) => {
+        const freq = customer.visitFreq || 7;
+        if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+        
+        const parseDate = (dStr) => {
+            const [y, m, d] = dStr.split('-');
+            return new Date(y, m-1, d);
+        };
+        
+        const lastDate = parseDate(customer.lastVisit.split('T')[0]);
+        const now = parseDate(todayDate);
+        
+        const diffTime = now - lastDate; 
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const daysLeft = freq - diffDays;
+
+        if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
+        if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
+        return { text: `⚠️ CRITICAL: OVERDUE BY ${Math.abs(daysLeft)} DAYS`, color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+    };
 
     useEffect(() => {
         const fetchRoute = async () => {
@@ -364,16 +373,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
             if (logAudit) await logAudit("VISIT_UNDO", `Undid visit for ${customer.name}`);
             if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
-        } catch (error) {
-            console.error("Undo Error:", error);
-            alert("Failed to undo: " + error.message);
-        }
+        } catch (error) { console.error("Undo Error:", error); alert("Failed to undo: " + error.message); }
     };
 
     const confirmCheckIn = async (e) => {
         e.preventDefault();
         if (!user || !checkInCustomer) return;
-        
         setIsSubmitting(true);
         try {
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, checkInCustomer.id);
@@ -389,11 +394,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             
             setCheckInCustomer(null);
             setIsSubmitting(false);
-        } catch (error) {
-            console.error("Check-in Error:", error);
-            alert("Failed to save report: " + error.message);
-            setIsSubmitting(false);
-        }
+        } catch (error) { console.error("Check-in Error:", error); alert("Failed to save report: " + error.message); setIsSubmitting(false); }
     };
 
     const QUICK_TAGS = ["Repeat Order 📦", "Stock Full (No Order) 🛑", "Competitor Issue ⚠️", "New Request 📝", "Store Closed 🔒"];
@@ -407,7 +408,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         return aVis - bVis; 
     });
 
-    // 🚀 AUTO-GROUP BY MATH SECTOR (Kecamatan)
     const groupedRoute = useMemo(() => {
         return sortedRoute.reduce((acc, customer) => {
             const sector = customer._hierarchy?.Kecamatan || 'Unassigned Sector';
@@ -417,22 +417,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         }, {});
     }, [sortedRoute]);
 
-    const jumpToTerminal = (storeName) => {
-        if (setActiveTab) setActiveTab('sales');
-    };
-
-    const jumpToMap = (storeId) => {
-        if (setActiveTab) setActiveTab('map_war_room');
-    };
-
-    const toggleSectorCollapse = (sectorName) => {
-        setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
-    };
+    const jumpToTerminal = (storeName) => { if (setActiveTab) setActiveTab('sales'); };
+    const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
+    const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
     return (
         <div className="space-y-6 animate-fade-in relative font-mono">
-            
-            {/* 🚀 TACTICAL HUD HEADER */}
+            {/* INJECT CROSSHAIR IF BRUSH IS ACTIVE */}
+            {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
+
             <div className="bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                 <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-4">
                     <div className="w-full lg:w-1/2">
@@ -452,10 +445,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     </div>
                 </div>
 
-                {/* 🚀 NEW: REGIONAL CASCADING FILTER CONSOLE */}
                 <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">
-                    
-                    {/* Location Control */}
                     <div className="flex-1 min-w-[200px] flex flex-col gap-2 border-r border-slate-700 pr-4">
                         <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> Regional Command</label>
                         <div className="flex gap-2 w-full">
@@ -474,7 +464,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         </div>
                     </div>
 
-                    {/* Ops Control */}
                     <div className="flex-1 min-w-[200px] flex flex-col gap-2">
                         <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><ListFilter size={12}/> Operational Filters</label>
                         <div className="flex gap-2">
@@ -497,7 +486,44 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             </div>
 
             {/* 🚀 JOURNEY MAP RADAR */}
-            <div className="w-full h-72 lg:h-[450px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
+            <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
+                
+                {/* 🚀 NEW: CMDR PAINTBRUSH TOOL */}
+                {isAdmin && (
+                    <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto">
+                        <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2"><Paintbrush size={12} className="text-orange-500"/> Paintbrush</h4>
+                        
+                        <button 
+                            onClick={() => setActiveBrush(null)}
+                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                        >
+                            <X size={14}/> Disable Brush
+                        </button>
+                        <button 
+                            onClick={() => setActiveBrush('Unassigned')}
+                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                        >
+                            <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
+                        </button>
+                        
+                        {agentsList.map(a => {
+                            const color = AGENT_COLORS[agentsList.indexOf(a) % AGENT_COLORS.length];
+                            const isActive = activeBrush === a;
+                            return (
+                                <button 
+                                    key={a}
+                                    onClick={() => setActiveBrush(a)}
+                                    className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-700'}`}
+                                    style={{ borderColor: isActive ? color : 'transparent' }}
+                                >
+                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
+                                    {a.split(' ')[0]}
+                                </button>
+                            )
+                        })}
+                    </div>
+                )}
+
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
@@ -510,7 +536,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
                         className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
-                        title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
                         <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Set Home</span>
@@ -518,7 +543,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
                         className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
-                        title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
                         <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Fly Home</span>
@@ -558,11 +582,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         
                         const isVisited = store.lastVisit === todayDate;
                         const iconHtml = isVisited ? '✅' : '📍';
-                        
                         const metric = storeMetrics[store.id];
-                        const ringColor = isVisited ? '#10b981' : metric.color;
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
+                        const statusBadge = getBountyStatus(store);
+                        
+                        // 🚀 COLOR ENGINE 
+                        let ringColor;
+                        if (isVisited) ringColor = '#10b981'; 
+                        else if (metric.agentName === 'Unassigned') ringColor = '#94a3b8'; 
+                        else ringColor = metric.color; 
                         
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
@@ -576,56 +605,62 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         });
 
                         return (
-                            <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
+                            <Marker 
+                                key={store.id} 
+                                position={[store.latitude, store.longitude]} 
+                                icon={customIcon}
+                                eventHandlers={{
+                                    click: (e) => {
+                                        if (activeBrush) {
+                                            handleAssignAgent(store.id, activeBrush);
+                                            e.originalEvent.stopPropagation();
+                                        }
+                                    }
+                                }}
+                            >
                                 <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
                                         <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
                                     </div>
                                 </LeafletTooltip>
 
-                                <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
-                                    <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
-                                        <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
-                                            <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
-                                            <span 
-                                                className="text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 uppercase tracking-widest"
-                                                style={{ backgroundColor: `${ringColor}33`, color: ringColor }}
-                                            >
-                                                {isVisited ? 'DONE' : `${metric.agentName === 'Unassigned' ? 'Unassigned' : metric.agentName.split(' ')[0]} #${stopNum}`}
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="space-y-3">
-                                            <div>
-                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Global Position:</label>
-                                                <select
-                                                    className="w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
-                                                    value={globalIdx}
-                                                    onChange={(e) => jumpToSequence(globalIdx, Number(e.target.value))}
-                                                    style={{ colorScheme: 'dark' }}
+                                {/* 🚀 DYNAMIC POPUP: Only renders if Paintbrush is OFF */}
+                                {!activeBrush && (
+                                    <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
+                                        <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
+                                            <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
+                                                <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
+                                                <span 
+                                                    className="text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 uppercase tracking-widest"
+                                                    style={{ backgroundColor: `${ringColor}33`, color: ringColor }}
                                                 >
-                                                    {orderedRoute.map((_, i) => (
-                                                        <option key={i} value={i} className="bg-slate-900 text-white">Global Stop #{i + 1}</option>
-                                                    ))}
-                                                </select>
+                                                    {isVisited ? 'DONE' : `${metric.agentName === 'Unassigned' ? 'Unassigned' : metric.agentName.split(' ')[0]} #${stopNum}`}
+                                                </span>
                                             </div>
-
-                                            <div>
-                                                <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
-                                                <select 
-                                                    className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                                                    value={assignments[store.id] || 'Unassigned'}
-                                                    onChange={(e) => handleAssignAgent(store.id, e.target.value)}
-                                                    style={{ colorScheme: 'dark' }}
-                                                    disabled={!isAdmin}
-                                                >
-                                                    <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
-                                                    {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
-                                                </select>
+                                            
+                                            {/* 🚀 MAP COUNTDOWN PILL */}
+                                            <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                {statusBadge.text}
+                                            </div>
+                                            
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
+                                                    <select 
+                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                        value={assignments[store.id] || 'Unassigned'}
+                                                        onChange={(e) => handleAssignAgent(store.id, e.target.value)}
+                                                        style={{ colorScheme: 'dark' }}
+                                                        disabled={!isAdmin}
+                                                    >
+                                                        <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
+                                                        {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </Popup>
+                                    </Popup>
+                                )}
                             </Marker>
                         );
                     })}
@@ -642,7 +677,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     return (
                         <div key={sectorName} className="animate-fade-in-up bg-black/20 p-4 rounded-3xl border border-white/5">
                             
-                            {/* 🚀 INTERACTIVE SECTOR HEADER */}
                             <div 
                                 onClick={() => toggleSectorCollapse(sectorName)}
                                 className="flex items-center justify-between mb-2 cursor-pointer hover:bg-slate-800/50 p-3 rounded-2xl transition-colors border border-transparent hover:border-slate-700"
@@ -663,18 +697,20 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                 </div>
                             </div>
 
-                            {/* 🚀 SECTOR GRID (Hidden if collapsed) */}
                             {!isCollapsed && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
                                     {sectorStores.map((customer) => {
                                         const isVisited = customer.lastVisit === todayDate;
                                         const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
                                         const tierLabel = customer.priceTier || customer.tier || 'Retail';
+                                        
+                                        const metric = storeMetrics[customer.id];
+                                        const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
+                                        const statusBadge = getBountyStatus(customer);
 
                                         return (
                                             <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                                 
-                                                {/* MASSIVE CLAIMED STAMP OVERLAY */}
                                                 {isVisited && (
                                                     <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
                                                         <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-6 py-2 rounded-xl font-black text-xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
@@ -683,7 +719,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </div>
                                                 )}
 
-                                                {/* SEQUENCE & FLEET CONTROLS (Top Bar) */}
                                                 <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
                                                     <div className="flex gap-1 relative z-20">
                                                         <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
@@ -701,7 +736,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </select>
                                                 </div>
 
-                                                {/* TARGET IMAGE HEADER */}
                                                 <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
                                                     {customer.storeImage ? (
                                                         <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
@@ -712,12 +746,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         </div>
                                                     )}
                                                     
-                                                    {/* HUD Badges */}
+                                                    {/* BOUNTY HUD BADGES */}
                                                     <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                                                         <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
-                                                            <span style={{ color: storeMetrics[customer.id]?.color }}>●</span>
-                                                            {storeMetrics[customer.id]?.agentName === 'Unassigned' ? 'UNASSIGNED' : storeMetrics[customer.id]?.agentName.split(' ')[0]} 
-                                                            <span className="opacity-50">|</span> #{storeMetrics[customer.id]?.stopNumber}
+                                                            <span style={{ color: ringColor }}>●</span>
+                                                            {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
+                                                            <span className="opacity-50">|</span> #{metric.stopNumber}
                                                         </div>
                                                         <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
                                                             {tierLabel} TIER
@@ -725,11 +759,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </div>
                                                 </div>
 
-                                                {/* BOUNTY DETAILS */}
                                                 <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
                                                     <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
                                                         {customer.name}
                                                     </h3>
+
+                                                    {/* 🚀 CARD COUNTDOWN PILL */}
+                                                    <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                        {statusBadge.text}
+                                                    </div>
                                                     
                                                     <div className="space-y-2 mb-4 flex-1">
                                                         <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
@@ -740,7 +778,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         </div>
                                                     </div>
 
-                                                    {/* COMBAT ACTION BUTTONS */}
                                                     <div className="flex flex-col gap-2 mt-auto relative z-20">
                                                         {!isVisited ? (
                                                             <>
@@ -791,7 +828,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 })}
             </div>
 
-            {/* --- EXCEPTION MODAL AND CSS --- */}
             {checkInCustomer && (
                 <div className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-mono">
                     <div className="bg-slate-900 w-full max-w-lg rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] border-2 border-orange-500/50 flex flex-col overflow-hidden">
@@ -864,8 +900,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
                 .leaflet-tooltip.custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
                 .leaflet-tooltip.custom-leaflet-tooltip::before, .leaflet-tooltip.custom-leaflet-tooltip::after { display: none !important; }
-                
-                /* 🚀 NEW: Watermark Styling */
                 .region-watermark-label { background: transparent !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; }
                 .region-watermark-label::before, .region-watermark-label::after { display: none !important; }
             `}</style>
