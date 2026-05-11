@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -45,7 +45,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 GEOFENCE MATH ENGINES
+// 🚀 GEOFENCE MATH ENGINES (Ray-Casting Algorithm)
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -59,38 +59,70 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
-    if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
-    if (geometry.type === 'MultiPolygon') {
-        for (let poly of geometry.coordinates) { if (isPointInPolygon(point, poly[0])) return true; }
-    }
+    try {
+        if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
+        if (geometry.type === 'MultiPolygon') {
+            for (let poly of geometry.coordinates) { 
+                const ring = Array.isArray(poly[0][0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
+                if (isPointInPolygon(point, ring)) return true; 
+            }
+        }
+    } catch(e) { console.warn("Geofence parse error", e); }
     return false;
 };
 
-// 🚀 NEW: AUTO-SECTORING GEOFENCE LOGIC
-const getStoreSector = (lng, lat, fallbackRegion, fallbackCity, boundaries) => {
-    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return 'Unknown Location';
-    
-    // 1. Strict Geofence Check (If pin is inside a border, it BELONGS to that border)
-    if (boundaries && boundaries.length > 0) {
-        for (let b of boundaries) {
+// 🚀 NEW: AUTO-SECTORING HIERARCHY ENGINE
+const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) => {
+    // Default context for Indonesia
+    let h = { Provinsi: 'JAWA TENGAH', Kabupaten: 'MAGELANG', Kecamatan: '' }; 
+    const fLng = parseFloat(lng);
+    const fLat = parseFloat(lat);
+    let foundGeofence = false;
+
+    // 1. Strict Map Physics Check
+    if (!isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
+        const sortedBnd = [...boundaries].sort((a,b) => {
+            const w = { 'Desa': 4, 'Kecamatan': 3, 'Kabupaten': 2, 'Provinsi': 1 };
+            return (w[b.level] || 0) - (w[a.level] || 0);
+        });
+
+        for (let b of sortedBnd) {
             const geo = b.feature || b.geometry;
-            if (geo && checkPointInGeoJSON(lng, lat, geo)) {
-                return b.name; 
+            if (geo && checkPointInGeoJSON(fLng, fLat, geo)) {
+                if (b.level === 'Provinsi') h.Provinsi = b.name.toUpperCase();
+                else if (b.level === 'Kabupaten') h.Kabupaten = b.name.toUpperCase();
+                else {
+                    h.Kecamatan = b.name.toUpperCase(); // Snap to specific boundary
+                    foundGeofence = true;
+                    break; 
+                }
             }
         }
     }
     
-    // 2. Fallback (If store is placed outside all drawn maps)
-    let fallback = fallbackRegion || fallbackCity || 'Unmapped Zone';
-    // Auto-Correct messy data like "Jalan Pemuda"
-    if (fallback.toLowerCase().includes('pemuda')) fallback = 'Muntilan';
-    
-    return `${fallback} (Off-Grid)`;
+    // 2. Auto-Correction Fallback if completely off-map
+    if (!foundGeofence) {
+        let fallbackKec = fallbackCity || 'UNMAPPED';
+        let fallbackKab = fallbackRegion || 'MAGELANG';
+        
+        if (fallbackKec.toLowerCase().includes('pemuda')) fallbackKec = 'MUNTILAN';
+        if (fallbackKab.toLowerCase().includes('pemuda')) fallbackKab = 'MAGELANG';
+        
+        h.Kecamatan = fallbackKec.toUpperCase();
+        h.Kabupaten = fallbackKab.toUpperCase();
+    }
+
+    return h;
 };
 
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+    
+    // 🚀 NEW: CASCADING REGIONAL FILTERS
+    const [selectedProvinsi, setSelectedProvinsi] = useState('All');
+    const [selectedKabupaten, setSelectedKabupaten] = useState('All');
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
+    
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     // MAP STATE
@@ -216,32 +248,46 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 FIXED: DYNAMIC GEOFENCE EXTRACTOR FOR DROPDOWN
-    const availableRegions = useMemo(() => {
-        const regions = new Set();
+    // 🚀 NEW: BUILD DYNAMIC DROPDOWN LISTS
+    const hierarchyData = useMemo(() => {
+        const provs = new Set();
+        const kabs = new Set();
+        const kecs = new Set();
+        
         (customers || []).forEach(c => {
-            regions.add(getStoreSector(c.longitude, c.latitude, c.region, c.city, boundaries));
+            const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, boundaries);
+            c._hierarchy = h; // Inject exact location into object
+            provs.add(h.Provinsi);
+            
+            if (selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) {
+                kabs.add(h.Kabupaten);
+            }
+            if ((selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) &&
+                (selectedKabupaten === 'All' || h.Kabupaten === selectedKabupaten)) {
+                kecs.add(h.Kecamatan);
+            }
         });
-        return Array.from(regions).sort();
-    }, [customers, boundaries]);
+        
+        return {
+            provs: Array.from(provs).sort(),
+            kabs: Array.from(kabs).sort(),
+            kecs: Array.from(kecs).sort()
+        };
+    }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
 
+    // 🚀 APPLY ALL FILTERS
     useEffect(() => {
         let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
         
-        if (selectedAgent !== 'All') {
-            baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
-        }
+        if (selectedAgent !== 'All') baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
         
-        // 🚀 FIXED: DYNAMIC GEOFENCE FILTER
-        if (selectedKecamatan !== 'All') {
-            baseRoute = baseRoute.filter(c => {
-                const sector = getStoreSector(c.longitude, c.latitude, c.region, c.city, boundaries);
-                return sector === selectedKecamatan;
-            });
-        }
+        // Cascading Geographical Filter
+        if (selectedProvinsi !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Provinsi === selectedProvinsi);
+        if (selectedKabupaten !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kabupaten === selectedKabupaten);
+        if (selectedKecamatan !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kecamatan === selectedKecamatan);
         
         setOrderedRoute(baseRoute);
-    }, [customers, selectedDay, selectedAgent, selectedKecamatan, assignments, boundaries]);
+    }, [customers, selectedDay, selectedAgent, selectedProvinsi, selectedKabupaten, selectedKecamatan, assignments]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
@@ -250,6 +296,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         } else if (direction === 'down' && index < newRoute.length - 1) {
             [newRoute[index + 1], newRoute[index]] = [newRoute[index], newRoute[index + 1]];
         }
+        setOrderedRoute(newRoute);
+    };
+
+    const jumpToSequence = (oldIndex, newIndex) => {
+        if (oldIndex === newIndex) return;
+        const newRoute = [...orderedRoute];
+        const [movedStore] = newRoute.splice(oldIndex, 1);
+        newRoute.splice(newIndex, 0, movedStore);
         setOrderedRoute(newRoute);
     };
 
@@ -353,15 +407,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         return aVis - bVis; 
     });
 
-    // 🚀 FIXED: GEOFENCE-BASED AUTO SECTOR GROUPING
+    // 🚀 AUTO-GROUP BY MATH SECTOR (Kecamatan)
     const groupedRoute = useMemo(() => {
         return sortedRoute.reduce((acc, customer) => {
-            const sector = getStoreSector(customer.longitude, customer.latitude, customer.region, customer.city, boundaries);
+            const sector = customer._hierarchy?.Kecamatan || 'Unassigned Sector';
             if (!acc[sector]) acc[sector] = [];
             acc[sector].push(customer);
             return acc;
         }, {});
-    }, [sortedRoute, boundaries]);
+    }, [sortedRoute]);
 
     const jumpToTerminal = (storeName) => {
         if (setActiveTab) setActiveTab('sales');
@@ -377,69 +431,67 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     return (
         <div className="space-y-6 animate-fade-in relative font-mono">
+            
             {/* 🚀 TACTICAL HUD HEADER */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <div className="w-full lg:w-1/3">
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-widest mb-3">
-                        <Target size={28} className="text-orange-500 animate-pulse"/> 
-                        Mission Feed
-                    </h2>
-                    
-                    {/* GAMIFIED PROGRESS BAR */}
-                    <div className="flex flex-col gap-1.5 w-full">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-orange-400">
-                            <span>Elimination Status</span>
-                            <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
-                        </div>
-                        <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
-                            <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
+            <div className="bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-4">
+                    <div className="w-full lg:w-1/2">
+                        <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-widest mb-3">
+                            <Target size={28} className="text-orange-500 animate-pulse"/> 
+                            Mission Feed
+                        </h2>
+                        <div className="flex flex-col gap-1.5 w-full">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-orange-400">
+                                <span>Elimination Status</span>
+                                <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
+                            </div>
+                            <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+                                <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
+
+                {/* 🚀 NEW: REGIONAL CASCADING FILTER CONSOLE */}
+                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">
                     
-                    {/* SECTOR FILTER */}
-                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
-                        <MapPin size={16} className="text-orange-400 ml-1 shrink-0"/>
-                        <select
-                            value={selectedKecamatan}
-                            onChange={(e) => setSelectedKecamatan(e.target.value)}
-                            className="bg-transparent text-orange-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
-                            style={{ colorScheme: 'dark' }}
-                        >
-                            <option value="All" className="bg-slate-900 text-white">All Sectors</option>
-                            {availableRegions.map(r => <option key={r} value={r} className="bg-slate-900 text-white">{r}</option>)}
-                        </select>
+                    {/* Location Control */}
+                    <div className="flex-1 min-w-[200px] flex flex-col gap-2 border-r border-slate-700 pr-4">
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> Regional Command</label>
+                        <div className="flex gap-2 w-full">
+                            <select value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[10px] uppercase p-2 rounded outline-none border border-slate-700 cursor-pointer">
+                                <option value="All">All Prov</option>
+                                {hierarchyData.provs.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            <select value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[10px] uppercase p-2 rounded outline-none border border-slate-700 cursor-pointer">
+                                <option value="All">All Kab</option>
+                                {hierarchyData.kabs.map(k => <option key={k} value={k}>{k}</option>)}
+                            </select>
+                            <select value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className="flex-1 bg-black text-orange-400 font-bold text-[10px] uppercase p-2 rounded outline-none border border-orange-500/50 focus:border-orange-500 cursor-pointer">
+                                <option value="All">All Kec</option>
+                                {hierarchyData.kecs.map(k => <option key={k} value={k}>{k}</option>)}
+                            </select>
+                        </div>
                     </div>
 
-                    {/* AGENT FILTER */}
-                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
-                        <Truck size={16} className="text-emerald-400 ml-1 shrink-0"/>
-                        <select
-                            value={selectedAgent}
-                            onChange={(e) => setSelectedAgent(e.target.value)}
-                            className="bg-transparent text-emerald-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
-                            style={{ colorScheme: 'dark' }}
-                        >
-                            <option value="All" className="bg-slate-900 text-white">Global Feed (All)</option>
-                            {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}'s Bounties</option>)}
-                        </select>
-                    </div>
-
-                    {/* DAY FILTER */}
-                    <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-700 w-full sm:w-auto flex-1">
-                        <Calendar size={16} className="text-blue-400 ml-1 shrink-0"/>
-                        <select
-                            value={selectedDay}
-                            onChange={(e) => setSelectedDay(e.target.value)}
-                            className="bg-transparent text-blue-400 font-black text-xs uppercase tracking-widest outline-none cursor-pointer w-full appearance-none"
-                            style={{ colorScheme: 'dark' }}
-                        >
-                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                                <option key={d} value={d} className="bg-slate-900 text-white">{d}</option>
-                            ))}
-                        </select>
+                    {/* Ops Control */}
+                    <div className="flex-1 min-w-[200px] flex flex-col gap-2">
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><ListFilter size={12}/> Operational Filters</label>
+                        <div className="flex gap-2">
+                            <div className="flex items-center flex-1 bg-black p-1.5 rounded border border-slate-700">
+                                <Truck size={14} className="text-emerald-400 ml-1 shrink-0"/>
+                                <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="bg-transparent text-emerald-400 font-bold text-[10px] uppercase w-full outline-none cursor-pointer pl-1">
+                                    <option value="All">Global Fleet</option>
+                                    {agentsList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
+                                </select>
+                            </div>
+                            <div className="flex items-center flex-1 bg-black p-1.5 rounded border border-slate-700">
+                                <Calendar size={14} className="text-blue-400 ml-1 shrink-0"/>
+                                <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="bg-transparent text-blue-400 font-bold text-[10px] uppercase w-full outline-none cursor-pointer pl-1">
+                                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -477,12 +529,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    {/* 🚀 MAP BOUNDARIES & WATERMARKS */}
                     {showBorders && boundaries.map((boundary) => {
                         const geoData = boundary.feature || boundary.geometry;
                         if (!geoData || !geoData.type) return null;
                         
-                        const isSelected = selectedKecamatan === boundary.name;
+                        const isSelected = selectedKecamatan === boundary.name.toUpperCase();
                         const fillColor = isSelected ? '#f97316' : boundary.color || '#38bdf8';
                         
                         return (
@@ -491,7 +542,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                 data={geoData}
                                 style={{ color: boundary.color || '#38bdf8', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
                                 onEachFeature={(f, layer) => {
-                                    // 🚀 NEW: Permanent Watermark Label directly on the map!
                                     const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; opacity: 0.8; white-space: nowrap;">${boundary.name}</div>`;
                                     layer.bindTooltip(ttContent, { permanent: true, direction: "center", className: "region-watermark-label" });
                                 }}
@@ -514,7 +564,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         
-                        // 🚀 COMPACTED MAP PINS (Decluttered)
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
@@ -528,7 +577,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                         return (
                             <Marker key={store.id} position={[store.latitude, store.longitude]} icon={customIcon}>
-                                {/* 🚀 HOVER TOOLTIP FOR CLEAN NAMES */}
                                 <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
                                         <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
@@ -653,7 +701,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </select>
                                                 </div>
 
-                                                {/* 🚀 COMPACT TARGET IMAGE HEADER */}
+                                                {/* TARGET IMAGE HEADER */}
                                                 <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
                                                     {customer.storeImage ? (
                                                         <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
@@ -677,7 +725,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </div>
                                                 </div>
 
-                                                {/* 🚀 COMPACT BOUNTY DETAILS */}
+                                                {/* BOUNTY DETAILS */}
                                                 <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
                                                     <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
                                                         {customer.name}
