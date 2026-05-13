@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,7 +26,6 @@ const userLocationIcon = L.divIcon({
     iconAnchor: [12, 12]
 });
 
-// 🚀 SMART MAP CONTROLLERS
 const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
@@ -58,7 +57,6 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 LIVE GPS TRACKER 
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -100,7 +98,6 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     );
 };
 
-// GEOFENCE MATH ENGINES 
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -176,19 +173,49 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const [activeBrush, setActiveBrush] = useState(null);
 
+    // 🚀 NEW: CUSTOM AGENT COLORS STATE
+    const [agentColors, setAgentColors] = useState({});
+    const DEFAULT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
+
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
     const [showBorders, setShowBorders] = useState(true);
     const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
     const [boundaries, setBoundaries] = useState([]);
     
-    // 🚀 LIVE GPS STATE
     const [userLocation, setUserLocation] = useState(null);
 
     const handleSaveHome = (viewData) => {
         setSavedHome(viewData);
         localStorage.setItem('journeyHomeView', JSON.stringify(viewData));
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
+    };
+
+    // 🚀 LOAD CUSTOM COLORS FROM FIREBASE
+    useEffect(() => {
+        const loadColors = async () => {
+            const userId = user?.uid || user?.id;
+            if (!db || !appId || !userId) return;
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, 'agentColors');
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    setAgentColors(snap.data());
+                }
+            } catch(e) { console.error("Failed to load custom colors", e); }
+        };
+        loadColors();
+    }, [db, appId, user]);
+
+    // 🚀 SAVE CUSTOM COLORS
+    const handleColorChange = async (agentName, newColor) => {
+        const updatedColors = { ...agentColors, [agentName]: newColor };
+        setAgentColors(updatedColors);
+        try {
+            const userId = user?.uid || user?.id;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, 'agentColors');
+            await setDoc(docRef, updatedColors, { merge: true });
+        } catch(e) { console.error("Failed to save color", e); }
     };
 
     useEffect(() => {
@@ -236,6 +263,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
+    // MEMORY
     useEffect(() => {
         const initialAssignments = {};
         const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
@@ -295,14 +323,46 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    const globalAgentList = useMemo(() => {
-        const agents = new Set(agentsList);
-        (customers || []).forEach(c => {
-            if (c.assignedAgent && c.assignedAgent !== 'Unassigned') agents.add(c.assignedAgent);
-            if (assignments[c.id] && assignments[c.id] !== 'Unassigned') agents.add(assignments[c.id]);
+    // 🚀 FIXED: GHOST AGENT AUTO-MIGRATOR
+    // If a store has an old assigned name that no longer exists in the fleet roster, it auto-corrects it via fuzzy matching
+    useEffect(() => {
+        if (!isAdmin || agentsList.length === 0 || !customers || customers.length === 0) return;
+        
+        let batchUpdates = false;
+        const updatedAssignments = { ...assignments };
+
+        customers.forEach(c => {
+            const currentAgent = c.assignedAgent;
+            if (currentAgent && currentAgent !== 'Unassigned' && !agentsList.includes(currentAgent)) {
+                // Ghost found! Try fuzzy matching (e.g. "MAS GILGA" -> "Gilga")
+                const match = agentsList.find(a => 
+                    currentAgent.toLowerCase().includes(a.toLowerCase()) || 
+                    a.toLowerCase().includes(currentAgent.toLowerCase())
+                );
+                
+                const newAgent = match || 'Unassigned';
+                updatedAssignments[c.id] = newAgent === 'Unassigned' ? null : newAgent;
+                batchUpdates = true;
+
+                // Fire & Forget Firebase Update
+                const userId = user?.uid || user?.id || 'default';
+                const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id);
+                updateDoc(ref, {
+                    assignedAgent: newAgent === 'Unassigned' ? deleteField() : newAgent
+                }).catch(console.error);
+            }
         });
-        return Array.from(agents).sort();
-    }, [agentsList, customers, assignments]);
+
+        if (batchUpdates) {
+            setAssignments(updatedAssignments);
+            localStorage.setItem('tripBuilderCache', JSON.stringify(updatedAssignments));
+        }
+    }, [agentsList, customers, isAdmin, db, appId, user, assignments]);
+
+    // 🚀 THE FIX: Restrict the global list to ONLY valid agents from the DB
+    const globalAgentList = useMemo(() => {
+        return [...agentsList].sort();
+    }, [agentsList]);
 
     const hierarchyData = useMemo(() => {
         const provs = new Set();
@@ -353,26 +413,29 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
-    const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
-    
+    // 🚀 CUSTOM COLOR ENGINE FOR METRICS
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
         
         orderedRoute.forEach(store => {
-            const agent = assignments[store.id] || 'Unassigned';
+            let agent = assignments[store.id] || 'Unassigned';
+            // Force ghost agents to Unassigned in the UI immediately
+            if (agent !== 'Unassigned' && !globalAgentList.includes(agent)) {
+                agent = 'Unassigned';
+            }
+
             if (!counters[agent]) counters[agent] = 0;
             counters[agent]++; 
             
             let color = '#64748b'; 
             if (agent !== 'Unassigned') {
-                const agentIdx = globalAgentList.indexOf(agent);
-                color = AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
+                color = agentColors[agent] || DEFAULT_COLORS[globalAgentList.indexOf(agent) % DEFAULT_COLORS.length];
             }
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
         return metrics;
-    }, [orderedRoute, assignments, globalAgentList]);
+    }, [orderedRoute, assignments, globalAgentList, agentColors]);
 
     const getBountyStatus = (customer) => {
         const freq = customer.visitFreq || 7;
@@ -479,14 +542,13 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
-    // 🚀 FIXED: CORRECTED GOOGLE MAPS URL SCHEME
     const handleOpenLocation = (customer) => {
         if (customer.gmapsUrl) { 
             window.open(customer.gmapsUrl, '_blank'); 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            window.open(`https://www.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
+            window.open(`http://googleusercontent.com/maps.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -559,35 +621,45 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 
                 {isAdmin && (
-                    <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto">
+                    <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto custom-scrollbar">
                         <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2"><Paintbrush size={12} className="text-orange-500"/> Paintbrush</h4>
                         
                         <button 
                             onClick={() => setActiveBrush(null)}
-                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                            className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
                         >
                             <X size={14}/> Disable Brush
                         </button>
                         <button 
                             onClick={() => setActiveBrush('Unassigned')}
-                            className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                            className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
                         >
                             <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
                         </button>
                         
+                        {/* 🚀 NEW: COLOR PICKER UI FOR SQUAD AGENTS */}
                         {globalAgentList.map(a => {
-                            const color = AGENT_COLORS[globalAgentList.indexOf(a) % AGENT_COLORS.length];
+                            const color = agentColors[a] || AGENT_COLORS[globalAgentList.indexOf(a) % AGENT_COLORS.length];
                             const isActive = activeBrush === a;
                             return (
-                                <button 
-                                    key={a}
-                                    onClick={() => setActiveBrush(a)}
-                                    className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-700'}`}
-                                    style={{ borderColor: isActive ? color : 'transparent' }}
-                                >
-                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
-                                    {a.split(' ')[0]}
-                                </button>
+                                <div key={a} className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setActiveBrush(a)}
+                                        className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-700'}`}
+                                        style={{ borderColor: isActive ? color : 'transparent' }}
+                                    >
+                                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
+                                        <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
+                                    </button>
+                                    <div className="relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-slate-600 cursor-pointer hover:border-white transition-colors shadow-inner" title="Change Squad Color">
+                                        <input 
+                                            type="color" 
+                                            value={color} 
+                                            onChange={(e) => handleColorChange(a, e.target.value)} 
+                                            className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
                             )
                         })}
                     </div>
