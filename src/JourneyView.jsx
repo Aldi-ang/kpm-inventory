@@ -172,10 +172,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     const [activeBrush, setActiveBrush] = useState(null);
-
-    // 🚀 NEW: CUSTOM AGENT COLORS STATE
     const [agentColors, setAgentColors] = useState({});
-    const DEFAULT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
+    const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -191,7 +189,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
 
-    // 🚀 LOAD CUSTOM COLORS FROM FIREBASE
+    // LOAD CUSTOM COLORS
     useEffect(() => {
         const loadColors = async () => {
             const userId = user?.uid || user?.id;
@@ -207,7 +205,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         loadColors();
     }, [db, appId, user]);
 
-    // 🚀 SAVE CUSTOM COLORS
+    // SAVE CUSTOM COLORS
     const handleColorChange = async (agentName, newColor) => {
         const updatedColors = { ...agentColors, [agentName]: newColor };
         setAgentColors(updatedColors);
@@ -263,7 +261,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
-    // MEMORY
     useEffect(() => {
         const initialAssignments = {};
         const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
@@ -323,10 +320,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 FIXED: GHOST AGENT AUTO-MIGRATOR
-    // If a store has an old assigned name that no longer exists in the fleet roster, it auto-corrects it via fuzzy matching
+    // 🚀 FIXED: GHOST AGENT AUTO-MIGRATOR (Safety Locked)
+    const hasMigratedGhosts = useRef(false);
     useEffect(() => {
-        if (!isAdmin || agentsList.length === 0 || !customers || customers.length === 0) return;
+        // Run ONLY ONCE when data is ready to prevent infinite loops
+        if (!isAdmin || agentsList.length === 0 || !customers || customers.length === 0 || hasMigratedGhosts.current) return;
         
         let batchUpdates = false;
         const updatedAssignments = { ...assignments };
@@ -334,7 +332,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         customers.forEach(c => {
             const currentAgent = c.assignedAgent;
             if (currentAgent && currentAgent !== 'Unassigned' && !agentsList.includes(currentAgent)) {
-                // Ghost found! Try fuzzy matching (e.g. "MAS GILGA" -> "Gilga")
                 const match = agentsList.find(a => 
                     currentAgent.toLowerCase().includes(a.toLowerCase()) || 
                     a.toLowerCase().includes(currentAgent.toLowerCase())
@@ -344,7 +341,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 updatedAssignments[c.id] = newAgent === 'Unassigned' ? null : newAgent;
                 batchUpdates = true;
 
-                // Fire & Forget Firebase Update
                 const userId = user?.uid || user?.id || 'default';
                 const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id);
                 updateDoc(ref, {
@@ -357,12 +353,17 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             setAssignments(updatedAssignments);
             localStorage.setItem('tripBuilderCache', JSON.stringify(updatedAssignments));
         }
-    }, [agentsList, customers, isAdmin, db, appId, user, assignments]);
+        hasMigratedGhosts.current = true; // Lock it so it never runs again per session
+    }, [agentsList, customers, isAdmin, db, appId, user]);
 
-    // 🚀 THE FIX: Restrict the global list to ONLY valid agents from the DB
     const globalAgentList = useMemo(() => {
-        return [...agentsList].sort();
-    }, [agentsList]);
+        const agents = new Set(agentsList);
+        (customers || []).forEach(c => {
+            if (c.assignedAgent && c.assignedAgent !== 'Unassigned') agents.add(c.assignedAgent);
+            if (assignments[c.id] && assignments[c.id] !== 'Unassigned') agents.add(assignments[c.id]);
+        });
+        return Array.from(agents).sort();
+    }, [agentsList, customers, assignments]);
 
     const hierarchyData = useMemo(() => {
         const provs = new Set();
@@ -412,15 +413,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         newRoute.splice(newIndex, 0, movedStore);
         setOrderedRoute(newRoute);
     };
-
-    // 🚀 CUSTOM COLOR ENGINE FOR METRICS
+    
+    // 🚀 FIXED: SECURE COLOR METRICS
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
         
         orderedRoute.forEach(store => {
             let agent = assignments[store.id] || 'Unassigned';
-            // Force ghost agents to Unassigned in the UI immediately
+            
             if (agent !== 'Unassigned' && !globalAgentList.includes(agent)) {
                 agent = 'Unassigned';
             }
@@ -430,7 +431,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             
             let color = '#64748b'; 
             if (agent !== 'Unassigned') {
-                color = agentColors[agent] || DEFAULT_COLORS[globalAgentList.indexOf(agent) % DEFAULT_COLORS.length];
+                const agentIdx = globalAgentList.indexOf(agent);
+                // 🚀 Uses Custom Colors from DB first, then falls back to original hashing
+                color = agentColors[agent] || AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
             }
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
@@ -637,7 +640,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
                         </button>
                         
-                        {/* 🚀 NEW: COLOR PICKER UI FOR SQUAD AGENTS */}
                         {globalAgentList.map(a => {
                             const color = agentColors[a] || AGENT_COLORS[globalAgentList.indexOf(a) % AGENT_COLORS.length];
                             const isActive = activeBrush === a;
