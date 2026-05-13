@@ -13,7 +13,6 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// 🚀 SMART MAP CONTROLLER
 const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
@@ -45,7 +44,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 GEOFENCE MATH ENGINES 
+// GEOFENCE MATH ENGINES 
 const isPointInPolygon = (point, polygon) => {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -114,16 +113,13 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // CASCADING REGIONAL FILTERS
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
-    // 🚀 NEW: CMDR PAINTBRUSH STATE
     const [activeBrush, setActiveBrush] = useState(null);
 
-    // MAP STATE
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
     const [showBorders, setShowBorders] = useState(true);
@@ -136,7 +132,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
 
-    // LOAD GEO-BOUNDARIES
     useEffect(() => {
         const loadBorders = async () => {
             const CACHE_KEY = `cello_map_bnd_${appId}`;
@@ -171,20 +166,17 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         loadBorders();
     }, [db, appId, user]);
     
-    // CHECK-IN STATE
     const [checkInCustomer, setCheckInCustomer] = useState(null); 
     const [visitNote, setVisitNote] = useState("");
     const [visitTag, setVisitTag] = useState("Routine Check");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [streetRoute, setStreetRoute] = useState(null);
 
-    // TRIP PLANNER
     const [agentsList, setAgentsList] = useState([]);
     const [selectedAgent, setSelectedAgent] = useState('All');
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
-    // MEMORY
     useEffect(() => {
         const initialAssignments = {};
         const localCache = JSON.parse(localStorage.getItem('tripBuilderCache') || '{}');
@@ -244,6 +236,17 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
+    // 🚀 THE FIX: UNIVERSAL GLOBAL AGENT LIST
+    // This dynamically forces the app to recognize agents even if the employee account can't read the master DB
+    const globalAgentList = useMemo(() => {
+        const agents = new Set(agentsList);
+        (customers || []).forEach(c => {
+            if (c.assignedAgent && c.assignedAgent !== 'Unassigned') agents.add(c.assignedAgent);
+            if (assignments[c.id] && assignments[c.id] !== 'Unassigned') agents.add(assignments[c.id]);
+        });
+        return Array.from(agents).sort();
+    }, [agentsList, customers, assignments]);
+
     const hierarchyData = useMemo(() => {
         const provs = new Set();
         const kabs = new Set();
@@ -293,9 +296,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         setOrderedRoute(newRoute);
     };
 
-    // 🚀 MULTI-AGENT COLORS
     const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
     
+    // 🚀 THE FIX: Color Assignment Engine now uses the Bulletproof globalAgentList
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
@@ -307,15 +310,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             
             let color = '#64748b'; 
             if (agent !== 'Unassigned') {
-                const agentIdx = agentsList.indexOf(agent);
+                const agentIdx = globalAgentList.indexOf(agent);
                 color = AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
             }
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
         return metrics;
-    }, [orderedRoute, assignments, agentsList]);
+    }, [orderedRoute, assignments, globalAgentList]);
 
-    // 🚀 NEW: 7-DAY COUNTDOWN ENGINE
     const getBountyStatus = (customer) => {
         const freq = customer.visitFreq || 7;
         if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
@@ -423,7 +425,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     return (
         <div className="space-y-6 animate-fade-in relative font-mono">
-            {/* INJECT CROSSHAIR IF BRUSH IS ACTIVE */}
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
             <div className="bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
@@ -471,7 +472,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                 <Truck size={14} className="text-emerald-400 ml-1 shrink-0"/>
                                 <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="bg-transparent text-emerald-400 font-bold text-[10px] uppercase w-full outline-none cursor-pointer pl-1">
                                     <option value="All">Global Fleet</option>
-                                    {agentsList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
+                                    {globalAgentList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
                                 </select>
                             </div>
                             <div className="flex items-center flex-1 bg-black p-1.5 rounded border border-slate-700">
@@ -488,7 +489,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 
-                {/* 🚀 NEW: CMDR PAINTBRUSH TOOL */}
                 {isAdmin && (
                     <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto">
                         <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2"><Paintbrush size={12} className="text-orange-500"/> Paintbrush</h4>
@@ -506,8 +506,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                             <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
                         </button>
                         
-                        {agentsList.map(a => {
-                            const color = AGENT_COLORS[agentsList.indexOf(a) % AGENT_COLORS.length];
+                        {globalAgentList.map(a => {
+                            const color = AGENT_COLORS[globalAgentList.indexOf(a) % AGENT_COLORS.length];
                             const isActive = activeBrush === a;
                             return (
                                 <button 
@@ -536,6 +536,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
                         className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
+                        title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
                         <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Set Home</span>
@@ -543,6 +544,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
                         className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
+                        title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
                         <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Fly Home</span>
@@ -587,7 +589,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         const statusBadge = getBountyStatus(store);
                         
-                        // 🚀 COLOR ENGINE 
                         let ringColor;
                         if (isVisited) ringColor = '#10b981'; 
                         else if (metric.agentName === 'Unassigned') ringColor = '#94a3b8'; 
@@ -624,7 +625,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     </div>
                                 </LeafletTooltip>
 
-                                {/* 🚀 DYNAMIC POPUP: Only renders if Paintbrush is OFF */}
                                 {!activeBrush && (
                                     <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
                                         <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
@@ -638,12 +638,25 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 </span>
                                             </div>
                                             
-                                            {/* 🚀 MAP COUNTDOWN PILL */}
                                             <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
                                                 {statusBadge.text}
                                             </div>
                                             
                                             <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Global Position:</label>
+                                                    <select
+                                                        className="w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
+                                                        value={globalIdx}
+                                                        onChange={(e) => jumpToSequence(globalIdx, Number(e.target.value))}
+                                                        style={{ colorScheme: 'dark' }}
+                                                    >
+                                                        {orderedRoute.map((_, i) => (
+                                                            <option key={i} value={i} className="bg-slate-900 text-white">Global Stop #{i + 1}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
                                                 <div>
                                                     <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                     <select 
@@ -654,7 +667,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         disabled={!isAdmin}
                                                     >
                                                         <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
-                                                        {agentsList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
+                                                        {globalAgentList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
@@ -667,7 +680,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </MapContainer>
             </div>
 
-            {/* 🚀 GAMIFIED SECTOR-GROUPED BOUNTY CARDS GRID */}
             <div className="pt-4 space-y-12">
                 {Object.keys(groupedRoute).sort().map(sectorName => {
                     const sectorStores = groupedRoute[sectorName];
@@ -732,7 +744,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         disabled={!isAdmin || isVisited}
                                                     >
                                                         <option value="Unassigned">UNASSIGNED</option>
-                                                        {agentsList.map(a => <option key={a} value={a}>{a}</option>)}
+                                                        {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
                                                     </select>
                                                 </div>
 
@@ -746,7 +758,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         </div>
                                                     )}
                                                     
-                                                    {/* BOUNTY HUD BADGES */}
                                                     <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                                                         <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
                                                             <span style={{ color: ringColor }}>●</span>
@@ -763,8 +774,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
                                                         {customer.name}
                                                     </h3>
-
-                                                    {/* 🚀 CARD COUNTDOWN PILL */}
+                                                    
                                                     <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
                                                         {statusBadge.text}
                                                     </div>
