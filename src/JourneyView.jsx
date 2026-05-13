@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -13,6 +13,20 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// 🚀 LIVE GPS ICON
+const userLocationIcon = L.divIcon({
+    className: 'user-location-icon',
+    html: `
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; width: 24px; height: 24px;">
+            <div style="position: absolute; width: 100%; height: 100%; background-color: #3b82f6; border-radius: 50%; opacity: 0.4; animation: pulse-ring 2s infinite;"></div>
+            <div style="width: 14px; height: 14px; background-color: #2563eb; border: 2px solid white; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
+        </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+// 🚀 SMART MAP CONTROLLERS
 const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
@@ -42,6 +56,48 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     }, [saveTrigger]);
 
     return null;
+};
+
+// 🚀 LIVE GPS TRACKER
+const LocationController = ({ userLocation, setUserLocation }) => {
+    const map = useMap();
+    const watchId = useRef(null);
+
+    const handleLocateClick = () => {
+        if (userLocation) {
+            map.flyTo(userLocation, 16, { duration: 1.2 });
+        }
+        if (!watchId.current) {
+            watchId.current = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const coords = [pos.coords.latitude, pos.coords.longitude];
+                    setUserLocation(coords);
+                    if (!userLocation) map.flyTo(coords, 16, { duration: 1.2 });
+                },
+                (err) => {
+                    console.error(err);
+                    alert("Please enable location permissions in your device settings.");
+                },
+                { enableHighAccuracy: true, maximumAge: 5000 }
+            );
+        }
+    };
+
+    useEffect(() => {
+        return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
+    }, []);
+
+    return (
+        <div className="absolute bottom-[20px] right-[10px] z-[999]">
+            <button 
+                onClick={handleLocateClick} 
+                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
+                title="Locate Me"
+            >
+                <LocateFixed size={20} className={watchId.current ? "text-blue-400" : "text-slate-300"} />
+            </button>
+        </div>
+    );
 };
 
 // GEOFENCE MATH ENGINES 
@@ -125,6 +181,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [showBorders, setShowBorders] = useState(true);
     const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
     const [boundaries, setBoundaries] = useState([]);
+    
+    // 🚀 NEW: LIVE GPS STATE
+    const [userLocation, setUserLocation] = useState(null);
 
     const handleSaveHome = (viewData) => {
         setSavedHome(viewData);
@@ -236,8 +295,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 THE FIX: UNIVERSAL GLOBAL AGENT LIST
-    // This dynamically forces the app to recognize agents even if the employee account can't read the master DB
     const globalAgentList = useMemo(() => {
         const agents = new Set(agentsList);
         (customers || []).forEach(c => {
@@ -298,7 +355,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
     
-    // 🚀 THE FIX: Color Assignment Engine now uses the Bulletproof globalAgentList
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
@@ -422,6 +478,19 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const jumpToTerminal = (storeName) => { if (setActiveTab) setActiveTab('sales'); };
     const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
+
+    // 🚀 NEW: DIRECT GOOGLE MAPS ROUTING LAUNCHER
+    const handleOpenLocation = (customer) => {
+        if (customer.gmapsUrl) { 
+            window.open(customer.gmapsUrl, '_blank'); 
+            return; 
+        }
+        if (customer.latitude && customer.longitude) {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
+        } else {
+            alert("No GPS Coordinates found for this target.");
+        }
+    };
 
     return (
         <div className="space-y-6 animate-fade-in relative font-mono">
@@ -555,6 +624,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
+                    {/* 🚀 INJECT LIVE USER LOCATION INTO THE RADAR */}
+                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
+                    {userLocation && (
+                        <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
+                    )}
+
                     {showBorders && boundaries.map((boundary) => {
                         const geoData = boundary.feature || boundary.geometry;
                         if (!geoData || !geoData.type) return null;
@@ -671,6 +746,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     </select>
                                                 </div>
                                             </div>
+
+                                            {/* 🚀 NEW: DIRECT GOOGLE MAPS NAVIGATION FROM POPUP */}
+                                            <button 
+                                                onClick={() => handleOpenLocation(store)}
+                                                className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                                            >
+                                                <Navigation size={14}/> Navigate via Google Maps
+                                            </button>
                                         </div>
                                     </Popup>
                                 )}
@@ -798,19 +881,30 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                                     <Crosshair size={14}/> Engage Target
                                                                 </button>
                                                                 
+                                                                {/* 🚀 COMBAT ACTION BUTTONS NOW HAVE 3 OPTIONS */}
                                                                 <div className="flex gap-2">
                                                                     <button 
                                                                         onClick={() => jumpToMap(customer.id)}
                                                                         className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
+                                                                        title="Find on Tactical Radar"
                                                                     >
                                                                         <Globe size={12}/> Radar
                                                                     </button>
                                                                     
                                                                     <button 
+                                                                        onClick={() => handleOpenLocation(customer)}
+                                                                        className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
+                                                                        title="Navigate via Google Maps"
+                                                                    >
+                                                                        <Navigation size={12}/> Navigate
+                                                                    </button>
+
+                                                                    <button 
                                                                         onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
                                                                         className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
+                                                                        title="Log Exception (Closed/Refused)"
                                                                     >
-                                                                        <AlertTriangle size={12}/> Log Exception
+                                                                        <AlertTriangle size={12}/> Log
                                                                     </button>
                                                                 </div>
                                                             </>
