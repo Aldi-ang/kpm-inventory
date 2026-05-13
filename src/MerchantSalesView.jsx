@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
-import { doc, setDoc, collection } from 'firebase/firestore'; // 🚀 Added Firebase
+import { doc, setDoc, collection } from 'firebase/firestore'; 
 
-// 🚀 Added db and appId to props
-const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  const [mobileTab, setMobileTab] = useState('products');
+// 🚀 FIXED: Added isAdmin, logAudit, and triggerCapy to props!
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  
+    const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
     const [activeCategory, setActiveCategory] = useState("ALL");
@@ -25,8 +26,8 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
-    // 🚀 TIER RESTRICTION LOGIC: Only Tier 1, Tier 2, and Admins can override GPS
-    const canOverrideGps = user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+    // 🚀 FIXED TIER RESTRICTION LOGIC: Now safely checks direct isAdmin prop!
+    const canOverrideGps = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
 
     // 🚀 THE FIFO DEBT ENGINE 
     const debtInfo = React.useMemo(() => {
@@ -93,7 +94,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return { totalDebt: Math.max(0, totalDebt), isOverdue: totalDebt > 0 ? isOverdue : false };
     }, [customerName, transactions]); 
 
-    // --- GEO-FENCE & NOO (NEW OPEN OUTLET) STATE ---
+    // --- GEO-FENCE & NOO STATE ---
     const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);
     const [gpsStatus, setGpsStatus] = useState('idle'); 
     const [distanceToStore, setDistanceToStore] = useState(null);
@@ -143,7 +144,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         return R * c; 
     };
 
-    // 🚀 GEOFENCE AUTO-LOCK ENGINE
     const verifyLocation = (useLowAccuracy = false) => {
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
@@ -437,6 +437,7 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
         triggerMerchantSpeak('expensive');
     };
 
+    // 🚀 FIXED: Added triggerCapy and logAudit to NOO Only Submit!
     const submitNooOnly = async () => {
         if (!validateNoo()) return;
         if (!db || !appId) return alert("Database connection missing!");
@@ -460,6 +461,9 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                 photoData: nooForm.photoUrl,
                 createdAt: new Date().toISOString()
             });
+            
+            if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
+            if (triggerCapy) triggerCapy(`New Target Secured: ${customerName} 📍`);
             
             alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
             setShowNooModal(false);
@@ -537,7 +541,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
-    // 🚀 NEW: Restricts Final Submit if Tier 3/4 is Out of Range
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
     const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted;
 
@@ -614,7 +617,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                                 
                                 {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
                                 
-                                {/* 🚀 FIXED: TIER-RESTRICTED OUT OF RANGE BADGE */}
                                 {gpsStatus === 'manual_override' && (
                                     <div className="flex items-center gap-2 w-full">
                                         {canOverrideGps ? (
@@ -777,7 +779,6 @@ const MerchantSalesView = ({ inventory, user, onProcessSale, onInspect, appSetti
                         </span>
                     </div>
                     
-                    {/* 🚀 FIXED: TIERS 3 & 4 CANNOT CLICK SUBMIT IF OUT OF RANGE */}
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale}
