@@ -58,7 +58,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 LIVE GPS TRACKER (This is what caused the crash! Fixed the useRef import)
+// 🚀 LIVE GPS TRACKER 
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -479,13 +479,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
+    // 🚀 FIXED: CORRECTED GOOGLE MAPS URL SCHEME
     const handleOpenLocation = (customer) => {
         if (customer.gmapsUrl) { 
             window.open(customer.gmapsUrl, '_blank'); 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            window.open(`http://googleusercontent.com/maps.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
+            window.open(`https://www.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -554,6 +555,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </div>
             </div>
 
+            {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 
                 {isAdmin && (
@@ -622,7 +624,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    {/* 🚀 LIVE GPS MARKER RENDERED HERE */}
                     <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
                     {userLocation && (
                         <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
@@ -886,7 +887,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                                         <Globe size={12}/> Radar
                                                                     </button>
                                                                     
-                                                                    {/* 🚀 NEW: GOOGLE MAPS NAVIGATION FROM CARD */}
                                                                     <button 
                                                                         onClick={() => handleOpenLocation(customer)}
                                                                         className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
