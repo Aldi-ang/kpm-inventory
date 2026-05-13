@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
@@ -58,7 +58,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-// 🚀 LIVE GPS TRACKER
+// 🚀 LIVE GPS TRACKER (This is what caused the crash! Fixed the useRef import)
 const LocationController = ({ userLocation, setUserLocation }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -182,7 +182,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [savedHome, setSavedHome] = useState(() => JSON.parse(localStorage.getItem('journeyHomeView')) || null);
     const [boundaries, setBoundaries] = useState([]);
     
-    // 🚀 NEW: LIVE GPS STATE
+    // 🚀 LIVE GPS STATE
     const [userLocation, setUserLocation] = useState(null);
 
     const handleSaveHome = (viewData) => {
@@ -479,14 +479,13 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
-    // 🚀 NEW: DIRECT GOOGLE MAPS ROUTING LAUNCHER
     const handleOpenLocation = (customer) => {
         if (customer.gmapsUrl) { 
             window.open(customer.gmapsUrl, '_blank'); 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
+            window.open(`http://googleusercontent.com/maps.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -555,7 +554,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 </div>
             </div>
 
-            {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 
                 {isAdmin && (
@@ -624,7 +622,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    {/* 🚀 INJECT LIVE USER LOCATION INTO THE RADAR */}
+                    {/* 🚀 LIVE GPS MARKER RENDERED HERE */}
                     <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
                     {userLocation && (
                         <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
@@ -747,7 +745,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 </div>
                                             </div>
 
-                                            {/* 🚀 NEW: DIRECT GOOGLE MAPS NAVIGATION FROM POPUP */}
                                             <button 
                                                 onClick={() => handleOpenLocation(store)}
                                                 className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.4)]"
@@ -881,16 +878,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                                     <Crosshair size={14}/> Engage Target
                                                                 </button>
                                                                 
-                                                                {/* 🚀 COMBAT ACTION BUTTONS NOW HAVE 3 OPTIONS */}
                                                                 <div className="flex gap-2">
                                                                     <button 
                                                                         onClick={() => jumpToMap(customer.id)}
                                                                         className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
-                                                                        title="Find on Tactical Radar"
                                                                     >
                                                                         <Globe size={12}/> Radar
                                                                     </button>
                                                                     
+                                                                    {/* 🚀 NEW: GOOGLE MAPS NAVIGATION FROM CARD */}
                                                                     <button 
                                                                         onClick={() => handleOpenLocation(customer)}
                                                                         className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
@@ -902,7 +898,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                                     <button 
                                                                         onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
                                                                         className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
-                                                                        title="Log Exception (Closed/Refused)"
                                                                     >
                                                                         <AlertTriangle size={12}/> Log
                                                                     </button>
