@@ -179,8 +179,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
     // 🚀 PERMISSION ENGINE: Tier 1, 2, and 3 CAN assign. Tier 4 can ONLY view the Legend.
-    const userTierStr = String(user?.tier || user?.roleTier || '');
-    const canAssignFleet = isAdmin === true || user?.isAdmin === true || user?.role?.toLowerCase() === 'admin' || userTierStr === '1' || userTierStr === '2' || userTierStr === '3';
+    const checkTier = (val) => {
+        if (!val) return false;
+        const str = String(val).toLowerCase().trim();
+        return str === '1' || str === '2' || str === '3' || 
+               str.includes('tier 1') || str.includes('tier 2') || str.includes('tier 3') || 
+               str.includes('admin') || str.includes('spv') || str.includes('supervisor');
+    };
+    const canAssignFleet = isAdmin === true || user?.isAdmin === true || checkTier(user?.tier) || checkTier(user?.roleTier) || checkTier(user?.role);
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
