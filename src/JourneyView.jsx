@@ -560,7 +560,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            window.open(`http://googleusercontent.com/maps.google.com/maps?q=${customer.latitude},${customer.longitude}`, '_blank');
+            // 🚀 FIXED: Official Google Maps deep-link URL format
+            window.open(`https://maps.google.com/?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
