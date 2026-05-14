@@ -162,10 +162,26 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
     return h;
 };
 
+// 🚀 STRING HASHING ALGORITHM (Ensures universal colors across all devices)
+const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
+const getHashColor = (name) => {
+    if (!name) return '#64748b';
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AGENT_COLORS.length;
+    return AGENT_COLORS[index];
+};
+
 const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
+    // 🚀 PERMISSION ENGINE: Tier 1, 2, and 3 CAN assign. Tier 4 can ONLY view the Legend.
+    const userTierStr = String(user?.tier || user?.roleTier || '');
+    const canAssignFleet = isAdmin === true || user?.isAdmin === true || user?.role?.toLowerCase() === 'admin' || userTierStr === '1' || userTierStr === '2' || userTierStr === '3';
+
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
@@ -173,7 +189,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
     const [activeBrush, setActiveBrush] = useState(null);
     const [agentColors, setAgentColors] = useState({});
-    const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -189,7 +204,6 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (triggerCapy) triggerCapy("Custom Map Home Saved! 🌍");
     };
 
-    // LOAD CUSTOM COLORS
     useEffect(() => {
         const loadColors = async () => {
             const userId = user?.uid || user?.id;
@@ -205,8 +219,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         loadColors();
     }, [db, appId, user]);
 
-    // SAVE CUSTOM COLORS
     const handleColorChange = async (agentName, newColor) => {
+        if (!canAssignFleet) return; 
         const updatedColors = { ...agentColors, [agentName]: newColor };
         setAgentColors(updatedColors);
         try {
@@ -276,7 +290,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     }, [customers]);
 
     const handleAssignAgent = async (customerId, agentName) => {
-        if (!isAdmin) return;
+        if (!canAssignFleet) return; 
         const userId = user?.uid || user?.id || 'default';
         
         setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
@@ -320,11 +334,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         fetchAgents();
     }, [db, appId, user]);
 
-    // 🚀 FIXED: GHOST AGENT AUTO-MIGRATOR (Safety Locked)
     const hasMigratedGhosts = useRef(false);
     useEffect(() => {
-        // Run ONLY ONCE when data is ready to prevent infinite loops
-        if (!isAdmin || agentsList.length === 0 || !customers || customers.length === 0 || hasMigratedGhosts.current) return;
+        if (!canAssignFleet || agentsList.length === 0 || !customers || customers.length === 0 || hasMigratedGhosts.current) return;
         
         let batchUpdates = false;
         const updatedAssignments = { ...assignments };
@@ -353,8 +365,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             setAssignments(updatedAssignments);
             localStorage.setItem('tripBuilderCache', JSON.stringify(updatedAssignments));
         }
-        hasMigratedGhosts.current = true; // Lock it so it never runs again per session
-    }, [agentsList, customers, isAdmin, db, appId, user]);
+        hasMigratedGhosts.current = true;
+    }, [agentsList, customers, canAssignFleet, db, appId, user, assignments]);
 
     const globalAgentList = useMemo(() => {
         const agents = new Set(agentsList);
@@ -413,8 +425,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         newRoute.splice(newIndex, 0, movedStore);
         setOrderedRoute(newRoute);
     };
-    
-    // 🚀 FIXED: SECURE COLOR METRICS
+
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
@@ -431,9 +442,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             
             let color = '#64748b'; 
             if (agent !== 'Unassigned') {
-                const agentIdx = globalAgentList.indexOf(agent);
-                // 🚀 Uses Custom Colors from DB first, then falls back to original hashing
-                color = agentColors[agent] || AGENT_COLORS[Math.max(0, agentIdx) % AGENT_COLORS.length];
+                color = agentColors[agent] || getHashColor(agent);
             }
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
@@ -623,36 +632,44 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             {/* 🚀 JOURNEY MAP RADAR */}
             <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
                 
-                {isAdmin && (
-                    <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto custom-scrollbar">
-                        <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2"><Paintbrush size={12} className="text-orange-500"/> Paintbrush</h4>
-                        
-                        <button 
-                            onClick={() => setActiveBrush(null)}
-                            className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                        >
-                            <X size={14}/> Disable Brush
-                        </button>
-                        <button 
-                            onClick={() => setActiveBrush('Unassigned')}
-                            className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                        >
-                            <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
-                        </button>
-                        
-                        {globalAgentList.map(a => {
-                            const color = agentColors[a] || AGENT_COLORS[globalAgentList.indexOf(a) % AGENT_COLORS.length];
-                            const isActive = activeBrush === a;
-                            return (
-                                <div key={a} className="flex items-center gap-2">
-                                    <button 
-                                        onClick={() => setActiveBrush(a)}
-                                        className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-700'}`}
-                                        style={{ borderColor: isActive ? color : 'transparent' }}
-                                    >
-                                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
-                                        <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
-                                    </button>
+                {/* 🚀 FIXED: UNIVERSAL UI (Paintbrush for Tier 1-3, Legend for Tier 4) */}
+                <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto custom-scrollbar">
+                    <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">
+                        {canAssignFleet ? <><Paintbrush size={12} className="text-orange-500"/> Paintbrush</> : <><Globe size={12} className="text-blue-500"/> Squad Legend</>}
+                    </h4>
+                    
+                    {canAssignFleet && (
+                        <>
+                            <button 
+                                onClick={() => setActiveBrush(null)}
+                                className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                            >
+                                <X size={14}/> Disable Brush
+                            </button>
+                            <button 
+                                onClick={() => setActiveBrush('Unassigned')}
+                                className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                            >
+                                <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
+                            </button>
+                        </>
+                    )}
+                    
+                    {globalAgentList.map(a => {
+                        const color = agentColors[a] || getHashColor(a);
+                        const isActive = activeBrush === a;
+                        return (
+                            <div key={a} className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => canAssignFleet && setActiveBrush(a)}
+                                    disabled={!canAssignFleet}
+                                    className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent'} ${canAssignFleet ? 'hover:bg-slate-700 cursor-pointer' : 'cursor-default'}`}
+                                    style={{ borderColor: isActive ? color : 'transparent' }}
+                                >
+                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
+                                    <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
+                                </button>
+                                {canAssignFleet && (
                                     <div className="relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-slate-600 cursor-pointer hover:border-white transition-colors shadow-inner" title="Change Squad Color">
                                         <input 
                                             type="color" 
@@ -661,11 +678,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                             className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
                                         />
                                     </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
+                                )}
+                            </div>
+                        )
+                    })}
+                </div>
 
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
@@ -760,7 +777,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                 icon={customIcon}
                                 eventHandlers={{
                                     click: (e) => {
-                                        if (activeBrush) {
+                                        if (canAssignFleet && activeBrush) {
                                             handleAssignAgent(store.id, activeBrush);
                                             e.originalEvent.stopPropagation();
                                         }
@@ -773,7 +790,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     </div>
                                 </LeafletTooltip>
 
-                                {!activeBrush && (
+                                {(!canAssignFleet || !activeBrush) && (
                                     <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
                                         <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
                                             <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
@@ -808,11 +825,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 <div>
                                                     <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                     <select 
-                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${isAdmin ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${canAssignFleet ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                                         value={assignments[store.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(store.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
-                                                        disabled={!isAdmin}
+                                                        disabled={!canAssignFleet}
                                                     >
                                                         <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
                                                         {globalAgentList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
@@ -892,11 +909,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
                                                     </div>
                                                     <select 
-                                                        className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${isAdmin && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                        className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${canAssignFleet && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
                                                         value={assignments[customer.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
-                                                        disabled={!isAdmin || isVisited}
+                                                        disabled={!canAssignFleet || isVisited}
                                                     >
                                                         <option value="Unassigned">UNASSIGNED</option>
                                                         {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
