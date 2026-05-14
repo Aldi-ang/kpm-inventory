@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -203,6 +203,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         const cached = localStorage.getItem(`cello_colors_${appId}`);
         return cached ? JSON.parse(cached) : {};
     });
+
+    // 🚀 NEW MOBILE UI STATES
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isPanelOpen, setIsPanelOpen] = useState(false); // Default closed to save mobile space
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -654,69 +658,94 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             </div>
 
             {/* 🚀 JOURNEY MAP RADAR */}
-            <div className="w-full h-72 lg:h-[500px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-xl relative z-0">
+            <div className={`${isFullScreen ? 'fixed inset-0 z-[5000] rounded-none' : 'w-full h-[400px] lg:h-[500px] rounded-2xl'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl relative transition-all duration-300`}>
                 
-                {/* 🚀 FIXED: UNIVERSAL UI (Paintbrush for Tier 1-3, Legend for Tier 4) */}
-                <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto custom-scrollbar">
-                    <h4 
-                        onDoubleClick={() => setDevUnlock(true)} 
-                        className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2 cursor-pointer select-none"
+                {/* 🚀 COLLAPSIBLE UNIVERSAL UI (Paintbrush/Legend) */}
+                <div className="absolute bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-none">
+                    {/* TOGGLE BUTTON */}
+                    <button 
+                        onClick={() => setIsPanelOpen(!isPanelOpen)} 
+                        onDoubleClick={() => setDevUnlock(true)}
                         title="Double-Tap to Override Permissions"
+                        className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-2.5 rounded-xl shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-colors active:scale-95 select-none"
                     >
-                        {canAssignFleet ? <><Paintbrush size={12} className="text-orange-500"/> Paintbrush</> : <><Globe size={12} className="text-blue-500"/> Squad Legend</>}
-                    </h4>
-                    
-                    {canAssignFleet && (
-                        <>
-                            <button 
-                                onClick={() => setActiveBrush(null)}
-                                className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                            >
-                                <X size={14}/> Disable Brush
-                            </button>
-                            <button 
-                                onClick={() => setActiveBrush('Unassigned')}
-                                className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                            >
-                                <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
-                            </button>
-                        </>
-                    )}
-                    
-                    {globalAgentList.map(a => {
-                        const color = agentColors[a] || getHashColor(a);
-                        const isActive = activeBrush === a;
-                        return (
-                            <div key={a} className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => canAssignFleet && setActiveBrush(a)}
-                                    disabled={!canAssignFleet}
-                                    className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent'} ${canAssignFleet ? 'hover:bg-slate-700 cursor-pointer' : 'cursor-default'}`}
-                                    style={{ borderColor: isActive ? color : 'transparent' }}
-                                >
-                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
-                                    <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
-                                </button>
-                                {canAssignFleet && (
-                                    <div className="relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-slate-600 cursor-pointer hover:border-white transition-colors shadow-inner" title="Change Squad Color">
-                                        <input 
-                                            type="color" 
-                                            value={color} 
-                                            onChange={(e) => handleColorChange(a, e.target.value)} 
-                                            onBlur={(e) => saveColorToDB(a, e.target.value)}
-                                            className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
-                                        />
+                        {canAssignFleet ? <Paintbrush size={16} className="text-orange-500"/> : <Globe size={16} className="text-blue-500"/>}
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest">{canAssignFleet ? 'Paintbrush' : 'Squad Legend'}</span>
+                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
+                    </button>
+
+                    {/* HIDDEN UNTIL CLICKED */}
+                    {isPanelOpen && (
+                        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[60vh] overflow-y-auto flex flex-col gap-2 custom-scrollbar w-max animate-fade-in-up">
+                            {canAssignFleet && (
+                                <>
+                                    <button 
+                                        onClick={() => setActiveBrush(null)}
+                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                                    >
+                                        <X size={14}/> Disable Brush
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveBrush('Unassigned')}
+                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                                    >
+                                        <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
+                                    </button>
+                                </>
+                            )}
+                            
+                            {globalAgentList.map(a => {
+                                const color = agentColors[a] || getHashColor(a);
+                                const isActive = activeBrush === a;
+                                return (
+                                    <div key={a} className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => canAssignFleet && setActiveBrush(a)}
+                                            disabled={!canAssignFleet}
+                                            className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent'} ${canAssignFleet ? 'hover:bg-slate-700 cursor-pointer' : 'cursor-default'}`}
+                                            style={{ borderColor: isActive ? color : 'transparent' }}
+                                        >
+                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div> 
+                                            <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
+                                        </button>
+                                        {canAssignFleet && (
+                                            <div className="relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-slate-600 cursor-pointer hover:border-white transition-colors shadow-inner" title="Change Squad Color">
+                                                <input 
+                                                    type="color" 
+                                                    value={color} 
+                                                    onChange={(e) => handleColorChange(a, e.target.value)} 
+                                                    onBlur={(e) => saveColorToDB(a, e.target.value)}
+                                                    className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        )
-                    })}
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
 
+                {/* 🚀 TOP RIGHT MAP CONTROLS */}
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
+                    {/* FULLSCREEN TOGGLE */}
+                    <button 
+                        onClick={() => {
+                            setIsFullScreen(!isFullScreen);
+                            setTimeout(() => window.dispatchEvent(new Event('resize')), 200); // Forces Map to redraw
+                        }}
+                        className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-blue-400 transition-all active:scale-95 group flex items-center gap-2"
+                        title="Toggle Fullscreen Map"
+                    >
+                        {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">
+                            {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                        </span>
+                    </button>
+
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
-                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700'}`}
+                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:bg-slate-700'}`}
                         title="Toggle Regional Borders"
                     >
                         <Layers size={20} className="transition-transform"/>
