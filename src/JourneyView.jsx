@@ -178,15 +178,22 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 PERMISSION ENGINE: Tier 1, 2, and 3 CAN assign. Tier 4 can ONLY view the Legend.
+    // 🚀 PERMISSION ENGINE: Aggressive check for Tier 1, 2, and 3
     const checkTier = (val) => {
         if (!val) return false;
-        const str = String(val).toLowerCase().trim();
-        return str === '1' || str === '2' || str === '3' || 
-               str.includes('tier 1') || str.includes('tier 2') || str.includes('tier 3') || 
+        // Strip everything except letters and numbers (e.g., "Tier-3!" becomes "tier3")
+        const str = String(val).toLowerCase().replace(/[^a-z0-9]/g, ''); 
+        return ['1', '2', '3'].includes(str) || 
+               str.includes('tier1') || str.includes('tier2') || str.includes('tier3') || 
+               str.includes('level1') || str.includes('level2') || str.includes('level3') ||
                str.includes('admin') || str.includes('spv') || str.includes('supervisor');
     };
-    const canAssignFleet = isAdmin === true || user?.isAdmin === true || checkTier(user?.tier) || checkTier(user?.roleTier) || checkTier(user?.role);
+
+    // Scan every possible database field where the tier might be hiding
+    const canAssignFleet = isAdmin === true || user?.isAdmin === true || 
+        checkTier(user?.tier) || checkTier(user?.roleTier) || 
+        checkTier(user?.role) || checkTier(user?.level) || 
+        checkTier(user?.accessLevel) || checkTier(user?.accountType);
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
