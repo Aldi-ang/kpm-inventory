@@ -198,7 +198,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     const [activeBrush, setActiveBrush] = useState(null);
-    const [agentColors, setAgentColors] = useState({});
+    // 🚀 FIXED: Instantly load cached colors to prevent flickering
+    const [agentColors, setAgentColors] = useState(() => {
+        const cached = localStorage.getItem(`cello_colors_${appId}`);
+        return cached ? JSON.parse(cached) : {};
+    });
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -222,22 +226,31 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 const docRef = doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, 'agentColors');
                 const snap = await getDoc(docRef);
                 if (snap.exists()) {
-                    setAgentColors(snap.data());
+                    const dbColors = snap.data();
+                    setAgentColors(dbColors);
+                    localStorage.setItem(`cello_colors_${appId}`, JSON.stringify(dbColors)); // Sync cache
                 }
             } catch(e) { console.error("Failed to load custom colors", e); }
         };
         loadColors();
     }, [db, appId, user]);
 
-    const handleColorChange = async (agentName, newColor) => {
+    // 🚀 FIXED: UI updates instantly and caches locally to survive Firebase permission blocks
+    const handleColorChange = (agentName, newColor) => {
         if (!canAssignFleet) return; 
         const updatedColors = { ...agentColors, [agentName]: newColor };
-        setAgentColors(updatedColors);
+        setAgentColors(updatedColors); 
+        localStorage.setItem(`cello_colors_${appId}`, JSON.stringify(updatedColors)); 
+    };
+
+    // 🚀 FIXED: Only fires ONCE when the user closes the color picker
+    const saveColorToDB = async (agentName, newColor) => {
+        if (!canAssignFleet) return;
         try {
             const userId = user?.uid || user?.id;
             const docRef = doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, 'agentColors');
-            await setDoc(docRef, updatedColors, { merge: true });
-        } catch(e) { console.error("Failed to save color", e); }
+            await setDoc(docRef, { [agentName]: newColor }, { merge: true });
+        } catch(e) { console.error("Failed to sync color to DB", e); }
     };
 
     useEffect(() => {
@@ -690,6 +703,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                             type="color" 
                                             value={color} 
                                             onChange={(e) => handleColorChange(a, e.target.value)} 
+                                            onBlur={(e) => saveColorToDB(a, e.target.value)}
                                             className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
                                         />
                                     </div>
