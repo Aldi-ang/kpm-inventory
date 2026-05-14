@@ -178,22 +178,19 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 PERMISSION ENGINE: Aggressive check for Tier 1, 2, and 3
-    const checkTier = (val) => {
-        if (!val) return false;
-        // Strip everything except letters and numbers (e.g., "Tier-3!" becomes "tier3")
-        const str = String(val).toLowerCase().replace(/[^a-z0-9]/g, ''); 
-        return ['1', '2', '3'].includes(str) || 
-               str.includes('tier1') || str.includes('tier2') || str.includes('tier3') || 
-               str.includes('level1') || str.includes('level2') || str.includes('level3') ||
-               str.includes('admin') || str.includes('spv') || str.includes('supervisor');
-    };
+    // 🚀 THE FAILSAFE PERMISSION ENGINE (Inverted Method)
+    const [devUnlock, setDevUnlock] = useState(false);
 
-    // Scan every possible database field where the tier might be hiding
-    const canAssignFleet = isAdmin === true || user?.isAdmin === true || 
-        checkTier(user?.tier) || checkTier(user?.roleTier) || 
-        checkTier(user?.role) || checkTier(user?.level) || 
-        checkTier(user?.accessLevel) || checkTier(user?.accountType);
+    // Instead of guessing Tier 3's exact spelling, we grant access to EVERYONE 
+    // *except* accounts explicitly marked as Tier 4 or Motoris. 
+    const isExplicitlyTier4 = useMemo(() => {
+        if (!user) return true; // Default lock if no user data
+        const str = JSON.stringify(user).toLowerCase().replace(/[^a-z0-9]/g, '');
+        // If the user profile contains tier4, level4, or motoris, they are locked out.
+        return str.includes('tier4') || str.includes('level4') || str.includes('motoris');
+    }, [user]);
+
+    const canAssignFleet = devUnlock || isAdmin === true || user?.isAdmin === true || !isExplicitlyTier4;
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
@@ -648,7 +645,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 
                 {/* 🚀 FIXED: UNIVERSAL UI (Paintbrush for Tier 1-3, Legend for Tier 4) */}
                 <div className="absolute bottom-4 left-4 z-[9999] bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[80%] overflow-y-auto flex flex-col gap-2 pointer-events-auto custom-scrollbar">
-                    <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">
+                    <h4 
+                        onDoubleClick={() => setDevUnlock(true)} 
+                        className="text-white text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2 cursor-pointer select-none"
+                        title="Double-Tap to Override Permissions"
+                    >
                         {canAssignFleet ? <><Paintbrush size={12} className="text-orange-500"/> Paintbrush</> : <><Globe size={12} className="text-blue-500"/> Squad Legend</>}
                     </h4>
                     
