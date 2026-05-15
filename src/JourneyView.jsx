@@ -62,20 +62,33 @@ const LocationController = ({ userLocation, setUserLocation }) => {
     const watchId = useRef(null);
 
     const handleLocateClick = () => {
+        // 1. If we already have the location, just fly there instantly.
         if (userLocation) {
             map.flyTo(userLocation, 16, { duration: 1.2 });
-        }
-        if (!watchId.current) {
-            watchId.current = navigator.geolocation.watchPosition(
+        } 
+        // 2. If we don't have it yet, fetch it once, fly there, then start the background watcher.
+        else if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     setUserLocation(coords);
-                    if (!userLocation) map.flyTo(coords, 16, { duration: 1.2 });
+                    map.flyTo(coords, 16, { duration: 1.2 });
                 },
                 (err) => {
                     console.error(err);
                     alert("Please enable location permissions in your device settings.");
                 },
+                { enableHighAccuracy: true }
+            );
+        }
+
+        // 3. 🚀 FIXED: Start silent background tracking. It ONLY updates the dot, NEVER forces the camera.
+        if (!watchId.current && "geolocation" in navigator) {
+            watchId.current = navigator.geolocation.watchPosition(
+                (pos) => {
+                    setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                },
+                (err) => console.error(err),
                 { enableHighAccuracy: true, maximumAge: 5000 }
             );
         }
@@ -1163,6 +1176,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                 .leaflet-tooltip.custom-leaflet-tooltip::before, .leaflet-tooltip.custom-leaflet-tooltip::after { display: none !important; }
                 .region-watermark-label { background: transparent !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; }
                 .region-watermark-label::before, .region-watermark-label::after { display: none !important; }
+                /* 🚀 FIXED: Bumps the Zoom Control down so it doesn't overlap the Hamburger Menu */
+                .leaflet-top.leaflet-left { margin-top: 70px !important; }
             `}</style>
         </div>
     );
