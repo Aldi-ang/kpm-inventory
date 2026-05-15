@@ -587,15 +587,25 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            // 🚀 FIXED: Official Google Maps deep-link URL format
+            // 🚀 FIXED: The TRUE Google Maps URL
             window.open(`https://maps.google.com/?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
     };
 
+    // 🚀 FIXED: Lock background scrolling when map is Fullscreen
+    useEffect(() => {
+        if (isFullScreen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [isFullScreen]);
+
     return (
-        <div className="space-y-6 animate-fade-in relative font-mono">
+        <div className={`space-y-6 font-mono ${isFullScreen ? 'static z-[9999]' : 'animate-fade-in relative'}`}>
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
             <div className="bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
@@ -658,7 +668,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             </div>
 
             {/* 🚀 JOURNEY MAP RADAR */}
-            <div className={`${isFullScreen ? 'fixed inset-0 z-[5000] rounded-none' : 'w-full h-[400px] lg:h-[500px] rounded-2xl'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl relative transition-all duration-300`}>
+            <div 
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-[400px] lg:h-[500px] rounded-2xl'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
+                style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
+            >
                 
                 {/* 🚀 COLLAPSIBLE UNIVERSAL UI (Paintbrush/Legend) */}
                 <div className="absolute bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-none">
