@@ -85,10 +85,16 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
-    if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
-    if (geometry.type === 'MultiPolygon') {
-        for (let poly of geometry.coordinates) { if (isPointInPolygon(point, poly[0])) return true; }
-    }
+    // 🚀 FIXED: Added try-catch and deep array checking to prevent malformed map borders from crashing the app!
+    try {
+        if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
+        if (geometry.type === 'MultiPolygon') {
+            for (let poly of geometry.coordinates) { 
+                const ring = Array.isArray(poly[0][0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
+                if (isPointInPolygon(point, ring)) return true; 
+            }
+        }
+    } catch(e) { console.warn("Geofence parse error caught safely", e); }
     return false;
 };
 
@@ -1271,8 +1277,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const userId = user?.uid || user?.id || "default";
 
-    // 🚀 FIXED: Initialize Tiers early so filter maps correctly!
-    const activeTiers = useMemo(() => tierSettings || [
+    // 🚀 FIXED: Bulletproof Array validation. If Firebase passes {} instead of [], it won't crash the .map functions!
+    const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
         { id: 'Retail', label: 'Retail', color: '#38bdf8', iconType: 'emoji', value: '🏪' },
         { id: 'Grosir', label: 'Grosir', color: '#f59e0b', iconType: 'emoji', value: '🏢' },
         { id: 'Ecer', label: 'Ecer', color: '#ef4444', iconType: 'emoji', value: '🚶' },
@@ -1433,12 +1439,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     }
                     const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
 
-                    // 🚀 FIXED: The Tier Normalizer. Forces corrupted/misspelled tiers into valid ones so they don't vanish!
-                    let rawTier = c.tier || c.priceTier || 'Retail';
-                    let safeTier = activeTiers.find(t => t.id.toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
-                    if (!safeTier) safeTier = activeTiers[0]?.id || 'Retail';
+                    // 🚀 FIXED: Indestructible String validation and fully decoupled Performance vs Pricing tiers!
+                    let rawTier = c.tier || 'Retail';
+                    let safePerfTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
+                    if (!safePerfTier) safePerfTier = activeTiers[0]?.id || 'Retail';
 
-                    return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safeTier, priceTier: safeTier };
+                    let rawPrice = c.priceTier || 'Retail';
+                    let safePriceTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawPrice).toLowerCase().trim())?.id || 'Retail';
+
+                    return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };
                 })
                 .filter(c => c !== null);
 
