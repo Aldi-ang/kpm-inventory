@@ -1215,23 +1215,29 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
                     isConquered = daysSinceVisit <= 30;
                 } else {
-                    diffDays = -1; 
-                    daysSinceVisit = 999;
-                    isConquered = false;
-                }
-                const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
+                        diffDays = -1; 
+                        daysSinceVisit = 999;
+                        isConquered = false;
+                    }
+                    const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
 
-                return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last };
-            })
-            .filter(c => c !== null);
+                    // 🚀 FIXED: The Tier Normalizer. Forces corrupted/misspelled tiers into valid ones so they don't vanish!
+                    let rawTier = c.tier || c.priceTier || 'Retail';
+                    let safeTier = activeTiers.find(t => t.id.toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
+                    if (!safeTier) safeTier = activeTiers[0]?.id || 'Retail';
 
-        const filtered = validStores.filter(c => {
-            if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
-            if (selectedCity !== "All" && c.city !== selectedCity) return false;
-            if (!filterTier.includes(c.tier || c.priceTier || 'Retail')) return false;
-            return true;
-        });
+                    return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safeTier, priceTier: safeTier };
+                })
+                .filter(c => c !== null);
 
+            const filtered = validStores.filter(c => {
+                if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
+                if (selectedCity !== "All" && c.city !== selectedCity) return false;
+                // Now safely checks against normalized tier, preventing ghosting!
+                if (!filterTier.includes(c.tier)) return false; 
+                return true;
+            });
+            
         const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
