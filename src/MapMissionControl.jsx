@@ -15,6 +15,11 @@ import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
 try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
@@ -148,25 +153,39 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-const LocationController = ({ userLocation, setUserLocation }) => {
+const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
     const map = useMap();
     const watchId = useRef(null);
+    const isEditingRef = useRef(isEditing);
+
+    useEffect(() => {
+        isEditingRef.current = isEditing;
+    }, [isEditing]);
 
     const handleLocateClick = () => {
         if (userLocation) {
             map.flyTo(userLocation, 16, { duration: 1.2 });
-        }
-        if (!watchId.current) {
-            watchId.current = navigator.geolocation.watchPosition(
+        } else if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     setUserLocation(coords);
-                    if (!userLocation) map.flyTo(coords, 16, { duration: 1.2 });
+                    map.flyTo(coords, 16, { duration: 1.2 });
                 },
-                (err) => {
-                    console.error(err);
-                    alert("Please enable location permissions in your iPhone Settings.");
+                (err) => console.error(err),
+                { enableHighAccuracy: true }
+            );
+        }
+
+        if (!watchId.current && "geolocation" in navigator) {
+            watchId.current = navigator.geolocation.watchPosition(
+                (pos) => {
+                    // 🚀 FIXED: Silent tracking engine. NEVER forces a flyTo loop crash!
+                    if (!isEditingRef.current) {
+                        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                    }
                 },
+                (err) => console.error(err),
                 { enableHighAccuracy: true, maximumAge: 5000 }
             );
         }
@@ -1082,11 +1101,12 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 </div>
                                                 <div className="space-y-1">
                                                     {(Array.isArray(tx.items) ? tx.items : []).map((item, i) => (
-                                                        <div key={i} className="flex justify-between text-[10px]">
-                                                            <span className="text-slate-300 truncate pr-2">- {item?.name || 'Item'}</span>
-                                                            <span className="text-orange-400 font-bold shrink-0">{item?.qty || 0} {item?.unit || 'Bks'}</span>
-                                                        </div>
-                                                    ))}
+                                                    <div key={i} className="flex justify-between text-[10px]">
+                                                        {/* 🚀 FIXED: Aggressive String/Number casting so React never crashes on malformed Firebase objects */}
+                                                        <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
+                                                        <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
+                                                    </div>
+                                                ))}
                                                 </div>
                                             </div>
                                         )
@@ -1700,7 +1720,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <div className="grid grid-cols-2 gap-1 mt-1">
                             {activeTiers.map(tier => (
                                 <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 rounded-lg text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
-                                    {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{tier.value}</span>}{tier.label}
+                                    {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{String(tier.value || '')}</span>}{String(tier.label || '')}
                                 </button>
                             ))}
                         </div>
@@ -1804,7 +1824,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
+                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
                 {userLocation && (
                     <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
                 )}
