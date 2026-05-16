@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -57,16 +57,20 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-const LocationController = ({ userLocation, setUserLocation }) => {
+const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
     const map = useMap();
     const watchId = useRef(null);
+    const isEditingRef = useRef(isEditing);
+
+    // Keep the ref updated without causing re-renders in the watcher
+    useEffect(() => {
+        isEditingRef.current = isEditing;
+    }, [isEditing]);
 
     const handleLocateClick = () => {
-        // 1. If we already have the location, just fly there instantly.
         if (userLocation) {
             map.flyTo(userLocation, 16, { duration: 1.2 });
         } 
-        // 2. If we don't have it yet, fetch it once, fly there, then start the background watcher.
         else if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
@@ -82,11 +86,13 @@ const LocationController = ({ userLocation, setUserLocation }) => {
             );
         }
 
-        // 3. 🚀 FIXED: Start silent background tracking. It ONLY updates the dot, NEVER forces the camera.
         if (!watchId.current && "geolocation" in navigator) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
-                    setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                    // 🚀 FIXED: Pause GPS state updates while dragging to prevent map re-rendering and snapping!
+                    if (!isEditingRef.current) {
+                        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                    }
                 },
                 (err) => console.error(err),
                 { enableHighAccuracy: true, maximumAge: 5000 }
@@ -109,6 +115,16 @@ const LocationController = ({ userLocation, setUserLocation }) => {
             </button>
         </div>
     );
+};
+
+// 🚀 NEW: Click-to-Place Map Editor
+const MapEditController = ({ isEditing, onMapClick }) => {
+    useMapEvents({
+        click(e) {
+            if (isEditing) onMapClick(e.latlng);
+        }
+    });
+    return null;
 };
 
 const isPointInPolygon = (point, polygon) => {
@@ -796,7 +812,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 px-4 py-3 rounded-2xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col md:flex-row items-center gap-3 md:gap-6 pointer-events-auto animate-fade-in-up w-[90%] md:w-auto">
                         <div className="flex flex-col text-center md:text-left">
                             <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center md:justify-start gap-1"><MapPin size={12}/> Editing Pin Location</span>
-                            <span className="text-white text-xs font-bold mt-0.5">Drag the pin to exact spot, then save.</span>
+                            <span className="text-white text-xs font-bold mt-0.5">Drag the pin or tap the map to relocate, then save.</span>
                         </div>
                         <div className="flex gap-2 w-full md:w-auto">
                             <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-700 transition-colors">Cancel</button>
@@ -852,7 +868,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} />
+                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
+                    <MapEditController isEditing={!!editingStoreId} onMapClick={(latlng) => setTempPinLocation({ lat: latlng.lat, lng: latlng.lng })} />
+                    
                     {userLocation && (
                         <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
                     )}
