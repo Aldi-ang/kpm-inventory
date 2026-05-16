@@ -223,40 +223,41 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isPanelOpen, setIsPanelOpen] = useState(false); // Default closed to save mobile space
 
-    // 🚀 NEW: GPS Correction Engine for Tier 1, 2, 3
-    const handleUpdateGpsPin = async (customer) => {
+    // 🚀 NEW: Drag & Drop GPS Pin Editor
+    const [editingStoreId, setEditingStoreId] = useState(null);
+    const [tempPinLocation, setTempPinLocation] = useState(null);
+
+    const handleStartEditPin = (store) => {
         if (!canAssignFleet) return;
-        if (!window.confirm(`Update GPS Pin for ${customer.name} to your current standing location?`)) return;
-        
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                async (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-                    try {
-                        const userId = user?.uid || user?.id || 'default';
-                        const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, customer.id);
-                        await updateDoc(customerRef, {
-                            latitude: lat,
-                            longitude: lon,
-                            updatedAt: serverTimestamp()
-                        });
-                        if (logAudit) logAudit("GPS_PIN_UPDATED", `Updated GPS for ${customer.name} to ${lat}, ${lon}`);
-                        if (triggerCapy) triggerCapy("📍 Target Coordinates Updated!");
-                    } catch (error) {
-                        console.error("Failed to update GPS:", error);
-                        alert("Database error: Could not save new GPS coordinates.");
-                    }
-                },
-                (err) => {
-                    console.error("GPS Error:", err);
-                    alert("Could not read your phone's GPS. Please check location permissions.");
-                },
-                { enableHighAccuracy: true }
-            );
-        } else {
-            alert("Geolocation is not supported by your browser.");
+        setEditingStoreId(store.id);
+        setTempPinLocation({ lat: store.latitude, lng: store.longitude });
+        setActivePopupId(null); // Close popup
+    };
+
+    const handleConfirmPin = async () => {
+        if (!tempPinLocation || !editingStoreId) return;
+        try {
+            const userId = user?.uid || user?.id || 'default';
+            const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
+            await updateDoc(customerRef, {
+                latitude: tempPinLocation.lat,
+                longitude: tempPinLocation.lng,
+                updatedAt: serverTimestamp()
+            });
+            if (logAudit) logAudit("GPS_PIN_DRAGGED", `Manually dragged GPS pin to ${tempPinLocation.lat}, ${tempPinLocation.lng}`);
+            if (triggerCapy) triggerCapy("📍 Target Coordinates Secured!");
+            
+            setEditingStoreId(null);
+            setTempPinLocation(null);
+        } catch (error) {
+            console.error("Failed to update GPS:", error);
+            alert("Database error: Could not save new GPS coordinates.");
         }
+    };
+
+    const handleCancelPin = () => {
+        setEditingStoreId(null);
+        setTempPinLocation(null);
     };
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
@@ -790,6 +791,20 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     )}
                 </div>
 
+                {/* 🚀 DRAG PIN EDITING OVERLAY */}
+                {editingStoreId && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 px-4 py-3 rounded-2xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col md:flex-row items-center gap-3 md:gap-6 pointer-events-auto animate-fade-in-up w-[90%] md:w-auto">
+                        <div className="flex flex-col text-center md:text-left">
+                            <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center md:justify-start gap-1"><MapPin size={12}/> Editing Pin Location</span>
+                            <span className="text-white text-xs font-bold mt-0.5">Drag the pin to exact spot, then save.</span>
+                        </div>
+                        <div className="flex gap-2 w-full md:w-auto">
+                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-700 transition-colors">Cancel</button>
+                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all active:scale-95"><Save size={14}/> Save</button>
+                        </div>
+                    </div>
+                )}
+
                 {/* 🚀 TOP RIGHT MAP CONTROLS */}
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     {/* FULLSCREEN TOGGLE */}
@@ -876,39 +891,55 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
                         const statusBadge = getBountyStatus(store);
                         
+                        const isEditing = editingStoreId === store.id;
+
                         let ringColor;
                         if (isVisited) ringColor = '#10b981'; 
                         else if (metric.agentName === 'Unassigned') ringColor = '#94a3b8'; 
                         else ringColor = metric.color; 
                         
+                        // Override ring color to bright orange if editing
+                        const finalRingColor = isEditing ? '#f97316' : ringColor;
+                        const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
+                        
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
                             html: `
-                                <div style="background-color: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 0 10px ${ringColor}80; transition: transform 0.2s;">
-                                    ${iconHtml}
+                                <div style="background-color: #1e293b; width: ${isEditing ? '34px' : '28px'}; height: ${isEditing ? '34px' : '28px'}; border-radius: 50%; border: 2px solid ${finalRingColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${isEditing ? '25px' : '10px'} ${finalRingColor}${isEditing ? 'ff' : '80'}; transition: all 0.2s;">
+                                    ${isEditing ? '🖐️' : iconHtml}
                                 </div>
                             `,
-                            iconSize: [28, 28],
-                            iconAnchor: [14, 14]
+                            iconSize: [isEditing ? 34 : 28, isEditing ? 34 : 28],
+                            iconAnchor: [isEditing ? 17 : 14, isEditing ? 17 : 14]
                         });
 
                         return (
                             <Marker 
                                 key={store.id} 
-                                position={[store.latitude, store.longitude]} 
+                                position={markerPos} 
                                 icon={customIcon}
+                                draggable={isEditing}
+                                zIndexOffset={isEditing ? 9999 : 0}
                                 eventHandlers={{
                                     click: (e) => {
-                                        setActivePopupId(store.id); // 🚀 NEW: Tracks open popup to hide tooltip
+                                        if (isEditing) return; // Disable clicks while dragging
+                                        setActivePopupId(store.id); 
                                         if (canAssignFleet && activeBrush) {
                                             handleAssignAgent(store.id, activeBrush);
                                             e.originalEvent.stopPropagation();
                                         }
+                                    },
+                                    dragend: (e) => {
+                                        if (isEditing) {
+                                            const marker = e.target;
+                                            const pos = marker.getLatLng();
+                                            setTempPinLocation({ lat: pos.lat, lng: pos.lng });
+                                        }
                                     }
                                 }}
                             >
-                                {/* 🚀 FIXED: Tooltip hides when Popup is open */}
-                                {activePopupId !== store.id && (
+                                {/* 🚀 FIXED: Tooltip hides when Popup or Editing is open */}
+                                {activePopupId !== store.id && !isEditing && (
                                     <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                         <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
                                             <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
@@ -963,14 +994,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     )}
                                                 </div>
 
-                                                {/* 🚀 NEW: Live GPS Correction Tool for Commanders */}
+                                                {/* 🚀 NEW: Drag & Drop Relocation Tool for Commanders */}
                                                 {canAssignFleet && (
                                                     <button 
-                                                        onClick={() => handleUpdateGpsPin(store)}
-                                                        className="w-full bg-slate-800 hover:bg-emerald-900/40 text-slate-400 hover:text-emerald-400 border border-slate-600 hover:border-emerald-500 p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95"
+                                                        onClick={() => handleStartEditPin(store)}
+                                                        className="w-full bg-slate-800 hover:bg-orange-900/40 text-slate-400 hover:text-orange-400 border border-slate-600 hover:border-orange-500 p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-inner"
                                                     >
-                                                        <LocateFixed size={14} />
-                                                        <span className="text-[9px] font-black uppercase tracking-widest">Update Pin to My GPS</span>
+                                                        <MapPin size={14} />
+                                                        <span className="text-[9px] font-black uppercase tracking-widest">Adjust Pin Location</span>
                                                     </button>
                                                 )}
 
