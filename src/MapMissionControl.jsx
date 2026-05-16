@@ -1140,7 +1140,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - evalDays);
         
-        const recentTrans = (transactions || []).filter(t => t.type === 'SALE' && new Date(t.date || (t.timestamp?.seconds * 1000)) >= cutoffDate);
+        // 🚀 FIXED: Safe Array Cast for Transactions
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+        const recentTrans = safeTrans.filter(t => t.type === 'SALE' && new Date(t.date || (t.timestamp?.seconds * 1000)) >= cutoffDate);
         const revMap = {};
         recentTrans.forEach(t => {
             const cust = t.customerName || t.customer;
@@ -1403,20 +1405,26 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
-        const validStores = (customers || [])
-            .filter(c => c) // 🚀 FIXED: Removed strict filter to prevent vanishing stores
+        
+        // 🚀 FIXED: Indestructible Array Casting. If Firebase passes an Object {}, it won't crash the .filter()
+        const safeCustomers = Array.isArray(customers) ? customers : [];
+
+        const validStores = safeCustomers
+            .filter(c => c)
             .map(c => {
                 let lat = parseFloat(c.latitude); 
                 let lng = parseFloat(c.longitude);
                 
-                // 🚀 DATA RECOVERY ENGINE: If coords are corrupted (NaN, 0, or missing), restore them to a fallback so they appear and can be dragged!
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
                     lat = -7.5845; // Default Muntilan Center
                     lng = 110.2895;
                 }
 
-                let reg = c.region || "Uncategorized"; let cit = c.city || "Uncategorized";
-                const addr = (c.address || "").toLowerCase();
+                // 🚀 FIXED: Indestructible String Casting. If a number (like a Zip Code) is saved in the City or Address field, it won't crash the .toLowerCase() function!
+                let reg = String(c.region || "Uncategorized"); 
+                let cit = String(c.city || "Uncategorized");
+                const addr = String(c.address || "").toLowerCase();
+                
                 if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
                 if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
 
@@ -1484,8 +1492,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // 🚀 FIXED: Armor-plated transactions array
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+
         mapPoints.forEach(store => {
-            storeRevs[store.name] = (transactions || [])
+            storeRevs[store.name] = safeTrans
                 .filter(t => {
                     if (t.customerName !== store.name || t.type !== 'SALE') return false;
                     if (timeFilter === 'All-Time') return true;
