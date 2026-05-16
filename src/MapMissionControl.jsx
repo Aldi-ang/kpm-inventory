@@ -844,16 +844,31 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) { console.error(error); }
     };
 
-    // 🚀 NEW: Direct Map Tier Editor
+    // 🚀 FIXED: Direct Map Tier Editor (Performance Tier Only)
     const handleSaveTier = async (newTier) => {
         if (!db || !appId || !user || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
-                tier: newTier,
-                priceTier: newTier
+                tier: newTier
+                // We DO NOT touch priceTier here, keeping pricing and performance completely separate!
             }); 
         } catch (error) { console.error(error); }
+    };
+
+    // 🚀 NEW: Store Deletion Engine for Testing
+    const handleDeleteStore = async () => {
+        if (!window.confirm(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
+        if (!db || !appId || !user || !store?.id) return;
+        try {
+            const userId = user?.uid || user?.id;
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id));
+            alert(`✅ ${store.name} has been eradicated from the database.`);
+            setSelectedStore(null);
+        } catch (error) {
+            console.error("Delete Error:", error);
+            alert("Failed to delete store.");
+        }
     };
 
     const getWhatsappLink = () => { 
@@ -969,16 +984,22 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 {isAdmin && (
                     <>
-                        {/* 🚀 NEW: Tier Editor UI */}
-                        <div className="mb-4 p-4 rounded-xl border border-slate-700 bg-slate-800/80 flex items-center justify-between shadow-inner">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Tag size={12} className="text-blue-400"/> Pricing & Class Tier</label>
-                            <select 
-                                value={store.tier || store.priceTier || 'Retail'} 
-                                onChange={(e) => handleSaveTier(e.target.value)} 
-                                className="bg-slate-900 border border-slate-600 rounded p-1.5 text-[10px] uppercase tracking-widest text-white outline-none focus:border-blue-500 font-bold cursor-pointer"
-                            >
-                                {activeTiers?.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                            </select>
+                        {/* 🚀 FIXED: Tier Editor & Delete Store UI */}
+                        <div className="flex gap-2 mb-4">
+                            <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
+                                <select 
+                                    value={store.tier || store.priceTier || 'Retail'} 
+                                    onChange={(e) => handleSaveTier(e.target.value)} 
+                                    className="bg-slate-900 border border-slate-600 rounded p-1.5 text-[10px] uppercase tracking-widest text-white outline-none focus:border-emerald-500 font-bold cursor-pointer w-full"
+                                >
+                                    {activeTiers?.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                                </select>
+                            </div>
+                            <button onClick={handleDeleteStore} className="flex-[0.5] bg-slate-800 hover:bg-red-900/60 text-slate-500 hover:text-red-400 rounded-xl border border-slate-700 hover:border-red-500 transition-colors flex flex-col items-center justify-center shadow-inner active:scale-95">
+                                <Trash2 size={16} className="mb-1"/>
+                                <span className="text-[9px] font-black uppercase tracking-widest">Delete</span>
+                            </button>
                         </div>
 
                         <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
@@ -1080,7 +1101,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 // 🚀 NEW: AUTO-TIER EVALUATION ENGINE
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
     const [thresholds, setThresholds] = useState({});
-    const [evalDays, setEvalDays] = useState(30);
+    const [evalDays, setEvalDays] = useState(90); // 🚀 FIXED: Default to 3 months (90 Days) of buying power
     const [simResults, setSimResults] = useState(null);
     const [isApplying, setIsApplying] = useState(false);
     const userId = user?.uid || user?.id || 'default';
@@ -1156,7 +1177,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         try {
             let ops = 0;
             for (let action of simResults.actions) {
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new, priceTier: action.new });
+                // 🚀 FIXED: Only updates the Performance 'tier', absolutely ignores 'priceTier' so pricing contracts stay perfectly intact!
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new });
                 ops++;
             }
             if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores based on ${evalDays} day performance.`);
