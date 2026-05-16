@@ -397,8 +397,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const validateNoo = () => {
-        if (!nooForm.phone || !nooForm.address || !nooForm.photoUrl) {
-            alert("All fields (Phone, Address, Photo) are required to register a new outlet!");
+        // 🚀 FIXED: Removed the slow manual address typing requirement!
+        if (!nooForm.phone || !nooForm.photoUrl) {
+            alert("Phone number and Photo are required to register a new outlet! GPS will be automatically locked.");
             return false;
         }
         const duplicateName = customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim());
@@ -450,7 +451,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 id: newRef.id,
                 name: customerName.toUpperCase().trim(),
                 phone: nooForm.phone,
-                address: nooForm.address,
+                address: "GPS Locked via NOO Form",
                 tier: nooForm.requestedTier,
                 priceTier: nooForm.requestedTier,
                 storeType: 'Retailer',
@@ -458,7 +459,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 longitude: agentLocation?.longitude,
                 status: 'Active',
                 visitFreq: 7,
-                photoData: nooForm.photoUrl,
+                storeImage: nooForm.photoUrl, // 🚀 FIXED: Saved as storeImage to sync with the Map System!
                 createdAt: new Date().toISOString()
             });
             
@@ -756,12 +757,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                     
                     <div className="mb-4">
-                        <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Live Delivery Proof <span className="text-red-500">*</span></label>
-                        <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
+                        <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-red-500">*</span></label>
+                        {/* 🚀 FIXED: Removed forced camera capture so users can pick from gallery if needed */}
+                        <input type="file" accept="image/*" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
-                            <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)]">
-                                <img src={txProofPhoto} alt="Proof" className="w-full h-24 object-cover opacity-80" />
+                            <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
+                                {/* 🚀 FIXED: object-contain prevents the image from getting chopped off on mobile! */}
+                                <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
@@ -861,11 +864,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Address <span className="text-red-500">*</span></label>
-                                <textarea value={nooForm.address} onChange={e => setNooForm({...nooForm, address: e.target.value})} placeholder="Include RT/RW and Landmarks..." className="w-full bg-slate-800 border border-slate-600 focus:border-orange-500 outline-none text-white p-3 rounded font-bold min-h-[80px]" />
-                            </div>
-
-                            <div>
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
                                 <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
@@ -873,18 +871,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Live Camera Proof <span className="text-red-500">*</span></label>
-                                <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
+                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
-                                    <div className="relative rounded-lg overflow-hidden border-2 border-orange-500">
-                                        <img src={nooForm.photoUrl} alt="Store Proof" className="w-full h-40 object-cover" />
+                                    <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
+                                        <img src={nooForm.photoUrl} alt="Store Proof" className="w-full h-48 object-contain" />
                                         <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
                                     <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-slate-600 hover:border-orange-500 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
-                                        <span className="text-xs font-bold uppercase tracking-widest">Take Storefront Photo</span>
-                                        <span className="text-[9px] opacity-60">(Gallery Uploads Disabled)</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest">Select or Capture Photo</span>
+                                        <span className="text-[9px] opacity-60">(Camera & Gallery Supported)</span>
                                     </button>
                                 )}
                             </div>
