@@ -24,7 +24,8 @@ L.Icon.Default.mergeOptions({
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
-    const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[2] || {};
+    // 🚀 FIXED: Safeguards against undefined arrays if your system has fewer than 3 pricing tiers!
+    const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
     let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     
     const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-8px; right:-8px; background:gold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">👑</div>` : '';
@@ -1100,9 +1101,9 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                     <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
                                                 </div>
                                                 <div className="space-y-1">
-                                                    {(Array.isArray(tx.items) ? tx.items : []).map((item, i) => (
+                                                    {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => (
                                                     <div key={i} className="flex justify-between text-[10px]">
-                                                        {/* 🚀 FIXED: Aggressive String/Number casting so React never crashes on malformed Firebase objects */}
+                                                        {/* 🚀 FIXED: Universal Array/Object parsing prevents crash while ensuring Firebase items ALWAYS render */}
                                                         <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
                                                         <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
                                                     </div>
@@ -1312,12 +1313,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
     
-    // 🚀 FIXED: Dynamic filter initialization ensures everything shows
     const [filterTier, setFilterTier] = useState(() => activeTiers.map(t => t.id)); 
     
+    // 🚀 FIXED: Stringified dependency prevents "Maximum update depth exceeded" infinite loop WSOD!
+    const tierIdsString = activeTiers.map(t => t.id).join(',');
     useEffect(() => {
         setFilterTier(activeTiers.map(t => t.id));
-    }, [activeTiers]);
+    }, [tierIdsString]);
 
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [editingStoreId, setEditingStoreId] = useState(null); 
