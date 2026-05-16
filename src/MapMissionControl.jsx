@@ -10,10 +10,11 @@ import {
 } from 'lucide-react';
 
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'; // 🚀 FIXED: Added missing Leaflet CSS to prevent dimensional Map math crashes!
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
-delete L.Icon.Default.prototype._getIconUrl;
+try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
 
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
@@ -274,7 +275,8 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                        {store.name}
+                        {/* 🚀 FIXED: Guaranteed String Cast to prevent "Object as React Child" WSOD crashes! */}
+                        {String(store.name || 'Unknown')}
                     </div>
                 </LeafletTooltip>
             )}
@@ -1410,25 +1412,29 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const safeCustomers = Array.isArray(customers) ? customers : [];
 
         const validStores = safeCustomers
-            .filter(c => c)
-            .map(c => {
-                let lat = parseFloat(c.latitude); 
-                let lng = parseFloat(c.longitude);
-                
-                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
-                    lat = -7.5845; // Default Muntilan Center
-                    lng = 110.2895;
-                }
+                .filter(c => c && typeof c === 'object')
+                .map(c => {
+                    let lat = parseFloat(c.latitude); 
+                    let lng = parseFloat(c.longitude);
+                    
+                    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
+                        lat = -7.5845; // Default Muntilan Center
+                        lng = 110.2895;
+                    }
 
-                // 🚀 FIXED: Indestructible String Casting. If a number (like a Zip Code) is saved in the City or Address field, it won't crash the .toLowerCase() function!
-                let reg = String(c.region || "Uncategorized"); 
-                let cit = String(c.city || "Uncategorized");
-                const addr = String(c.address || "").toLowerCase();
-                
-                if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
-                if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
+                    // 🚀 FIXED: Absolute String Casting for ALL text fields to completely eliminate random UI crashes
+                    let safeName = typeof c.name === 'string' ? c.name : String(c.name || 'Unknown Store');
+                    let safePhone = typeof c.phone === 'string' ? c.phone : String(c.phone || '');
+                    let safeStoreType = typeof c.storeType === 'string' ? c.storeType : String(c.storeType || 'Retailer');
+                    
+                    let reg = String(c.region || "Uncategorized"); 
+                    let cit = String(c.city || "Uncategorized");
+                    const addr = String(c.address || "").toLowerCase();
+                    
+                    if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
+                    if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
 
-                const last = c.lastVisit ? new Date(c.lastVisit) : null;
+                    const last = c.lastVisit ? new Date(c.lastVisit) : null;
                 const freq = parseInt(c.visitFreq) || 7;
                 let diffDays = 0;
                 let daysSinceVisit = 0;
@@ -1455,7 +1461,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     let rawPrice = c.priceTier || 'Retail';
                     let safePriceTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawPrice).toLowerCase().trim())?.id || 'Retail';
 
-                    return { ...c, city: cit, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };
+                    // 🚀 FIXED: Re-inject the safe string fields into the store object so they never crash the UI
+                    return { ...c, name: safeName, phone: safePhone, storeType: safeStoreType, address: addr, city: cit, region: reg, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };
                 })
                 .filter(c => c !== null);
 
