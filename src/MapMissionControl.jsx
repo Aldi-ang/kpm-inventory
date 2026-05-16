@@ -1186,10 +1186,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         const validStores = (customers || [])
-            .filter(c => c && c.latitude && c.longitude)
+            .filter(c => c) // 🚀 FIXED: Removed strict filter to prevent vanishing stores
             .map(c => {
-                const lat = parseFloat(c.latitude); const lng = parseFloat(c.longitude);
-                if (isNaN(lat) || isNaN(lng)) return null;
+                let lat = parseFloat(c.latitude); 
+                let lng = parseFloat(c.longitude);
+                
+                // 🚀 DATA RECOVERY ENGINE: If coords are corrupted (NaN, 0, or missing), restore them to a fallback so they appear and can be dragged!
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
+                    lat = -7.5845; // Default Muntilan Center
+                    lng = 110.2895;
+                }
 
                 let reg = c.region || "Uncategorized"; let cit = c.city || "Uncategorized";
                 const addr = (c.address || "").toLowerCase();

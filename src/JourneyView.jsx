@@ -905,7 +905,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                     )}
 
                     {orderedRoute.map((store) => {
-                        if (!store || typeof store.latitude !== 'number' || typeof store.longitude !== 'number' || isNaN(store.latitude)) return null;
+                        if (!store) return null;
+                        
+                        // 🚀 DATA RECOVERY ENGINE: Auto-recover corrupted coordinates
+                        let lat = parseFloat(store.latitude);
+                        let lng = parseFloat(store.longitude);
+                        if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !store.latitude) {
+                            lat = -7.5845; // Default Muntilan Center
+                            lng = 110.2895;
+                        }
                         
                         const isVisited = store.lastVisit === todayDate;
                         const iconHtml = isVisited ? '✅' : '📍';
@@ -923,7 +931,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         
                         // Override ring color to bright orange if editing
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
-                        const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
+                        // 🚀 FIXED: Feeds the safe recovered coordinates (lat, lng) to the marker instead of raw store data
+                        const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [lat, lng];
                         
                         const customIcon = L.divIcon({
                             className: 'bg-transparent border-none',
