@@ -1343,8 +1343,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
         
-        const zoomLvl = window.innerWidth < 1024 ? 17 : 15;
-        map.flyTo([store.latitude, store.longitude], zoomLvl, { duration: 1.2 }); 
+        // 🚀 FIXED: Smart Zoom Engine. It zooms in if you are far, but maintains your zoom if you are already close!
+        const minZoom = window.innerWidth < 1024 ? 17 : 15;
+        const targetZoom = Math.max(map.getZoom(), minZoom);
+        
+        map.flyTo([store.latitude, store.longitude], targetZoom, { duration: 1.2 }); 
     };
 
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
