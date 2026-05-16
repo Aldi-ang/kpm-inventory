@@ -1322,43 +1322,50 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
-            {/* 🚀 TARGETING HUD */}
+            {/* 🚀 TARGETING HUD (COMPACT FOR MOBILE) */}
             {(isAddingMode || editingStoreId) && dragPinCoords && (
-                <div className="absolute top-[80px] left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-3 items-center w-full max-w-[320px] pointer-events-auto">
-                    <div className="bg-orange-600/95 backdrop-blur text-white px-6 py-2.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_10px_30px_rgba(249,115,22,0.5)] border-2 border-orange-400 text-center flex items-center justify-center gap-2 w-full">
-                        <MapPin size={16} className="animate-bounce" /> {editingStoreId ? "Drag to correct location" : "Drag pin to exact location"}
+                <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-2 items-center w-max min-w-[220px] pointer-events-auto bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.5)] animate-fade-in-up">
+                    <div className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1">
+                        <MapPin size={12} className="animate-bounce" /> {editingStoreId ? "Correct Location" : "Drop New Pin"}
                     </div>
+                    <span className="text-slate-300 text-[9px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                     
-                    <button 
-                        onClick={async () => {
-                            if (editingStoreId) {
-                                try {
-                                    const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
-                                    await updateDoc(storeRef, { latitude: dragPinCoords.lat, longitude: dragPinCoords.lng });
-                                    alert("✅ Location Corrected!");
-                                    setEditingStoreId(null);
+                    <div className="flex gap-2 w-full mt-1">
+                        <button 
+                            onClick={() => { setIsAddingMode(false); setEditingStoreId(null); setDragPinCoords(null); }}
+                            className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                // 🚀 FIXED: Robust Array/Object parser to fix cross-map vanishing bugs
+                                const finalLat = Number(parseFloat(dragPinCoords.lat ?? dragPinCoords[0]).toFixed(7));
+                                const finalLng = Number(parseFloat(dragPinCoords.lng ?? dragPinCoords[1]).toFixed(7));
+
+                                if (editingStoreId) {
+                                    try {
+                                        const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
+                                        await updateDoc(storeRef, { latitude: finalLat, longitude: finalLng });
+                                        alert("✅ Location Corrected!");
+                                        setEditingStoreId(null);
+                                        setDragPinCoords(null);
+                                        if (logAudit) logAudit("STORE_EDITED_MAP", `Corrected pin for store ID: ${editingStoreId}`);
+                                    } catch(e) {
+                                        alert("Failed to update location: " + e.message);
+                                    }
+                                } else {
+                                    setPendingNewStore({ lat: finalLat, lng: finalLng });
+                                    setIsAddingMode(false);
                                     setDragPinCoords(null);
-                                    if (logAudit) logAudit("STORE_EDITED_MAP", `Corrected pin for store ID: ${editingStoreId}`);
-                                } catch(e) {
-                                    alert("Failed to update location: " + e.message);
+                                    setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
                                 }
-                            } else {
-                                setPendingNewStore(dragPinCoords);
-                                setIsAddingMode(false);
-                                setDragPinCoords(null);
-                                setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
-                            }
-                        }}
-                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm shadow-[0_10px_30px_rgba(16,185,129,0.4)] border-2 border-emerald-300 transition-transform active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <CheckCircle size={20} /> {editingStoreId ? "Save New Location" : "Confirm Location"}
-                    </button>
-                    <button 
-                        onClick={() => { setIsAddingMode(false); setEditingStoreId(null); setDragPinCoords(null); }}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg border-2 border-slate-600 transition-colors"
-                    >
-                        Cancel
-                    </button>
+                            }}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
+                        >
+                            <CheckCircle size={12} /> {editingStoreId ? "Save" : "Confirm"}
+                        </button>
+                    </div>
                 </div>
             )}
 

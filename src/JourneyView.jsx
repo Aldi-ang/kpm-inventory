@@ -256,9 +256,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
             const userId = user?.uid || user?.id || 'default';
             const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
             
-            // 🚀 FIXED: Explicitly cast to Numbers and trim to safe decimal places to prevent MapMissionControl crashes
-            const finalLat = Number(parseFloat(tempPinLocation.lat).toFixed(7));
-            const finalLng = Number(parseFloat(tempPinLocation.lng).toFixed(7));
+            // 🚀 FIXED: Robust Array/Object parser to fix cross-map vanishing bugs
+            const finalLat = Number(parseFloat(tempPinLocation.lat ?? tempPinLocation[0]).toFixed(7));
+            const finalLng = Number(parseFloat(tempPinLocation.lng ?? tempPinLocation[1]).toFixed(7));
 
             await updateDoc(customerRef, {
                 latitude: finalLat,
@@ -814,14 +814,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                 {/* 🚀 DRAG PIN EDITING OVERLAY (COMPACT) */}
                 {editingStoreId && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max max-w-[260px]">
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
                         <div className="flex flex-col text-center">
                             <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
                             <span className="text-slate-300 text-[9px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                         </div>
                         <div className="flex gap-2 w-full">
-                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors">Cancel</button>
-                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95"><Save size={12}/> Save</button>
+                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4">Cancel</button>
+                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"><Save size={12}/> Save</button>
                         </div>
                     </div>
                 )}
