@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock, CheckCircle
+    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -1077,6 +1077,173 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     );
 };
 
+// 🚀 NEW: AUTO-TIER EVALUATION ENGINE
+const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
+    const [thresholds, setThresholds] = useState({});
+    const [evalDays, setEvalDays] = useState(30);
+    const [simResults, setSimResults] = useState(null);
+    const [isApplying, setIsApplying] = useState(false);
+    const userId = user?.uid || user?.id || 'default';
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierAutomation'));
+                if (snap.exists() && snap.data().thresholds) {
+                    setThresholds(snap.data().thresholds);
+                    if (snap.data().evalDays) setEvalDays(snap.data().evalDays);
+                } else {
+                    const defaults = {};
+                    activeTiers.forEach((t, i) => defaults[t.id] = (activeTiers.length - i - 1) * 5000000);
+                    setThresholds(defaults);
+                }
+            } catch(e) {}
+        };
+        loadSettings();
+    }, [db, appId, userId, activeTiers]);
+
+    const handleSaveThresholds = async () => {
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierAutomation'), { thresholds, evalDays });
+            alert("Settings Saved Successfully!");
+        } catch(e) { alert("Failed to save."); }
+    };
+
+    const runSimulation = () => {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - evalDays);
+        
+        const recentTrans = (transactions || []).filter(t => t.type === 'SALE' && new Date(t.date || (t.timestamp?.seconds * 1000)) >= cutoffDate);
+        const revMap = {};
+        recentTrans.forEach(t => {
+            const cust = t.customerName || t.customer;
+            if (!revMap[cust]) revMap[cust] = 0;
+            revMap[cust] += (t.total || 0);
+        });
+
+        const sortedTiers = [...activeTiers].sort((a,b) => (thresholds[b.id] || 0) - (thresholds[a.id] || 0));
+        const defaultTier = sortedTiers[sortedTiers.length - 1]?.id || 'Retail';
+
+        const results = { promotions: [], demotions: [], steady: 0, actions: [] };
+
+        mapPoints.forEach(store => {
+            const storeRev = revMap[store.name] || 0;
+            let targetTier = defaultTier;
+            for (let t of sortedTiers) {
+                if (storeRev >= (thresholds[t.id] || 0)) { targetTier = t.id; break; }
+            }
+
+            const currentTier = store.tier || store.priceTier || defaultTier;
+            const targetIdx = activeTiers.findIndex(t => t.id === targetTier);
+            const currentIdx = activeTiers.findIndex(t => t.id === currentTier);
+
+            if (targetTier !== currentTier) {
+                const isPromo = targetIdx < currentIdx; // Lower index = higher tier
+                const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: targetTier, rev: storeRev };
+                if (isPromo) { results.promotions.push(changeObj); results.actions.push(changeObj); }
+                else { results.demotions.push(changeObj); results.actions.push(changeObj); }
+            } else {
+                results.steady++;
+            }
+        });
+        setSimResults(results);
+    };
+
+    const applyChanges = async () => {
+        if (!simResults || simResults.actions.length === 0) return;
+        if (!window.confirm(`Are you sure you want to alter the tiers of ${simResults.actions.length} stores?`)) return;
+        setIsApplying(true);
+        try {
+            let ops = 0;
+            for (let action of simResults.actions) {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new, priceTier: action.new });
+                ops++;
+            }
+            if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores based on ${evalDays} day performance.`);
+            if (triggerCapy) triggerCapy(`Commander! ${ops} store tiers have been restructured! 📈`);
+            alert(`✅ Success! ${ops} stores updated.`);
+            setSimResults(null);
+            onClose();
+        } catch(e) { alert("Error applying changes."); }
+        setIsApplying(false);
+    };
+
+    return (
+        <div className="absolute inset-0 z-[3000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 font-mono">
+            <div className="bg-slate-900 border-2 border-emerald-500 rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] animate-fade-in-up">
+                <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center shrink-0">
+                    <div>
+                        <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Tier Automation Engine</h2>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Define conditions to automatically promote/demote stores</p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={24}/></button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                    <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl">
+                        <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-3"><Calendar size={14} className="text-blue-400"/> Evaluation Period</label>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold text-slate-400 uppercase">Review sales over the last</span>
+                            <input type="number" value={evalDays} onChange={e => setEvalDays(Number(e.target.value))} className="w-20 bg-slate-900 border border-slate-600 rounded p-2 text-white font-black text-center outline-none focus:border-emerald-500"/>
+                            <span className="text-sm font-bold text-slate-400 uppercase">Days</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2"><DollarSign size={14} className="text-emerald-400"/> Minimum Revenue Thresholds</label>
+                            <button onClick={handleSaveThresholds} className="text-[10px] bg-emerald-900/50 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold px-3 py-1.5 rounded border border-emerald-700 transition-colors">Save Settings</button>
+                        </div>
+                        {activeTiers.map(tier => (
+                            <div key={tier.id} className="flex justify-between items-center bg-slate-800/50 border border-slate-700 p-3 rounded-xl">
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{backgroundColor: tier.color}}></div><span className="font-bold text-white uppercase">{tier.label}</span></div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500 font-bold">Rp</span>
+                                    <input type="number" value={thresholds[tier.id] || 0} onChange={e => setThresholds({...thresholds, [tier.id]: Number(e.target.value)})} className="w-32 bg-slate-900 border border-slate-600 text-right p-1.5 rounded text-emerald-400 font-bold outline-none focus:border-emerald-500"/>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {simResults ? (
+                        <div className="bg-black/50 border-2 border-orange-500 rounded-xl p-4 animate-fade-in">
+                            <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Simulation Results</h3>
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                                <div className="bg-slate-800 p-3 rounded-lg border border-emerald-500/30 text-center"><span className="block text-2xl font-black text-emerald-400">{simResults.promotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Promotions</span></div>
+                                <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Demotions</span></div>
+                                <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 text-center"><span className="block text-2xl font-black text-slate-300">{simResults.steady}</span><span className="text-[9px] uppercase font-bold text-slate-500">Unchanged</span></div>
+                            </div>
+                            <div className="max-h-32 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
+                                {simResults.actions.map((act, i) => (
+                                    <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
+                                        <span className="font-bold text-white truncate w-1/3">{act.name}</span>
+                                        <span className="text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                        <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
+                                            <span className="text-slate-500">{act.old}</span>
+                                            {act.old !== act.new && (activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>)}
+                                            <span className={activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setSimResults(null)} className="flex-1 bg-slate-800 text-slate-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-slate-700 transition-colors">Discard</button>
+                                <button onClick={applyChanges} disabled={isApplying} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-transform active:scale-95 disabled:opacity-50">
+                                    {isApplying ? 'EXECUTING...' : 'EXECUTE RESTRUCTURE'}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <Activity size={18}/> Simulate Auto-Tiering
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN WRAPPER (APP IN APP) ---
 const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
 
@@ -1109,8 +1276,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showBorders, setShowBorders] = useState(false); 
     const [showImporter, setShowImporter] = useState(false);
 
-    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
-    const [showTacticalDash, setShowTacticalDash] = useState(false);
+    const [showTierEngine, setShowTierEngine] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
     const [selectedCity, setSelectedCity] = useState("All");
@@ -1493,9 +1659,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                     <div className="grid grid-cols-1 gap-2 w-full mt-2">
                         {isAdmin && (
-                            <button onClick={() => setShowImporter(!showImporter)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
-                                Map Boundaries Setup <Download size={16}/>
-                            </button>
+                            <>
+                                <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
+                                    Tier Automation Engine <Settings size={16}/>
+                                </button>
+                                <button onClick={() => setShowImporter(!showImporter)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
+                                    Map Boundaries Setup <Download size={16}/>
+                                </button>
+                            </>
                         )}
                         
                         <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
@@ -1560,7 +1731,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 />
             )}
 
-            {showImporter && <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />}
+            {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />}
 
             <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />

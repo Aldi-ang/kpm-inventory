@@ -103,7 +103,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     
     // THE NOO MODAL STATE
     const [showNooModal, setShowNooModal] = useState(false);
-    const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
+    
+    // 🚀 FIXED: NOO now defaults to the lowest tier (last in the array) instead of highest
+    const defaultNooTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
+    const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
 
     const dropdownRef = useRef(null);
@@ -469,7 +472,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
             setShowNooModal(false);
             setCustomerName("");
-            setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
+            setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
             setGpsStatus('idle');
             setAgentLocation(null);
         } catch (e) {
@@ -517,7 +520,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             setTxProofPhoto(null); 
             setIsReturMode(false); 
             setManualOverride(false); 
-            setNooForm({ phone: '', address: '', requestedTier: allowedTiers[0] || 'Retail', photoUrl: null });
+            setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
             setMerchantMood("deal"); 
             setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
