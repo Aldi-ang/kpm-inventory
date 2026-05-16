@@ -211,6 +211,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     const [activeBrush, setActiveBrush] = useState(null);
+    const [activePopupId, setActivePopupId] = useState(null); // 🚀 NEW: Tracks which popup is open to hide tooltips
+
     // 🚀 FIXED: Instantly load cached colors to prevent flickering
     const [agentColors, setAgentColors] = useState(() => {
         const cached = localStorage.getItem(`cello_colors_${appId}`);
@@ -220,6 +222,42 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     // 🚀 NEW MOBILE UI STATES
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [isPanelOpen, setIsPanelOpen] = useState(false); // Default closed to save mobile space
+
+    // 🚀 NEW: GPS Correction Engine for Tier 1, 2, 3
+    const handleUpdateGpsPin = async (customer) => {
+        if (!canAssignFleet) return;
+        if (!window.confirm(`Update GPS Pin for ${customer.name} to your current standing location?`)) return;
+        
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    try {
+                        const userId = user?.uid || user?.id || 'default';
+                        const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, customer.id);
+                        await updateDoc(customerRef, {
+                            latitude: lat,
+                            longitude: lon,
+                            updatedAt: serverTimestamp()
+                        });
+                        if (logAudit) logAudit("GPS_PIN_UPDATED", `Updated GPS for ${customer.name} to ${lat}, ${lon}`);
+                        if (triggerCapy) triggerCapy("📍 Target Coordinates Updated!");
+                    } catch (error) {
+                        console.error("Failed to update GPS:", error);
+                        alert("Database error: Could not save new GPS coordinates.");
+                    }
+                },
+                (err) => {
+                    console.error("GPS Error:", err);
+                    alert("Could not read your phone's GPS. Please check location permissions.");
+                },
+                { enableHighAccuracy: true }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    };
 
     const [recenterTrigger, setRecenterTrigger] = useState(0);
     const [saveHomeTrigger, setSaveHomeTrigger] = useState(0);
@@ -861,6 +899,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                 icon={customIcon}
                                 eventHandlers={{
                                     click: (e) => {
+                                        setActivePopupId(store.id); // 🚀 NEW: Tracks open popup to hide tooltip
                                         if (canAssignFleet && activeBrush) {
                                             handleAssignAgent(store.id, activeBrush);
                                             e.originalEvent.stopPropagation();
@@ -868,14 +907,22 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     }
                                 }}
                             >
-                                <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
-                                    <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                                        <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
-                                    </div>
-                                </LeafletTooltip>
+                                {/* 🚀 FIXED: Tooltip hides when Popup is open */}
+                                {activePopupId !== store.id && (
+                                    <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
+                                        <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
+                                            <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
+                                        </div>
+                                    </LeafletTooltip>
+                                )}
 
                                 {(!canAssignFleet || !activeBrush) && (
-                                    <Popup closeButton={false} className="custom-popup" style={{ margin: '-13px' }}>
+                                    <Popup 
+                                        closeButton={false} 
+                                        className="custom-popup" 
+                                        style={{ margin: '-13px' }}
+                                        onClose={() => setActivePopupId(null)} // 🚀 NEW: Restores tooltip when closed
+                                    >
                                         <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
                                             <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
                                                 <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
@@ -892,19 +939,40 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                             </div>
                                             
                                             <div className="space-y-3">
-                                                <div>
-                                                    <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={10}/> Global Position:</label>
-                                                    <select
-                                                        className="w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border border-slate-700 text-white focus:border-orange-500 transition-colors cursor-pointer"
-                                                        value={globalIdx}
-                                                        onChange={(e) => jumpToSequence(globalIdx, Number(e.target.value))}
-                                                        style={{ colorScheme: 'dark' }}
-                                                    >
-                                                        {orderedRoute.map((_, i) => (
-                                                            <option key={i} value={i} className="bg-slate-900 text-white">Global Stop #{i + 1}</option>
-                                                        ))}
-                                                    </select>
+                                                {/* 🚀 FIXED: Replaced Global Position with Real Info & Actions */}
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center">
+                                                        <span className="block text-[8px] text-slate-500 uppercase font-black mb-0.5">Tier Type</span>
+                                                        <span className="text-[10px] text-orange-400 font-bold uppercase">{store.priceTier || store.tier || 'RETAIL'}</span>
+                                                    </div>
+                                                    {store.phone ? (
+                                                        <a 
+                                                            href={`https://wa.me/${store.phone.replace(/\D/g, '')}`} 
+                                                            target="_blank" 
+                                                            rel="noreferrer"
+                                                            className="flex-1 bg-[#25D366]/10 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-[#25D366] p-2 rounded flex flex-col items-center justify-center transition-colors shadow-inner"
+                                                        >
+                                                            <MessageSquare size={12} className="mb-0.5"/>
+                                                            <span className="text-[8px] font-black uppercase tracking-widest">WhatsApp</span>
+                                                        </a>
+                                                    ) : (
+                                                        <div className="flex-1 bg-slate-800 border border-slate-700 text-slate-500 p-2 rounded flex flex-col items-center justify-center">
+                                                            <Phone size={12} className="mb-0.5"/>
+                                                            <span className="text-[8px] font-black uppercase tracking-widest">No Phone</span>
+                                                        </div>
+                                                    )}
                                                 </div>
+
+                                                {/* 🚀 NEW: Live GPS Correction Tool for Commanders */}
+                                                {canAssignFleet && (
+                                                    <button 
+                                                        onClick={() => handleUpdateGpsPin(store)}
+                                                        className="w-full bg-slate-800 hover:bg-emerald-900/40 text-slate-400 hover:text-emerald-400 border border-slate-600 hover:border-emerald-500 p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95"
+                                                    >
+                                                        <LocateFixed size={14} />
+                                                        <span className="text-[9px] font-black uppercase tracking-widest">Update Pin to My GPS</span>
+                                                    </button>
+                                                )}
 
                                                 <div>
                                                     <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
