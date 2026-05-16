@@ -667,7 +667,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps }) => {
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -844,6 +844,18 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) { console.error(error); }
     };
 
+    // 🚀 NEW: Direct Map Tier Editor
+    const handleSaveTier = async (newTier) => {
+        if (!db || !appId || !user || !store?.id) return;
+        try { 
+            const userId = user?.uid || user?.id;
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
+                tier: newTier,
+                priceTier: newTier
+            }); 
+        } catch (error) { console.error(error); }
+    };
+
     const getWhatsappLink = () => { 
         if (!store?.phone) return "#"; 
         return `https://wa.me/${String(store.phone).replace(/\D/g, '').replace(/^0/, '62')}`; 
@@ -957,6 +969,18 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 {isAdmin && (
                     <>
+                        {/* 🚀 NEW: Tier Editor UI */}
+                        <div className="mb-4 p-4 rounded-xl border border-slate-700 bg-slate-800/80 flex items-center justify-between shadow-inner">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Tag size={12} className="text-blue-400"/> Pricing & Class Tier</label>
+                            <select 
+                                value={store.tier || store.priceTier || 'Retail'} 
+                                onChange={(e) => handleSaveTier(e.target.value)} 
+                                className="bg-slate-900 border border-slate-600 rounded p-1.5 text-[10px] uppercase tracking-widest text-white outline-none focus:border-blue-500 font-bold cursor-pointer"
+                            >
+                                {activeTiers?.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                            </select>
+                        </div>
+
                         <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
@@ -1237,7 +1261,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 if (!filterTier.includes(c.tier)) return false; 
                 return true;
             });
-            
+
         const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
         return { mapPoints: filtered, locationTree: treeArray };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
@@ -1637,6 +1661,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
                     setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
+                    activeTiers={activeTiers}
                 />
             )}
             
