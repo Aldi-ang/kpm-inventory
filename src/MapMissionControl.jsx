@@ -1330,6 +1330,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showBorders, setShowBorders] = useState(false); 
     const [showImporter, setShowImporter] = useState(false);
 
+    // 🚀 FIXED: Restored the missing Dashboard state variables that were accidentally deleted!
+    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+    const [showTacticalDash, setShowTacticalDash] = useState(false);
+    
     const [showTierEngine, setShowTierEngine] = useState(false);
 
     const [selectedRegion, setSelectedRegion] = useState("All"); 
