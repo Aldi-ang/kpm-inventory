@@ -513,16 +513,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
                     const rules = rulesSnap.data().rules;
+                    let earnedTier = null; 
                     
-                    // 🚀 FIXED: The Ultimate Trap Killer. We permanently remove the lowest tier from the target search 
-                    // so its hidden 10 Million default target can NEVER block a Mythic promotion!
-                    const lowestTierId = allowedTiers[allowedTiers.length - 1];
-                    let earnedTier = lowestTierId; 
-                    
-                    const cleanRules = Object.entries(rules).filter(([id, r]) => id !== lowestTierId);
-
-                    // 1. Sort rules from highest target to lowest
-                    const sortedRules = cleanRules.sort((a, b) => {
+                    // 🚀 FIXED: Total simplification! Sort ALL rules and evaluate them unconditionally.
+                    const sortedRules = Object.entries(rules).sort((a, b) => {
                         const targetA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
                         const targetB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
                         return targetB - targetA;
@@ -535,7 +529,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                        if (target <= 0) continue; 
+                        
+                        // 🚀 FIXED: We no longer skip 0! If Bronze is set to 0, it acts as the perfect safety net. 
 
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();

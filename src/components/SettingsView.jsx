@@ -383,9 +383,7 @@ export default function SettingsView({
 
               <div className="space-y-3">
                   {tierSettings.map((tier, idx) => {
-                      // Skip the very last/lowest tier because everyone defaults there
-                      if (idx === tierSettings.length - 1) return null; 
-                      
+                      // 🚀 FIXED: Unhidden! You can now explicitly see and set the lowest tier (e.g. Bronze) to 0.
                       const rule = tierRules[tier.id] || defaultLogic;
                       const isOmset = rule.type === 'omset';
 

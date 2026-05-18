@@ -1148,26 +1148,25 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     }, [db, appId, userId]);
 
     const runSimulation = () => {
-        // 🚀 FIXED: Trap Killer injected here too to mirror MerchantSalesView
-        const lowestTierId = activeTiers[activeTiers.length - 1]?.id || 'Retail';
-        const cleanRules = Object.entries(rules).filter(([id, r]) => id !== lowestTierId);
-
-        const sortedRules = cleanRules.sort((a, b) => {
+        // 🚀 FIXED: Total simplification to match MerchantSalesView.
+        const sortedRules = Object.entries(rules).sort((a, b) => {
             const tA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
             const tB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
             return tB - tA;
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [] };
+        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
         mapPoints.forEach(store => {
-            let earnedTier = lowestTierId;
+            let earnedTier = fallbackTier;
             let earnedRev = 0;
 
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
                 const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                if (target <= 0) continue;
+                
+                // 🚀 FIXED: Allow checking against 0 target tiers
 
                 const timeframeDays = parseInt(rule.timeframe || 90);
                 const cutoff = new Date();
