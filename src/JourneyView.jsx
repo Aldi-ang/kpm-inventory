@@ -1101,7 +1101,8 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
 
                             {!isCollapsed && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
-                                    {sectorStores.map((customer) => {
+
+                                   {sectorStores.map((customer) => {
                                         const isVisited = customer.lastVisit === todayDate;
                                         const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
                                         // 🚀 FIXED: Split the labels so Price Tier doesn't permanently hide the Performance Rank!

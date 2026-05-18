@@ -526,7 +526,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                        if (target <= 0) continue; // Ignore blank tiers
+                        if (target <= 0) continue; // 🚀 FIXED: Ignore hidden default Bronze rules so they don't block Mythic!
 
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
@@ -553,7 +553,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                                 if (tTime >= cutoff.getTime()) {
-                                    if (rule.type === 'omset') metricTotal += (Number(t.total) || 0);
+                                    if (rule.type === 'omset') {
+                                        // 🚀 FIXED: Aggressively strip dots/commas from Rupiah just in case
+                                        const cleanTotal = Number(String(t.total).replace(/[^0-9-]/g, ''));
+                                        metricTotal += cleanTotal;
+                                    }
                                     else if (rule.type === 'volume') {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                         itemsList.forEach(item => {
@@ -592,7 +596,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-                    // 3. Failsafe Direct DB Assignment (Bypasses Stale React Memory)
+                    // 3. 🚀 FIXED: Failsafe Direct DB Assignment (Bypasses Stale React Memory!)
                     if (earnedTier) {
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
