@@ -506,7 +506,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Evaluates Omset/Volume instantly on checkout!
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Absolute Evaluation (History-Based)
             try {
                 const userId = user?.uid || user?.id || 'default';
                 const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
@@ -514,32 +514,40 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
                     const rules = rulesSnap.data().rules;
                     let earnedTier = null;
-                    let earnedTarget = 0;
 
-                    // 🚀 FIXED: Dynamic array sorting ensures we always evaluate highest targets first, completely ignoring the allowedTiers array order!
+                    // 1. Sort rules from highest target to lowest
                     const sortedRules = Object.entries(rules).sort((a, b) => {
                         const targetA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
                         const targetB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
                         return targetB - targetA;
                     });
 
+                    // 2. Evaluate each rule based on its specific timeframe setting
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
 
+                        const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
-                        cutoff.setDate(cutoff.getDate() - parseInt(rule.timeframe || 90));
+                        cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
-                        // 1. Calculate History
-                        transactions.forEach(t => {
+                        // Add past history within the timeframe
+                        const safeTrans = Array.isArray(transactions) ? transactions : [];
+                        safeTrans.forEach(t => {
                             if (((t.customerName || t.customer || '').toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
-                                // 🚀 FIXED: Bulletproof Date Parsing for Indonesian Locales (e.g. "18 Mei 2026")
+                                
+                                // 🚀 FIXED: Indonesian Date Translator
                                 let tTime = 0;
-                                if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-                                else if (typeof t.timestamp === 'string') tTime = new Date(t.timestamp).getTime();
-                                else if (t.createdAt) tTime = new Date(t.createdAt).getTime();
-                                else if (typeof t.date === 'string' && t.date.includes('T')) tTime = new Date(t.date).getTime();
-                                else tTime = new Date().getTime(); // Fallback assumes recent if completely unparseable to protect salesman data!
+                                if (t.timestamp?.seconds) {
+                                    tTime = t.timestamp.seconds * 1000;
+                                } else if (t.date && typeof t.date === 'string') {
+                                    let dStr = t.date.toLowerCase()
+                                        .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
+                                        .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
+                                        .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
+                                    tTime = new Date(dStr).getTime();
+                                }
+                                if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (rule.type === 'omset') metricTotal += (Number(t.total) || 0);
@@ -561,7 +569,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             }
                         });
 
-                        // 2. Add Current Live Sale
+                        // Add current live sale that was just processed
                         if (rule.type === 'omset') metricTotal += finalTotal;
                         else if (rule.type === 'volume') {
                             finalCart.forEach(item => {
@@ -577,7 +585,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
-                        // 3. Evaluate Target
+                        // Check if their absolute total meets this tier's target
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
                         if (target > 0 && metricTotal >= target) {
                             earnedTier = tierId;
@@ -585,26 +593,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-                    // 4. Upgrade Customer Automatically (🚀 PROMOTIONS ONLY)
+                    // 3. Absolute Assignment (Judge purely based on history)
                     const targetCustomer = customers.find(c => c.name.toLowerCase() === finalCust.toLowerCase());
                     if (targetCustomer && earnedTier && targetCustomer.tier !== earnedTier) {
-                        
-                        // 🚀 FIXED: The "Hidden Default Target" Trap!
-                        // Instead of comparing Rupiah targets (which fails because the lowest tier initializes with 10M by default), 
-                        // we compare their absolute Rank Index. 0 = Highest (Mythic), 3 = Lowest (Bronze).
-                        
-                        const currentTierId = targetCustomer.tier || allowedTiers[allowedTiers.length - 1];
-                        
-                        const earnedIdx = allowedTiers.findIndex(t => String(t).toLowerCase() === String(earnedTier).toLowerCase());
-                        const currentIdx = allowedTiers.findIndex(t => String(t).toLowerCase() === String(currentTierId).toLowerCase());
-                        
-                        const safeCurrentIdx = currentIdx === -1 ? allowedTiers.length : currentIdx;
-
-                        // Only upgrade if the earned rank is HIGHER (which means a LOWER index number)
-                        if (earnedIdx !== -1 && earnedIdx < safeCurrentIdx) {
-                            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
-                            if (triggerCapy) triggerCapy(`Level Up! ${finalCust} just earned Performance Tier: ${earnedTier} 🚀`);
-                        }
+                        await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
+                        if (triggerCapy) triggerCapy(`Performance Evaluated! ${finalCust} earned tier: ${earnedTier} 🚀`);
                     }
                 }
             } catch (e) {
