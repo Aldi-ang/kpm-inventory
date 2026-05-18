@@ -1129,8 +1129,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
 // 🚀 NEW: AUTO-TIER EVALUATION ENGINE
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
-    const [thresholds, setThresholds] = useState({});
-    const [evalDays, setEvalDays] = useState(90); // 🚀 FIXED: Default to 3 months (90 Days) of buying power
+    const [rules, setRules] = useState({});
     const [simResults, setSimResults] = useState(null);
     const [isApplying, setIsApplying] = useState(false);
     const userId = user?.uid || user?.id || 'default';
@@ -1138,69 +1137,92 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierAutomation'));
-                if (snap.exists() && snap.data().thresholds) {
-                    setThresholds(snap.data().thresholds);
-                    if (snap.data().evalDays) setEvalDays(snap.data().evalDays);
-                } else {
-                    const defaults = {};
-                    activeTiers.forEach((t, i) => defaults[t.id] = (activeTiers.length - i - 1) * 5000000);
-                    setThresholds(defaults);
+                // 🚀 FIXED: Now properly links to 'tierRules' configured in Global Settings!
+                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                if (snap.exists() && snap.data().rules) {
+                    setRules(snap.data().rules);
                 }
             } catch(e) {}
         };
         loadSettings();
-    }, [db, appId, userId, activeTiers]);
-
-    const handleSaveThresholds = async () => {
-        try {
-            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierAutomation'), { thresholds, evalDays });
-            alert("Settings Saved Successfully!");
-        } catch(e) { alert("Failed to save."); }
-    };
+    }, [db, appId, userId]);
 
     const runSimulation = () => {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - evalDays);
-        
-        // 🚀 FIXED: Bulletproof Date Parsing for Indonesian Locales in the Admin Simulator!
-        const safeTrans = Array.isArray(transactions) ? transactions : [];
-        const recentTrans = safeTrans.filter(t => {
-            if (t.type !== 'SALE') return false;
-            let tTime = 0;
-            if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-            else if (typeof t.timestamp === 'string') tTime = new Date(t.timestamp).getTime();
-            else if (t.createdAt) tTime = new Date(t.createdAt).getTime();
-            else if (typeof t.date === 'string' && t.date.includes('T')) tTime = new Date(t.date).getTime();
-            else tTime = new Date().getTime(); 
-            return tTime >= cutoffDate.getTime();
-        });
-        const revMap = {};
-        recentTrans.forEach(t => {
-            const cust = t.customerName || t.customer;
-            if (!revMap[cust]) revMap[cust] = 0;
-            revMap[cust] += (t.total || 0);
-        });
+        // 🚀 FIXED: Trap Killer injected here too to mirror MerchantSalesView
+        const lowestTierId = activeTiers[activeTiers.length - 1]?.id || 'Retail';
+        const cleanRules = Object.entries(rules).filter(([id, r]) => id !== lowestTierId);
 
-        const sortedTiers = [...activeTiers].sort((a,b) => (thresholds[b.id] || 0) - (thresholds[a.id] || 0));
-        const defaultTier = sortedTiers[sortedTiers.length - 1]?.id || 'Retail';
+        const sortedRules = cleanRules.sort((a, b) => {
+            const tA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
+            const tB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
+            return tB - tA;
+        });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [] };
 
         mapPoints.forEach(store => {
-            const storeRev = revMap[store.name] || 0;
-            let targetTier = defaultTier;
-            for (let t of sortedTiers) {
-                if (storeRev >= (thresholds[t.id] || 0)) { targetTier = t.id; break; }
+            let earnedTier = lowestTierId;
+            let earnedRev = 0;
+
+            for (let [tierId, rule] of sortedRules) {
+                if (!rule) continue;
+                const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                if (target <= 0) continue;
+
+                const timeframeDays = parseInt(rule.timeframe || 90);
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - timeframeDays);
+                let metricTotal = 0;
+
+                const safeTrans = Array.isArray(transactions) ? transactions : [];
+                safeTrans.forEach(t => {
+                    if (((t.customerName || t.customer || '').trim().toLowerCase() === store.name.toLowerCase()) && t.type === 'SALE') {
+                        let tTime = 0;
+                        if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+                        else if (t.date && typeof t.date === 'string') {
+                            let dStr = t.date.toLowerCase()
+                                .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
+                                .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
+                                .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
+                                .replace(/\./g, ':');
+                            tTime = new Date(dStr).getTime();
+                        }
+                        if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
+
+                        if (tTime >= cutoff.getTime()) {
+                            if (rule.type === 'omset') {
+                                metricTotal += Number(String(t.total).replace(/[^0-9-]/g, ''));
+                            } else if (rule.type === 'volume') {
+                                const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                                itemsList.forEach(item => {
+                                    let qtyInBks = Number(item.qty) || 0;
+                                    if (item.unit === 'Slop') qtyInBks *= 10;
+                                    if (item.unit === 'Bal') qtyInBks *= 200;
+                                    if (item.unit === 'Karton') qtyInBks *= 800;
+                                    if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
+                                    if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
+                                    if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
+                                    if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                                });
+                            }
+                        }
+                    }
+                });
+
+                if (metricTotal >= target) {
+                    earnedTier = tierId;
+                    earnedRev = metricTotal;
+                    break;
+                }
             }
 
-            const currentTier = store.tier || store.priceTier || defaultTier;
-            const targetIdx = activeTiers.findIndex(t => t.id === targetTier);
-            const currentIdx = activeTiers.findIndex(t => t.id === currentTier);
+            const currentTier = store.tier || store.priceTier || lowestTierId;
+            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+            const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
-            if (targetTier !== currentTier) {
-                const isPromo = targetIdx < currentIdx; // Lower index = higher tier
-                const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: targetTier, rev: storeRev };
+            if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
+                const isPromo = targetIdx !== -1 && currentIdx !== -1 && targetIdx < currentIdx; 
+                const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: earnedRev };
                 if (isPromo) { results.promotions.push(changeObj); results.actions.push(changeObj); }
                 else { results.demotions.push(changeObj); results.actions.push(changeObj); }
             } else {
@@ -1217,11 +1239,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         try {
             let ops = 0;
             for (let action of simResults.actions) {
-                // 🚀 FIXED: Only updates the Performance 'tier', absolutely ignores 'priceTier' so pricing contracts stay perfectly intact!
                 await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new });
                 ops++;
             }
-            if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores based on ${evalDays} day performance.`);
+            if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores.`);
             if (triggerCapy) triggerCapy(`Commander! ${ops} store tiers have been restructured! 📈`);
             alert(`✅ Success! ${ops} stores updated.`);
             setSimResults(null);
@@ -1236,35 +1257,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center shrink-0">
                     <div>
                         <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Tier Automation Engine</h2>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Define conditions to automatically promote/demote stores</p>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Review Performance Based on Global Rules</p>
                     </div>
                     <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={24}/></button>
                 </div>
                 
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
-                    <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl">
-                        <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-3"><Calendar size={14} className="text-blue-400"/> Evaluation Period</label>
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm font-bold text-slate-400 uppercase">Review sales over the last</span>
-                            <input type="number" value={evalDays} onChange={e => setEvalDays(Number(e.target.value))} className="w-20 bg-slate-900 border border-slate-600 rounded p-2 text-white font-black text-center outline-none focus:border-emerald-500"/>
-                            <span className="text-sm font-bold text-slate-400 uppercase">Days</span>
+                    <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-1"><Globe size={14} className="text-blue-400"/> Synced to Global Logic</label>
+                            <p className="text-[10px] text-slate-500">Targets and timeframes are automatically managed in the Global Settings panel.</p>
                         </div>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2"><DollarSign size={14} className="text-emerald-400"/> Minimum Revenue Thresholds</label>
-                            <button onClick={handleSaveThresholds} className="text-[10px] bg-emerald-900/50 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold px-3 py-1.5 rounded border border-emerald-700 transition-colors">Save Settings</button>
-                        </div>
-                        {activeTiers.map(tier => (
-                            <div key={tier.id} className="flex justify-between items-center bg-slate-800/50 border border-slate-700 p-3 rounded-xl">
-                                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{backgroundColor: tier.color}}></div><span className="font-bold text-white uppercase">{tier.label}</span></div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-500 font-bold">Rp</span>
-                                    <input type="number" value={thresholds[tier.id] || 0} onChange={e => setThresholds({...thresholds, [tier.id]: Number(e.target.value)})} className="w-32 bg-slate-900 border border-slate-600 text-right p-1.5 rounded text-emerald-400 font-bold outline-none focus:border-emerald-500"/>
-                                </div>
-                            </div>
-                        ))}
                     </div>
 
                     {simResults ? (
@@ -1297,7 +1300,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         </div>
                     ) : (
                         <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
-                            <Activity size={18}/> Simulate Auto-Tiering
+                            <Activity size={18}/> Run Simulation Scan
                         </button>
                     )}
                 </div>

@@ -513,20 +513,29 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
                     const rules = rulesSnap.data().rules;
-                    let earnedTier = null;
+                    
+                    // 🚀 FIXED: The Ultimate Trap Killer. We permanently remove the lowest tier from the target search 
+                    // so its hidden 10 Million default target can NEVER block a Mythic promotion!
+                    const lowestTierId = allowedTiers[allowedTiers.length - 1];
+                    let earnedTier = lowestTierId; 
+                    
+                    const cleanRules = Object.entries(rules).filter(([id, r]) => id !== lowestTierId);
 
                     // 1. Sort rules from highest target to lowest
-                    const sortedRules = Object.entries(rules).sort((a, b) => {
+                    const sortedRules = cleanRules.sort((a, b) => {
                         const targetA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
                         const targetB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
                         return targetB - targetA;
                     });
 
+                    let debugMetric = 0;
+                    let debugTarget = 0;
+
                     // 2. Evaluate each rule based on its specific timeframe
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                        if (target <= 0) continue; // 🚀 FIXED: Ignore hidden default Bronze rules so they don't block Mythic!
+                        if (target <= 0) continue; 
 
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
@@ -547,14 +556,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                         .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                         .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
-                                        .replace(/\./g, ':'); // Fixes Indonesian time format crashing JavaScript math
+                                        .replace(/\./g, ':'); 
                                     tTime = new Date(dStr).getTime();
                                 }
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (rule.type === 'omset') {
-                                        // 🚀 FIXED: Aggressively strip dots/commas from Rupiah just in case
                                         const cleanTotal = Number(String(t.total).replace(/[^0-9-]/g, ''));
                                         metricTotal += cleanTotal;
                                     }
@@ -590,13 +598,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
+                        if (metricTotal > debugMetric) debugMetric = metricTotal;
+
                         if (metricTotal >= target) {
                             earnedTier = tierId;
+                            debugTarget = target;
                             break; 
                         }
                     }
 
-                    // 3. 🚀 FIXED: Failsafe Direct DB Assignment (Bypasses Stale React Memory!)
+                    // 3. Failsafe Direct DB Assignment
                     if (earnedTier) {
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
@@ -606,7 +617,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             const currentTier = targetDoc.data().tier;
                             if (currentTier !== earnedTier) {
                                 await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetDoc.id), { tier: earnedTier });
-                                if (triggerCapy) triggerCapy(`Performance Evaluated! ${finalCust} earned rank: ${earnedTier} 🚀`);
+                                if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
+                            } else {
+                                if (triggerCapy) triggerCapy(`Status Maintained: ${finalCust} remains ${earnedTier}. (Sales Total: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)})`);
                             }
                         }
                     }
