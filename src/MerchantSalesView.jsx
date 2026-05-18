@@ -581,7 +581,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
                         if (target > 0 && metricTotal >= target) {
                             earnedTier = tierId;
-                            earnedTarget = target;
                             break; 
                         }
                     }
@@ -589,12 +588,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     // 4. Upgrade Customer Automatically (🚀 PROMOTIONS ONLY)
                     const targetCustomer = customers.find(c => c.name.toLowerCase() === finalCust.toLowerCase());
                     if (targetCustomer && earnedTier && targetCustomer.tier !== earnedTier) {
-                        const currentTierId = targetCustomer.tier;
-                        const currentRule = rules[currentTierId];
-                        const currentTarget = currentRule ? (currentRule.type === 'omset' ? Number(currentRule.omsetTarget || 0) : Number(currentRule.volumeTarget || 0)) : 0;
                         
-                        // 🚀 Blocks live demotions! Only upgrades if the new target is higher than their current one.
-                        if (earnedTarget > currentTarget) {
+                        // 🚀 FIXED: The "Hidden Default Target" Trap!
+                        // Instead of comparing Rupiah targets (which fails because the lowest tier initializes with 10M by default), 
+                        // we compare their absolute Rank Index. 0 = Highest (Mythic), 3 = Lowest (Bronze).
+                        
+                        const currentTierId = targetCustomer.tier || allowedTiers[allowedTiers.length - 1];
+                        
+                        const earnedIdx = allowedTiers.findIndex(t => String(t).toLowerCase() === String(earnedTier).toLowerCase());
+                        const currentIdx = allowedTiers.findIndex(t => String(t).toLowerCase() === String(currentTierId).toLowerCase());
+                        
+                        const safeCurrentIdx = currentIdx === -1 ? allowedTiers.length : currentIdx;
+
+                        // Only upgrade if the earned rank is HIGHER (which means a LOWER index number)
+                        if (earnedIdx !== -1 && earnedIdx < safeCurrentIdx) {
                             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
                             if (triggerCapy) triggerCapy(`Level Up! ${finalCust} just earned Performance Tier: ${earnedTier} 🚀`);
                         }
