@@ -1,6 +1,6 @@
 import React from 'react';
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music } from 'lucide-react';
-import { doc, setDoc } from 'firebase/firestore';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronRight } from 'lucide-react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard'; 
 import CrownTransferProtocol from './CrownTransferProtocol';
@@ -20,6 +20,53 @@ export default function SettingsView({
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
     triggerDiscoParty, isDiscoMode
 }) {
+
+    // --- TIER AUTOMATION LOGIC ---
+    const [tierRules, setTierRules] = React.useState({});
+    const [isSavingTierRules, setIsSavingTierRules] = React.useState(false);
+
+    const defaultLogic = {
+        type: 'omset', 
+        omsetTarget: 10000000,
+        volumeTarget: 30,
+        volumeUnit: 'Bal', 
+        timeframe: '90' 
+    };
+
+    React.useEffect(() => {
+        if (!isAdmin || !db || !appId || !userId) return;
+        const loadTierRules = async () => {
+            try {
+                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                if (snap.exists() && snap.data().rules) {
+                    setTierRules(snap.data().rules);
+                } else {
+                    const init = {};
+                    (tierSettings || []).forEach(t => init[t.id] = { ...defaultLogic });
+                    setTierRules(init);
+                }
+            } catch(e) { console.error("Failed to load tier rules", e); }
+        };
+        loadTierRules();
+    }, [db, appId, userId, isAdmin, tierSettings]);
+
+    const handleUpdateTierRule = (tierId, field, value) => {
+        setTierRules(prev => ({
+            ...prev,
+            [tierId]: { ...(prev[tierId] || defaultLogic), [field]: value }
+        }));
+    };
+
+    const handleSaveTierRules = async () => {
+        setIsSavingTierRules(true);
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'), { rules: tierRules });
+            alert("✅ Tier Automation Rules locked in!");
+        } catch(e) { 
+            alert("Failed to save settings."); 
+        }
+        setIsSavingTierRules(false);
+    };
 
     // 1. LOCKSCREEN
     if (!isAdmin) {
@@ -304,7 +351,126 @@ export default function SettingsView({
               </div>
            </div>
 
-          {/* 5. MASCOT SETTINGS (SIZE + DIALOGUE) */}
+          {/* 5. AUTOMATED PERFORMANCE TIERS (LOGIC BUILDER) */}
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all">
+              <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
+                  <div>
+                      <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white">
+                          <Settings size={20} className="text-blue-500"/> Performance Tier Logic
+                      </h3>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Configure automated promotion/demotion conditions</p>
+                  </div>
+                  <button 
+                      onClick={handleSaveTierRules}
+                      disabled={isSavingTierRules}
+                      className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md disabled:opacity-50"
+                  >
+                      <Save size={14} /> {isSavingTierRules ? 'Saving...' : 'Save Logic'}
+                  </button>
+              </div>
+
+              <div className="space-y-3">
+                  {tierSettings.map((tier, idx) => {
+                      // Skip the very last/lowest tier because everyone defaults there
+                      if (idx === tierSettings.length - 1) return null; 
+                      
+                      const rule = tierRules[tier.id] || defaultLogic;
+                      const isOmset = rule.type === 'omset';
+
+                      return (
+                          <div key={tier.id} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:border-blue-500/50">
+                              
+                              {/* TIER BADGE */}
+                              <div className="flex items-center gap-3 min-w-[140px] shrink-0">
+                                  <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: tier.color }}></div>
+                                  <div>
+                                      <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{tier.label}</h4>
+                                      <p className="text-[9px] text-slate-500 uppercase tracking-widest">Target Requirement</p>
+                                  </div>
+                              </div>
+
+                              <ChevronRight className="hidden lg:block text-slate-400 shrink-0" size={16}/>
+
+                              {/* THE LOGIC BUILDER */}
+                              <div className="flex-1 flex flex-wrap items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                                  
+                                  {/* METRIC SELECTOR */}
+                                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                      <div className="px-2 text-slate-500 dark:text-slate-400">
+                                          {isOmset ? <TrendingUp size={14}/> : <Package size={14}/>}
+                                      </div>
+                                      <select 
+                                          value={rule.type}
+                                          onChange={(e) => handleUpdateTierRule(tier.id, 'type', e.target.value)}
+                                          className="bg-transparent text-xs font-bold text-slate-700 dark:text-white uppercase p-2 outline-none cursor-pointer hover:text-blue-500 dark:hover:text-blue-400"
+                                      >
+                                          <option value="omset" className="dark:bg-slate-900">Total Omset</option>
+                                          <option value="volume" className="dark:bg-slate-900">Total Volume</option>
+                                      </select>
+                                  </div>
+
+                                  <span className="text-slate-400 font-black text-sm">=</span>
+
+                                  {/* VALUE INPUT */}
+                                  {isOmset ? (
+                                      <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                          <span className="px-2 text-xs font-black text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30">Rp</span>
+                                          <input 
+                                              type="number" 
+                                              value={rule.omsetTarget}
+                                              onChange={(e) => handleUpdateTierRule(tier.id, 'omsetTarget', Number(e.target.value))}
+                                              className="bg-transparent text-xs font-black text-emerald-600 dark:text-emerald-400 p-2 w-32 outline-none text-right"
+                                          />
+                                      </div>
+                                  ) : (
+                                      <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                          <input 
+                                              type="number" 
+                                              value={rule.volumeTarget}
+                                              onChange={(e) => handleUpdateTierRule(tier.id, 'volumeTarget', Number(e.target.value))}
+                                              className="bg-transparent text-xs font-black text-orange-600 dark:text-orange-400 p-2 w-16 outline-none text-center border-r border-slate-200 dark:border-slate-700"
+                                          />
+                                          <select 
+                                              value={rule.volumeUnit}
+                                              onChange={(e) => handleUpdateTierRule(tier.id, 'volumeUnit', e.target.value)}
+                                              className="bg-transparent text-xs font-bold text-orange-600 dark:text-orange-300 uppercase p-2 outline-none cursor-pointer"
+                                          >
+                                              <option value="Bks" className="dark:bg-slate-900">Bks</option>
+                                              <option value="Slop" className="dark:bg-slate-900">Slop</option>
+                                              <option value="Bal" className="dark:bg-slate-900">Bal</option>
+                                              <option value="Karton" className="dark:bg-slate-900">Karton</option>
+                                          </select>
+                                      </div>
+                                  )}
+
+                                  <span className="text-slate-400 font-black text-sm">/</span>
+
+                                  {/* TIMEFRAME SELECTOR */}
+                                  <select 
+                                      value={rule.timeframe}
+                                      onChange={(e) => handleUpdateTierRule(tier.id, 'timeframe', e.target.value)}
+                                      className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-xs font-bold text-blue-600 dark:text-blue-300 uppercase p-2 outline-none cursor-pointer hover:border-blue-500"
+                                  >
+                                      <option value="30" className="dark:bg-slate-900">1 Bulan</option>
+                                      <option value="90" className="dark:bg-slate-900">3 Bulan</option>
+                                      <option value="180" className="dark:bg-slate-900">6 Bulan</option>
+                                      <option value="365" className="dark:bg-slate-900">1 Tahun</option>
+                                  </select>
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+              
+              <div className="mt-4 flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 p-3 rounded-lg">
+                  <ShieldAlert size={14} className="text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-blue-600 dark:text-blue-300 uppercase tracking-widest leading-relaxed">
+                      Note: The engine reads these rules top-to-bottom. Stores are assigned to the highest tier whose conditions they meet. If no conditions are met, they default to {tierSettings[tierSettings.length - 1]?.label || "the lowest tier"}.
+                  </p>
+              </div>
+          </div>
+
+          {/* 6. MASCOT SETTINGS (SIZE + DIALOGUE) */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-all duration-300">
               <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white mb-4"><MessageSquare size={20}/> Mascot Settings</h3>
               <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
