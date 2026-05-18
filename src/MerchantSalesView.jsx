@@ -507,6 +507,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
             // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Armor-Plated Direct DB Evaluation
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Direct ID Targeting
             try {
                 const userId = user?.uid || user?.id || 'default';
                 const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
@@ -516,8 +517,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     let earnedTier = null; 
                     
                     const sortedRules = Object.entries(rules).sort((a, b) => {
-                        const targetA = a[1]?.type === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
-                        const targetB = b[1]?.type === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
+                        const targetA = (a[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
+                        const targetB = (b[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
                         return targetB - targetA;
                     });
 
@@ -526,7 +527,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
-                        const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                        const ruleType = (rule.type || 'omset').toLowerCase();
+                        const target = ruleType === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
                         
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
@@ -535,7 +537,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            // 🚀 FIXED: Aggressive Null-Check prevents corrupted transactions from crashing the loop!
                             if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
                                 
                                 let tTime = 0;
@@ -552,11 +553,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                                 if (tTime >= cutoff.getTime()) {
-                                    if (rule.type === 'omset') {
-                                        const cleanTotal = Number(String(t.total || 0).replace(/[^0-9-]/g, ''));
-                                        metricTotal += cleanTotal;
+                                    if (ruleType === 'omset') {
+                                        metricTotal += (Number(t.total) || 0);
                                     }
-                                    else if (rule.type === 'volume') {
+                                    else if (ruleType === 'volume') {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                         itemsList.forEach(item => {
                                             if (!item) return;
@@ -575,8 +575,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         });
 
                         // Add current live sale
-                        if (rule.type === 'omset') metricTotal += Number(finalTotal);
-                        else if (rule.type === 'volume') {
+                        if (ruleType === 'omset') metricTotal += Number(finalTotal);
+                        else if (ruleType === 'volume') {
                             finalCart.forEach(item => {
                                 if (!item) return;
                                 let qtyInBks = Number(item.qty) || 0;
@@ -599,30 +599,43 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-                    // 3. Failsafe Direct DB Assignment
-                    if (earnedTier) {
+                    // 🚀 FIXED: The Zero-Fallback. If math fails to hit ANY target, force them into the lowest tier instead of aborting!
+                    if (!earnedTier) {
+                        earnedTier = allowedTiers[allowedTiers.length - 1]; 
+                        debugTarget = 0;
+                    }
+
+                    // 🚀 FIXED: Direct ID Targeting. Bypasses name-searching entirely so Ghost Stores can't steal the upgrade!
+                    const storeId = selectedCustomerInfo?.id;
+                    let targetDocRef = null;
+                    let currentTier = null;
+
+                    if (storeId) {
+                        targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
+                        const storeSnap = await getDoc(targetDocRef);
+                        if (storeSnap.exists()) currentTier = storeSnap.data().tier;
+                    } else {
+                        // Fallback for Walk-Ins
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
-                        // 🚀 FIXED: Null-check `d.data().name` prevents a single unnamed ghost store from aborting the promotion!
-                        const targetDoc = qSnap.docs.find(d => {
-                            const docName = d.data()?.name || '';
-                            return docName.trim().toLowerCase() === finalCust.toLowerCase();
-                        });
-                        
-                        if (targetDoc) {
-                            const currentTier = targetDoc.data().tier;
-                            if (currentTier !== earnedTier) {
-                                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetDoc.id), { tier: earnedTier });
-                                if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
-                            } else {
-                                if (triggerCapy) triggerCapy(`Status Maintained: ${finalCust} remains ${earnedTier}. (Sales Total: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)})`);
-                            }
+                        const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
+                        if (foundDoc) {
+                            targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, foundDoc.id);
+                            currentTier = foundDoc.data().tier;
+                        }
+                    }
+                    
+                    if (targetDocRef) {
+                        if (currentTier !== earnedTier) {
+                            await updateDoc(targetDocRef, { tier: earnedTier });
+                            if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
+                        } else {
+                            if (triggerCapy) triggerCapy(`Status Maintained: ${finalCust} remains ${earnedTier}. (Sales Total: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)})`);
                         }
                     }
                 }
             } catch (e) {
                 console.error("Live Auto-Promoter Failed:", e);
-                // 🚀 FIXED: Capy will now explicitly warn you if the engine crashes, instead of failing silently!
                 if (triggerCapy) triggerCapy(`Auto-Promoter Error: ${e.message}`);
             }
 

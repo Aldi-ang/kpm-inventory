@@ -1150,8 +1150,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     const runSimulation = () => {
         // 🚀 FIXED: Total simplification to match MerchantSalesView.
         const sortedRules = Object.entries(rules).sort((a, b) => {
-            const tA = a[1]?.type === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
-            const tB = b[1]?.type === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
+            const tA = (a[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
+            const tB = (b[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
             return tB - tA;
         });
 
@@ -1164,7 +1164,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
-                const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                const ruleType = (rule.type || 'omset').toLowerCase();
+                const target = ruleType === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
 
                 const timeframeDays = parseInt(rule.timeframe || 90);
                 const cutoff = new Date();
