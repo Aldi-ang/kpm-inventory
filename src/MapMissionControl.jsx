@@ -1150,8 +1150,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     const runSimulation = () => {
         // 🚀 FIXED: Total simplification to match MerchantSalesView.
         const sortedRules = Object.entries(rules).sort((a, b) => {
-            const tA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
-            const tB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
+            const tA = a[1]?.type === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
+            const tB = b[1]?.type === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
             return tB - tA;
         });
 
@@ -1165,8 +1165,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
                 const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                
-                // 🚀 FIXED: Allow checking against 0 target tiers
 
                 const timeframeDays = parseInt(rule.timeframe || 90);
                 const cutoff = new Date();
@@ -1175,10 +1173,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
                 const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
-                    if (((t.customerName || t.customer || '').trim().toLowerCase() === store.name.toLowerCase()) && t.type === 'SALE') {
+                    // 🚀 FIXED: Aggressive Null-Checks added
+                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && t.type === 'SALE') {
                         let tTime = 0;
-                        if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-                        else if (t.date && typeof t.date === 'string') {
+                        if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
+                            tTime = t.timestamp.seconds * 1000;
+                        } else if (t.date && typeof t.date === 'string') {
                             let dStr = t.date.toLowerCase()
                                 .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                 .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')

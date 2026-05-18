@@ -506,7 +506,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Failsafe Direct DB Evaluation
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Armor-Plated Direct DB Evaluation
             try {
                 const userId = user?.uid || user?.id || 'default';
                 const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
@@ -515,36 +515,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     const rules = rulesSnap.data().rules;
                     let earnedTier = null; 
                     
-                    // 🚀 FIXED: Total simplification! Sort ALL rules and evaluate them unconditionally.
                     const sortedRules = Object.entries(rules).sort((a, b) => {
-                        const targetA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
-                        const targetB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
+                        const targetA = a[1]?.type === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
+                        const targetB = b[1]?.type === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
                         return targetB - targetA;
                     });
 
                     let debugMetric = 0;
                     let debugTarget = 0;
 
-                    // 2. Evaluate each rule based on its specific timeframe
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
                         
-                        // 🚀 FIXED: We no longer skip 0! If Bronze is set to 0, it acts as the perfect safety net. 
-
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
                         cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
-                        // Add past history within the timeframe
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            if (((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
+                            // 🚀 FIXED: Aggressive Null-Check prevents corrupted transactions from crashing the loop!
+                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
                                 
-                                // 🚀 FIXED: Indonesian Date Translator + Time Dot Fix (11.55 -> 11:55)
                                 let tTime = 0;
-                                if (t.timestamp?.seconds) {
+                                if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
                                 } else if (t.date && typeof t.date === 'string') {
                                     let dStr = t.date.toLowerCase()
@@ -558,12 +553,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (rule.type === 'omset') {
-                                        const cleanTotal = Number(String(t.total).replace(/[^0-9-]/g, ''));
+                                        const cleanTotal = Number(String(t.total || 0).replace(/[^0-9-]/g, ''));
                                         metricTotal += cleanTotal;
                                     }
                                     else if (rule.type === 'volume') {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                         itemsList.forEach(item => {
+                                            if (!item) return;
                                             let qtyInBks = Number(item.qty) || 0;
                                             if (item.unit === 'Slop') qtyInBks *= 10;
                                             if (item.unit === 'Bal') qtyInBks *= 200;
@@ -582,6 +578,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (rule.type === 'omset') metricTotal += Number(finalTotal);
                         else if (rule.type === 'volume') {
                             finalCart.forEach(item => {
+                                if (!item) return;
                                 let qtyInBks = Number(item.qty) || 0;
                                 if (item.unit === 'Slop') qtyInBks *= 10;
                                 if (item.unit === 'Bal') qtyInBks *= 200;
@@ -606,7 +603,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     if (earnedTier) {
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
-                        const targetDoc = qSnap.docs.find(d => d.data().name.trim().toLowerCase() === finalCust.toLowerCase());
+                        // 🚀 FIXED: Null-check `d.data().name` prevents a single unnamed ghost store from aborting the promotion!
+                        const targetDoc = qSnap.docs.find(d => {
+                            const docName = d.data()?.name || '';
+                            return docName.trim().toLowerCase() === finalCust.toLowerCase();
+                        });
                         
                         if (targetDoc) {
                             const currentTier = targetDoc.data().tier;
@@ -621,6 +622,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 }
             } catch (e) {
                 console.error("Live Auto-Promoter Failed:", e);
+                // 🚀 FIXED: Capy will now explicitly warn you if the engine crashes, instead of failing silently!
+                if (triggerCapy) triggerCapy(`Auto-Promoter Error: ${e.message}`);
             }
 
             setReceiptData({
