@@ -59,8 +59,20 @@ export default function SettingsView({
 
     const handleSaveTierRules = async () => {
         setIsSavingTierRules(true);
+        
+        // 🚀 FIXED: Safety net to convert empty strings back to 0 before saving to database
+        const cleanedRules = {};
+        Object.keys(tierRules).forEach(key => {
+            cleanedRules[key] = {
+                ...tierRules[key],
+                omsetTarget: tierRules[key].omsetTarget === '' ? 0 : tierRules[key].omsetTarget,
+                volumeTarget: tierRules[key].volumeTarget === '' ? 0 : tierRules[key].volumeTarget
+            };
+        });
+
         try {
-            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'), { rules: tierRules });
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'), { rules: cleanedRules });
+            setTierRules(cleanedRules); // Update UI to reflect cleaned zeros
             alert("✅ Tier Automation Rules locked in!");
         } catch(e) { 
             alert("Failed to save settings."); 
@@ -416,18 +428,24 @@ export default function SettingsView({
                                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
                                           <span className="px-2 text-xs font-black text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30">Rp</span>
                                           <input 
-                                              type="number" 
-                                              value={rule.omsetTarget}
-                                              onChange={(e) => handleUpdateTierRule(tier.id, 'omsetTarget', Number(e.target.value))}
+                                              type="text" 
+                                              value={rule.omsetTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.omsetTarget || 0)}
+                                              onChange={(e) => {
+                                                  const val = e.target.value.replace(/[^0-9]/g, ''); // Strip commas to process raw number
+                                                  handleUpdateTierRule(tier.id, 'omsetTarget', val === '' ? '' : Number(val));
+                                              }}
                                               className="bg-transparent text-xs font-black text-emerald-600 dark:text-emerald-400 p-2 w-32 outline-none text-right"
                                           />
                                       </div>
                                   ) : (
                                       <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
                                           <input 
-                                              type="number" 
-                                              value={rule.volumeTarget}
-                                              onChange={(e) => handleUpdateTierRule(tier.id, 'volumeTarget', Number(e.target.value))}
+                                              type="text" 
+                                              value={rule.volumeTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.volumeTarget || 0)}
+                                              onChange={(e) => {
+                                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                                  handleUpdateTierRule(tier.id, 'volumeTarget', val === '' ? '' : Number(val));
+                                              }}
                                               className="bg-transparent text-xs font-black text-orange-600 dark:text-orange-400 p-2 w-16 outline-none text-center border-r border-slate-200 dark:border-slate-700"
                                           />
                                           <select 
