@@ -1163,9 +1163,18 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - evalDays);
         
-        // 🚀 FIXED: Safe Array Cast for Transactions
+        // 🚀 FIXED: Bulletproof Date Parsing for Indonesian Locales in the Admin Simulator!
         const safeTrans = Array.isArray(transactions) ? transactions : [];
-        const recentTrans = safeTrans.filter(t => t.type === 'SALE' && new Date(t.date || (t.timestamp?.seconds * 1000)) >= cutoffDate);
+        const recentTrans = safeTrans.filter(t => {
+            if (t.type !== 'SALE') return false;
+            let tTime = 0;
+            if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+            else if (typeof t.timestamp === 'string') tTime = new Date(t.timestamp).getTime();
+            else if (t.createdAt) tTime = new Date(t.createdAt).getTime();
+            else if (typeof t.date === 'string' && t.date.includes('T')) tTime = new Date(t.date).getTime();
+            else tTime = new Date().getTime(); 
+            return tTime >= cutoffDate.getTime();
+        });
         const revMap = {};
         recentTrans.forEach(t => {
             const cust = t.customerName || t.customer;

@@ -513,13 +513,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
                     const rules = rulesSnap.data().rules;
-                    const defaultTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
-                    let earnedTier = defaultTier;
+                    let earnedTier = null;
+                    let earnedTarget = 0;
 
-                    // Read top-to-bottom to find highest matching tier
-                    for (let i = 0; i < allowedTiers.length - 1; i++) {
-                        const tierId = allowedTiers[i];
-                        const rule = rules[tierId];
+                    // 🚀 FIXED: Dynamic array sorting ensures we always evaluate highest targets first, completely ignoring the allowedTiers array order!
+                    const sortedRules = Object.entries(rules).sort((a, b) => {
+                        const targetA = a[1].type === 'omset' ? Number(a[1].omsetTarget || 0) : Number(a[1].volumeTarget || 0);
+                        const targetB = b[1].type === 'omset' ? Number(b[1].omsetTarget || 0) : Number(b[1].volumeTarget || 0);
+                        return targetB - targetA;
+                    });
+
+                    for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
 
                         const cutoff = new Date();
@@ -529,8 +533,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         // 1. Calculate History
                         transactions.forEach(t => {
                             if (((t.customerName || t.customer || '').toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
-                                const tDate = new Date(t.date || (t.timestamp?.seconds * 1000));
-                                if (tDate >= cutoff) {
+                                // 🚀 FIXED: Bulletproof Date Parsing for Indonesian Locales (e.g. "18 Mei 2026")
+                                let tTime = 0;
+                                if (t.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+                                else if (typeof t.timestamp === 'string') tTime = new Date(t.timestamp).getTime();
+                                else if (t.createdAt) tTime = new Date(t.createdAt).getTime();
+                                else if (typeof t.date === 'string' && t.date.includes('T')) tTime = new Date(t.date).getTime();
+                                else tTime = new Date().getTime(); // Fallback assumes recent if completely unparseable to protect salesman data!
+
+                                if (tTime >= cutoff.getTime()) {
                                     if (rule.type === 'omset') metricTotal += (Number(t.total) || 0);
                                     else if (rule.type === 'volume') {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
@@ -568,17 +579,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                         // 3. Evaluate Target
                         const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                        if (metricTotal >= target) {
+                        if (target > 0 && metricTotal >= target) {
                             earnedTier = tierId;
+                            earnedTarget = target;
                             break; 
                         }
                     }
 
-                    // 4. Upgrade Customer Automatically
+                    // 4. Upgrade Customer Automatically (🚀 PROMOTIONS ONLY)
                     const targetCustomer = customers.find(c => c.name.toLowerCase() === finalCust.toLowerCase());
-                    if (targetCustomer && targetCustomer.tier !== earnedTier) {
-                        await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
-                        if (triggerCapy) triggerCapy(`Level Up! ${finalCust} just earned Performance Tier: ${earnedTier} 🚀`);
+                    if (targetCustomer && earnedTier && targetCustomer.tier !== earnedTier) {
+                        const currentTierId = targetCustomer.tier;
+                        const currentRule = rules[currentTierId];
+                        const currentTarget = currentRule ? (currentRule.type === 'omset' ? Number(currentRule.omsetTarget || 0) : Number(currentRule.volumeTarget || 0)) : 0;
+                        
+                        // 🚀 Blocks live demotions! Only upgrades if the new target is higher than their current one.
+                        if (earnedTarget > currentTarget) {
+                            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
+                            if (triggerCapy) triggerCapy(`Level Up! ${finalCust} just earned Performance Tier: ${earnedTier} 🚀`);
+                        }
                     }
                 }
             } catch (e) {
