@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
-import { doc, setDoc, collection } from 'firebase/firestore'; 
+import { doc, setDoc, collection, getDoc, updateDoc } from 'firebase/firestore'; 
 
 // 🚀 FIXED: Added isAdmin, logAudit, and triggerCapy to props!
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  
@@ -505,6 +505,85 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
+
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Evaluates Omset/Volume instantly on checkout!
+            try {
+                const userId = user?.uid || user?.id || 'default';
+                const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                
+                if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
+                    const rules = rulesSnap.data().rules;
+                    const defaultTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
+                    let earnedTier = defaultTier;
+
+                    // Read top-to-bottom to find highest matching tier
+                    for (let i = 0; i < allowedTiers.length - 1; i++) {
+                        const tierId = allowedTiers[i];
+                        const rule = rules[tierId];
+                        if (!rule) continue;
+
+                        const cutoff = new Date();
+                        cutoff.setDate(cutoff.getDate() - parseInt(rule.timeframe || 90));
+                        let metricTotal = 0;
+
+                        // 1. Calculate History
+                        transactions.forEach(t => {
+                            if (((t.customerName || t.customer || '').toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
+                                const tDate = new Date(t.date || (t.timestamp?.seconds * 1000));
+                                if (tDate >= cutoff) {
+                                    if (rule.type === 'omset') metricTotal += (Number(t.total) || 0);
+                                    else if (rule.type === 'volume') {
+                                        const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                                        itemsList.forEach(item => {
+                                            let qtyInBks = Number(item.qty) || 0;
+                                            if (item.unit === 'Slop') qtyInBks *= 10;
+                                            if (item.unit === 'Bal') qtyInBks *= 200;
+                                            if (item.unit === 'Karton') qtyInBks *= 800;
+                                            
+                                            if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
+                                            if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
+                                            if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
+                                            if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                                        });
+                                    }
+                                }
+                            }
+                        });
+
+                        // 2. Add Current Live Sale
+                        if (rule.type === 'omset') metricTotal += finalTotal;
+                        else if (rule.type === 'volume') {
+                            finalCart.forEach(item => {
+                                let qtyInBks = Number(item.qty) || 0;
+                                if (item.unit === 'Slop') qtyInBks *= 10;
+                                if (item.unit === 'Bal') qtyInBks *= 200;
+                                if (item.unit === 'Karton') qtyInBks *= 800;
+                                
+                                if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
+                                if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
+                                if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
+                                if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                            });
+                        }
+
+                        // 3. Evaluate Target
+                        const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                        if (metricTotal >= target) {
+                            earnedTier = tierId;
+                            break; 
+                        }
+                    }
+
+                    // 4. Upgrade Customer Automatically
+                    const targetCustomer = customers.find(c => c.name.toLowerCase() === finalCust.toLowerCase());
+                    if (targetCustomer && targetCustomer.tier !== earnedTier) {
+                        await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
+                        if (triggerCapy) triggerCapy(`Level Up! ${finalCust} just earned Performance Tier: ${earnedTier} 🚀`);
+                    }
+                }
+            } catch (e) {
+                console.error("Live Auto-Promoter Failed:", e);
+            }
 
             setReceiptData({
                 customer: finalCust, method: finalMethod, items: finalCart, total: finalTotal,
