@@ -506,7 +506,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Absolute Evaluation (History-Based)
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Failsafe Direct DB Evaluation
             try {
                 const userId = user?.uid || user?.id || 'default';
                 const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
@@ -522,9 +522,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         return targetB - targetA;
                     });
 
-                    // 2. Evaluate each rule based on its specific timeframe setting
+                    // 2. Evaluate each rule based on its specific timeframe
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
+                        const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                        if (target <= 0) continue; // Ignore blank tiers
 
                         const timeframeDays = parseInt(rule.timeframe || 90);
                         const cutoff = new Date();
@@ -534,9 +536,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         // Add past history within the timeframe
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            if (((t.customerName || t.customer || '').toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
+                            if (((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
                                 
-                                // 🚀 FIXED: Indonesian Date Translator
+                                // 🚀 FIXED: Indonesian Date Translator + Time Dot Fix (11.55 -> 11:55)
                                 let tTime = 0;
                                 if (t.timestamp?.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
@@ -544,7 +546,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     let dStr = t.date.toLowerCase()
                                         .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                         .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                        .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
+                                        .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
+                                        .replace(/\./g, ':'); // Fixes Indonesian time format crashing JavaScript math
                                     tTime = new Date(dStr).getTime();
                                 }
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
@@ -558,7 +561,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             if (item.unit === 'Slop') qtyInBks *= 10;
                                             if (item.unit === 'Bal') qtyInBks *= 200;
                                             if (item.unit === 'Karton') qtyInBks *= 800;
-                                            
                                             if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
                                             if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
                                             if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
@@ -569,15 +571,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             }
                         });
 
-                        // Add current live sale that was just processed
-                        if (rule.type === 'omset') metricTotal += finalTotal;
+                        // Add current live sale
+                        if (rule.type === 'omset') metricTotal += Number(finalTotal);
                         else if (rule.type === 'volume') {
                             finalCart.forEach(item => {
                                 let qtyInBks = Number(item.qty) || 0;
                                 if (item.unit === 'Slop') qtyInBks *= 10;
                                 if (item.unit === 'Bal') qtyInBks *= 200;
                                 if (item.unit === 'Karton') qtyInBks *= 800;
-                                
                                 if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
                                 if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
                                 if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
@@ -585,19 +586,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
-                        // Check if their absolute total meets this tier's target
-                        const target = rule.type === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
-                        if (target > 0 && metricTotal >= target) {
+                        if (metricTotal >= target) {
                             earnedTier = tierId;
                             break; 
                         }
                     }
 
-                    // 3. Absolute Assignment (Judge purely based on history)
-                    const targetCustomer = customers.find(c => c.name.toLowerCase() === finalCust.toLowerCase());
-                    if (targetCustomer && earnedTier && targetCustomer.tier !== earnedTier) {
-                        await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id), { tier: earnedTier });
-                        if (triggerCapy) triggerCapy(`Performance Evaluated! ${finalCust} earned tier: ${earnedTier} 🚀`);
+                    // 3. Failsafe Direct DB Assignment (Bypasses Stale React Memory)
+                    if (earnedTier) {
+                        const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
+                        const qSnap = await getDocs(customersRef);
+                        const targetDoc = qSnap.docs.find(d => d.data().name.trim().toLowerCase() === finalCust.toLowerCase());
+                        
+                        if (targetDoc) {
+                            const currentTier = targetDoc.data().tier;
+                            if (currentTier !== earnedTier) {
+                                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, targetDoc.id), { tier: earnedTier });
+                                if (triggerCapy) triggerCapy(`Performance Evaluated! ${finalCust} earned rank: ${earnedTier} 🚀`);
+                            }
+                        }
                     }
                 }
             } catch (e) {

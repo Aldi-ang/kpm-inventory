@@ -1004,9 +1004,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                             <div className="space-y-3">
                                                 {/* 🚀 FIXED: Replaced Global Position with Real Info & Actions */}
                                                 <div className="flex gap-2">
-                                                    <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center">
-                                                        <span className="block text-[8px] text-slate-500 uppercase font-black mb-0.5">Tier Type</span>
-                                                        <span className="text-[10px] text-orange-400 font-bold uppercase">{store.priceTier || store.tier || 'RETAIL'}</span>
+                                                    <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center gap-0.5">
+                                                        <span className="block text-[8px] text-slate-500 uppercase font-black">Performance Rank</span>
+                                                        <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier || 'RETAIL'}</span>
+                                                        {store.priceTier && store.priceTier !== store.tier && (
+                                                            <span className="text-[8px] text-blue-400 font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
+                                                        )}
                                                     </div>
                                                     {store.phone ? (
                                                         <a 
@@ -1101,7 +1104,9 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     {sectorStores.map((customer) => {
                                         const isVisited = customer.lastVisit === todayDate;
                                         const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
-                                        const tierLabel = customer.priceTier || customer.tier || 'Retail';
+                                        // 🚀 FIXED: Split the labels so Price Tier doesn't permanently hide the Performance Rank!
+                                        const tierLabel = customer.tier || 'Retail';
+                                        const priceLabel = customer.priceTier || 'Retail';
                                         
                                         const metric = storeMetrics[customer.id];
                                         const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
@@ -1151,8 +1156,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                             {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
                                                             <span className="opacity-50">|</span> #{metric.stopNumber}
                                                         </div>
-                                                        <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
-                                                            {tierLabel} TIER
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                RANK: {tierLabel}
+                                                            </div>
+                                                            {priceLabel !== tierLabel && (
+                                                                <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                    PRICE: {priceLabel}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
