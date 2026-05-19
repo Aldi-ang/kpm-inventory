@@ -177,6 +177,19 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
+  // 🚀 COMMANDER FIX: REAL-TIME CUSTOMER SYNC ENGINE
+  // This completely overrides the static, stale memory. The exact millisecond you drop a pin, 
+  // delete a store, or change a tier, Firebase forces the whole app to instantly update!
+  useEffect(() => {
+      if (!db || !appId || !userId || userId === 'default') return;
+      const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
+      const unsub = onSnapshot(customersRef, (snap) => {
+          const liveCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setCustomers(liveCustomers);
+      });
+      return () => unsub();
+  }, [db, appId, userId, setCustomers]);
+
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
       if (!db || !appId || !userId || userId === 'default') return;
