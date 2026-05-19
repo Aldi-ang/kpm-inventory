@@ -589,18 +589,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && String(t.type || '').toUpperCase() === 'SALE') {
+                            // 🚀 FIXED: Legacy Transaction Type Support & DD/MM/YYYY Date Parser
+                            const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && tType === 'SALE') {
                                 
                                 let tTime = 0;
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
                                 } else if (t.date && typeof t.date === 'string') {
-                                    let dStr = t.date.toLowerCase()
-                                        .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
-                                        .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                        .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
-                                        .replace(/\./g, ':'); 
-                                    tTime = new Date(dStr).getTime();
+                                    const dateStr = t.date.split(',')[0].trim();
+                                    const dateParts = dateStr.split('/');
+                                    if (dateParts.length === 3) {
+                                        tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
+                                    } else {
+                                        tTime = new Date(dateStr).getTime();
+                                    }
                                 }
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 

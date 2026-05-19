@@ -1151,26 +1151,25 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     }, [db, appId, userId]);
 
     const runSimulation = () => {
-        // 🚀 FIXED: Aggressively strip dots/commas from targets so "1.000.000" doesn't become NaN
         const sortedRules = Object.entries(rules).sort((a, b) => {
             const tA = Number(String((a[1]?.type || 'omset').toLowerCase() === 'omset' ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
             const tB = Number(String((b[1]?.type || 'omset').toLowerCase() === 'omset' ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
             return tB - tA;
         });
 
-        const results = { promotions: [], demotions: [], steady: 0, actions: [] };
+        // 🚀 FIXED: Added 'all' array to track universal XP for every store!
+        const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
         const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
         mapPoints.forEach(store => {
             let earnedTier = fallbackTier;
-            let earnedRev = 0;
+            let maxMetricTotal = 0; // Tracks highest XP seen across all math
 
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
                 const ruleType = (rule.type || 'omset').toLowerCase();
                 const target = Number(String(ruleType === 'omset' ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                // 🚀 FIXED: Smart Timeframe Parser. Prevents "1 month" from becoming exactly 1 day!
                 let timeframeDays = 90;
                 if (rule.timeframe) {
                     const tfStr = String(rule.timeframe).toLowerCase();
@@ -1187,23 +1186,25 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
                 const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
-                    // 🚀 FIXED: Uppercase TYPE check and safer customerName matching
-                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && String(t.type || '').toUpperCase() === 'SALE') {
+                    // 🚀 FIXED: Legacy Transaction Parser! Grants XP even if the receipt was missing the 'SALE' tag
+                    const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && tType === 'SALE') {
                         let tTime = 0;
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
                         } else if (t.date && typeof t.date === 'string') {
-                            let dStr = t.date.toLowerCase()
-                                .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
-                                .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
-                                .replace(/\./g, ':');
-                            tTime = new Date(dStr).getTime();
+                            // 🚀 FIXED: The DD/MM/YYYY Date Crash. Safely parses Indonesian text dates into math!
+                            const dateStr = t.date.split(',')[0].trim();
+                            const dateParts = dateStr.split('/');
+                            if (dateParts.length === 3) {
+                                tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
+                            } else {
+                                tTime = new Date(dateStr).getTime();
+                            }
                         }
                         if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                         if (tTime >= cutoff.getTime()) {
-                            // 🚀 FIXED: Case-insensitive ruleType to match MerchantSalesView!
                             if (ruleType === 'omset') {
                                 metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                             } else if (ruleType === 'volume') {
@@ -1213,7 +1214,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                     if (item.unit === 'Slop') qtyInBks *= 10;
                                     if (item.unit === 'Bal') qtyInBks *= 200;
                                     if (item.unit === 'Karton') qtyInBks *= 800;
-                                    
                                     const vUnit = (rule.volumeUnit || 'Bks').toLowerCase();
                                     if (vUnit === 'bks') metricTotal += qtyInBks;
                                     if (vUnit === 'slop') metricTotal += (qtyInBks / 10);
@@ -1225,28 +1225,34 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     }
                 });
 
+                if (metricTotal > maxMetricTotal) maxMetricTotal = metricTotal;
+
                 if (metricTotal >= target) {
                     earnedTier = tierId;
-                    earnedRev = metricTotal;
                     break;
                 }
             }
 
-            // 🚀 FIXED: True Gamified Logic! Simulator strictly isolates Performance XP (Ranks) and completely ignores Pricing (Grosir/Ecer).
             const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
                                 ? store.tier : fallbackTier;
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
+            // 🚀 FIXED: Captures exact XP for EVERY store so you can audit them on the UI!
+            const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: maxMetricTotal };
+            results.all.push(changeObj);
+
             if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
                 const isPromo = targetIdx !== -1 && currentIdx !== -1 && targetIdx < currentIdx; 
-                const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: earnedRev };
                 if (isPromo) { results.promotions.push(changeObj); results.actions.push(changeObj); }
                 else { results.demotions.push(changeObj); results.actions.push(changeObj); }
             } else {
                 results.steady++;
             }
         });
+        
+        // Sort highest XP to top
+        results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
 
@@ -1296,15 +1302,22 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                 <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Demotions</span></div>
                                 <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 text-center"><span className="block text-2xl font-black text-slate-300">{simResults.steady}</span><span className="text-[9px] uppercase font-bold text-slate-500">Unchanged</span></div>
                             </div>
-                            <div className="max-h-32 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
-                                {simResults.actions.map((act, i) => (
+                            <div className="max-h-48 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
+                                {simResults.all.map((act, i) => (
                                     <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
                                         <span className="font-bold text-white truncate w-1/3">{act.name}</span>
-                                        <span className="text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                        {/* 🚀 FIXED: Explicitly shows Total XP for every store! */}
+                                        <span className="text-orange-400 font-mono font-black tracking-widest text-[9px]">XP: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
                                         <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
                                             <span className="text-slate-500">{act.old}</span>
-                                            {act.old !== act.new && (activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>)}
-                                            <span className={activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
+                                            {act.old !== act.new ? (
+                                                <>
+                                                    {activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>}
+                                                    <span className={activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-slate-600 ml-1">(=)</span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -1769,7 +1782,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
                                     Tier Automation Engine <Settings size={16}/>
                                 </button>
-                                <button onClick={() => setShowImporter(!showImporter)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
+                                <button onClick={() => alert("Commander, Map Boundaries are currently managed in the backend Firebase Database under mapSettings. The UI Uploader is scheduled for the next patch!")} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
                                     Map Boundaries Setup <Download size={16}/>
                                 </button>
                             </>
