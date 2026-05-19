@@ -430,25 +430,48 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         return true;
     };
 
-    const submitNooRegistration = () => {
+    const submitNooRegistration = async () => {
         if (!validateNoo()) return;
-        // 🚀 FIXED: Decoupled! New NOOs explicitly start 'UNRANKED' for Performance Rank, but keep requested priceTier.
-        const tempStore = { 
-            id: 'NOO_TEMP', 
-            name: customerName, 
-            isNooRegistration: true, 
-            ...nooForm, 
-            tier: 'UNRANKED', 
-            priceTier: nooForm.requestedTier,
-            latitude: agentLocation?.latitude, 
-            longitude: agentLocation?.longitude 
-        };
-        setSelectedCustomerInfo(tempStore);
-        setLockedTier(nooForm.requestedTier);
-        updateCartPricing(nooForm.requestedTier);
-        setShowNooModal(false);
-        setGpsStatus('verified'); 
-        triggerMerchantSpeak('expensive');
+        if (!db || !appId) return alert("Database connection missing!");
+        
+        try {
+            const userId = user?.uid || user?.id || 'default';
+            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+            
+            // 🚀 FIXED: We pre-emptively build the REAL Firebase document right now, instead of holding it in temporary memory!
+            const newStoreData = {
+                id: newRef.id,
+                name: customerName.toUpperCase().trim(),
+                phone: nooForm.phone,
+                address: nooForm.address || "GPS Locked via NOO Form",
+                tier: 'UNRANKED', 
+                priceTier: nooForm.requestedTier,
+                storeType: 'Retailer',
+                latitude: agentLocation?.latitude,
+                longitude: agentLocation?.longitude,
+                status: 'Active',
+                visitFreq: 7,
+                storeImage: nooForm.photoUrl, 
+                createdAt: new Date().toISOString()
+            };
+
+            // 🔥 INSTANT WRITE: The store is cemented in the database before you even start the sale!
+            await setDoc(newRef, newStoreData);
+
+            if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
+            if (triggerCapy) triggerCapy(`Target Data Secured! 📍`);
+            
+            // 🚀 The terminal now has the REAL Firebase ID to evaluate, zero race conditions!
+            setSelectedCustomerInfo(newStoreData);
+            setLockedTier(nooForm.requestedTier);
+            updateCartPricing(nooForm.requestedTier);
+            setShowNooModal(false);
+            setGpsStatus('verified'); 
+            triggerMerchantSpeak('expensive');
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save NOO: " + e.message);
+        }
     };
 
     // 🚀 FIXED: Added triggerCapy and logAudit to NOO Only Submit!
