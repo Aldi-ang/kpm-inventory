@@ -539,13 +539,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
-
          
             // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Gamified XP System
             try {
                 const userId = user?.uid || user?.id || 'default';
-                
-                // 🚀 FIXED: Deep Database Sweeper to guarantee it finds your Leveling Rules no matter where Firebase saved them
                 let rules = null;
                 const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
                 if (rulesSnap.exists() && rulesSnap.data().rules) {
@@ -559,8 +556,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     let earnedTier = null; 
                     
                     const sortedRules = Object.entries(rules).sort((a, b) => {
-                        const targetA = Number(String((a[1]?.type || 'omset').toLowerCase() === 'omset' ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-                        const targetB = Number(String((b[1]?.type || 'omset').toLowerCase() === 'omset' ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+                        const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+                        const targetA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const targetB = Number(String(isOmsetB ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
                         return targetB - targetA;
                     });
 
@@ -569,10 +568,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
-                        const ruleType = (rule.type || 'omset').toLowerCase();
-                        const target = Number(String(ruleType === 'omset' ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const ruleType = String(rule.type || 'omset').toLowerCase();
+                        const isOmset = ruleType.includes('omset');
+                        const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
                         
-                        // 🚀 FIXED: Smart Timeframe Parser matches the Map System exactly
                         let timeframeDays = 90;
                         if (rule.timeframe) {
                             const tfStr = String(rule.timeframe).toLowerCase();
@@ -589,92 +588,80 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            // 🚀 FIXED: Legacy Transaction Type Support & DD/MM/YYYY Date Parser
                             const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                             if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && tType === 'SALE') {
-                                
                                 let tTime = 0;
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
                                 } else if (t.date && typeof t.date === 'string') {
-                                    const dateStr = t.date.split(',')[0].trim();
-                                    const dateParts = dateStr.split('/');
-                                    if (dateParts.length === 3) {
-                                        tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
-                                    } else {
-                                        tTime = new Date(dateStr).getTime();
-                                    }
+                                    let cleanDate = t.date.toLowerCase().split(',')[0].trim()
+                                        .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
+                                        .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
+                                        .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
+                                    const dateParts = cleanDate.split('/');
+                                    if (dateParts.length === 3) tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
+                                    else tTime = new Date(cleanDate).getTime();
                                 }
                                 if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                                 if (tTime >= cutoff.getTime()) {
-                                    if (ruleType === 'omset') {
-                                        metricTotal += (Number(t.total) || 0);
-                                    }
-                                    else if (ruleType === 'volume') {
+                                    if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                                    else if (ruleType.includes('volume')) {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                         itemsList.forEach(item => {
-                                            if (!item) return;
                                             let qtyInBks = Number(item.qty) || 0;
                                             if (item.unit === 'Slop') qtyInBks *= 10;
                                             if (item.unit === 'Bal') qtyInBks *= 200;
                                             if (item.unit === 'Karton') qtyInBks *= 800;
-                                            if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
-                                            if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
-                                            if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
-                                            if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                                            const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                            if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                            if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                            if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                            if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
                                         });
                                     }
                                 }
                             }
                         });
 
-                        // Add current live sale
-                        if (ruleType === 'omset') metricTotal += Number(finalTotal);
-                        else if (ruleType === 'volume') {
+                        if (isOmset) metricTotal += Number(finalTotal);
+                        else if (ruleType.includes('volume')) {
                             finalCart.forEach(item => {
-                                if (!item) return;
                                 let qtyInBks = Number(item.qty) || 0;
                                 if (item.unit === 'Slop') qtyInBks *= 10;
                                 if (item.unit === 'Bal') qtyInBks *= 200;
                                 if (item.unit === 'Karton') qtyInBks *= 800;
-                                if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
-                                if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
-                                if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
-                                if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                                const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
                             });
                         }
-
-                        if (metricTotal > debugMetric) debugMetric = metricTotal;
 
                         if (metricTotal >= target) {
                             earnedTier = tierId;
                             debugTarget = target;
+                            debugMetric = metricTotal;
                             break; 
                         }
                     }
 
-                    // 🚀 FIXED: The Zero-Fallback. Use the lowest Performance Rank from the database settings, not the Pricing Tier!
                     if (!earnedTier) {
                         earnedTier = sortedRules.length > 0 ? sortedRules[sortedRules.length - 1][0] : (allowedTiers[allowedTiers.length - 1] || 'Retail'); 
                         debugTarget = 0;
                     }
 
-                    // 🚀 FIXED: Direct ID Targeting. Bypasses name-searching entirely so Ghost Stores can't steal the upgrade!
                     const storeId = selectedCustomerInfo?.id;
                     let targetDocRef = null;
                     let currentTier = null;
 
-                    // 🚀 FIXED: Explicitly reject the 'NOO_TEMP' fake ID so the engine correctly waits 1.5 seconds for Firebase!
                     if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
                         targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
                         const storeSnap = await getDoc(targetDocRef);
                         if (storeSnap.exists()) currentTier = storeSnap.data().tier;
                     } else {
-                        // 🚀 FIXED: The NOO Indexing Trap! Firebase needs 1.5 seconds to index a newly created NOO before it can be found.
                         if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
-
-                        // Fallback for Walk-Ins & NOOs
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
                         const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
@@ -688,8 +675,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (currentTier !== earnedTier) {
                             await updateDoc(targetDocRef, { tier: earnedTier });
                             if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
-                        } else {
-                            if (triggerCapy) triggerCapy(`Status Maintained: ${finalCust} remains ${earnedTier}. (Sales Total: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)})`);
                         }
                     }
                 }
@@ -703,18 +688,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
-            setCart([]); 
-            setCustomerName("");
-            setLockedTier(null); 
-            setSelectedCustomerInfo(null);
-            setGpsStatus('idle');
-            setAgentLocation(null);
-            setTxProofPhoto(null); 
-            setIsReturMode(false); 
-            setManualOverride(false); 
+            setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
+            setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null); 
+            setIsReturMode(false); setManualOverride(false); 
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-            setMerchantMood("deal"); 
-            setMerchantMsg("Heh heh heh... Thank you, stranger!");
+            setMerchantMood("deal"); setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) {
             console.error("Transaction failed:", error);

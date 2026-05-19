@@ -1151,13 +1151,15 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     }, [db, appId, userId]);
 
     const runSimulation = () => {
+        // 🚀 FIXED: Robust Rule Type Parsing! Handles "Total Omset", "Omset", "Target Omset", etc.
         const sortedRules = Object.entries(rules).sort((a, b) => {
-            const tA = Number(String((a[1]?.type || 'omset').toLowerCase() === 'omset' ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-            const tB = Number(String((b[1]?.type || 'omset').toLowerCase() === 'omset' ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
             return tB - tA;
         });
 
-        // 🚀 FIXED: Added 'all' array to track universal XP for every store!
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
         const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
@@ -1167,8 +1169,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
-                const ruleType = (rule.type || 'omset').toLowerCase();
-                const target = Number(String(ruleType === 'omset' ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                const ruleType = String(rule.type || 'omset').toLowerCase();
+                const isOmset = ruleType.includes('omset');
+                const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
 
                 let timeframeDays = 90;
                 if (rule.timeframe) {
@@ -1186,39 +1189,39 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
                 const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
-                    // 🚀 FIXED: Legacy Transaction Parser! Grants XP even if the receipt was missing the 'SALE' tag
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                     if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && tType === 'SALE') {
                         let tTime = 0;
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
                         } else if (t.date && typeof t.date === 'string') {
-                            // 🚀 FIXED: The DD/MM/YYYY Date Crash. Safely parses Indonesian text dates into math!
-                            const dateStr = t.date.split(',')[0].trim();
-                            const dateParts = dateStr.split('/');
-                            if (dateParts.length === 3) {
-                                tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
-                            } else {
-                                tTime = new Date(dateStr).getTime();
-                            }
+                            // 🚀 FIXED: The Ultimate Indonesian Date Parser
+                            let cleanDate = t.date.toLowerCase().split(',')[0].trim()
+                                .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
+                                .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
+                                .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
+                            
+                            const dateParts = cleanDate.split('/');
+                            if (dateParts.length === 3) tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
+                            else tTime = new Date(cleanDate).getTime();
                         }
                         if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                         if (tTime >= cutoff.getTime()) {
-                            if (ruleType === 'omset') {
+                            if (isOmset) {
                                 metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                            } else if (ruleType === 'volume') {
+                            } else if (ruleType.includes('volume')) {
                                 const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                 itemsList.forEach(item => {
                                     let qtyInBks = Number(item.qty) || 0;
                                     if (item.unit === 'Slop') qtyInBks *= 10;
                                     if (item.unit === 'Bal') qtyInBks *= 200;
                                     if (item.unit === 'Karton') qtyInBks *= 800;
-                                    const vUnit = (rule.volumeUnit || 'Bks').toLowerCase();
-                                    if (vUnit === 'bks') metricTotal += qtyInBks;
-                                    if (vUnit === 'slop') metricTotal += (qtyInBks / 10);
-                                    if (vUnit === 'bal') metricTotal += (qtyInBks / 200);
-                                    if (vUnit === 'karton') metricTotal += (qtyInBks / 800);
+                                    const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                    if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                    if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                    if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                    if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
                                 });
                             }
                         }
@@ -1238,7 +1241,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
-            // 🚀 FIXED: Captures exact XP for EVERY store so you can audit them on the UI!
             const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: maxMetricTotal };
             results.all.push(changeObj);
 
@@ -1251,7 +1253,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             }
         });
         
-        // Sort highest XP to top
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
