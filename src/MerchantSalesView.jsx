@@ -432,7 +432,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     const submitNooRegistration = () => {
         if (!validateNoo()) return;
-        const tempStore = { id: 'NOO_TEMP', name: customerName, isNooRegistration: true, ...nooForm, latitude: agentLocation?.latitude, longitude: agentLocation?.longitude };
+        // 🚀 FIXED: Decoupled! New NOOs explicitly start 'UNRANKED' for Performance Rank, but keep requested priceTier.
+        const tempStore = { 
+            id: 'NOO_TEMP', 
+            name: customerName, 
+            isNooRegistration: true, 
+            ...nooForm, 
+            tier: 'UNRANKED', 
+            priceTier: nooForm.requestedTier,
+            latitude: agentLocation?.latitude, 
+            longitude: agentLocation?.longitude 
+        };
         setSelectedCustomerInfo(tempStore);
         setLockedTier(nooForm.requestedTier);
         updateCartPricing(nooForm.requestedTier);
@@ -455,7 +465,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 name: customerName.toUpperCase().trim(),
                 phone: nooForm.phone,
                 address: "GPS Locked via NOO Form",
-                tier: nooForm.requestedTier,
+                // 🚀 FIXED: Decoupled! New NOOs explicitly start 'UNRANKED'
+                tier: 'UNRANKED',
                 priceTier: nooForm.requestedTier,
                 storeType: 'Retailer',
                 latitude: agentLocation?.latitude,
@@ -599,9 +610,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-                    // 🚀 FIXED: The Zero-Fallback. If math fails to hit ANY target, force them into the lowest tier instead of aborting!
+                    // 🚀 FIXED: The Zero-Fallback. Use the lowest Performance Rank from the database settings, not the Pricing Tier!
                     if (!earnedTier) {
-                        earnedTier = allowedTiers[allowedTiers.length - 1]; 
+                        earnedTier = sortedRules.length > 0 ? sortedRules[sortedRules.length - 1][0] : (allowedTiers[allowedTiers.length - 1] || 'Retail'); 
                         debugTarget = 0;
                     }
 

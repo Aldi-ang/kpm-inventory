@@ -1494,7 +1494,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     // 🚀 FIXED: Indestructible String validation and fully decoupled Performance vs Pricing tiers!
                     let rawTier = c.tier || 'Retail';
                     let safePerfTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
-                    if (!safePerfTier) safePerfTier = activeTiers[0]?.id || 'Retail';
+                    // 🚀 FIXED: Default unranked stores to the LOWEST rank (Tier 4), NOT the Highest rank (Tier 1)!
+                    if (!safePerfTier) safePerfTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
                     let rawPrice = c.priceTier || 'Retail';
                     let safePriceTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawPrice).toLowerCase().trim())?.id || 'Retail';
