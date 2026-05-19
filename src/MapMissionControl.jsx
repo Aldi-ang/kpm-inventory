@@ -1148,10 +1148,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     }, [db, appId, userId]);
 
     const runSimulation = () => {
-        // 🚀 FIXED: Total simplification to match MerchantSalesView.
+        // 🚀 FIXED: Aggressively strip dots/commas from targets so "1.000.000" doesn't become NaN
         const sortedRules = Object.entries(rules).sort((a, b) => {
-            const tA = (a[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
-            const tB = (b[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
+            const tA = Number(String((a[1]?.type || 'omset').toLowerCase() === 'omset' ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+            const tB = Number(String((b[1]?.type || 'omset').toLowerCase() === 'omset' ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
             return tB - tA;
         });
 
@@ -1165,17 +1165,27 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
                 const ruleType = (rule.type || 'omset').toLowerCase();
-                const target = ruleType === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                const target = Number(String(ruleType === 'omset' ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                const timeframeDays = parseInt(rule.timeframe || 90);
+                // 🚀 FIXED: Smart Timeframe Parser. Prevents "1 month" from becoming exactly 1 day!
+                let timeframeDays = 90;
+                if (rule.timeframe) {
+                    const tfStr = String(rule.timeframe).toLowerCase();
+                    const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
+                    if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
+                    else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
+                    else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
+                    else timeframeDays = numVal;
+                }
+
                 const cutoff = new Date();
                 cutoff.setDate(cutoff.getDate() - timeframeDays);
                 let metricTotal = 0;
 
                 const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
-                    // 🚀 FIXED: Aggressive Null-Checks added
-                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && t.type === 'SALE') {
+                    // 🚀 FIXED: Uppercase TYPE check and safer customerName matching
+                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && String(t.type || '').toUpperCase() === 'SALE') {
                         let tTime = 0;
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
