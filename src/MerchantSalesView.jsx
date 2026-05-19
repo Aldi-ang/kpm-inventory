@@ -615,7 +615,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const storeSnap = await getDoc(targetDocRef);
                         if (storeSnap.exists()) currentTier = storeSnap.data().tier;
                     } else {
-                        // Fallback for Walk-Ins
+                        // 🚀 FIXED: The NOO Indexing Trap! Firebase needs 1.5 seconds to index a newly created NOO before it can be found.
+                        if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
+
+                        // Fallback for Walk-Ins & NOOs
                         const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
                         const qSnap = await getDocs(customersRef);
                         const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());

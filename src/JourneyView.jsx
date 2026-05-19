@@ -498,7 +498,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
     }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
 
     useEffect(() => {
-        let baseRoute = customers.filter(c => c.visitFreq === 7 || c.visitDay === selectedDay);
+        // 🚀 FIXED: Robust fallback for visitFreq. NOOs from the Sales Terminal might not have a strict integer 7 set!
+        let baseRoute = customers.filter(c => {
+            const freq = parseInt(c.visitFreq) || 7;
+            return freq === 7 || c.visitDay === selectedDay;
+        });
         
         if (selectedAgent !== 'All') baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
         if (selectedProvinsi !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Provinsi === selectedProvinsi);
