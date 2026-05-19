@@ -621,7 +621,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     let targetDocRef = null;
                     let currentTier = null;
 
-                    if (storeId) {
+                    // 🚀 FIXED: Explicitly reject the 'NOO_TEMP' fake ID so the engine correctly waits 1.5 seconds for Firebase!
+                    if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
                         targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
                         const storeSnap = await getDoc(targetDocRef);
                         if (storeSnap.exists()) currentTier = storeSnap.data().tier;
