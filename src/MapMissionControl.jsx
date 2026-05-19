@@ -1190,19 +1190,22 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
 
                         if (tTime >= cutoff.getTime()) {
-                            if (rule.type === 'omset') {
-                                metricTotal += Number(String(t.total).replace(/[^0-9-]/g, ''));
-                            } else if (rule.type === 'volume') {
+                            // 🚀 FIXED: Case-insensitive ruleType to match MerchantSalesView!
+                            if (ruleType === 'omset') {
+                                metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                            } else if (ruleType === 'volume') {
                                 const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                 itemsList.forEach(item => {
                                     let qtyInBks = Number(item.qty) || 0;
                                     if (item.unit === 'Slop') qtyInBks *= 10;
                                     if (item.unit === 'Bal') qtyInBks *= 200;
                                     if (item.unit === 'Karton') qtyInBks *= 800;
-                                    if (rule.volumeUnit === 'Bks') metricTotal += qtyInBks;
-                                    if (rule.volumeUnit === 'Slop') metricTotal += (qtyInBks / 10);
-                                    if (rule.volumeUnit === 'Bal') metricTotal += (qtyInBks / 200);
-                                    if (rule.volumeUnit === 'Karton') metricTotal += (qtyInBks / 800);
+                                    
+                                    const vUnit = (rule.volumeUnit || 'Bks').toLowerCase();
+                                    if (vUnit === 'bks') metricTotal += qtyInBks;
+                                    if (vUnit === 'slop') metricTotal += (qtyInBks / 10);
+                                    if (vUnit === 'bal') metricTotal += (qtyInBks / 200);
+                                    if (vUnit === 'karton') metricTotal += (qtyInBks / 800);
                                 });
                             }
                         }
@@ -1216,7 +1219,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             }
 
-            const currentTier = store.tier || store.priceTier || lowestTierId;
+            // 🚀 FIXED: The Fatal Ghost Variable. Repaired currentTier logic to safely use fallbackTier instead of lowestTierId!
+            const currentTier = store.tier || store.priceTier || fallbackTier;
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
