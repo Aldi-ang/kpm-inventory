@@ -1137,11 +1137,14 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                // 🚀 FIXED: Now properly links to 'tierRules' configured in Global Settings!
-                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                // 🚀 FIXED: Deep Database Sweeper for Simulator
+                let snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
                 if (snap.exists() && snap.data().rules) {
                     setRules(snap.data().rules);
+                    return;
                 }
+                const mainSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
+                if (mainSnap.exists() && mainSnap.data().tierRules) setRules(mainSnap.data().tierRules);
             } catch(e) {}
         };
         loadSettings();
@@ -1229,8 +1232,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             }
 
-            // 🚀 FIXED: The Fatal Ghost Variable. Repaired currentTier logic to safely use fallbackTier instead of lowestTierId!
-            const currentTier = store.tier || store.priceTier || fallbackTier;
+            // 🚀 FIXED: True Gamified Logic! Simulator strictly isolates Performance XP (Ranks) and completely ignores Pricing (Grosir/Ecer).
+            const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
+                                ? store.tier : fallbackTier;
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
@@ -1511,8 +1515,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     // 🚀 FIXED: Default unranked stores to the LOWEST rank (Tier 4), NOT the Highest rank (Tier 1)!
                     if (!safePerfTier) safePerfTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
-                    let rawPrice = c.priceTier || 'Retail';
-                    let safePriceTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawPrice).toLowerCase().trim())?.id || 'Retail';
+                    // 🚀 FIXED: Pricing Tiers (Grosir/Ecer) are now 100% decoupled from Performance XP Ranks! They will never overwrite each other again.
+                    let safePriceTier = c.priceTier || c.pricingTier || 'Retail';
 
                     // 🚀 FIXED: Re-inject the safe string fields into the store object so they never crash the UI
                     return { ...c, name: safeName, phone: safePhone, storeType: safeStoreType, address: addr, city: cit, region: reg, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };

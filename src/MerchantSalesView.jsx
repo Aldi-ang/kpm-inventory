@@ -540,19 +540,27 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
 
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Armor-Plated Direct DB Evaluation
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Direct ID Targeting
+         
+            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Gamified XP System
             try {
                 const userId = user?.uid || user?.id || 'default';
-                const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
                 
-                if (rulesSnap.exists() && rulesSnap.data().rules && !isReturMode) {
-                    const rules = rulesSnap.data().rules;
+                // 🚀 FIXED: Deep Database Sweeper to guarantee it finds your Leveling Rules no matter where Firebase saved them
+                let rules = null;
+                const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                if (rulesSnap.exists() && rulesSnap.data().rules) {
+                    rules = rulesSnap.data().rules;
+                } else {
+                    const mainSettingsSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
+                    if (mainSettingsSnap.exists() && mainSettingsSnap.data().tierRules) rules = mainSettingsSnap.data().tierRules;
+                }
+                
+                if (rules && !isReturMode) {
                     let earnedTier = null; 
                     
                     const sortedRules = Object.entries(rules).sort((a, b) => {
-                        const targetA = (a[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(a[1]?.omsetTarget || 0) : Number(a[1]?.volumeTarget || 0);
-                        const targetB = (b[1]?.type || 'omset').toLowerCase() === 'omset' ? Number(b[1]?.omsetTarget || 0) : Number(b[1]?.volumeTarget || 0);
+                        const targetA = Number(String((a[1]?.type || 'omset').toLowerCase() === 'omset' ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const targetB = Number(String((b[1]?.type || 'omset').toLowerCase() === 'omset' ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
                         return targetB - targetA;
                     });
 
@@ -562,16 +570,26 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const ruleType = (rule.type || 'omset').toLowerCase();
-                        const target = ruleType === 'omset' ? Number(rule.omsetTarget || 0) : Number(rule.volumeTarget || 0);
+                        const target = Number(String(ruleType === 'omset' ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
                         
-                        const timeframeDays = parseInt(rule.timeframe || 90);
+                        // 🚀 FIXED: Smart Timeframe Parser matches the Map System exactly
+                        let timeframeDays = 90;
+                        if (rule.timeframe) {
+                            const tfStr = String(rule.timeframe).toLowerCase();
+                            const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
+                            if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
+                            else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
+                            else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
+                            else timeframeDays = numVal;
+                        }
+
                         const cutoff = new Date();
                         cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
-                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && t.type === 'SALE') {
+                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && String(t.type || '').toUpperCase() === 'SALE') {
                                 
                                 let tTime = 0;
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
