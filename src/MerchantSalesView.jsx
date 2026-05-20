@@ -622,21 +622,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             if (t && isMatch && tType === 'SALE') {
                                 let tTime = 0;
                                 
+                                // 1. Try Firebase Object
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
-                                } else if (t.timestamp && typeof t.timestamp === 'string') {
-                                    const parsedTs = new Date(t.timestamp).getTime();
+                                } 
+                                // 2. Try Raw Number
+                                else if (typeof t.timestamp === 'number') {
+                                    tTime = t.timestamp;
+                                }
+                                // 3. Try String (Fixing Mobile Safari Space-Bug)
+                                else if (t.timestamp && typeof t.timestamp === 'string') {
+                                    let safeTs = t.timestamp.replace(' ', 'T'); 
+                                    const parsedTs = new Date(safeTs).getTime();
                                     if (!isNaN(parsedTs)) tTime = parsedTs;
-                                } else if (t.date && typeof t.date === 'string') {
+                                } 
+                                
+                                // 🚀 CRITICAL FIX: Shattered the "else if" chain! 
+                                // If the browser crashed on the timestamp, independently fallback to t.date!
+                                if ((!tTime || isNaN(tTime)) && t.date && typeof t.date === 'string') {
                                     const dateStr = String(t.date);
                                     const isoMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
                                     const euMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                                     
                                     if (isoMatch) {
-                                        // 🚀 FIXED: Aggressive Zero-Padding prevents strict-browsers (Safari/iOS) from crashing into NaN
                                         tTime = new Date(`${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}T12:00:00Z`).getTime();
                                     } else if (euMatch) {
-                                        // 🚀 FIXED: Aggressive Zero-Padding prevents strict-browsers (Safari/iOS) from crashing into NaN
                                         tTime = new Date(`${euMatch[3]}-${euMatch[2].padStart(2, '0')}-${euMatch[1].padStart(2, '0')}T12:00:00Z`).getTime();
                                     } else {
                                         let cleanDate = dateStr.toLowerCase()
@@ -649,9 +659,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     }
                                 }
                                 
-                                // 🚀 FATAL TRAP FIXED: Push corrupted dates to the deep PAST (0), never assume TODAY!
                                 if (!tTime || isNaN(tTime)) tTime = 0;
-
                                 if (tTime >= cutoff.getTime()) {
                                     if (isOmset) {
                                         metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
