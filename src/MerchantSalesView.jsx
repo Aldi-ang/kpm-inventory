@@ -585,11 +585,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     });
                     
-                    debugMetric = lifetimeXP; // UI will display Lifetime XP by default
+                    debugMetric = lifetimeXP; 
 
                     // 🚀 STEP 2: Evaluate Seasonal Timeframe Rules
                     for (let [ruleKey, rule] of sortedRules) {
-                        if (!rule || !rule.targetTier) continue; // 🚀 CRITICAL FIX: Ensure the rule actually has a target tier selected!
+                        // 🚀 FIXED: Aligned target mapping selector with core DB key schema 'tierId'
+                        const actualTargetTier = rule.tierId || rule.targetTier;
+                        if (!rule || !actualTargetTier) continue; 
                         
                         const ruleType = String(rule.type || 'omset').toLowerCase();
                         const isOmset = ruleType.includes('omset');
@@ -621,19 +623,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 } else if (t.timestamp && typeof t.timestamp === 'string') {
                                     tTime = new Date(t.timestamp).getTime();
                                 } else if (t.date && typeof t.date === 'string') {
-                                    let cleanDate = t.date.toLowerCase().split(',')[0].trim()
+                                    let cleanDate = t.date.toLowerCase()
                                         .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                         .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                         .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
                                     
-                                    if (cleanDate.includes('-')) {
-                                        const dParts = cleanDate.split('-');
-                                        if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
-                                        else tTime = new Date(cleanDate).getTime();
-                                    } else if (cleanDate.includes('/')) {
-                                        const dParts = cleanDate.split('/');
-                                        if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
-                                        else tTime = new Date(cleanDate).getTime();
+                                    // 🚀 FIXED: Applied matching Regex parsing pattern to the checkout interface
+                                    const dateMatch = cleanDate.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                                    if (dateMatch) {
+                                        tTime = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).getTime();
                                     } else {
                                         tTime = new Date(cleanDate).getTime();
                                     }
@@ -678,8 +676,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
+                        // 🚀 FIXED: Assign the matching schema variable
                         if (metricTotal >= target) {
-                            earnedTier = rule.targetTier; // 🚀 CRITICAL FIX: Award the actual named tier!
+                            earnedTier = actualTargetTier;
                             debugTarget = target;
                             break; 
                         }

@@ -1172,8 +1172,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
         mapPoints.forEach(store => {
             let earnedTier = fallbackTier;
+            
+            // 🚀 STEP 1: Calculate Absolute Lifetime Career XP
             let lifetimeXP = 0;
-
             safeTrans.forEach(t => {
                 const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                 const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
@@ -1182,11 +1183,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             });
 
-            // 🚀 Gamified "Seasonal" XP Display Tracker
-            let maxSeasonalXP = 0;
+            let currentStoreSeasonalXP = 0; // Tracks the current active season timeframe metric
 
             for (let [ruleKey, rule] of sortedRules) {
-                if (!rule || !rule.targetTier) continue; // 🚀 CRITICAL FIX: Ensure the rule actually has a target tier selected!
+                // 🚀 FIXED: SettingsView maps selected tiers to 'tierId', NOT 'targetTier'! Matches database schema perfectly.
+                const actualTargetTier = rule.tierId || rule.targetTier;
+                if (!rule || !actualTargetTier) continue;
                 
                 const ruleType = String(rule.type || 'omset').toLowerCase();
                 const isOmset = ruleType.includes('omset');
@@ -1212,24 +1214,21 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     
                     if (t && isMatch && tType === 'SALE') {
                         let tTime = 0;
+                        
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
                         } else if (t.timestamp && typeof t.timestamp === 'string') {
                             tTime = new Date(t.timestamp).getTime();
                         } else if (t.date && typeof t.date === 'string') {
-                            let cleanDate = t.date.toLowerCase().split(',')[0].trim()
+                            let cleanDate = t.date.toLowerCase()
                                 .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                 .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                 .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
                             
-                            if (cleanDate.includes('-')) {
-                                const dParts = cleanDate.split('-');
-                                if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
-                                else tTime = new Date(cleanDate).getTime();
-                            } else if (cleanDate.includes('/')) {
-                                const dParts = cleanDate.split('/');
-                                if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
-                                else tTime = new Date(cleanDate).getTime();
+                            // 🚀 FIXED: Bulletproof RegEx Pattern ignores all trailing time strings/punctuation, preventing NaN crashing
+                            const dateMatch = cleanDate.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                            if (dateMatch) {
+                                tTime = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).getTime();
                             } else {
                                 tTime = new Date(cleanDate).getTime();
                             }
@@ -1258,23 +1257,28 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     }
                 });
 
-                if (metricTotal > maxSeasonalXP) maxSeasonalXP = metricTotal;
+                // Assign seasonal calculation tracker
+                if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
 
                 if (metricTotal >= target) {
-                    earnedTier = rule.targetTier; // 🚀 CRITICAL FIX: Award the actual named tier!
+                    earnedTier = actualTargetTier;
                     break;
                 }
             }
-
-            // Fallback: If seasonal XP is 0, show lifetime so the UI doesn't look empty, but ranks are based purely on seasonal.
-            const displayedXP = maxSeasonalXP > 0 ? maxSeasonalXP : lifetimeXP;
 
             const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
                                 ? store.tier : fallbackTier;
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
-            const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: displayedXP };
+            const changeObj = { 
+                storeId: store.id, 
+                name: store.name, 
+                old: currentTier, 
+                new: earnedTier, 
+                rev: currentStoreSeasonalXP,
+                lt: lifetimeXP // 🚀 Pass career statistics to the interface
+            };
             results.all.push(changeObj);
 
             if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
@@ -1289,7 +1293,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
-
 
 
 
@@ -1344,9 +1347,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             <div className="max-h-48 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
                                 {simResults.all.map((act, i) => (
                                     <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
-                                        <span className="font-bold text-white truncate w-1/3">{act.name}</span>
-                                        {/* 🚀 FIXED: Explicitly shows Total XP for every store! */}
-                                        <span className="text-orange-400 font-mono font-black tracking-widest text-[9px]">XP: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                        <span className="font-bold text-white truncate w-1/4">{act.name}</span>
+                                        {/* 🚀 FIXED: Separates Seasonal Timeframe metrics from Career Lifetimes for transparency! */}
+                                        <div className="flex flex-col items-start w-2/5 font-mono">
+                                            <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                            <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
+                                        </div>
                                         <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
                                             <span className="text-slate-500">{act.old}</span>
                                             {act.old !== act.new ? (
