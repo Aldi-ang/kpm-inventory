@@ -1157,6 +1157,45 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
 
     const runSimulation = () => {
+        // 🚀 THE ULTIMATE SIMPLE DATE PARSER: No more regex madness.
+        const getSafeTime = (t) => {
+            if (!t) return 0;
+            if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+            if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+            
+            const parseDateStr = (dateStr) => {
+                if (!dateStr) return 0;
+                let ms = new Date(dateStr).getTime();
+                if (!isNaN(ms)) return ms; // Standard ISO works instantly
+                
+                // Translate Indonesian months so the browser clock can read it natively
+                let cleanStr = String(dateStr).toLowerCase()
+                    .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                    .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
+                    .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                    .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
+                    .replace(/desember|des/g, 'december');
+                
+                ms = new Date(cleanStr).getTime();
+                if (!isNaN(ms)) return ms;
+
+                // Fallback for strict DD/MM/YYYY
+                const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+                if (parts.length === 3) {
+                    let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                    let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                    let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                    ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                    if (!isNaN(ms)) return ms;
+                }
+                return 0;
+            };
+
+            const tsTime = parseDateStr(t.timestamp);
+            if (tsTime > 0) return tsTime;
+            return parseDateStr(t.date);
+        };
+
         const safeRules = rules || {};
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
@@ -1173,7 +1212,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         mapPoints.forEach(store => {
             let earnedTier = fallbackTier;
             
-            // 🚀 STEP 1: Calculate Absolute Lifetime Career XP
+            // 🚀 STEP 1: Absolute Lifetime XP
             let lifetimeXP = 0;
             safeTrans.forEach(t => {
                 const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
@@ -1183,12 +1222,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             });
 
-            let currentStoreSeasonalXP = 0; // Tracks the current active season timeframe metric
-
-
+            let currentStoreSeasonalXP = 0; 
 
             for (let [ruleKey, rule] of sortedRules) {
-                // 🚀 FIXED: SettingsView maps selected tiers to 'tierId', NOT 'targetTier'! Matches database schema perfectly.
                 const actualTargetTier = rule.tierId || rule.targetTier;
                 if (!rule || !actualTargetTier) continue;
                 
@@ -1210,59 +1246,13 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 cutoff.setDate(cutoff.getDate() - timeframeDays);
                 let metricTotal = 0;
 
-
-
-
-               safeTrans.forEach(t => {
+                safeTrans.forEach(t => {
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                     const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
                     
                     if (t && isMatch && tType === 'SALE') {
-                        let tTime = 0;
+                        const tTime = getSafeTime(t); // 🚀 CLEAN: One line does all the work!
                         
-                        // 1. Firebase Object Failsafes
-                        if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-                        else if (t?.timestamp?._seconds) tTime = t.timestamp._seconds * 1000;
-                        else if (t?.timestamp?.toMillis) tTime = t.timestamp.toMillis();
-                        
-                        // 2. Raw Number Failsafe (Handles both Seconds & Milliseconds)
-                        else if (typeof t?.timestamp === 'number') tTime = t.timestamp < 1000000000000 ? t.timestamp * 1000 : t.timestamp;
-                        
-                        // 3. Valid ISO Failsafe
-                        else if (typeof t?.timestamp === 'string') {
-                            const parsed = new Date(t.timestamp).getTime();
-                            if (!isNaN(parsed)) tTime = parsed;
-                        }
-
-                        // 4. 🚀 ULTIMATE BRUTE FORCE EXTRACTOR: Impossible to crash on mobile/Safari
-                        if (!tTime || isNaN(tTime)) {
-                            let rawStr = String(t?.date || t?.timestamp || '').toLowerCase();
-                            rawStr = rawStr
-                                .replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03')
-                                .replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07')
-                                .replace(/agustus|agu|aug/g, '08').replace(/oktober|okt|oct/g, '10').replace(/desember|des|dec/g, '12')
-                                .replace(/september|sep/g, '09').replace(/november|nov/g, '11').replace(/april|apr/g, '04');
-                            
-                            // Shreds text, extracts ONLY pure digits
-                            const chunks = rawStr.match(/\d+/g);
-                            if (chunks && chunks.length >= 3) {
-                                let year = chunks.find(c => c.length === 4) || new Date().getFullYear();
-                                const remaining = chunks.filter(c => c !== String(year));
-                                if (remaining.length >= 2) {
-                                    let day = remaining[0];
-                                    let month = remaining[1];
-                                    if (Number(month) > 12 && Number(day) <= 12) {
-                                        day = remaining[1];
-                                        month = remaining[0];
-                                    }
-                                    tTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00Z`).getTime();
-                                }
-                            }
-                        }
-                        
-                        // 🚀 FATAL TRAP FIXED: Push corrupted dates to the deep PAST (0), never assume TODAY!
-                        if (isNaN(tTime) || !tTime) tTime = 0;
-
                         if (tTime >= cutoff.getTime()) {
                             if (isOmset) {
                                 metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
@@ -1283,14 +1273,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         }
                     }
                 });
-                                    
-                                    
 
-
-
-
-
-                // Assign seasonal calculation tracker
                 if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
 
                 if (metricTotal >= target) {
@@ -1310,7 +1293,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 old: currentTier, 
                 new: earnedTier, 
                 rev: currentStoreSeasonalXP,
-                lt: lifetimeXP // 🚀 Pass career statistics to the interface
+                lt: lifetimeXP
             };
             results.all.push(changeObj);
 

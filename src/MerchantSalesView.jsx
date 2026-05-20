@@ -570,12 +570,49 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
 
 
-                    let currentStoreSeasonalXP = 0; // 🚀 FIXED: UI Tracker for Season XP
+                    // 🚀 THE ULTIMATE SIMPLE DATE PARSER
+                    const getSafeTime = (t) => {
+                        if (!t) return 0;
+                        if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+                        if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+                        
+                        const parseDateStr = (dateStr) => {
+                            if (!dateStr) return 0;
+                            let ms = new Date(dateStr).getTime();
+                            if (!isNaN(ms)) return ms; 
+                            
+                            let cleanStr = String(dateStr).toLowerCase()
+                                .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                                .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
+                                .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                                .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
+                                .replace(/desember|des/g, 'december');
+                            
+                            ms = new Date(cleanStr).getTime();
+                            if (!isNaN(ms)) return ms;
+
+                            const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+                            if (parts.length === 3) {
+                                let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                                let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                                let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                                ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                                if (!isNaN(ms)) return ms;
+                            }
+                            return 0;
+                        };
+
+                        const tsTime = parseDateStr(t.timestamp);
+                        if (tsTime > 0) return tsTime;
+                        return parseDateStr(t.date);
+                    };
+
+                    let currentStoreSeasonalXP = 0;
                     let debugTarget = 0;
 
                     const safeTrans = Array.isArray(transactions) ? transactions : [];
 
-                    // 🚀 STEP 1: Calculate Absolute Lifetime XP
+                    // 🚀 STEP 1: Absolute Lifetime XP
                     let lifetimeXP = 0;
                     safeTrans.forEach(t => {
                         const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
@@ -585,7 +622,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     });
 
-                    // 🚀 STEP 2: Evaluate Seasonal Timeframe Rules
+                    // 🚀 STEP 2: Seasonal Timeframe XP
                     for (let [ruleKey, rule] of sortedRules) {
                         const actualTargetTier = rule.tierId || rule.targetTier;
                         if (!rule || !actualTargetTier) continue; 
@@ -613,43 +650,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
                             
                             if (t && isMatch && tType === 'SALE') {
-                                let tTime = 0;
-                                
-                                if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-                                else if (t?.timestamp?._seconds) tTime = t.timestamp._seconds * 1000;
-                                else if (t?.timestamp?.toMillis) tTime = t.timestamp.toMillis();
-                                else if (typeof t?.timestamp === 'number') tTime = t.timestamp < 1000000000000 ? t.timestamp * 1000 : t.timestamp;
-                                else if (typeof t?.timestamp === 'string') {
-                                    const parsed = new Date(t.timestamp).getTime();
-                                    if (!isNaN(parsed)) tTime = parsed;
-                                }
-
-                                // 🚀 ULTIMATE BRUTE FORCE EXTRACTOR
-                                if (!tTime || isNaN(tTime)) {
-                                    let rawStr = String(t?.date || t?.timestamp || '').toLowerCase();
-                                    rawStr = rawStr
-                                        .replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03')
-                                        .replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07')
-                                        .replace(/agustus|agu|aug/g, '08').replace(/oktober|okt|oct/g, '10').replace(/desember|des|dec/g, '12')
-                                        .replace(/september|sep/g, '09').replace(/november|nov/g, '11').replace(/april|apr/g, '04');
-                                    
-                                    const chunks = rawStr.match(/\d+/g);
-                                    if (chunks && chunks.length >= 3) {
-                                        let year = chunks.find(c => c.length === 4) || new Date().getFullYear();
-                                        const remaining = chunks.filter(c => c !== String(year));
-                                        if (remaining.length >= 2) {
-                                            let day = remaining[0];
-                                            let month = remaining[1];
-                                            if (Number(month) > 12 && Number(day) <= 12) {
-                                                day = remaining[1];
-                                                month = remaining[0];
-                                            }
-                                            tTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00Z`).getTime();
-                                        }
-                                    }
-                                }
-                                
-                                if (isNaN(tTime) || !tTime) tTime = 0;
+                                const tTime = getSafeTime(t); // 🚀 CLEAN: One line does all the work!
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (isOmset) {
@@ -688,7 +689,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
-                        // 🚀 FIXED: Assign Active Season XP to UI Tracker
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
 
                         if (metricTotal >= target) {
