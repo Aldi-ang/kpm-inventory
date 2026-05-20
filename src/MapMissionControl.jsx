@@ -1220,44 +1220,48 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     if (t && isMatch && tType === 'SALE') {
                         let tTime = 0;
                         
-                        // 1. Try Firebase Object
-                                if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
-                                    tTime = t.timestamp.seconds * 1000;
-                                } 
-                                // 2. Try Raw Number
-                                else if (typeof t.timestamp === 'number') {
-                                    tTime = t.timestamp;
-                                }
-                                // 3. Try String (Fixing Mobile Safari Space-Bug)
-                                else if (t.timestamp && typeof t.timestamp === 'string') {
-                                    let safeTs = t.timestamp.replace(' ', 'T'); 
-                                    const parsedTs = new Date(safeTs).getTime();
-                                    if (!isNaN(parsedTs)) tTime = parsedTs;
-                                } 
-                                
-                                // 🚀 CRITICAL FIX: Shattered the "else if" chain! 
-                                // If the browser crashed on the timestamp, independently fallback to t.date!
-                                if ((!tTime || isNaN(tTime)) && t.date && typeof t.date === 'string') {
-                                    const dateStr = String(t.date);
-                                    const isoMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-                                    const euMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                                    
-                                    if (isoMatch) {
-                                        tTime = new Date(`${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}T12:00:00Z`).getTime();
-                                    } else if (euMatch) {
-                                        tTime = new Date(`${euMatch[3]}-${euMatch[2].padStart(2, '0')}-${euMatch[1].padStart(2, '0')}T12:00:00Z`).getTime();
-                                    } else {
-                                        let cleanDate = dateStr.toLowerCase()
-                                            .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
-                                            .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                            .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
-                                            .replace(/\./g, ':');
-                                        const parsedText = new Date(cleanDate).getTime();
-                                        if (!isNaN(parsedText)) tTime = parsedText;
+                        // 1. Firebase Object Failsafes
+                        if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+                        else if (t?.timestamp?._seconds) tTime = t.timestamp._seconds * 1000;
+                        else if (t?.timestamp?.toMillis) tTime = t.timestamp.toMillis();
+                        
+                        // 2. Raw Number Failsafe (Handles both Seconds & Milliseconds)
+                        else if (typeof t?.timestamp === 'number') tTime = t.timestamp < 1000000000000 ? t.timestamp * 1000 : t.timestamp;
+                        
+                        // 3. Valid ISO Failsafe
+                        else if (typeof t?.timestamp === 'string') {
+                            const parsed = new Date(t.timestamp).getTime();
+                            if (!isNaN(parsed)) tTime = parsed;
+                        }
+
+                        // 4. 🚀 ULTIMATE BRUTE FORCE EXTRACTOR: Impossible to crash on mobile/Safari
+                        if (!tTime || isNaN(tTime)) {
+                            let rawStr = String(t?.date || t?.timestamp || '').toLowerCase();
+                            rawStr = rawStr
+                                .replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03')
+                                .replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07')
+                                .replace(/agustus|agu|aug/g, '08').replace(/oktober|okt|oct/g, '10').replace(/desember|des|dec/g, '12')
+                                .replace(/september|sep/g, '09').replace(/november|nov/g, '11').replace(/april|apr/g, '04');
+                            
+                            // Shreds text, extracts ONLY pure digits
+                            const chunks = rawStr.match(/\d+/g);
+                            if (chunks && chunks.length >= 3) {
+                                let year = chunks.find(c => c.length === 4) || new Date().getFullYear();
+                                const remaining = chunks.filter(c => c !== String(year));
+                                if (remaining.length >= 2) {
+                                    let day = remaining[0];
+                                    let month = remaining[1];
+                                    if (Number(month) > 12 && Number(day) <= 12) {
+                                        day = remaining[1];
+                                        month = remaining[0];
                                     }
+                                    tTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00Z`).getTime();
                                 }
-                                
-                                if (!tTime || isNaN(tTime)) tTime = 0;
+                            }
+                        }
+                        
+                        // 🚀 FATAL TRAP FIXED: Push corrupted dates to the deep PAST (0), never assume TODAY!
+                        if (isNaN(tTime) || !tTime) tTime = 0;
 
                         if (tTime >= cutoff.getTime()) {
                             if (isOmset) {
@@ -1279,7 +1283,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         }
                     }
                 });
-
+                                    
+                                    
 
 
 

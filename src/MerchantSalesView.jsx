@@ -570,7 +570,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
 
 
-                    let debugMetric = 0;
+                    let currentStoreSeasonalXP = 0; // 🚀 FIXED: UI Tracker for Season XP
                     let debugTarget = 0;
 
                     const safeTrans = Array.isArray(transactions) ? transactions : [];
@@ -584,12 +584,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                         }
                     });
-                    
-                    debugMetric = lifetimeXP; 
 
                     // 🚀 STEP 2: Evaluate Seasonal Timeframe Rules
                     for (let [ruleKey, rule] of sortedRules) {
-                        // 🚀 FIXED: Aligned target mapping selector with core DB key schema 'tierId'
                         const actualTargetTier = rule.tierId || rule.targetTier;
                         if (!rule || !actualTargetTier) continue; 
                         
@@ -611,10 +608,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
-
-
-
-
                         safeTrans.forEach(t => {
                             const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                             const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
@@ -622,44 +615,42 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             if (t && isMatch && tType === 'SALE') {
                                 let tTime = 0;
                                 
-                                // 1. Try Firebase Object
-                                if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
-                                    tTime = t.timestamp.seconds * 1000;
-                                } 
-                                // 2. Try Raw Number
-                                else if (typeof t.timestamp === 'number') {
-                                    tTime = t.timestamp;
+                                if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+                                else if (t?.timestamp?._seconds) tTime = t.timestamp._seconds * 1000;
+                                else if (t?.timestamp?.toMillis) tTime = t.timestamp.toMillis();
+                                else if (typeof t?.timestamp === 'number') tTime = t.timestamp < 1000000000000 ? t.timestamp * 1000 : t.timestamp;
+                                else if (typeof t?.timestamp === 'string') {
+                                    const parsed = new Date(t.timestamp).getTime();
+                                    if (!isNaN(parsed)) tTime = parsed;
                                 }
-                                // 3. Try String (Fixing Mobile Safari Space-Bug)
-                                else if (t.timestamp && typeof t.timestamp === 'string') {
-                                    let safeTs = t.timestamp.replace(' ', 'T'); 
-                                    const parsedTs = new Date(safeTs).getTime();
-                                    if (!isNaN(parsedTs)) tTime = parsedTs;
-                                } 
-                                
-                                // 🚀 CRITICAL FIX: Shattered the "else if" chain! 
-                                // If the browser crashed on the timestamp, independently fallback to t.date!
-                                if ((!tTime || isNaN(tTime)) && t.date && typeof t.date === 'string') {
-                                    const dateStr = String(t.date);
-                                    const isoMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-                                    const euMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+
+                                // 🚀 ULTIMATE BRUTE FORCE EXTRACTOR
+                                if (!tTime || isNaN(tTime)) {
+                                    let rawStr = String(t?.date || t?.timestamp || '').toLowerCase();
+                                    rawStr = rawStr
+                                        .replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03')
+                                        .replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07')
+                                        .replace(/agustus|agu|aug/g, '08').replace(/oktober|okt|oct/g, '10').replace(/desember|des|dec/g, '12')
+                                        .replace(/september|sep/g, '09').replace(/november|nov/g, '11').replace(/april|apr/g, '04');
                                     
-                                    if (isoMatch) {
-                                        tTime = new Date(`${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}T12:00:00Z`).getTime();
-                                    } else if (euMatch) {
-                                        tTime = new Date(`${euMatch[3]}-${euMatch[2].padStart(2, '0')}-${euMatch[1].padStart(2, '0')}T12:00:00Z`).getTime();
-                                    } else {
-                                        let cleanDate = dateStr.toLowerCase()
-                                            .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
-                                            .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                            .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
-                                            .replace(/\./g, ':');
-                                        const parsedText = new Date(cleanDate).getTime();
-                                        if (!isNaN(parsedText)) tTime = parsedText;
+                                    const chunks = rawStr.match(/\d+/g);
+                                    if (chunks && chunks.length >= 3) {
+                                        let year = chunks.find(c => c.length === 4) || new Date().getFullYear();
+                                        const remaining = chunks.filter(c => c !== String(year));
+                                        if (remaining.length >= 2) {
+                                            let day = remaining[0];
+                                            let month = remaining[1];
+                                            if (Number(month) > 12 && Number(day) <= 12) {
+                                                day = remaining[1];
+                                                month = remaining[0];
+                                            }
+                                            tTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00Z`).getTime();
+                                        }
                                     }
                                 }
                                 
-                                if (!tTime || isNaN(tTime)) tTime = 0;
+                                if (isNaN(tTime) || !tTime) tTime = 0;
+
                                 if (tTime >= cutoff.getTime()) {
                                     if (isOmset) {
                                         metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
@@ -681,10 +672,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             }
                         });
 
-
-
-
-
                         // Add current live sale
                         if (isOmset) metricTotal += Number(finalTotal);
                         else if (ruleType.includes('volume')) {
@@ -701,7 +688,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
-                        // 🚀 FIXED: Assign the matching schema variable
+                        // 🚀 FIXED: Assign Active Season XP to UI Tracker
+                        if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
+
                         if (metricTotal >= target) {
                             earnedTier = actualTargetTier;
                             debugTarget = target;
