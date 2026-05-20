@@ -565,6 +565,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         return targetB - targetA;
                     });
 
+
+
+
+
+
                     let debugMetric = 0;
                     let debugTarget = 0;
 
@@ -582,9 +587,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     
                     debugMetric = lifetimeXP; // UI will display Lifetime XP by default
 
-                    // 🚀 STEP 2: Evaluate Timeframe Rules
-                    for (let [tierId, rule] of sortedRules) {
-                        if (!rule) continue;
+                    // 🚀 STEP 2: Evaluate Seasonal Timeframe Rules
+                    for (let [ruleKey, rule] of sortedRules) {
+                        if (!rule || !rule.targetTier) continue; // 🚀 CRITICAL FIX: Ensure the rule actually has a target tier selected!
+                        
                         const ruleType = String(rule.type || 'omset').toLowerCase();
                         const isOmset = ruleType.includes('omset');
                         const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
@@ -610,7 +616,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             if (t && isMatch && tType === 'SALE') {
                                 let tTime = 0;
                                 
-                                // 🚀 ULTIMATE DATE PARSER
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
                                 } else if (t.timestamp && typeof t.timestamp === 'string') {
@@ -674,11 +679,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
 
                         if (metricTotal >= target) {
-                            earnedTier = tierId;
+                            earnedTier = rule.targetTier; // 🚀 CRITICAL FIX: Award the actual named tier!
                             debugTarget = target;
                             break; 
                         }
                     }
+
+
+
+
 
                     if (!earnedTier) {
                         earnedTier = sortedRules.length > 0 ? sortedRules[sortedRules.length - 1][0] : (allowedTiers[allowedTiers.length - 1] || 'Retail'); 

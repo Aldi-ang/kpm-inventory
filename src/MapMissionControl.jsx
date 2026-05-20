@@ -1150,8 +1150,13 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         loadSettings();
     }, [db, appId, userId]);
 
+
+
+
+
+
+
     const runSimulation = () => {
-        // 🚀 FIXED: Fallback to prevent crash if rules are missing
         const safeRules = rules || {};
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
@@ -1167,10 +1172,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
         mapPoints.forEach(store => {
             let earnedTier = fallbackTier;
-            
-            // 🚀 STEP 1: Calculate Indestructible Lifetime XP First!
-            // This guarantees the UI will NEVER show "0" if the store has past sales.
-            let lifetimeXP = 0; 
+            let lifetimeXP = 0;
+
             safeTrans.forEach(t => {
                 const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                 const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
@@ -1179,16 +1182,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             });
 
-            // 🚀 STEP 2: Evaluate Timeframe Rules
-            let maxMetricTotal = lifetimeXP; // Default display to Lifetime XP
+            // 🚀 Gamified "Seasonal" XP Display Tracker
+            let maxSeasonalXP = 0;
 
-            for (let [tierId, rule] of sortedRules) {
-                if (!rule) continue;
+            for (let [ruleKey, rule] of sortedRules) {
+                if (!rule || !rule.targetTier) continue; // 🚀 CRITICAL FIX: Ensure the rule actually has a target tier selected!
+                
                 const ruleType = String(rule.type || 'omset').toLowerCase();
                 const isOmset = ruleType.includes('omset');
                 const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                let timeframeDays = 90; // Default to 90
+                let timeframeDays = 90;
                 if (rule.timeframe) {
                     const tfStr = String(rule.timeframe).toLowerCase();
                     const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
@@ -1208,8 +1212,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     
                     if (t && isMatch && tType === 'SALE') {
                         let tTime = 0;
-                        
-                        // 🚀 ULTIMATE DATE PARSER: Handles ISO Strings, Timestamps, and Indonesian Text
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
                         } else if (t.timestamp && typeof t.timestamp === 'string') {
@@ -1233,8 +1235,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             }
                         }
                         
-                        // Failsafe: If date is totally corrupted, credit it to them anyway so they don't lose XP
-                        if (isNaN(tTime) || !tTime) tTime = Date.now(); 
+                        if (isNaN(tTime) || !tTime) tTime = Date.now();
 
                         if (tTime >= cutoff.getTime()) {
                             if (isOmset) {
@@ -1257,18 +1258,23 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     }
                 });
 
+                if (metricTotal > maxSeasonalXP) maxSeasonalXP = metricTotal;
+
                 if (metricTotal >= target) {
-                    earnedTier = tierId;
+                    earnedTier = rule.targetTier; // 🚀 CRITICAL FIX: Award the actual named tier!
                     break;
                 }
             }
+
+            // Fallback: If seasonal XP is 0, show lifetime so the UI doesn't look empty, but ranks are based purely on seasonal.
+            const displayedXP = maxSeasonalXP > 0 ? maxSeasonalXP : lifetimeXP;
 
             const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
                                 ? store.tier : fallbackTier;
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
             const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
-            const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: maxMetricTotal };
+            const changeObj = { storeId: store.id, name: store.name, old: currentTier, new: earnedTier, rev: displayedXP };
             results.all.push(changeObj);
 
             if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
@@ -1283,6 +1289,11 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
+
+
+
+
+
 
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
