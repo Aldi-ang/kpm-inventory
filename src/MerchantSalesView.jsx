@@ -553,9 +553,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 }
                 
                 if (rules && !isReturMode) {
+
                     let earnedTier = null; 
                     
-                    const sortedRules = Object.entries(rules).sort((a, b) => {
+                    const safeRules = rules || {};
+                    const sortedRules = Object.entries(safeRules).sort((a, b) => {
                         const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
                         const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
                         const targetA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
@@ -566,6 +568,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     let debugMetric = 0;
                     let debugTarget = 0;
 
+                    const safeTrans = Array.isArray(transactions) ? transactions : [];
+
+                    // 🚀 STEP 1: Calculate Absolute Lifetime XP
+                    let lifetimeXP = 0;
+                    safeTrans.forEach(t => {
+                        const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                        const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
+                        if (t && isMatch && tType === 'SALE') {
+                            lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                        }
+                    });
+                    
+                    debugMetric = lifetimeXP; // UI will display Lifetime XP by default
+
+                    // 🚀 STEP 2: Evaluate Timeframe Rules
                     for (let [tierId, rule] of sortedRules) {
                         if (!rule) continue;
                         const ruleType = String(rule.type || 'omset').toLowerCase();
@@ -586,27 +603,43 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
-                        const safeTrans = Array.isArray(transactions) ? transactions : [];
                         safeTrans.forEach(t => {
                             const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                            if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase()) && tType === 'SALE') {
+                            const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
+                            
+                            if (t && isMatch && tType === 'SALE') {
                                 let tTime = 0;
+                                
+                                // 🚀 ULTIMATE DATE PARSER
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
+                                } else if (t.timestamp && typeof t.timestamp === 'string') {
+                                    tTime = new Date(t.timestamp).getTime();
                                 } else if (t.date && typeof t.date === 'string') {
                                     let cleanDate = t.date.toLowerCase().split(',')[0].trim()
                                         .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                         .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                         .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
-                                    const dateParts = cleanDate.split('/');
-                                    if (dateParts.length === 3) tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
-                                    else tTime = new Date(cleanDate).getTime();
+                                    
+                                    if (cleanDate.includes('-')) {
+                                        const dParts = cleanDate.split('-');
+                                        if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
+                                        else tTime = new Date(cleanDate).getTime();
+                                    } else if (cleanDate.includes('/')) {
+                                        const dParts = cleanDate.split('/');
+                                        if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
+                                        else tTime = new Date(cleanDate).getTime();
+                                    } else {
+                                        tTime = new Date(cleanDate).getTime();
+                                    }
                                 }
-                                if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
+                                
+                                if (isNaN(tTime) || !tTime) tTime = Date.now();
 
                                 if (tTime >= cutoff.getTime()) {
-                                    if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                                    else if (ruleType.includes('volume')) {
+                                    if (isOmset) {
+                                        metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                                    } else if (ruleType.includes('volume')) {
                                         const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                                         itemsList.forEach(item => {
                                             let qtyInBks = Number(item.qty) || 0;
@@ -624,6 +657,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             }
                         });
 
+                        // Add current live sale
                         if (isOmset) metricTotal += Number(finalTotal);
                         else if (ruleType.includes('volume')) {
                             finalCart.forEach(item => {
@@ -642,7 +676,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (metricTotal >= target) {
                             earnedTier = tierId;
                             debugTarget = target;
-                            debugMetric = metricTotal;
                             break; 
                         }
                     }

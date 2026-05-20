@@ -1151,8 +1151,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     }, [db, appId, userId]);
 
     const runSimulation = () => {
-        // 🚀 FIXED: Robust Rule Type Parsing! Handles "Total Omset", "Omset", "Target Omset", etc.
-        const sortedRules = Object.entries(rules).sort((a, b) => {
+        // 🚀 FIXED: Fallback to prevent crash if rules are missing
+        const safeRules = rules || {};
+        const sortedRules = Object.entries(safeRules).sort((a, b) => {
             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
             const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
             const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
@@ -1162,10 +1163,24 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
         const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
 
         mapPoints.forEach(store => {
             let earnedTier = fallbackTier;
-            let maxMetricTotal = 0; // Tracks highest XP seen across all math
+            
+            // 🚀 STEP 1: Calculate Indestructible Lifetime XP First!
+            // This guarantees the UI will NEVER show "0" if the store has past sales.
+            let lifetimeXP = 0; 
+            safeTrans.forEach(t => {
+                const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+                if (t && isMatch && tType === 'SALE') {
+                    lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                }
+            });
+
+            // 🚀 STEP 2: Evaluate Timeframe Rules
+            let maxMetricTotal = lifetimeXP; // Default display to Lifetime XP
 
             for (let [tierId, rule] of sortedRules) {
                 if (!rule) continue;
@@ -1173,7 +1188,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 const isOmset = ruleType.includes('omset');
                 const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                let timeframeDays = 90;
+                let timeframeDays = 90; // Default to 90
                 if (rule.timeframe) {
                     const tfStr = String(rule.timeframe).toLowerCase();
                     const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
@@ -1187,25 +1202,39 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 cutoff.setDate(cutoff.getDate() - timeframeDays);
                 let metricTotal = 0;
 
-                const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                    if (t && ((t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase()) && tType === 'SALE') {
+                    const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+                    
+                    if (t && isMatch && tType === 'SALE') {
                         let tTime = 0;
+                        
+                        // 🚀 ULTIMATE DATE PARSER: Handles ISO Strings, Timestamps, and Indonesian Text
                         if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                             tTime = t.timestamp.seconds * 1000;
+                        } else if (t.timestamp && typeof t.timestamp === 'string') {
+                            tTime = new Date(t.timestamp).getTime();
                         } else if (t.date && typeof t.date === 'string') {
-                            // 🚀 FIXED: The Ultimate Indonesian Date Parser
                             let cleanDate = t.date.toLowerCase().split(',')[0].trim()
                                 .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                 .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                 .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
                             
-                            const dateParts = cleanDate.split('/');
-                            if (dateParts.length === 3) tTime = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`).getTime();
-                            else tTime = new Date(cleanDate).getTime();
+                            if (cleanDate.includes('-')) {
+                                const dParts = cleanDate.split('-');
+                                if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
+                                else tTime = new Date(cleanDate).getTime();
+                            } else if (cleanDate.includes('/')) {
+                                const dParts = cleanDate.split('/');
+                                if (dParts.length === 3 && dParts[0].length <= 2) tTime = new Date(`${dParts[2]}-${dParts[1]}-${dParts[0]}`).getTime();
+                                else tTime = new Date(cleanDate).getTime();
+                            } else {
+                                tTime = new Date(cleanDate).getTime();
+                            }
                         }
-                        if (isNaN(tTime) || !tTime) tTime = new Date().getTime();
+                        
+                        // Failsafe: If date is totally corrupted, credit it to them anyway so they don't lose XP
+                        if (isNaN(tTime) || !tTime) tTime = Date.now(); 
 
                         if (tTime >= cutoff.getTime()) {
                             if (isOmset) {
@@ -1227,8 +1256,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         }
                     }
                 });
-
-                if (metricTotal > maxMetricTotal) maxMetricTotal = metricTotal;
 
                 if (metricTotal >= target) {
                     earnedTier = tierId;
