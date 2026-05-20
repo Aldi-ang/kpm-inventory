@@ -1185,6 +1185,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
             let currentStoreSeasonalXP = 0; // Tracks the current active season timeframe metric
 
+
+
             for (let [ruleKey, rule] of sortedRules) {
                 // 🚀 FIXED: SettingsView maps selected tiers to 'tierId', NOT 'targetTier'! Matches database schema perfectly.
                 const actualTargetTier = rule.tierId || rule.targetTier;
@@ -1220,21 +1222,26 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         } else if (t.timestamp && typeof t.timestamp === 'string') {
                             tTime = new Date(t.timestamp).getTime();
                         } else if (t.date && typeof t.date === 'string') {
-                            let cleanDate = t.date.toLowerCase()
-                                .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
-                                .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
-                                .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec');
+                            const dateStr = String(t.date);
+                            const isoMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+                            const euMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                             
-                            // 🚀 FIXED: Bulletproof RegEx Pattern ignores all trailing time strings/punctuation, preventing NaN crashing
-                            const dateMatch = cleanDate.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                            if (dateMatch) {
-                                tTime = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`).getTime();
+                            if (isoMatch) {
+                                tTime = new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`).getTime();
+                            } else if (euMatch) {
+                                tTime = new Date(`${euMatch[3]}-${euMatch[2]}-${euMatch[1]}`).getTime();
                             } else {
+                                let cleanDate = dateStr.toLowerCase()
+                                    .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
+                                    .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
+                                    .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
+                                    .replace(/\./g, ':');
                                 tTime = new Date(cleanDate).getTime();
                             }
                         }
                         
-                        if (isNaN(tTime) || !tTime) tTime = Date.now();
+                        // 🚀 FATAL TRAP FIXED: If the date is corrupted, force it into the deep PAST (0), never assume it's TODAY!
+                        if (isNaN(tTime) || !tTime) tTime = 0;
 
                         if (tTime >= cutoff.getTime()) {
                             if (isOmset) {
