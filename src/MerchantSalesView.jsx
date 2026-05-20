@@ -611,6 +611,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         cutoff.setDate(cutoff.getDate() - timeframeDays);
                         let metricTotal = 0;
 
+
+
+
+
                         safeTrans.forEach(t => {
                             const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                             const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
@@ -621,28 +625,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 if (t.timestamp && typeof t.timestamp === 'object' && t.timestamp.seconds) {
                                     tTime = t.timestamp.seconds * 1000;
                                 } else if (t.timestamp && typeof t.timestamp === 'string') {
-                                    tTime = new Date(t.timestamp).getTime();
+                                    const parsedTs = new Date(t.timestamp).getTime();
+                                    if (!isNaN(parsedTs)) tTime = parsedTs;
                                 } else if (t.date && typeof t.date === 'string') {
                                     const dateStr = String(t.date);
                                     const isoMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
                                     const euMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                                     
                                     if (isoMatch) {
-                                        tTime = new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`).getTime();
+                                        // 🚀 FIXED: Aggressive Zero-Padding prevents strict-browsers (Safari/iOS) from crashing into NaN
+                                        tTime = new Date(`${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}T12:00:00Z`).getTime();
                                     } else if (euMatch) {
-                                        tTime = new Date(`${euMatch[3]}-${euMatch[2]}-${euMatch[1]}`).getTime();
+                                        // 🚀 FIXED: Aggressive Zero-Padding prevents strict-browsers (Safari/iOS) from crashing into NaN
+                                        tTime = new Date(`${euMatch[3]}-${euMatch[2].padStart(2, '0')}-${euMatch[1].padStart(2, '0')}T12:00:00Z`).getTime();
                                     } else {
                                         let cleanDate = dateStr.toLowerCase()
                                             .replace('januari', 'jan').replace('februari', 'feb').replace('maret', 'mar')
                                             .replace('mei', 'may').replace('juni', 'jun').replace('juli', 'jul')
                                             .replace('agustus', 'aug').replace('oktober', 'oct').replace('desember', 'dec')
                                             .replace(/\./g, ':');
-                                        tTime = new Date(cleanDate).getTime();
+                                        const parsedText = new Date(cleanDate).getTime();
+                                        if (!isNaN(parsedText)) tTime = parsedText;
                                     }
                                 }
                                 
                                 // 🚀 FATAL TRAP FIXED: Push corrupted dates to the deep PAST (0), never assume TODAY!
-                                if (isNaN(tTime) || !tTime) tTime = 0;
+                                if (!tTime || isNaN(tTime)) tTime = 0;
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (isOmset) {
@@ -664,6 +672,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 }
                             }
                         });
+
+
+
+
 
                         // Add current live sale
                         if (isOmset) metricTotal += Number(finalTotal);
