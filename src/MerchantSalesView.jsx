@@ -554,21 +554,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 if (rules && !isReturMode) {
 
-                    let earnedTier = null; 
-                    
-                    const safeRules = rules || {};
-                    const sortedRules = Object.entries(safeRules).sort((a, b) => {
-                        const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
-                        const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
-                        const targetA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-                        const targetB = Number(String(isOmsetB ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-                        return targetB - targetA;
-                    });
-
-
-
-
-
+                    let earnedTier = 'Unranked'; // 🚀 DEFAULT BASELINE
+                    let currentStoreSeasonalXP = 0;
+                    let debugTarget = 0;
+                    let debugMetric = 0;
 
                     // 🚀 THE ULTIMATE SIMPLE DATE PARSER
                     const getSafeTime = (t) => {
@@ -606,15 +595,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (tsTime > 0) return tsTime;
                         return parseDateStr(t.date);
                     };
-
-
-
-
-
-
-                    
-                    let currentStoreSeasonalXP = 0;
-                    let debugTarget = 0;
 
                     const safeTrans = Array.isArray(transactions) ? transactions : [];
 
@@ -704,21 +684,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
 
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
+                        debugMetric = metricTotal;
 
-                        // 🚀 FIXED: The FIRST rule they beat is their exact bracket.
+                        // 🚀 STRICT BRACKET LOGIC: The FIRST rule they beat is their exact bracket.
                         if (metricTotal >= target) {
                             earnedTier = rule.tierId || rule.targetTier || rule.tier || ruleKey;
                             debugTarget = target;
                             break; 
                         }
                     }
-
-                    // 🚀 FIXED: Default to Unranked if they fail all targets!
-                    if (!earnedTier) {
-                        earnedTier = 'Unranked'; 
-                        debugTarget = 0;
-                    }
-
 
 
 
