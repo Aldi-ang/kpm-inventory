@@ -1127,7 +1127,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     );
 };
 
-// 🚀 NEW: AUTO-TIER EVALUATION ENGINE
+// 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
     const [rules, setRules] = useState({});
     const [simResults, setSimResults] = useState(null);
@@ -1137,12 +1137,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                // 🚀 FIXED: Deep Database Sweeper for Simulator
                 let snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
-                if (snap.exists() && snap.data().rules) {
-                    setRules(snap.data().rules);
-                    return;
-                }
+                if (snap.exists() && snap.data().rules) { setRules(snap.data().rules); return; }
                 const mainSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
                 if (mainSnap.exists() && mainSnap.data().tierRules) setRules(mainSnap.data().tierRules);
             } catch(e) {}
@@ -1150,182 +1146,178 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         loadSettings();
     }, [db, appId, userId]);
 
-
-
-
-
-
-
-    const runSimulation = () => {
-        // 🚀 THE ULTIMATE SIMPLE DATE PARSER: No more regex madness.
-        const getSafeTime = (t) => {
-            if (!t) return 0;
-            if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
-            if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+    const getSafeTime = (t) => {
+        if (!t) return 0;
+        if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+        if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+        
+        const parseDateStr = (dateStr) => {
+            if (!dateStr) return 0;
+            let ms = new Date(dateStr).getTime();
+            if (!isNaN(ms)) return ms; 
             
-            const parseDateStr = (dateStr) => {
-                if (!dateStr) return 0;
-                let ms = new Date(dateStr).getTime();
-                if (!isNaN(ms)) return ms; // Standard ISO works instantly
-                
-                // Translate Indonesian months so the browser clock can read it natively
-                let cleanStr = String(dateStr).toLowerCase()
-                    .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
-                    .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
-                    .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
-                    .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
-                    .replace(/desember|des/g, 'december');
-                
-                ms = new Date(cleanStr).getTime();
+            let cleanStr = String(dateStr).toLowerCase()
+                .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
+                .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
+                .replace(/desember|des/g, 'december').replace(/\./g, ':');
+            
+            ms = new Date(cleanStr).getTime();
+            if (!isNaN(ms)) return ms;
+
+            const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+            if (parts.length === 3) {
+                let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
                 if (!isNaN(ms)) return ms;
-
-                // Fallback for strict DD/MM/YYYY
-                const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
-                if (parts.length === 3) {
-                    let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
-                    let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
-                    let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
-                    ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
-                    if (!isNaN(ms)) return ms;
-                }
-                return 0;
-            };
-
-            const tsTime = parseDateStr(t.timestamp);
-            if (tsTime > 0) return tsTime;
-            return parseDateStr(t.date);
+            }
+            return 0;
         };
 
-        const safeRules = rules || {};
-        const sortedRules = Object.entries(safeRules).sort((a, b) => {
-            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
-            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
-            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-            return tB - tA;
-        });
+        const tsTime = parseDateStr(t.timestamp);
+        if (tsTime > 0) return tsTime;
+        return parseDateStr(t.date);
+    };
 
-        const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
-        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
-        const safeTrans = Array.isArray(transactions) ? transactions : [];
+    const runDataCleanse = async () => {
+        if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
+        setIsApplying(true);
+        try {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            let ops = 0;
 
-        mapPoints.forEach(store => {
-            let earnedTier = fallbackTier;
-            
-            // 🚀 STEP 1: Absolute Lifetime XP
-            let lifetimeXP = 0;
-            safeTrans.forEach(t => {
-                const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
-                if (t && isMatch && tType === 'SALE') {
-                    lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                }
-            });
-
-            let currentStoreSeasonalXP = 0; 
-
-            for (let [ruleKey, rule] of sortedRules) {
-                const actualTargetTier = rule.tierId || rule.targetTier;
-                if (!rule || !actualTargetTier) continue;
+            for (let store of mapPoints) {
+                let lifetimeXP = 0;
+                let seasonXP = 0;
                 
-                const ruleType = String(rule.type || 'omset').toLowerCase();
-                const isOmset = ruleType.includes('omset');
-                const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
-
-                let timeframeDays = 90;
-                if (rule.timeframe) {
-                    const tfStr = String(rule.timeframe).toLowerCase();
-                    const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
-                    if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
-                    else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
-                    else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
-                    else timeframeDays = numVal;
-                }
-
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - timeframeDays);
-                let metricTotal = 0;
-
+                const safeTrans = Array.isArray(transactions) ? transactions : [];
                 safeTrans.forEach(t => {
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                     const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
                     
                     if (t && isMatch && tType === 'SALE') {
-                        const tTime = getSafeTime(t); // 🚀 CLEAN: One line does all the work!
-                        
-                        if (tTime >= cutoff.getTime()) {
-                            if (isOmset) {
-                                metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                            } else if (ruleType.includes('volume')) {
-                                const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
-                                itemsList.forEach(item => {
-                                    let qtyInBks = Number(item.qty) || 0;
-                                    if (item.unit === 'Slop') qtyInBks *= 10;
-                                    if (item.unit === 'Bal') qtyInBks *= 200;
-                                    if (item.unit === 'Karton') qtyInBks *= 800;
-                                    const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
-                                    if (vUnit.includes('bks')) metricTotal += qtyInBks;
-                                    if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
-                                    if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
-                                    if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
-                                });
-                            }
+                        const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                        lifetimeXP += val;
+
+                        const tTime = getSafeTime(t);
+                        const d = new Date(tTime > 0 ? tTime : 0);
+                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                            seasonXP += val;
                         }
                     }
                 });
 
-                if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), {
+                    lifetimeXP: lifetimeXP,
+                    seasonXP: seasonXP,
+                    lastXPUpdate: new Date().toISOString()
+                });
+                ops++;
+            }
+            alert(`✅ RPG Migration Complete! ${ops} stores upgraded. You can now use the Season Rank Audit.`);
+            onClose();
+        } catch(e) {
+            console.error(e);
+            alert("Migration Failed. Check console.");
+        }
+        setIsApplying(false);
+    };
 
-                if (metricTotal >= target) {
-                    earnedTier = actualTargetTier;
-                    break;
+    const runSimulation = () => {
+        const safeRules = rules || {};
+        const sortedRules = Object.entries(safeRules).sort((a, b) => {
+            const tA = Number(String(a[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+            const tB = Number(String(b[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+            return tB - tA;
+        });
+
+        const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
+        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
+        
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        mapPoints.forEach(store => {
+            let currentTier = store.tier || fallbackTier;
+            let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
+            if (currentIdx === -1) currentIdx = activeTiers.length - 1;
+
+            let lifetimeXP = store.lifetimeXP || 0;
+            let seasonXP = store.seasonXP || 0;
+            let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
+
+            let earnedTier = currentTier;
+            let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
+
+            if (isNewSeason) {
+                let deservedTier = fallbackTier;
+                for (let [ruleKey, rule] of sortedRules) {
+                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+                    if (seasonXP >= target) {
+                        deservedTier = rule.tierId || rule.targetTier;
+                        break;
+                    }
+                }
+
+                const deservedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(deservedTier).toLowerCase());
+                
+                if (deservedIdx > currentIdx) {
+                    earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
+                }
+                seasonXP = 0; 
+            }
+
+            if (!isNewSeason || seasonXP > 0) {
+                for (let [ruleKey, rule] of sortedRules) {
+                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+                    if (seasonXP >= target) {
+                        const actualTargetTier = rule.tierId || rule.targetTier;
+                        const potentialIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(actualTargetTier).toLowerCase());
+                        const evalIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+                        
+                        if (potentialIdx < evalIdx) earnedTier = actualTargetTier;
+                        break;
+                    }
                 }
             }
 
-            const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
-                                ? store.tier : fallbackTier;
-            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-            const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
-
             const changeObj = { 
-                storeId: store.id, 
-                name: store.name, 
-                old: currentTier, 
-                new: earnedTier, 
-                rev: currentStoreSeasonalXP,
-                lt: lifetimeXP
+                storeId: store.id, name: store.name, old: currentTier, new: earnedTier, 
+                rev: seasonXP, lt: lifetimeXP, isNewSeason
             };
             results.all.push(changeObj);
 
-            if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
-                const isPromo = targetIdx !== -1 && currentIdx !== -1 && targetIdx < currentIdx; 
-                if (isPromo) { results.promotions.push(changeObj); results.actions.push(changeObj); }
-                else { results.demotions.push(changeObj); results.actions.push(changeObj); }
-            } else {
-                results.steady++;
-            }
+            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+            if (targetIdx < currentIdx) { results.promotions.push(changeObj); results.actions.push(changeObj); }
+            else if (targetIdx > currentIdx) { results.demotions.push(changeObj); results.actions.push(changeObj); }
+            else { results.steady++; }
         });
         
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
 
-
-
-
-
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
-        if (!window.confirm(`Are you sure you want to alter the tiers of ${simResults.actions.length} stores?`)) return;
+        if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
         setIsApplying(true);
         try {
             let ops = 0;
             for (let action of simResults.actions) {
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new });
+                const payload = { tier: action.new };
+                if (action.isNewSeason) {
+                    payload.seasonXP = 0;
+                    payload.lastXPUpdate = new Date().toISOString();
+                }
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), payload);
                 ops++;
             }
-            if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores.`);
-            if (triggerCapy) triggerCapy(`Commander! ${ops} store tiers have been restructured! 📈`);
+            if (logAudit) logAudit("SEASON_RANK_AUDIT", `Season RPG Engine adjusted ${ops} stores.`);
+            if (triggerCapy) triggerCapy(`Season Update Complete! ${ops} store ranks adjusted. 📈`);
             alert(`✅ Success! ${ops} stores updated.`);
             setSimResults(null);
             onClose();
@@ -1338,8 +1330,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             <div className="bg-slate-900 border-2 border-emerald-500 rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] animate-fade-in-up">
                 <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center shrink-0">
                     <div>
-                        <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Tier Automation Engine</h2>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Review Performance Based on Global Rules</p>
+                        <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Season Rank Engine</h2>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Option B: Monthly Reset with 1-Tier Soft Demotion</p>
                     </div>
                     <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={24}/></button>
                 </div>
@@ -1348,13 +1340,13 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center justify-between">
                         <div>
                             <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-1"><Globe size={14} className="text-blue-400"/> Synced to Global Logic</label>
-                            <p className="text-[10px] text-slate-500">Targets and timeframes are automatically managed in the Global Settings panel.</p>
+                            <p className="text-[10px] text-slate-500">Targets are evaluated against active Calendar Month Season XP.</p>
                         </div>
                     </div>
 
                     {simResults ? (
                         <div className="bg-black/50 border-2 border-orange-500 rounded-xl p-4 animate-fade-in">
-                            <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Simulation Results</h3>
+                            <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Season Audit Results</h3>
                             <div className="grid grid-cols-3 gap-3 mb-4">
                                 <div className="bg-slate-800 p-3 rounded-lg border border-emerald-500/30 text-center"><span className="block text-2xl font-black text-emerald-400">{simResults.promotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Promotions</span></div>
                                 <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Demotions</span></div>
@@ -1364,7 +1356,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                 {simResults.all.map((act, i) => (
                                     <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
                                         <span className="font-bold text-white truncate w-1/4">{act.name}</span>
-                                        {/* 🚀 FIXED: Separates Seasonal Timeframe metrics from Career Lifetimes for transparency! */}
                                         <div className="flex flex-col items-start w-2/5 font-mono">
                                             <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
                                             <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
@@ -1386,14 +1377,23 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             <div className="flex gap-3">
                                 <button onClick={() => setSimResults(null)} className="flex-1 bg-slate-800 text-slate-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-slate-700 transition-colors">Discard</button>
                                 <button onClick={applyChanges} disabled={isApplying} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-transform active:scale-95 disabled:opacity-50">
-                                    {isApplying ? 'EXECUTING...' : 'EXECUTE RESTRUCTURE'}
+                                    {isApplying ? 'EXECUTING...' : 'EXECUTE SEASON UPDATE'}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
-                            <Activity size={18}/> Run Simulation Scan
-                        </button>
+                        <div className="space-y-4">
+                            <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                                <Activity size={18}/> Audit Season Ranks
+                            </button>
+
+                            <div className="border-t border-slate-700 pt-4 mt-4">
+                                <h4 className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-bold flex items-center gap-1"><ShieldAlert size={12} className="text-red-500"/> System Setup (Run Once)</h4>
+                                <button onClick={runDataCleanse} disabled={isApplying} className="w-full bg-red-900/40 border border-red-500/50 hover:bg-red-600 text-red-300 hover:text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2">
+                                    {isApplying ? 'Processing Database...' : 'Initialize RPG Data Cleanse'}
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
