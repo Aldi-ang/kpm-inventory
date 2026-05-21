@@ -1182,6 +1182,28 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         return parseDateStr(t.date);
     };
 
+    // 🚀 NEW: THE MATHEMATICAL POWER LEVEL TRACKER
+    const getTierPower = (tierName) => {
+        const tId = String(tierName).toLowerCase().trim();
+        const safeRules = rules || {};
+        
+        // Dynamic Power based on user Settings
+        for (let [ruleKey, rule] of Object.entries(safeRules)) {
+            if (!rule) continue;
+            const ruleTier = String(rule.tierId || rule.targetTier || rule.tier || ruleKey).toLowerCase().trim();
+            if (ruleTier === tId) {
+                const isOmset = String(rule.type || 'omset').toLowerCase().includes('omset');
+                return Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+            }
+        }
+        // Master Fallback Power Level
+        if (tId === 'mythic') return 2500000;
+        if (tId === 'epic') return 1000000;
+        if (tId === 'grandmaster') return 500000;
+        if (tId === 'bronze') return 250000;
+        return 0; // Unranked baseline
+    };
+
     const runDataCleanse = async () => {
         if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
         setIsApplying(true);
@@ -1234,19 +1256,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
             const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
             const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            return tB - tA;
+            return tB - tA; // Always Highest Target to Lowest
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
-        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Unranked';
         
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
         mapPoints.forEach(store => {
-            let currentTier = store.tier || fallbackTier;
-            let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
-            if (currentIdx === -1) currentIdx = activeTiers.length - 1;
+            let currentTier = store.tier || 'Unranked';
+            let oldPower = getTierPower(currentTier); // 🚀 Mathematical Baseline
 
             let lifetimeXP = store.lifetimeXP || 0;
             let seasonXP = store.seasonXP || 0;
@@ -1262,11 +1282,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
                 
                 const isValidTier = activeTiers.some(t => String(t.id).toLowerCase() === ruleTierName.toLowerCase());
-                if (!isValidTier) continue;
+                if (!isValidTier && ruleTierName.toLowerCase() !== 'unranked') continue;
 
-                const ruleType = String(rule.type || 'omset').toLowerCase();
-                const isOmset = ruleType.includes('omset');
-                const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                const target = getTierPower(ruleTierName);
 
                 if (seasonXP >= target) {
                     earnedTier = ruleTierName;
@@ -1275,7 +1293,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
             }
 
-            // 🚀 THE MASTER BRACKET FALLBACK
             if (!matchedDynamic) {
                 if (seasonXP >= 2500000) earnedTier = 'Mythic';
                 else if (seasonXP >= 1000000) earnedTier = 'Epic';
@@ -1284,24 +1301,47 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 else earnedTier = 'Unranked';
             }
 
+            let newPower = getTierPower(earnedTier); // 🚀 Mathematical Earned Rank
+
             if (isNewSeason) {
-                 const earnedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-                 
-                 if (earnedIdx > currentIdx && currentIdx !== -1) {
-                     earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
+                 // 🚀 Mathematical Safety Net: If they dropped in Omset, only demote 1 step
+                 if (newPower < oldPower) {
+                     const powerLadder = sortedRules.length > 0 
+                         ? sortedRules.map(r => ({ id: String(r[1].tierId || r[1].targetTier || r[1].tier || r[0]), power: getTierPower(r[0]) }))
+                         : [
+                             { id: 'Mythic', power: 2500000 },
+                             { id: 'Epic', power: 1000000 },
+                             { id: 'Grandmaster', power: 500000 },
+                             { id: 'Bronze', power: 250000 }
+                           ];
+                     
+                     powerLadder.push({ id: 'Unranked', power: 0 });
+                     powerLadder.sort((a, b) => b.power - a.power); // Highest to lowest
+                     
+                     const oldIdx = powerLadder.findIndex(l => l.power <= oldPower);
+                     if (oldIdx !== -1 && oldIdx + 1 < powerLadder.length) {
+                         earnedTier = powerLadder[oldIdx + 1].id;
+                         newPower = powerLadder[oldIdx + 1].power;
+                     } else {
+                         earnedTier = 'Unranked';
+                         newPower = 0;
+                     }
                  }
                  seasonXP = 0; 
             }
 
+            const isPromotion = newPower > oldPower;
+            const isDemotion = newPower < oldPower;
+
             const changeObj = { 
                 storeId: store.id, name: store.name, old: currentTier, new: earnedTier, 
-                rev: seasonXP, lt: lifetimeXP, isNewSeason
+                rev: seasonXP, lt: lifetimeXP, isNewSeason, isPromotion
             };
             results.all.push(changeObj);
 
-            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-            if (targetIdx < currentIdx && targetIdx !== -1) { results.promotions.push(changeObj); results.actions.push(changeObj); }
-            else if (targetIdx > currentIdx || targetIdx === -1) { results.demotions.push(changeObj); results.actions.push(changeObj); }
+            // 🚀 FLAWLESS ROUTING: Based purely on Omset Math!
+            if (isPromotion) { results.promotions.push(changeObj); results.actions.push(changeObj); }
+            else if (isDemotion) { results.demotions.push(changeObj); results.actions.push(changeObj); }
             else { results.steady++; }
         });
         
@@ -1372,8 +1412,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                             <span className="text-slate-500">{act.old}</span>
                                             {act.old !== act.new ? (
                                                 <>
-                                                    {activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>}
-                                                    <span className={activeTiers.findIndex(t => t.id === act.new) < activeTiers.findIndex(t => t.id === act.old) ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
+                                                    {act.isPromotion ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>}
+                                                    <span className={act.isPromotion ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
                                                 </>
                                             ) : (
                                                 <span className="text-slate-600 ml-1">(=)</span>
