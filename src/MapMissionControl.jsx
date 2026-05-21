@@ -1227,16 +1227,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         setIsApplying(false);
     };
 
-
-
-
-
-
-    
-
     const runSimulation = () => {
         const safeRules = rules || {};
-        // 🚀 FIXED: Sorts rules from Highest Target to Lowest Target for Strict Bracket checking
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
             const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
@@ -1251,10 +1243,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
-
-
-
-       mapPoints.forEach(store => {
+        mapPoints.forEach(store => {
             let currentTier = store.tier || fallbackTier;
             let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
             if (currentIdx === -1) currentIdx = activeTiers.length - 1;
@@ -1265,32 +1254,43 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
-            // 🚀 STEP 1: Determine the "Natural" mathematically earned tier based strictly on XP
             let earnedTier = 'Unranked'; 
+            let matchedDynamic = false;
+
             for (let [ruleKey, rule] of sortedRules) {
                 if (!rule) continue;
+                const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                
+                const isValidTier = activeTiers.some(t => String(t.id).toLowerCase() === ruleTierName.toLowerCase());
+                if (!isValidTier) continue;
+
                 const ruleType = String(rule.type || 'omset').toLowerCase();
                 const isOmset = ruleType.includes('omset');
                 const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                // The FIRST target they beat is their exact Bracket!
                 if (seasonXP >= target) {
-                    const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
-                    earnedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                    earnedTier = ruleTierName;
+                    matchedDynamic = true;
                     break; 
                 }
             }
 
-            // 🚀 STEP 2: The Logic Gate (Apply Demotion Safety Net)
+            // 🚀 THE MASTER BRACKET FALLBACK
+            if (!matchedDynamic) {
+                if (seasonXP >= 2500000) earnedTier = 'Mythic';
+                else if (seasonXP >= 1000000) earnedTier = 'Epic';
+                else if (seasonXP >= 500000) earnedTier = 'Grandmaster';
+                else if (seasonXP >= 250000) earnedTier = 'Bronze';
+                else earnedTier = 'Unranked';
+            }
+
             if (isNewSeason) {
                  const earnedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
                  
-                 // If the natural rank is WORSE than current (and it's a new season), 
-                 // we only demote by 1 step, we don't dump them to the absolute bottom.
                  if (earnedIdx > currentIdx && currentIdx !== -1) {
                      earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
                  }
-                 seasonXP = 0; // Visual reset for the new month
+                 seasonXP = 0; 
             }
 
             const changeObj = { 
@@ -1305,19 +1305,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             else { results.steady++; }
         });
         
-
-
-
-
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
-
-
-
-
-
-
 
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;

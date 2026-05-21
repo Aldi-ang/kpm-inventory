@@ -618,8 +618,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         return tB - tA;
                     });
 
+                    let matchedDynamic = false;
+
                     for (let [ruleKey, rule] of sortedRules) {
                         if (!rule) continue; 
+                        
+                        const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                        // 🚀 GHOST RULE CATCHER
+                        const isValidTier = allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase());
+                        if (!isValidTier) continue;
                         
                         const ruleType = String(rule.type || 'omset').toLowerCase();
                         const isOmset = ruleType.includes('omset');
@@ -686,12 +693,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
                         debugMetric = metricTotal;
 
-                        // 🚀 STRICT BRACKET LOGIC: The FIRST rule they beat is their exact bracket.
+                        // 🚀 STRICT BRACKET LOGIC
                         if (metricTotal >= target) {
-                            earnedTier = rule.tierId || rule.targetTier || rule.tier || ruleKey;
+                            earnedTier = ruleTierName;
                             debugTarget = target;
+                            matchedDynamic = true;
                             break; 
                         }
+                    }
+
+                    // 🚀 THE MASTER BRACKET FALLBACK (Live Checkout guarantees your logic)
+                    if (!matchedDynamic) {
+                        let fallbackMetric = currentStoreSeasonalXP > 0 ? currentStoreSeasonalXP : (debugMetric > 0 ? debugMetric : finalTotal);
+                        if (fallbackMetric >= 2500000) earnedTier = 'Mythic';
+                        else if (fallbackMetric >= 1000000) earnedTier = 'Epic';
+                        else if (fallbackMetric >= 500000) earnedTier = 'Grandmaster';
+                        else if (fallbackMetric >= 250000) earnedTier = 'Bronze';
+                        else earnedTier = 'Unranked';
                     }
 
 
