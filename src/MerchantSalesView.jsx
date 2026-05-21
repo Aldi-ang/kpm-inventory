@@ -607,6 +607,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         return parseDateStr(t.date);
                     };
 
+
+
+
+
+
+                    
                     let currentStoreSeasonalXP = 0;
                     let debugTarget = 0;
 
@@ -622,14 +628,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     });
 
-                    // 🚀 STEP 2: Seasonal Timeframe XP
+                    // 🚀 STEP 2: Strict Bracket Promotion Rules
+                    const safeRules = rules || {};
+                    const sortedRules = Object.entries(safeRules).sort((a, b) => {
+                        const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+                        const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+                        const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                        return tB - tA;
+                    });
+
                     for (let [ruleKey, rule] of sortedRules) {
-                        const actualTargetTier = rule.tierId || rule.targetTier;
-                        if (!rule || !actualTargetTier) continue; 
+                        if (!rule) continue; 
                         
                         const ruleType = String(rule.type || 'omset').toLowerCase();
                         const isOmset = ruleType.includes('omset');
-                        const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+                        const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
                         
                         let timeframeDays = 90;
                         if (rule.timeframe) {
@@ -650,7 +664,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
                             
                             if (t && isMatch && tType === 'SALE') {
-                                const tTime = getSafeTime(t); // 🚀 CLEAN: One line does all the work!
+                                const tTime = getSafeTime(t); 
 
                                 if (tTime >= cutoff.getTime()) {
                                     if (isOmset) {
@@ -689,12 +703,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
-                       // Assign Active Season XP to UI Tracker
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
 
-                        // 🚀 STRICT BRACKET LOGIC: The FIRST rule they beat is their exact bracket.
+                        // 🚀 FIXED: The FIRST rule they beat is their exact bracket.
                         if (metricTotal >= target) {
-                            earnedTier = actualTargetTier;
+                            earnedTier = rule.tierId || rule.targetTier || rule.tier || ruleKey;
                             debugTarget = target;
                             break; 
                         }
@@ -705,6 +718,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         earnedTier = 'Unranked'; 
                         debugTarget = 0;
                     }
+
+
+
+
+
+
 
                     const storeId = selectedCustomerInfo?.id;
                     let targetDocRef = null;

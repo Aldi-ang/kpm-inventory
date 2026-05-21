@@ -1227,16 +1227,26 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         setIsApplying(false);
     };
 
+
+
+
+
+
+    
+
     const runSimulation = () => {
         const safeRules = rules || {};
+        // 🚀 FIXED: Sorts rules from Highest Target to Lowest Target for Strict Bracket checking
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
-            const tA = Number(String(a[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
-            const tB = Number(String(b[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
+            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
             return tB - tA;
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
-        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
+        const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Unranked';
         
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
@@ -1253,12 +1263,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let earnedTier = currentTier;
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
+            // --- 1. THE 1-TIER DEMOTION CHECK ---
             if (isNewSeason) {
-                let deservedTier = fallbackTier;
+                let deservedTier = 'Unranked'; // Baseline assumption
                 for (let [ruleKey, rule] of sortedRules) {
-                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+                    const ruleType = String(rule.type || 'omset').toLowerCase();
+                    const isOmset = ruleType.includes('omset');
+                    const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+
                     if (seasonXP >= target) {
-                        deservedTier = rule.tierId || rule.targetTier;
+                        const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
+                        deservedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
                         break;
                     }
                 }
@@ -1273,17 +1288,20 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
             // --- 2. STRICT BRACKET PROMOTION CHECK ---
             if (!isNewSeason || seasonXP > 0) {
-                // Default to Unranked if they fail all checks
-                earnedTier = 'Unranked'; 
+                earnedTier = 'Unranked'; // 🚀 DEFAULT BASELINE
 
                 for (let [ruleKey, rule] of sortedRules) {
-                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
-                    
-                    // Because sortedRules goes from Highest (Mythic) to Lowest (Bronze),
-                    // the FIRST target they beat is mathematically their exact bracket.
+                    if (!rule) continue;
+                    const ruleType = String(rule.type || 'omset').toLowerCase();
+                    const isOmset = ruleType.includes('omset');
+                    const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+
+                    // 🚀 The FIRST target they beat determines their exact Bracket!
                     if (seasonXP >= target) {
-                        earnedTier = rule.tierId || rule.targetTier;
-                        break; // Stop checking. They found their bracket!
+                        const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
+                        // 🚀 FIXED: Securely extract the Tier Name, even if it's saved as the Object Key
+                        earnedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                        break; 
                     }
                 }
             }
@@ -1295,14 +1313,20 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             results.all.push(changeObj);
 
             const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-            if (targetIdx < currentIdx) { results.promotions.push(changeObj); results.actions.push(changeObj); }
-            else if (targetIdx > currentIdx) { results.demotions.push(changeObj); results.actions.push(changeObj); }
+            if (targetIdx < currentIdx && targetIdx !== -1) { results.promotions.push(changeObj); results.actions.push(changeObj); }
+            else if (targetIdx > currentIdx || targetIdx === -1) { results.demotions.push(changeObj); results.actions.push(changeObj); }
             else { results.steady++; }
         });
         
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
+
+
+
+
+
+
 
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
