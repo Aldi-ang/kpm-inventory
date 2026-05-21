@@ -1271,16 +1271,23 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 seasonXP = 0; 
             }
 
+            // --- 2. THE PROMOTION CHECK ---
+            // If it's an active season, aggressively check if their current SeasonXP beats a higher target.
             if (!isNewSeason || seasonXP > 0) {
                 for (let [ruleKey, rule] of sortedRules) {
                     const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
                     if (seasonXP >= target) {
                         const actualTargetTier = rule.tierId || rule.targetTier;
                         const potentialIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(actualTargetTier).toLowerCase());
-                        const evalIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
                         
-                        if (potentialIdx < evalIdx) earnedTier = actualTargetTier;
-                        break;
+                        // We ONLY compare against their originally determined tier (currentTier or demotedTier).
+                        // If the new target tier is historically "higher" (lower index) than where they currently sit, promote them!
+                        const currentEvalIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+                        
+                        if (potentialIdx !== -1 && potentialIdx < currentEvalIdx) {
+                            earnedTier = actualTargetTier;
+                        }
+                        break; // Stop checking. We found the highest tier they qualify for!
                     }
                 }
             }
