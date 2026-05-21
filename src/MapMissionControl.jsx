@@ -1251,7 +1251,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
-        mapPoints.forEach(store => {
+
+
+
+       mapPoints.forEach(store => {
             let currentTier = store.tier || fallbackTier;
             let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
             if (currentIdx === -1) currentIdx = activeTiers.length - 1;
@@ -1260,50 +1263,34 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let seasonXP = store.seasonXP || 0;
             let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
 
-            let earnedTier = currentTier;
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
-            // --- 1. THE 1-TIER DEMOTION CHECK ---
-            if (isNewSeason) {
-                let deservedTier = 'Unranked'; // Baseline assumption
-                for (let [ruleKey, rule] of sortedRules) {
-                    const ruleType = String(rule.type || 'omset').toLowerCase();
-                    const isOmset = ruleType.includes('omset');
-                    const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+            // 🚀 STEP 1: Determine the "Natural" mathematically earned tier based strictly on XP
+            let earnedTier = 'Unranked'; 
+            for (let [ruleKey, rule] of sortedRules) {
+                if (!rule) continue;
+                const ruleType = String(rule.type || 'omset').toLowerCase();
+                const isOmset = ruleType.includes('omset');
+                const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                    if (seasonXP >= target) {
-                        const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
-                        deservedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                        break;
-                    }
+                // The FIRST target they beat is their exact Bracket!
+                if (seasonXP >= target) {
+                    const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
+                    earnedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                    break; 
                 }
-
-                const deservedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(deservedTier).toLowerCase());
-                
-                if (deservedIdx > currentIdx) {
-                    earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
-                }
-                seasonXP = 0; 
             }
 
-            // --- 2. STRICT BRACKET PROMOTION CHECK ---
-            if (!isNewSeason || seasonXP > 0) {
-                earnedTier = 'Unranked'; // 🚀 DEFAULT BASELINE
-
-                for (let [ruleKey, rule] of sortedRules) {
-                    if (!rule) continue;
-                    const ruleType = String(rule.type || 'omset').toLowerCase();
-                    const isOmset = ruleType.includes('omset');
-                    const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
-
-                    // 🚀 The FIRST target they beat determines their exact Bracket!
-                    if (seasonXP >= target) {
-                        const matchedTier = activeTiers.find(t => String(t.id).toLowerCase() === String(ruleKey).toLowerCase());
-                        // 🚀 FIXED: Securely extract the Tier Name, even if it's saved as the Object Key
-                        earnedTier = matchedTier ? matchedTier.id : (rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                        break; 
-                    }
-                }
+            // 🚀 STEP 2: The Logic Gate (Apply Demotion Safety Net)
+            if (isNewSeason) {
+                 const earnedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+                 
+                 // If the natural rank is WORSE than current (and it's a new season), 
+                 // we only demote by 1 step, we don't dump them to the absolute bottom.
+                 if (earnedIdx > currentIdx && currentIdx !== -1) {
+                     earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
+                 }
+                 seasonXP = 0; // Visual reset for the new month
             }
 
             const changeObj = { 
@@ -1318,6 +1305,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             else { results.steady++; }
         });
         
+
+
+
+
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
