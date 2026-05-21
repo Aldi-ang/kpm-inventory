@@ -10,10 +10,9 @@ import {
 } from 'lucide-react';
 
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'; // 🚀 FIXED: Added missing Leaflet CSS to prevent dimensional Map math crashes!
+import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
-// 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
 try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -24,7 +23,6 @@ L.Icon.Default.mergeOptions({
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
-    // 🚀 FIXED: Safeguards against undefined arrays if your system has fewer than 3 pricing tiers!
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
     let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     
@@ -92,7 +90,6 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
-    // 🚀 FIXED: Added try-catch and deep array checking to prevent malformed map borders from crashing the app!
     try {
         if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
         if (geometry.type === 'MultiPolygon') {
@@ -181,7 +178,6 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
         if (!watchId.current && "geolocation" in navigator) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
-                    // 🚀 FIXED: Silent tracking engine. NEVER forces a flyTo loop crash!
                     if (!isEditingRef.current) {
                         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
                     }
@@ -228,7 +224,6 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
 const MapClicker = ({ isAddingMode, editingStoreId, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
-            // Only allow pin updates if we are actively Adding or Editing
             if (isAddingMode || editingStoreId) {
                 setDragPinCoords(e.latlng);
             } else {
@@ -295,7 +290,6 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                        {/* 🚀 FIXED: Guaranteed String Cast to prevent "Object as React Child" WSOD crashes! */}
                         {String(store.name || 'Unknown')}
                     </div>
                 </LeafletTooltip>
@@ -872,19 +866,16 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) { console.error(error); }
     };
 
-    // 🚀 FIXED: Direct Map Tier Editor (Performance Tier Only)
     const handleSaveTier = async (newTier) => {
         if (!db || !appId || !user || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
                 tier: newTier
-                // We DO NOT touch priceTier here, keeping pricing and performance completely separate!
             }); 
         } catch (error) { console.error(error); }
     };
 
-    // 🚀 NEW: Store Deletion Engine for Testing
     const handleDeleteStore = async () => {
         if (!window.confirm(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
         if (!db || !appId || !user || !store?.id) return;
@@ -1012,7 +1003,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 {isAdmin && (
                     <>
-                        {/* 🚀 FIXED: Tier Editor & Delete Store UI */}
                         <div className="flex gap-2 mb-4">
                             <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
@@ -1103,7 +1093,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 <div className="space-y-1">
                                                     {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => (
                                                     <div key={i} className="flex justify-between text-[10px]">
-                                                        {/* 🚀 FIXED: Universal Array/Object parsing prevents crash while ensuring Firebase items ALWAYS render */}
                                                         <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
                                                         <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
                                                     </div>
@@ -1126,6 +1115,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         </div>
     );
 };
+
 // 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
     const [rules, setRules] = useState({});
@@ -1144,6 +1134,42 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         };
         loadSettings();
     }, [db, appId, userId]);
+
+    const getSafeTime = (t) => {
+        if (!t) return 0;
+        if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+        if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+        
+        const parseDateStr = (dateStr) => {
+            if (!dateStr) return 0;
+            let ms = new Date(dateStr).getTime();
+            if (!isNaN(ms)) return ms; 
+            
+            let cleanStr = String(dateStr).toLowerCase()
+                .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
+                .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
+                .replace(/desember|des/g, 'december').replace(/\./g, ':');
+            
+            ms = new Date(cleanStr).getTime();
+            if (!isNaN(ms)) return ms;
+
+            const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+            if (parts.length === 3) {
+                let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                if (!isNaN(ms)) return ms;
+            }
+            return 0;
+        };
+
+        const tsTime = parseDateStr(t.timestamp);
+        if (tsTime > 0) return tsTime;
+        return parseDateStr(t.date);
+    };
 
     const runDataCleanse = async () => {
         if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
@@ -1166,23 +1192,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                         lifetimeXP += val;
 
-                        let tTime = 0;
-                        if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-                        else if (typeof t?.timestamp === 'number') tTime = t.timestamp;
-                        else if (typeof t?.timestamp === 'string') tTime = new Date(t.timestamp.replace(' ', 'T')).getTime();
-                        else if (t?.date && typeof t.date === 'string') {
-                            const clean = t.date.toLowerCase().replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03').replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07').replace(/agustus|agu/g, '08').replace(/oktober|okt/g, '10').replace(/desember|des/g, '12');
-                            const chunks = clean.match(/\d+/g);
-                            if (chunks && chunks.length >= 3) {
-                                let year = chunks.find(c => c.length === 4) || new Date().getFullYear().toString();
-                                let rem = chunks.filter(c => c !== year);
-                                if(rem.length >= 2) {
-                                    let month = Number(rem[1]) > 12 ? rem[0] : rem[1];
-                                    tTime = new Date(`${year}-${month.padStart(2,'0')}-01T12:00:00Z`).getTime(); 
-                                }
-                            }
-                        }
-                        
+                        const tTime = getSafeTime(t);
                         const d = new Date(tTime > 0 ? tTime : 0);
                         if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
                             seasonXP += val;
@@ -1380,15 +1390,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     );
 };
 
-
-
-
-
-// 🚀 FIXED: Restore the Main Map Component! This connects the entire file back to your app.
 const MapMissionControl = ({ 
-    mapPoints = [], transactions = [], inventory = [], activeTiers = [], 
+    mapPoints = [], transactions = [], inventory = [], activeTiers = [], customers = [],
     conquestMode = false, isAddingMode = false, setDragPinCoords, db, appId, user, 
-    isAdmin, logAudit, triggerCapy, onSetHome, mapSettings = {} 
+    isAdmin, logAudit, triggerCapy, onSetHome, savedHome, mapSettings = {}, tierSettings 
 }) => {
     const [selectedStore, setSelectedStore] = useState(null);
     const [editingStoreId, setEditingStoreId] = useState(null);
@@ -1402,10 +1407,38 @@ const MapMissionControl = ({
     const [uploadedFocus, setUploadedFocus] = useState(null);
     const [mapMode, setMapMode] = useState('Standard');
     const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+    const [showControls, setShowControls] = useState(false);
+    const [showTacticalDash, setShowTacticalDash] = useState(false);
+    const [selectedRegion, setSelectedRegion] = useState("All"); 
+    const [selectedCity, setSelectedCity] = useState("All");
+    const [networkMode, setNetworkMode] = useState(false); 
     
     const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
     const [timeFilter, setTimeFilter] = useState("This Month");
     const [zoneRevenues, setZoneRevenues] = useState({});
+
+    // Added locationTree for dropdown mapping
+    const locationTree = useMemo(() => {
+        const tree = {};
+        const safeCustomers = Array.isArray(customers) ? customers : mapPoints;
+        safeCustomers.forEach(c => {
+            let reg = String(c.region || "Uncategorized"); 
+            let cit = String(c.city || "Uncategorized");
+            if (!tree[reg]) tree[reg] = new Set(); 
+            tree[reg].add(cit);
+        });
+        return Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
+    }, [customers, mapPoints]);
+
+    const [filterTier, setFilterTier] = useState(() => activeTiers.map(t => t.id)); 
+    const tierIdsString = activeTiers.map(t => t.id).join(',');
+    
+    useEffect(() => {
+        setFilterTier(activeTiers.map(t => t.id));
+    }, [tierIdsString, activeTiers]);
+
+    const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
+    const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
 
     useEffect(() => {
         const loadBorders = async () => {
@@ -1504,6 +1537,24 @@ const MapMissionControl = ({
         Satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
     };
 
+    // Filter points securely for the map
+    const filteredPoints = useMemo(() => {
+        return mapPoints.filter(c => {
+            if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
+            if (selectedCity !== "All" && c.city !== selectedCity) return false;
+            if (!filterTier.includes(c.tier)) return false; 
+            return true;
+        });
+    }, [mapPoints, selectedRegion, selectedCity, filterTier]);
+
+    const sortedBoundaries = useMemo(() => {
+        if (!Array.isArray(boundaries)) return [];
+        return boundaries.filter(b => b && b.id && b.geometry && !b.isHidden).sort((a, b) => {
+            const lMap = { 'Provinsi': 1, 'Kabupaten': 2, 'Kecamatan': 3, 'Desa': 4 };
+            return (lMap[a.level] || 4) - (lMap[b.level] || 4);
+        });
+    }, [boundaries]);
+
     return (
         <div className="h-full w-full relative bg-slate-950 font-sans flex flex-col">
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] flex gap-2 p-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-2xl shadow-xl">
@@ -1526,7 +1577,7 @@ const MapMissionControl = ({
             </div>
 
             {showTierEngine && (
-                <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />
+                <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={filteredPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />
             )}
 
             {showImporter && (
@@ -1535,9 +1586,9 @@ const MapMissionControl = ({
 
             {(salesHeatmapMode || boundaries.length > 0) && (
                 <TacticalDashboard 
-                    boundaries={boundaries} zoneRevenues={zoneRevenues} mapPoints={mapPoints} transactions={transactions}
+                    boundaries={boundaries} zoneRevenues={zoneRevenues} mapPoints={filteredPoints} transactions={transactions}
                     selectedZone={selectedZone} setSelectedZone={setSelectedZone}
-                    onClose={() => { setSalesHeatmapMode(false); setZoneRevenues({}); }}
+                    onClose={() => { setSalesHeatmapMode(false); setZoneRevenues({}); setShowTacticalDash(false); }}
                     salesHeatmapMode={salesHeatmapMode} setSalesHeatmapMode={setSalesHeatmapMode}
                     selectedAreaType={selectedAreaType} setSelectedAreaType={setSelectedAreaType}
                     timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -1549,7 +1600,7 @@ const MapMissionControl = ({
                     <TileLayer url={mapTiles[mapMode]} />
                     <ZoomControl position="bottomleft" />
                     <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
-                    <MapEffectController selectedRegion="All" selectedCity="All" mapPoints={mapPoints} savedHome={mapSettings} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
+                    <MapEffectController selectedRegion="All" selectedCity="All" mapPoints={filteredPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                     <AdminControls isAdmin={isAdmin} onSetHome={onSetHome} />
                     <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
 
@@ -1580,21 +1631,14 @@ const MapMissionControl = ({
                         );
                     })}
 
-                    {mapPoints.map(store => (
+                    {filteredPoints.map(store => (
                         <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} isActive={selectedStore?.id === store.id} />
                     ))}
-
-                    {mapPoints.filter(s => s.storeType === 'Wholesaler').map(hub => {
-                        const connections = mapPoints.filter(s => s.suppliedBy === hub.id && s.latitude && s.longitude);
-                        return connections.map(c => (
-                            <Polyline key={`link-${hub.id}-${c.id}`} positions={[[hub.latitude, hub.longitude], [c.latitude, c.longitude]]} color="#f59e0b" weight={2} opacity={0.6} className="animated-supply-line" dashArray="8, 12" />
-                        ));
-                    })}
                 </MapContainer>
                 
                 {selectedStore && (
                     <StoreBottomSheet 
-                        store={selectedStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} 
+                        store={selectedStore} mapPoints={filteredPoints} transactions={transactions} inventory={inventory} 
                         db={db} appId={appId} user={user} isAdmin={isAdmin} 
                         setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} 
                         setLiveScaleOverride={setLiveScaleOverride} setEditingStoreId={setEditingStoreId} 
@@ -1602,8 +1646,60 @@ const MapMissionControl = ({
                     />
                 )}
 
-                <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} />
-                <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
+                <GameHUD conquestMode={conquestMode} mapPoints={filteredPoints} />
+                <ZoneHUD zone={selectedZone} mapPoints={filteredPoints} setSelectedZone={setSelectedZone} />
+            </div>
+
+            <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
+                <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
+                        <MapPin size={16} className="text-orange-500 shrink-0"/>
+                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="w-full bg-transparent text-sm font-bold text-white outline-none py-1.5 cursor-pointer truncate appearance-none">
+                            <option value="All">All Regions</option>
+                            {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                    </div>
+                    <button onClick={() => setShowControls(!showControls)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-white shrink-0">
+                        {showControls ? <X size={18}/> : <Menu size={18}/>}
+                    </button>
+                </div>
+
+                <div className={`transition-all duration-300 origin-top bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl pointer-events-auto overflow-y-auto custom-scrollbar flex flex-col gap-2 ${showControls ? 'opacity-100 scale-y-100 max-h-[60vh] p-3' : 'opacity-0 scale-y-0 max-h-0 p-0 border-none'}`}>
+                    <div className="flex flex-col gap-1 bg-black/40 p-2 rounded-xl border border-slate-700">
+                        <button onClick={toggleAllTiers} className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Show All Tiers</button>
+                        <div className="grid grid-cols-2 gap-1 mt-1">
+                            {activeTiers.map(tier => (
+                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 rounded-lg text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
+                                    {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{String(tier.value || '')}</span>}{String(tier.label || '')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 w-full mt-2">
+                        {isAdmin && (
+                            <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
+                                Tier Automation Engine <Settings size={16}/>
+                            </button>
+                        )}
+                        <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                            {showBorders ? "Regional Borders: ON" : "Regional Borders"} <Globe size={16}/>
+                        </button>
+                        {isAdmin && (
+                            <>
+                                <button onClick={() => { const nextState = !showTacticalDash; setShowTacticalDash(nextState); if (nextState) { setSalesHeatmapMode(true); setShowBorders(true); }}} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                    {showTacticalDash ? "Tactical Dashboard: ON" : "Tactical Dashboard"} <TrendingUp size={16}/>
+                                </button>
+                                <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                    {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"} <DollarSign size={16}/>
+                                </button>
+                            </>
+                        )}
+                        <button onClick={() => setNetworkMode(!networkMode)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                            {networkMode ? "Supply Lines: ON" : "View Supply Lines"} <Database size={16}/>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <style>{`
@@ -1615,26 +1711,20 @@ const MapMissionControl = ({
                     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
                     background-size: 100% 4px; pointer-events: none; position: absolute; inset: 0; z-index: 50; opacity: 0.3;
                 }
-
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
-                
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 .venn-heatmap-circle { mix-blend-mode: screen; }
-                
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
                 .animate-slide-down { animation: slide-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-                
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
                 .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-                
                 @keyframes pulse-ring { 
                     0% { transform: scale(0.8); opacity: 0.5; } 
                     80% { transform: scale(2.5); opacity: 0; } 
                     100% { transform: scale(2.5); opacity: 0; } 
                 }
                 .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
-                
                 .leaflet-tooltip-pane { z-index: 600 !important; }
                 .custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
                 .custom-leaflet-tooltip::before { display: none !important; }
