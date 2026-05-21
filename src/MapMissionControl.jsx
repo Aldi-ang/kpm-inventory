@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'; 
+import 'leaflet/dist/leaflet.css'; // 🚀 FIXED: Added missing Leaflet CSS to prevent dimensional Map math crashes!
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
+// 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
 try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -23,6 +24,7 @@ L.Icon.Default.mergeOptions({
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
+    // 🚀 FIXED: Safeguards against undefined arrays if your system has fewer than 3 pricing tiers!
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
     let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     
@@ -90,6 +92,7 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
+    // 🚀 FIXED: Added try-catch and deep array checking to prevent malformed map borders from crashing the app!
     try {
         if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
         if (geometry.type === 'MultiPolygon') {
@@ -178,6 +181,7 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
         if (!watchId.current && "geolocation" in navigator) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
+                    // 🚀 FIXED: Silent tracking engine. NEVER forces a flyTo loop crash!
                     if (!isEditingRef.current) {
                         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
                     }
@@ -224,6 +228,7 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
 const MapClicker = ({ isAddingMode, editingStoreId, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
+            // Only allow pin updates if we are actively Adding or Editing
             if (isAddingMode || editingStoreId) {
                 setDragPinCoords(e.latlng);
             } else {
@@ -290,6 +295,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
+                        {/* 🚀 FIXED: Guaranteed String Cast to prevent "Object as React Child" WSOD crashes! */}
                         {String(store.name || 'Unknown')}
                     </div>
                 </LeafletTooltip>
@@ -866,16 +872,19 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) { console.error(error); }
     };
 
+    // 🚀 FIXED: Direct Map Tier Editor (Performance Tier Only)
     const handleSaveTier = async (newTier) => {
         if (!db || !appId || !user || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
                 tier: newTier
+                // We DO NOT touch priceTier here, keeping pricing and performance completely separate!
             }); 
         } catch (error) { console.error(error); }
     };
 
+    // 🚀 NEW: Store Deletion Engine for Testing
     const handleDeleteStore = async () => {
         if (!window.confirm(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
         if (!db || !appId || !user || !store?.id) return;
@@ -1003,6 +1012,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 {isAdmin && (
                     <>
+                        {/* 🚀 FIXED: Tier Editor & Delete Store UI */}
                         <div className="flex gap-2 mb-4">
                             <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
@@ -1093,6 +1103,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 <div className="space-y-1">
                                                     {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => (
                                                     <div key={i} className="flex justify-between text-[10px]">
+                                                        {/* 🚀 FIXED: Universal Array/Object parsing prevents crash while ensuring Firebase items ALWAYS render */}
                                                         <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
                                                         <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
                                                     </div>
@@ -1116,7 +1127,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     );
 };
 
-// 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
+// 🚀 NEW: AUTO-TIER EVALUATION ENGINE
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
     const [rules, setRules] = useState({});
     const [simResults, setSimResults] = useState(null);
@@ -1126,8 +1137,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     useEffect(() => {
         const loadSettings = async () => {
             try {
+                // 🚀 FIXED: Deep Database Sweeper for Simulator
                 let snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
-                if (snap.exists() && snap.data().rules) { setRules(snap.data().rules); return; }
+                if (snap.exists() && snap.data().rules) {
+                    setRules(snap.data().rules);
+                    return;
+                }
                 const mainSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
                 if (mainSnap.exists() && mainSnap.data().tierRules) setRules(mainSnap.data().tierRules);
             } catch(e) {}
@@ -1135,178 +1150,182 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         loadSettings();
     }, [db, appId, userId]);
 
-    const getSafeTime = (t) => {
-        if (!t) return 0;
-        if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
-        if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
-        
-        const parseDateStr = (dateStr) => {
-            if (!dateStr) return 0;
-            let ms = new Date(dateStr).getTime();
-            if (!isNaN(ms)) return ms; 
-            
-            let cleanStr = String(dateStr).toLowerCase()
-                .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
-                .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
-                .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
-                .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
-                .replace(/desember|des/g, 'december').replace(/\./g, ':');
-            
-            ms = new Date(cleanStr).getTime();
-            if (!isNaN(ms)) return ms;
 
-            const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
-            if (parts.length === 3) {
-                let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
-                let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
-                let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
-                ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
-                if (!isNaN(ms)) return ms;
-            }
-            return 0;
-        };
 
-        const tsTime = parseDateStr(t.timestamp);
-        if (tsTime > 0) return tsTime;
-        return parseDateStr(t.date);
-    };
 
-    const runDataCleanse = async () => {
-        if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
-        setIsApplying(true);
-        try {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            let ops = 0;
 
-            for (let store of mapPoints) {
-                let lifetimeXP = 0;
-                let seasonXP = 0;
-                
-                const safeTrans = Array.isArray(transactions) ? transactions : [];
-                safeTrans.forEach(t => {
-                    const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                    const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
-                    
-                    if (t && isMatch && tType === 'SALE') {
-                        const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                        lifetimeXP += val;
 
-                        const tTime = getSafeTime(t);
-                        const d = new Date(tTime > 0 ? tTime : 0);
-                        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                            seasonXP += val;
-                        }
-                    }
-                });
-
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), {
-                    lifetimeXP: lifetimeXP,
-                    seasonXP: seasonXP,
-                    lastXPUpdate: new Date().toISOString()
-                });
-                ops++;
-            }
-            alert(`✅ RPG Migration Complete! ${ops} stores upgraded. You can now use the Season Rank Audit.`);
-            onClose();
-        } catch(e) {
-            console.error(e);
-            alert("Migration Failed. Check console.");
-        }
-        setIsApplying(false);
-    };
 
     const runSimulation = () => {
+        // 🚀 THE ULTIMATE SIMPLE DATE PARSER: No more regex madness.
+        const getSafeTime = (t) => {
+            if (!t) return 0;
+            if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+            if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+            
+            const parseDateStr = (dateStr) => {
+                if (!dateStr) return 0;
+                let ms = new Date(dateStr).getTime();
+                if (!isNaN(ms)) return ms; // Standard ISO works instantly
+                
+                // Translate Indonesian months so the browser clock can read it natively
+                let cleanStr = String(dateStr).toLowerCase()
+                    .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                    .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
+                    .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                    .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
+                    .replace(/desember|des/g, 'december');
+                
+                ms = new Date(cleanStr).getTime();
+                if (!isNaN(ms)) return ms;
+
+                // Fallback for strict DD/MM/YYYY
+                const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+                if (parts.length === 3) {
+                    let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                    let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                    let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                    ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                    if (!isNaN(ms)) return ms;
+                }
+                return 0;
+            };
+
+            const tsTime = parseDateStr(t.timestamp);
+            if (tsTime > 0) return tsTime;
+            return parseDateStr(t.date);
+        };
+
         const safeRules = rules || {};
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
-            const tA = Number(String(a[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
-            const tB = Number(String(b[1]?.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || 0) : (a[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || 0) : (b[1]?.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
             return tB - tA;
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
         const fallbackTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
-        
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
 
         mapPoints.forEach(store => {
-            let currentTier = store.tier || fallbackTier;
-            let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
-            if (currentIdx === -1) currentIdx = activeTiers.length - 1;
-
-            let lifetimeXP = store.lifetimeXP || 0;
-            let seasonXP = store.seasonXP || 0;
-            let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
-
-            let earnedTier = currentTier;
-            let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
-
-            if (isNewSeason) {
-                let deservedTier = fallbackTier;
-                for (let [ruleKey, rule] of sortedRules) {
-                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
-                    if (seasonXP >= target) {
-                        deservedTier = rule.tierId || rule.targetTier;
-                        break;
-                    }
+            let earnedTier = fallbackTier;
+            
+            // 🚀 STEP 1: Absolute Lifetime XP
+            let lifetimeXP = 0;
+            safeTrans.forEach(t => {
+                const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+                if (t && isMatch && tType === 'SALE') {
+                    lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                 }
+            });
 
-                const deservedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(deservedTier).toLowerCase());
+            let currentStoreSeasonalXP = 0; 
+
+            for (let [ruleKey, rule] of sortedRules) {
+                const actualTargetTier = rule.tierId || rule.targetTier;
+                if (!rule || !actualTargetTier) continue;
                 
-                if (deservedIdx > currentIdx) {
-                    earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
+                const ruleType = String(rule.type || 'omset').toLowerCase();
+                const isOmset = ruleType.includes('omset');
+                const target = Number(String(isOmset ? (rule.omsetTarget || 0) : (rule.volumeTarget || 0)).replace(/[^0-9]/g, '')) || 0;
+
+                let timeframeDays = 90;
+                if (rule.timeframe) {
+                    const tfStr = String(rule.timeframe).toLowerCase();
+                    const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
+                    if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
+                    else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
+                    else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
+                    else timeframeDays = numVal;
                 }
-                seasonXP = 0; 
+
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - timeframeDays);
+                let metricTotal = 0;
+
+                safeTrans.forEach(t => {
+                    const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                    const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+                    
+                    if (t && isMatch && tType === 'SALE') {
+                        const tTime = getSafeTime(t); // 🚀 CLEAN: One line does all the work!
+                        
+                        if (tTime >= cutoff.getTime()) {
+                            if (isOmset) {
+                                metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                            } else if (ruleType.includes('volume')) {
+                                const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                                itemsList.forEach(item => {
+                                    let qtyInBks = Number(item.qty) || 0;
+                                    if (item.unit === 'Slop') qtyInBks *= 10;
+                                    if (item.unit === 'Bal') qtyInBks *= 200;
+                                    if (item.unit === 'Karton') qtyInBks *= 800;
+                                    const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                    if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                    if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                    if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                    if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
+                                });
+                            }
+                        }
+                    }
+                });
+
+                if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
+
+                if (metricTotal >= target) {
+                    earnedTier = actualTargetTier;
+                    break;
+                }
             }
 
-            if (!isNewSeason || seasonXP > 0) {
-                for (let [ruleKey, rule] of sortedRules) {
-                    const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
-                    if (seasonXP >= target) {
-                        const actualTargetTier = rule.tierId || rule.targetTier;
-                        const potentialIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(actualTargetTier).toLowerCase());
-                        const evalIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-                        
-                        if (potentialIdx < evalIdx) earnedTier = actualTargetTier;
-                        break;
-                    }
-                }
-            }
+            const currentTier = (store.tier && store.tier !== 'UNRANKED' && activeTiers.some(t => String(t.id).toLowerCase() === String(store.tier).toLowerCase())) 
+                                ? store.tier : fallbackTier;
+            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
+            const currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
 
             const changeObj = { 
-                storeId: store.id, name: store.name, old: currentTier, new: earnedTier, 
-                rev: seasonXP, lt: lifetimeXP, isNewSeason
+                storeId: store.id, 
+                name: store.name, 
+                old: currentTier, 
+                new: earnedTier, 
+                rev: currentStoreSeasonalXP,
+                lt: lifetimeXP
             };
             results.all.push(changeObj);
 
-            const targetIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-            if (targetIdx < currentIdx) { results.promotions.push(changeObj); results.actions.push(changeObj); }
-            else if (targetIdx > currentIdx) { results.demotions.push(changeObj); results.actions.push(changeObj); }
-            else { results.steady++; }
+            if (String(earnedTier).toLowerCase() !== String(currentTier).toLowerCase()) {
+                const isPromo = targetIdx !== -1 && currentIdx !== -1 && targetIdx < currentIdx; 
+                if (isPromo) { results.promotions.push(changeObj); results.actions.push(changeObj); }
+                else { results.demotions.push(changeObj); results.actions.push(changeObj); }
+            } else {
+                results.steady++;
+            }
         });
         
         results.all.sort((a, b) => b.rev - a.rev);
         setSimResults(results);
     };
 
+
+
+
+
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
-        if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
+        if (!window.confirm(`Are you sure you want to alter the tiers of ${simResults.actions.length} stores?`)) return;
         setIsApplying(true);
         try {
             let ops = 0;
             for (let action of simResults.actions) {
-                const payload = { tier: action.new };
-                if (action.isNewSeason) {
-                    payload.seasonXP = 0;
-                    payload.lastXPUpdate = new Date().toISOString();
-                }
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), payload);
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), { tier: action.new });
                 ops++;
             }
-            if (logAudit) logAudit("SEASON_RANK_AUDIT", `Season RPG Engine adjusted ${ops} stores.`);
-            if (triggerCapy) triggerCapy(`Season Update Complete! ${ops} store ranks adjusted. 📈`);
+            if (logAudit) logAudit("AUTO_TIER_RUN", `Auto-Tier Engine adjusted ${ops} stores.`);
+            if (triggerCapy) triggerCapy(`Commander! ${ops} store tiers have been restructured! 📈`);
             alert(`✅ Success! ${ops} stores updated.`);
             setSimResults(null);
             onClose();
@@ -1319,8 +1338,8 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             <div className="bg-slate-900 border-2 border-emerald-500 rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] animate-fade-in-up">
                 <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center shrink-0">
                     <div>
-                        <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Season Rank Engine</h2>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Option B: Monthly Reset with 1-Tier Soft Demotion</p>
+                        <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Tier Automation Engine</h2>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Review Performance Based on Global Rules</p>
                     </div>
                     <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={24}/></button>
                 </div>
@@ -1329,13 +1348,13 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center justify-between">
                         <div>
                             <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-1"><Globe size={14} className="text-blue-400"/> Synced to Global Logic</label>
-                            <p className="text-[10px] text-slate-500">Targets are evaluated against active Calendar Month Season XP.</p>
+                            <p className="text-[10px] text-slate-500">Targets and timeframes are automatically managed in the Global Settings panel.</p>
                         </div>
                     </div>
 
                     {simResults ? (
                         <div className="bg-black/50 border-2 border-orange-500 rounded-xl p-4 animate-fade-in">
-                            <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Season Audit Results</h3>
+                            <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Simulation Results</h3>
                             <div className="grid grid-cols-3 gap-3 mb-4">
                                 <div className="bg-slate-800 p-3 rounded-lg border border-emerald-500/30 text-center"><span className="block text-2xl font-black text-emerald-400">{simResults.promotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Promotions</span></div>
                                 <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Demotions</span></div>
@@ -1345,6 +1364,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                 {simResults.all.map((act, i) => (
                                     <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
                                         <span className="font-bold text-white truncate w-1/4">{act.name}</span>
+                                        {/* 🚀 FIXED: Separates Seasonal Timeframe metrics from Career Lifetimes for transparency! */}
                                         <div className="flex flex-col items-start w-2/5 font-mono">
                                             <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
                                             <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
@@ -1366,23 +1386,14 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             <div className="flex gap-3">
                                 <button onClick={() => setSimResults(null)} className="flex-1 bg-slate-800 text-slate-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-slate-700 transition-colors">Discard</button>
                                 <button onClick={applyChanges} disabled={isApplying} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-transform active:scale-95 disabled:opacity-50">
-                                    {isApplying ? 'EXECUTING...' : 'EXECUTE SEASON UPDATE'}
+                                    {isApplying ? 'EXECUTING...' : 'EXECUTE RESTRUCTURE'}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
-                                <Activity size={18}/> Audit Season Ranks
-                            </button>
-
-                            <div className="border-t border-slate-700 pt-4 mt-4">
-                                <h4 className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-bold flex items-center gap-1"><ShieldAlert size={12} className="text-red-500"/> System Setup (Run Once)</h4>
-                                <button onClick={runDataCleanse} disabled={isApplying} className="w-full bg-red-900/40 border border-red-500/50 hover:bg-red-600 text-red-300 hover:text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2">
-                                    {isApplying ? 'Processing Database...' : 'Initialize RPG Data Cleanse'}
-                                </button>
-                            </div>
-                        </div>
+                        <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <Activity size={18}/> Run Simulation Scan
+                        </button>
                     )}
                 </div>
             </div>
@@ -1390,162 +1401,131 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     );
 };
 
-const MapMissionControl = ({ 
-    mapPoints = [], transactions = [], inventory = [], activeTiers = [], customers = [],
-    conquestMode = false, isAddingMode = false, setDragPinCoords, db, appId, user, 
-    isAdmin, logAudit, triggerCapy, onSetHome, savedHome, mapSettings = {}, tierSettings 
-}) => {
+// --- MAIN WRAPPER (APP IN APP) ---
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
+
+    const userId = user?.uid || user?.id || "default";
+
+    // 🚀 FIXED: Bulletproof Array validation. If Firebase passes {} instead of [], it won't crash the .map functions!
+    const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
+        { id: 'Retail', label: 'Retail', color: '#38bdf8', iconType: 'emoji', value: '🏪' },
+        { id: 'Grosir', label: 'Grosir', color: '#f59e0b', iconType: 'emoji', value: '🏢' },
+        { id: 'Ecer', label: 'Ecer', color: '#ef4444', iconType: 'emoji', value: '🚶' },
+        { id: 'Platinum', label: 'Platinum', color: '#8b5cf6', iconType: 'emoji', value: '🏆' }
+    ], [tierSettings]);
+
     const [selectedStore, setSelectedStore] = useState(null);
-    const [editingStoreId, setEditingStoreId] = useState(null);
-    const [showTierEngine, setShowTierEngine] = useState(false);
-    const [boundaries, setBoundaries] = useState([]);
-    const [showBorders, setShowBorders] = useState(true);
-    const [selectedZone, setSelectedZone] = useState(null);
-    const [showImporter, setShowImporter] = useState(false);
-    const [userLocation, setUserLocation] = useState(null);
-    const [liveScaleOverride, setLiveScaleOverride] = useState(1);
-    const [uploadedFocus, setUploadedFocus] = useState(null);
-    const [mapMode, setMapMode] = useState('Standard');
-    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
-    const [showControls, setShowControls] = useState(false);
-    const [showTacticalDash, setShowTacticalDash] = useState(false);
-    const [selectedRegion, setSelectedRegion] = useState("All"); 
-    const [selectedCity, setSelectedCity] = useState("All");
-    const [networkMode, setNetworkMode] = useState(false); 
+    const [selectedZone, setSelectedZone] = useState(null); 
     
-    const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
-    const [timeFilter, setTimeFilter] = useState("This Month");
-    const [zoneRevenues, setZoneRevenues] = useState({});
-
-    // Added locationTree for dropdown mapping
-    const locationTree = useMemo(() => {
-        const tree = {};
-        const safeCustomers = Array.isArray(customers) ? customers : mapPoints;
-        safeCustomers.forEach(c => {
-            let reg = String(c.region || "Uncategorized"); 
-            let cit = String(c.city || "Uncategorized");
-            if (!tree[reg]) tree[reg] = new Set(); 
-            tree[reg].add(cit);
-        });
-        return Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
-    }, [customers, mapPoints]);
-
     const [filterTier, setFilterTier] = useState(() => activeTiers.map(t => t.id)); 
-    const tierIdsString = activeTiers.map(t => t.id).join(',');
     
+    // 🚀 FIXED: Stringified dependency prevents "Maximum update depth exceeded" infinite loop WSOD!
+    const tierIdsString = activeTiers.map(t => t.id).join(',');
     useEffect(() => {
         setFilterTier(activeTiers.map(t => t.id));
-    }, [tierIdsString, activeTiers]);
+    }, [tierIdsString]);
 
-    const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
-    const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
+    const [isAddingMode, setIsAddingMode] = useState(false); 
+    const [editingStoreId, setEditingStoreId] = useState(null); 
+    
+    const [showControls, setShowControls] = useState(false);
+    const [conquestMode, setConquestMode] = useState(false); 
+    const [networkMode, setNetworkMode] = useState(false); 
+    const [showBorders, setShowBorders] = useState(false); 
+    const [showImporter, setShowImporter] = useState(false);
+
+    // 🚀 FIXED: Restored the missing Dashboard state variables that were accidentally deleted!
+    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+    const [showTacticalDash, setShowTacticalDash] = useState(false);
+    
+    const [showTierEngine, setShowTierEngine] = useState(false);
+
+    const [selectedRegion, setSelectedRegion] = useState("All"); 
+    const [selectedCity, setSelectedCity] = useState("All");
+    
+    const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
+    const [timeFilter, setTimeFilter] = useState("All-Time");
+
+    const [liveScaleOverride, setLiveScaleOverride] = useState(null);
+    const [uploadedFocus, setUploadedFocus] = useState(null);
+    
+    const [boundaries, setBoundaries] = useState([]);
+    const [userLocation, setUserLocation] = useState(null);
+    
+    const mapRef = useRef(null);
+    const [dragPinCoords, setDragPinCoords] = useState(null);
+
+    const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
+
+    const [pendingNewStore, setPendingNewStore] = useState(null);
+    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
+    const [isSavingStore, setIsSavingStore] = useState(false);
+
+    const handleSaveNewStore = async () => {
+        if (!newStoreForm.name) return alert("Store Name is required!");
+        setIsSavingStore(true);
+        try {
+            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+            
+            await setDoc(newRef, {
+                id: newRef.id,
+                name: newStoreForm.name.toUpperCase(),
+                phone: newStoreForm.phone || "",
+                address: newStoreForm.address || "",
+                tier: newStoreForm.tier,
+                priceTier: newStoreForm.tier,
+                storeType: 'Retailer',
+                latitude: pendingNewStore.lat,
+                longitude: pendingNewStore.lng,
+                status: 'Active',
+                visitFreq: 7, 
+                createdAt: new Date().toISOString()
+            });
+            
+            if (logAudit) logAudit("STORE_CREATED_MAP", `Added store ${newStoreForm.name} via map pin.`);
+            if (triggerCapy) triggerCapy(`New target secured: ${newStoreForm.name} 📍`);
+            
+            setPendingNewStore(null);
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save store: " + e.message);
+        } finally {
+            setIsSavingStore(false);
+        }
+    };
 
     useEffect(() => {
         const loadBorders = async () => {
             const CACHE_KEY = `cello_map_bnd_${appId}`;
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) { try { setBoundaries(JSON.parse(cached)); } catch(e) {} }
-            if (db && appId && user?.uid) {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                try { setBoundaries(JSON.parse(cachedData)); } catch(e) {}
+            }
+
+            if (db && appId && userId) {
                 try {
-                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/mapSettings`));
-                    const remoteBorders = [];
-                    snap.docs.forEach(d => {
-                        if (d.id.startsWith('bnd_')) {
-                            const data = d.data();
-                            try { data.geometry = JSON.parse(data.geometryString); } catch(e) {}
-                            remoteBorders.push(data);
+                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+                    const loaded = [];
+                    snap.forEach(doc => {
+                        if (doc.id.startsWith('bnd_')) {
+                            const data = doc.data();
+                            if (data && data.geometryString) {
+                                try {
+                                    data.geometry = JSON.parse(data.geometryString);
+                                    loaded.push(data);
+                                } catch(e) {}
+                            }
                         }
                     });
-                    if (remoteBorders.length > 0) {
-                        setBoundaries(remoteBorders);
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(remoteBorders));
+                    if (loaded.length > 0) {
+                        setBoundaries(loaded);
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(loaded));
                     }
                 } catch(e) {}
             }
         };
         loadBorders();
-    }, [db, appId, user?.uid]);
-
-    useEffect(() => {
-        if (!salesHeatmapMode) { setZoneRevenues({}); return; }
-        const revenues = {};
-        const safeTrans = Array.isArray(transactions) ? transactions : [];
-        const now = new Date();
-        
-        safeTrans.forEach(t => {
-            if (String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase() !== 'SALE') return;
-            
-            let tTime = 0;
-            if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
-            else if (typeof t?.timestamp === 'number') tTime = t.timestamp;
-            else if (typeof t?.timestamp === 'string') tTime = new Date(t.timestamp.replace(' ', 'T')).getTime();
-            else if (t?.date && typeof t.date === 'string') {
-                const clean = t.date.toLowerCase().replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03').replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07').replace(/agustus|agu/g, '08').replace(/oktober|okt/g, '10').replace(/desember|des/g, '12');
-                const chunks = clean.match(/\d+/g);
-                if (chunks && chunks.length >= 3) {
-                    let year = chunks.find(c => c.length === 4) || new Date().getFullYear().toString();
-                    let rem = chunks.filter(c => c !== year);
-                    if(rem.length >= 2) {
-                        let month = Number(rem[1]) > 12 ? rem[0] : rem[1];
-                        tTime = new Date(`${year}-${month.padStart(2,'0')}-01T12:00:00Z`).getTime(); 
-                    }
-                }
-            }
-            if (isNaN(tTime) || !tTime) return;
-
-            const tDate = new Date(tTime);
-            let inRange = false;
-            
-            if (timeFilter === 'Today') { inRange = tDate.toDateString() === now.toDateString(); } 
-            else if (timeFilter === '7 Days') { inRange = (now - tDate) / (1000 * 3600 * 24) <= 7; } 
-            else if (timeFilter === 'This Month') { inRange = tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear(); } 
-            else if (timeFilter === 'This Year') { inRange = tDate.getFullYear() === now.getFullYear(); } 
-            else if (timeFilter === 'All-Time') { inRange = true; }
-
-            if (inRange) {
-                const store = mapPoints.find(s => (s.name || '').trim().toLowerCase() === (t.customerName || t.customer || '').trim().toLowerCase());
-                if (store) {
-                    const val = Number(String(t.total).replace(/[^0-9-]/g, '')) || 0;
-                    boundaries.forEach(b => {
-                        if (!b.isHidden && checkPointInGeoJSON(store.longitude, store.latitude, b.geometry)) {
-                            revenues[b.id] = (revenues[b.id] || 0) + val;
-                        }
-                    });
-                }
-            }
-        });
-        setZoneRevenues(revenues);
-    }, [salesHeatmapMode, boundaries, mapPoints, transactions, timeFilter]);
-
-    const maxZoneRev = useMemo(() => {
-        const revs = Object.values(zoneRevenues);
-        return revs.length > 0 ? Math.max(...revs) : 1;
-    }, [zoneRevenues]);
-
-    const handlePinClick = (store, mapRef) => {
-        setSelectedStore(store);
-        setSelectedZone(null); 
-        mapRef.flyTo([store.latitude, store.longitude], 16, { duration: 1.2 });
-    };
-
-    const isMobile = window.innerWidth < 1024;
-    const canOverrideGps = isAdmin && (isMobile ? userLocation != null : true);
-
-    const mapTiles = {
-        Standard: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        Dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        Satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-    };
-
-    // Filter points securely for the map
-    const filteredPoints = useMemo(() => {
-        return mapPoints.filter(c => {
-            if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
-            if (selectedCity !== "All" && c.city !== selectedCity) return false;
-            if (!filterTier.includes(c.tier)) return false; 
-            return true;
-        });
-    }, [mapPoints, selectedRegion, selectedCity, filterTier]);
+    }, [db, appId, userId]);
 
     const sortedBoundaries = useMemo(() => {
         if (!Array.isArray(boundaries)) return [];
@@ -1555,100 +1535,281 @@ const MapMissionControl = ({
         });
     }, [boundaries]);
 
+    const { mapPoints, locationTree } = useMemo(() => {
+        const tree = {}; 
+        
+        // 🚀 FIXED: Indestructible Array Casting. If Firebase passes an Object {}, it won't crash the .filter()
+        const safeCustomers = Array.isArray(customers) ? customers : [];
+
+        const validStores = safeCustomers
+                .filter(c => c && typeof c === 'object')
+                .map(c => {
+                    let lat = parseFloat(c.latitude); 
+                    let lng = parseFloat(c.longitude);
+                    
+                    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
+                        lat = -7.5845; // Default Muntilan Center
+                        lng = 110.2895;
+                    }
+
+                    // 🚀 FIXED: Absolute String Casting for ALL text fields to completely eliminate random UI crashes
+                    let safeName = typeof c.name === 'string' ? c.name : String(c.name || 'Unknown Store');
+                    let safePhone = typeof c.phone === 'string' ? c.phone : String(c.phone || '');
+                    let safeStoreType = typeof c.storeType === 'string' ? c.storeType : String(c.storeType || 'Retailer');
+                    
+                    let reg = String(c.region || "Uncategorized"); 
+                    let cit = String(c.city || "Uncategorized");
+                    const addr = String(c.address || "").toLowerCase();
+                    
+                    if (cit.toLowerCase().includes("jalan pemuda") || addr.includes("jalan pemuda")) cit = "Muntilan"; 
+                    if (!tree[reg]) tree[reg] = new Set(); tree[reg].add(cit);
+
+                    const last = c.lastVisit ? new Date(c.lastVisit) : null;
+                const freq = parseInt(c.visitFreq) || 7;
+                let diffDays = 0;
+                let daysSinceVisit = 0;
+                let isConquered = false;
+
+                if (last && !isNaN(last.getTime())) {
+                    const next = new Date(last);
+                    next.setDate(last.getDate() + freq);
+                    diffDays = Math.ceil((next - new Date()) / (1000 * 60 * 60 * 24));
+                    daysSinceVisit = Math.floor((new Date() - last) / (1000 * 60 * 60 * 24));
+                    isConquered = daysSinceVisit <= 30;
+                } else {
+                        diffDays = -1; 
+                        daysSinceVisit = 999;
+                        isConquered = false;
+                    }
+                    const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
+
+                    // 🚀 FIXED: Indestructible String validation and fully decoupled Performance vs Pricing tiers!
+                    let rawTier = c.tier || 'Retail';
+                    let safePerfTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
+                    // 🚀 FIXED: Default unranked stores to the LOWEST rank (Tier 4), NOT the Highest rank (Tier 1)!
+                    if (!safePerfTier) safePerfTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
+
+                    // 🚀 FIXED: Pricing Tiers (Grosir/Ecer) are now 100% decoupled from Performance XP Ranks! They will never overwrite each other again.
+                    let safePriceTier = c.priceTier || c.pricingTier || 'Retail';
+
+                    // 🚀 FIXED: Re-inject the safe string fields into the store object so they never crash the UI
+                    return { ...c, name: safeName, phone: safePhone, storeType: safeStoreType, address: addr, city: cit, region: reg, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };
+                })
+                .filter(c => c !== null);
+
+            const filtered = validStores.filter(c => {
+                if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
+                if (selectedCity !== "All" && c.city !== selectedCity) return false;
+                // Now safely checks against normalized tier, preventing ghosting!
+                if (!filterTier.includes(c.tier)) return false; 
+                return true;
+            });
+
+        const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
+        return { mapPoints: filtered, locationTree: treeArray };
+    }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
+
+    const networkLinks = useMemo(() => {
+        if (!networkMode) return [];
+        const links = [];
+        const wholesalers = mapPoints.filter(c => c.storeType === 'Wholesaler');
+
+        mapPoints.forEach(store => {
+            if (store.suppliedBy) {
+                const ws = wholesalers.find(w => String(w.id) === String(store.suppliedBy));
+                if (ws) links.push({ id: `link-${ws.id}-${store.id}`, positions: [ [ws.latitude, ws.longitude], [store.latitude, store.longitude] ], color: ws.tier === 'Platinum' ? '#f59e0b' : '#fbbf24' });
+            }
+        });
+        return links;
+    }, [networkMode, mapPoints]);
+
+    const zoneRevenues = useMemo(() => {
+        if ((!salesHeatmapMode && !showTacticalDash) || !sortedBoundaries.length) return {};
+        const revMap = {};
+        const storeRevs = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 🚀 FIXED: Armor-plated transactions array
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+
+        mapPoints.forEach(store => {
+            storeRevs[store.name] = safeTrans
+                .filter(t => {
+                    if (t.customerName !== store.name || t.type !== 'SALE') return false;
+                    if (timeFilter === 'All-Time') return true;
+                    if (!t.date) return false;
+                    const txDate = new Date(t.date);
+                    if (isNaN(txDate)) return false;
+
+                    if (timeFilter === 'Today') return txDate.toDateString() === today.toDateString();
+                    if (timeFilter === '7 Days') {
+                        const sevenDaysAgo = new Date(today);
+                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        return txDate >= sevenDaysAgo;
+                    }
+                    if (timeFilter === 'This Month') return txDate.getMonth() === today.getMonth() && txDate.getFullYear() === today.getFullYear();
+                    if (timeFilter === 'This Year') return txDate.getFullYear() === today.getFullYear();
+                    return true;
+                }).reduce((sum, t) => sum + (t.total || 0), 0);
+        });
+
+        sortedBoundaries.forEach(boundary => {
+            const geoData = boundary.feature || boundary.geometry;
+            if (!geoData || !geoData.type) return;
+
+            let totalRev = 0;
+            mapPoints.forEach(store => {
+                if (checkPointInGeoJSON(store.longitude, store.latitude, geoData)) {
+                    totalRev += (storeRevs[store.name] || 0);
+                }
+            });
+            revMap[boundary.id] = totalRev;
+        });
+        return revMap;
+    }, [salesHeatmapMode, showTacticalDash, sortedBoundaries, mapPoints, transactions, timeFilter]);
+
+    const getZoneColor = (boundaryId) => {
+        if (!salesHeatmapMode) return null;
+        const rev = zoneRevenues[boundaryId] || 0;
+        if (rev === 0) return '#ef4444'; 
+        const maxRev = Math.max(...Object.values(zoneRevenues), 1);
+        const ratio = rev / maxRev;
+        if (ratio > 0.6) return '#10b981'; 
+        if (ratio > 0.2) return '#f59e0b'; 
+        return '#f97316'; 
+    };
+
+    const toggleTierFilter = (tierId) => setFilterTier(prev => prev.includes(tierId) ? prev.filter(t => t !== tierId) : [...prev, tierId]);
+    const toggleAllTiers = () => setFilterTier(filterTier.length === activeTiers.length ? [] : activeTiers.map(t => t.id));
+    
+    const handlePinClick = (store, map) => { 
+        if (isAddingMode || editingStoreId) return; 
+        setSelectedStore(store); 
+        setSelectedZone(null); 
+        setLiveScaleOverride(null); 
+        
+        // 🚀 FIXED: Smart Zoom Engine. It zooms in if you are far, but maintains your zoom if you are already close!
+        const minZoom = window.innerWidth < 1024 ? 17 : 15;
+        const targetZoom = Math.max(map.getZoom(), minZoom);
+        
+        map.flyTo([store.latitude, store.longitude], targetZoom, { duration: 1.2 }); 
+    };
+
+    const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
+
     return (
-        <div className="h-full w-full relative bg-slate-950 font-sans flex flex-col">
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] flex gap-2 p-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-2xl shadow-xl">
-                {Object.keys(mapTiles).map(mode => (
-                    <button key={mode} onClick={() => setMapMode(mode)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all ${mapMode === mode ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-                        {mode}
-                    </button>
-                ))}
-            </div>
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
+            
+            <style>{`
+                body, html { overscroll-behavior-y: none !important; }
+            `}</style>
 
-            <div className="absolute bottom-[30px] lg:top-4 right-4 z-[1000] flex flex-col gap-3">
-                <button onClick={() => setShowTierEngine(true)} className="w-12 h-12 bg-slate-900/90 hover:bg-blue-600 text-blue-400 hover:text-white rounded-full border border-slate-700 shadow-xl flex justify-center items-center transition-all group relative">
-                    <Activity size={20} className="group-hover:scale-110 transition-transform" />
-                    <span className="absolute right-14 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">RPG Auto-Tier Engine</span>
-                </button>
-                <button onClick={() => setShowImporter(true)} className="w-12 h-12 bg-slate-900/90 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-full border border-slate-700 shadow-xl flex justify-center items-center transition-all group relative">
-                    <Globe size={20} className="group-hover:scale-110 transition-transform" />
-                    <span className="absolute right-14 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Territory Intel</span>
-                </button>
-            </div>
+            <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
+            
+            {/* 🚀 TARGETING HUD (COMPACT FOR MOBILE) */}
+            {(isAddingMode || editingStoreId) && dragPinCoords && (
+                <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-2 items-center w-max min-w-[220px] pointer-events-auto bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.5)] animate-fade-in-up">
+                    <div className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1">
+                        <MapPin size={12} className="animate-bounce" /> {editingStoreId ? "Correct Location" : "Drop New Pin"}
+                    </div>
+                    <span className="text-slate-300 text-[9px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
+                    
+                    <div className="flex gap-2 w-full mt-1">
+                        <button 
+                            onClick={() => { setIsAddingMode(false); setEditingStoreId(null); setDragPinCoords(null); }}
+                            className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                // 🚀 FIXED: Robust Array/Object parser to fix cross-map vanishing bugs
+                                const finalLat = Number(parseFloat(dragPinCoords.lat ?? dragPinCoords[0]).toFixed(7));
+                                const finalLng = Number(parseFloat(dragPinCoords.lng ?? dragPinCoords[1]).toFixed(7));
 
-            {showTierEngine && (
-                <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={filteredPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />
+                                if (editingStoreId) {
+                                    try {
+                                        const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
+                                        await updateDoc(storeRef, { latitude: finalLat, longitude: finalLng });
+                                        alert("✅ Location Corrected!");
+                                        setEditingStoreId(null);
+                                        setDragPinCoords(null);
+                                        if (logAudit) logAudit("STORE_EDITED_MAP", `Corrected pin for store ID: ${editingStoreId}`);
+                                    } catch(e) {
+                                        alert("Failed to update location: " + e.message);
+                                    }
+                                } else {
+                                    setPendingNewStore({ lat: finalLat, lng: finalLng });
+                                    setIsAddingMode(false);
+                                    setDragPinCoords(null);
+                                    setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
+                                }
+                            }}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
+                        >
+                            <CheckCircle size={12} /> {editingStoreId ? "Save" : "Confirm"}
+                        </button>
+                    </div>
+                </div>
             )}
 
-            {showImporter && (
-                <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />
-            )}
-
-            {(salesHeatmapMode || boundaries.length > 0) && (
-                <TacticalDashboard 
-                    boundaries={boundaries} zoneRevenues={zoneRevenues} mapPoints={filteredPoints} transactions={transactions}
-                    selectedZone={selectedZone} setSelectedZone={setSelectedZone}
-                    onClose={() => { setSalesHeatmapMode(false); setZoneRevenues({}); setShowTacticalDash(false); }}
-                    salesHeatmapMode={salesHeatmapMode} setSalesHeatmapMode={setSalesHeatmapMode}
-                    selectedAreaType={selectedAreaType} setSelectedAreaType={setSelectedAreaType}
-                    timeFilter={timeFilter} setTimeFilter={setTimeFilter}
-                />
-            )}
-
-            <div className="flex-1 relative z-0">
-                <MapContainer center={[-7.250445, 112.768845]} zoom={12} className={`w-full h-full ${mapMode === 'Dark' ? 'balanced-dark-tile' : ''}`} zoomControl={false} >
-                    <TileLayer url={mapTiles[mapMode]} />
-                    <ZoomControl position="bottomleft" />
-                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
-                    <MapEffectController selectedRegion="All" selectedCity="All" mapPoints={filteredPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
-                    <AdminControls isAdmin={isAdmin} onSetHome={onSetHome} />
-                    <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
-
-                    {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} />}
-
-                    {showBorders && boundaries.map((bnd) => {
-                        if (bnd.isHidden) return null;
-                        const isSelected = selectedZone?.id === bnd.id;
-                        let fillColor = bnd.color;
-                        let fillOpacity = isSelected ? 0.3 : 0.05;
+            {/* 🚀 NEW STORE REGISTRATION MODAL */}
+            {pendingNewStore && (
+                <div className="absolute inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border-2 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)] rounded-2xl w-full max-w-sm p-6 animate-slide-down relative">
+                        <button onClick={() => setPendingNewStore(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
                         
-                        if (salesHeatmapMode) {
-                            const rev = zoneRevenues[bnd.id] || 0;
-                            const ratio = maxZoneRev > 0 ? rev / maxZoneRev : 0;
-                            if (rev === 0) { fillColor = '#1e293b'; fillOpacity = 0.2; }
-                            else if (ratio > 0.6) { fillColor = '#10b981'; fillOpacity = 0.5 + (ratio * 0.3); }
-                            else if (ratio > 0.2) { fillColor = '#f59e0b'; fillOpacity = 0.4 + (ratio * 0.3); }
-                            else { fillColor = '#ef4444'; fillOpacity = 0.3 + (ratio * 0.3); }
-                        }
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="bg-orange-500/20 p-2 rounded-full"><Store className="text-orange-500" size={24}/></div>
+                            <div>
+                                <h3 className="text-white font-black uppercase tracking-widest">Register Target</h3>
+                                <p className="text-blue-400 font-mono text-[10px]">{pendingNewStore.lat.toFixed(5)}, {pendingNewStore.lng.toFixed(5)}</p>
+                            </div>
+                        </div>
 
-                        return (
-                            <GeoJSON 
-                                key={`${bnd.id}-${salesHeatmapMode}-${fillColor}`}
-                                data={bnd.geometry} 
-                                style={{ color: isSelected ? '#ffffff' : fillColor, weight: isSelected ? 3 : (bnd.level === 'Provinsi' ? 3 : bnd.level === 'Kabupaten' ? 2 : 1), opacity: isSelected ? 1 : (salesHeatmapMode ? 0.8 : 0.6), fillColor: fillColor, fillOpacity: fillOpacity, dashArray: bnd.level === 'Desa' ? '4,4' : '' }}
-                                eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setSelectedZone(bnd); setSelectedStore(null); } }}
-                            />
-                        );
-                    })}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Store Name <span className="text-red-500">*</span></label>
+                                <input value={newStoreForm.name} onChange={e => setNewStoreForm({...newStoreForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500" placeholder="e.g. TOKO MAJU" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Phone / WhatsApp</label>
+                                <input value={newStoreForm.phone} onChange={e => setNewStoreForm({...newStoreForm, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500" placeholder="e.g. 08123456789" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Full Address</label>
+                                <textarea value={newStoreForm.address} onChange={e => setNewStoreForm({...newStoreForm, address: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold outline-none focus:border-orange-500 min-h-[80px]" placeholder="Include street, area..." />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pricing Tier</label>
+                                <select value={newStoreForm.tier} onChange={e => setNewStoreForm({...newStoreForm, tier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500">
+                                    {activeTiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                                </select>
+                            </div>
+                            
+                            <button 
+                                onClick={handleSaveNewStore}
+                                disabled={isSavingStore}
+                                className={`w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg ${isSavingStore ? 'bg-slate-700 text-slate-500' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'}`}
+                            >
+                                {isSavingStore ? 'Saving...' : 'Deploy Target'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                    {filteredPoints.map(store => (
-                        <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} isActive={selectedStore?.id === store.id} />
-                    ))}
-                </MapContainer>
-                
-                {selectedStore && (
-                    <StoreBottomSheet 
-                        store={selectedStore} mapPoints={filteredPoints} transactions={transactions} inventory={inventory} 
-                        db={db} appId={appId} user={user} isAdmin={isAdmin} 
-                        setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} 
-                        setLiveScaleOverride={setLiveScaleOverride} setEditingStoreId={setEditingStoreId} 
-                        setDragPinCoords={setDragPinCoords} canOverrideGps={canOverrideGps} activeTiers={activeTiers}
-                    />
-                )}
-
-                <GameHUD conquestMode={conquestMode} mapPoints={filteredPoints} />
-                <ZoneHUD zone={selectedZone} mapPoints={filteredPoints} setSelectedZone={setSelectedZone} />
-            </div>
+            {salesHeatmapMode && (
+                <div className="absolute bottom-[100px] lg:bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Heatmap</span>
+                    <div className="h-5 w-[1px] bg-slate-700"></div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#10b981] border border-white"></div> High</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f59e0b] border border-white"></div> Med</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f97316] border border-white"></div> Low</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white"></div> Zero</div>
+                </div>
+            )}
 
             <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
@@ -1678,18 +1839,30 @@ const MapMissionControl = ({
 
                     <div className="grid grid-cols-1 gap-2 w-full mt-2">
                         {isAdmin && (
-                            <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
-                                Tier Automation Engine <Settings size={16}/>
-                            </button>
+                            <>
+                                <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
+                                    Tier Automation Engine <Settings size={16}/>
+                                </button>
+                                <button onClick={() => alert("Commander, Map Boundaries are currently managed in the backend Firebase Database under mapSettings. The UI Uploader is scheduled for the next patch!")} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
+                                    Map Boundaries Setup <Download size={16}/>
+                                </button>
+                            </>
                         )}
+                        
                         <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                             {showBorders ? "Regional Borders: ON" : "Regional Borders"} <Globe size={16}/>
                         </button>
+                        
                         {isAdmin && (
                             <>
-                                <button onClick={() => { const nextState = !showTacticalDash; setShowTacticalDash(nextState); if (nextState) { setSalesHeatmapMode(true); setShowBorders(true); }}} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                                <button onClick={() => { 
+                                    const nextState = !showTacticalDash;
+                                    setShowTacticalDash(nextState); 
+                                    if (nextState) { setSalesHeatmapMode(true); setShowBorders(true); }
+                                }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                                     {showTacticalDash ? "Tactical Dashboard: ON" : "Tactical Dashboard"} <TrendingUp size={16}/>
                                 </button>
+
                                 <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                                     {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"} <DollarSign size={16}/>
                                 </button>
@@ -1698,36 +1871,183 @@ const MapMissionControl = ({
                         <button onClick={() => setNetworkMode(!networkMode)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
                             {networkMode ? "Supply Lines: ON" : "View Supply Lines"} <Database size={16}/>
                         </button>
+                        <button onClick={() => setConquestMode(!conquestMode)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                            {conquestMode ? "Catchment Footprints: ON" : "Analyze Catchment Areas"} <Folder size={16}/>
+                        </button>
                     </div>
                 </div>
             </div>
 
+            {/* 🚀 DEDICATED ADD STORE BUTTON */}
+            {!isAddingMode && !editingStoreId && canAddManualPin && (
+                <div className="absolute bottom-[90px] left-[14px] z-[999]">
+                    <button 
+                        onClick={() => {
+                            let center = [-7.6145, 110.7122];
+                            if (mapRef.current) {
+                                const c = mapRef.current.getCenter();
+                                center = [c.lat, c.lng];
+                            } else if (userLocation) {
+                                center = userLocation;
+                            }
+                            setDragPinCoords(center);
+                            setIsAddingMode(true);
+                        }} 
+                        className="bg-orange-600/95 backdrop-blur-md text-white border-2 border-orange-400 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(249,115,22,0.6)] flex items-center gap-2 hover:bg-orange-500 transition-all hover:scale-105 active:scale-95"
+                    >
+                        <MapPin size={18} className="animate-bounce" /> 
+                        Drop New Pin
+                    </button>
+                </div>
+            )}
+
+           {showTacticalDash && (
+                <TacticalDashboard 
+                    boundaries={sortedBoundaries} zoneRevenues={zoneRevenues} mapPoints={mapPoints} transactions={transactions}
+                    selectedZone={selectedZone} setSelectedZone={setSelectedZone} onClose={() => setShowTacticalDash(false)}
+                    salesHeatmapMode={salesHeatmapMode} setSalesHeatmapMode={setSalesHeatmapMode}
+                    selectedAreaType={selectedAreaType} setSelectedAreaType={setSelectedAreaType}
+                    timeFilter={timeFilter} setTimeFilter={setTimeFilter}
+                />
+            )}
+
+            {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />}
+
+            <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
+                <ZoomControl position="bottomright" />
+                <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
+                
+                <LayersControl position="bottomright">
+                    <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
+                        <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Google Maps (Streets)">
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" attribution='© Google' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Google Maps (Hybrid)">
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution='© Google' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Detailed Streets (Esri)">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Light Canvas (Carto)">
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
+                    </LayersControl.BaseLayer>
+                </LayersControl>
+
+                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
+                {userLocation && (
+                    <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
+                )}
+
+                <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
+                
+                <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
+                
+                {(isAddingMode || editingStoreId) && dragPinCoords && (
+                    <DraggableAddMarker position={dragPinCoords} setPosition={setDragPinCoords} />
+                )}
+                
+                {showBorders && sortedBoundaries.map((boundary) => {
+                    const geoData = boundary.feature || boundary.geometry;
+                    if (!geoData || !geoData.type) return null; 
+                    
+                    const isHeatmap = salesHeatmapMode;
+                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : boundary.color;
+                    const bndRev = zoneRevenues[boundary.id] || 0;
+                    const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
+                    const isSelected = selectedZone?.id === boundary.id;
+
+                    return (
+                        <GeoJSON 
+                            key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}-${isSelected}-${timeFilter}`} 
+                            data={geoData} 
+                            style={{ color: isSelected ? '#38bdf8' : bndColor, weight: isSelected ? 4 : (isKab ? 3 : 2), opacity: 1, fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), fillColor: bndColor, dashArray: isKab ? null : '5, 5' }}
+                            onEachFeature={(f, layer) => {
+                                layer.on({
+                                    click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
+                                    mouseover: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.6 : (isKab ? 0.05 : 0.3), weight: isKab ? 4 : 3 }),
+                                    mouseout: (e) => e.target.setStyle({ fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), weight: isSelected ? 4 : (isKab ? 3 : 2) })
+                                });
+                                const ttContent = `
+                                    <div style="background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
+                                        <div style="color: #cbd5e1; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${boundary.name || "Region"}</div>
+                                        ${isHeatmap ? `<div style="color: #fbbf24; font-size: 15px; font-weight: 900; font-family: monospace;">${formatRupiah(bndRev)}</div>` : ''}
+                                    </div>`;
+                                layer.bindTooltip(ttContent, { permanent: isHeatmap || isSelected, direction: "center", className: "custom-leaflet-tooltip" });
+                            }}
+                        />
+                    );
+                })}
+
+                {networkMode && networkLinks.map(link => (
+                    <Polyline key={link.id} positions={link.positions} pathOptions={{ color: link.color, weight: 3, opacity: 0.8, className: 'animated-supply-line' }}/>
+                ))}
+
+                {conquestMode && mapPoints.map(store => {
+                    let baseRadius = 300; 
+                    if (store.storeType === 'Wholesaler') baseRadius = 2500; 
+                    else if (store.tier === 'Platinum') baseRadius = 1500;
+                    else if (store.tier === 'Gold') baseRadius = 800;
+                    else if (store.tier === 'Silver') baseRadius = 500;
+                    const isEditingThisStore = activeStore && activeStore.id === store.id && liveScaleOverride !== null;
+                    const storeScale = isEditingThisStore ? liveScaleOverride : (store.catchmentScale || 1.0);
+                    const finalRadius = baseRadius * storeScale;
+                    return <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>;
+                })}
+
+                {mapPoints.map(store => (
+                    <MarkerWithZoom 
+                        key={store.id} 
+                        store={store} 
+                        activeTiers={activeTiers} 
+                        conquestMode={conquestMode} 
+                        handlePinClick={handlePinClick} 
+                        isActive={activeStore && activeStore.id === store.id}
+                    />
+                ))}
+            </MapContainer>
+
+            {activeStore && (
+                <StoreBottomSheet 
+                    store={activeStore} mapPoints={mapPoints} transactions={transactions} 
+                    inventory={inventory} db={db} appId={appId} user={user} 
+                    isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
+                    liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
+                    setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
+                    activeTiers={activeTiers}
+                />
+            )}
+            
+            {!showTacticalDash && <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />}
+            
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .scrollable-content { overscroll-behavior: contain; }
+                .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
+                .leaflet-tooltip.custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+                .leaflet-tooltip.custom-leaflet-tooltip::before, .leaflet-tooltip.custom-leaflet-tooltip::after { display: none !important; }
+                .custom-icon { z-index: 500 !important; }
+                .custom-icon:hover { z-index: 10000 !important; }
+                
                 .crt-overlay {
                     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
                     background-size: 100% 4px; pointer-events: none; position: absolute; inset: 0; z-index: 50; opacity: 0.3;
                 }
+
                 .balanced-dark-tile { filter: brightness(1.2); }
                 .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
+                
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 .venn-heatmap-circle { mix-blend-mode: screen; }
+                
                 @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
                 .animate-slide-down { animation: slide-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                
                 @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
                 .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-                @keyframes pulse-ring { 
-                    0% { transform: scale(0.8); opacity: 0.5; } 
-                    80% { transform: scale(2.5); opacity: 0; } 
-                    100% { transform: scale(2.5); opacity: 0; } 
-                }
-                .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
-                .leaflet-tooltip-pane { z-index: 600 !important; }
-                .custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-                .custom-leaflet-tooltip::before { display: none !important; }
+                
+                @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(3.5); opacity: 0; } }
+
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
             `}</style>
         </div>
     );
