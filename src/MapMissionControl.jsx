@@ -1126,7 +1126,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         </div>
     );
 };
-
 // 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
     const [rules, setRules] = useState({});
@@ -1146,7 +1145,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         loadSettings();
     }, [db, appId, userId]);
 
-    // 🚀 THE DATA CLEANSE PROTOCOL: Formats the database for the RPG system
     const runDataCleanse = async () => {
         if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
         setIsApplying(true);
@@ -1168,7 +1166,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                         lifetimeXP += val;
 
-                        // Brute force date parser just for the one-time migration
                         let tTime = 0;
                         if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
                         else if (typeof t?.timestamp === 'number') tTime = t.timestamp;
@@ -1187,14 +1184,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         }
                         
                         const d = new Date(tTime > 0 ? tTime : 0);
-                        // If it matches the current calendar month, add it to Season XP
                         if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
                             seasonXP += val;
                         }
                     }
                 });
 
-                // Lock data permanently into the profile
                 await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), {
                     lifetimeXP: lifetimeXP,
                     seasonXP: seasonXP,
@@ -1211,7 +1206,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         setIsApplying(false);
     };
 
-    // 🚀 OPTION B: FIXED CALENDAR SEASON & 1-TIER DEMOTION ENGINE
     const runSimulation = () => {
         const safeRules = rules || {};
         const sortedRules = Object.entries(safeRules).sort((a, b) => {
@@ -1231,7 +1225,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let currentIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(currentTier).toLowerCase());
             if (currentIdx === -1) currentIdx = activeTiers.length - 1;
 
-            // Fetch permanent profile stats instead of calculating on the fly
             let lifetimeXP = store.lifetimeXP || 0;
             let seasonXP = store.seasonXP || 0;
             let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
@@ -1239,7 +1232,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let earnedTier = currentTier;
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
-            // --- 1. THE 1-TIER DEMOTION CHECK ---
             if (isNewSeason) {
                 let deservedTier = fallbackTier;
                 for (let [ruleKey, rule] of sortedRules) {
@@ -1252,14 +1244,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
                 const deservedIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(deservedTier).toLowerCase());
                 
-                // If they failed to maintain their rank, drop them EXACTLY 1 Tier (Index + 1)
                 if (deservedIdx > currentIdx) {
                     earnedTier = activeTiers[Math.min(currentIdx + 1, activeTiers.length - 1)].id;
                 }
-                seasonXP = 0; // Reset visual for the new month
+                seasonXP = 0; 
             }
 
-            // --- 2. THE PROMOTION CHECK ---
             if (!isNewSeason || seasonXP > 0) {
                 for (let [ruleKey, rule] of sortedRules) {
                     const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
@@ -1298,7 +1288,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let ops = 0;
             for (let action of simResults.actions) {
                 const payload = { tier: action.new };
-                // If a demotion happened across a month boundary, execute the reset in Firebase
                 if (action.isNewSeason) {
                     payload.seasonXP = 0;
                     payload.lastXPUpdate = new Date().toISOString();
@@ -1377,7 +1366,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                 <Activity size={18}/> Audit Season Ranks
                             </button>
 
-                            {/* 🚀 THE DATA CLEANSE BUTTON */}
                             <div className="border-t border-slate-700 pt-4 mt-4">
                                 <h4 className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 font-bold flex items-center gap-1"><ShieldAlert size={12} className="text-red-500"/> System Setup (Run Once)</h4>
                                 <button onClick={runDataCleanse} disabled={isApplying} className="w-full bg-red-900/40 border border-red-500/50 hover:bg-red-600 text-red-300 hover:text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2">
@@ -1388,6 +1376,269 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     )}
                 </div>
             </div>
+        </div>
+    );
+};
+
+
+
+
+
+// 🚀 FIXED: Restore the Main Map Component! This connects the entire file back to your app.
+const MapMissionControl = ({ 
+    mapPoints = [], transactions = [], inventory = [], activeTiers = [], 
+    conquestMode = false, isAddingMode = false, setDragPinCoords, db, appId, user, 
+    isAdmin, logAudit, triggerCapy, onSetHome, mapSettings = {} 
+}) => {
+    const [selectedStore, setSelectedStore] = useState(null);
+    const [editingStoreId, setEditingStoreId] = useState(null);
+    const [showTierEngine, setShowTierEngine] = useState(false);
+    const [boundaries, setBoundaries] = useState([]);
+    const [showBorders, setShowBorders] = useState(true);
+    const [selectedZone, setSelectedZone] = useState(null);
+    const [showImporter, setShowImporter] = useState(false);
+    const [userLocation, setUserLocation] = useState(null);
+    const [liveScaleOverride, setLiveScaleOverride] = useState(1);
+    const [uploadedFocus, setUploadedFocus] = useState(null);
+    const [mapMode, setMapMode] = useState('Standard');
+    const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
+    
+    const [selectedAreaType, setSelectedAreaType] = useState("Kecamatan");
+    const [timeFilter, setTimeFilter] = useState("This Month");
+    const [zoneRevenues, setZoneRevenues] = useState({});
+
+    useEffect(() => {
+        const loadBorders = async () => {
+            const CACHE_KEY = `cello_map_bnd_${appId}`;
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) { try { setBoundaries(JSON.parse(cached)); } catch(e) {} }
+            if (db && appId && user?.uid) {
+                try {
+                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/mapSettings`));
+                    const remoteBorders = [];
+                    snap.docs.forEach(d => {
+                        if (d.id.startsWith('bnd_')) {
+                            const data = d.data();
+                            try { data.geometry = JSON.parse(data.geometryString); } catch(e) {}
+                            remoteBorders.push(data);
+                        }
+                    });
+                    if (remoteBorders.length > 0) {
+                        setBoundaries(remoteBorders);
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(remoteBorders));
+                    }
+                } catch(e) {}
+            }
+        };
+        loadBorders();
+    }, [db, appId, user?.uid]);
+
+    useEffect(() => {
+        if (!salesHeatmapMode) { setZoneRevenues({}); return; }
+        const revenues = {};
+        const safeTrans = Array.isArray(transactions) ? transactions : [];
+        const now = new Date();
+        
+        safeTrans.forEach(t => {
+            if (String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase() !== 'SALE') return;
+            
+            let tTime = 0;
+            if (t?.timestamp?.seconds) tTime = t.timestamp.seconds * 1000;
+            else if (typeof t?.timestamp === 'number') tTime = t.timestamp;
+            else if (typeof t?.timestamp === 'string') tTime = new Date(t.timestamp.replace(' ', 'T')).getTime();
+            else if (t?.date && typeof t.date === 'string') {
+                const clean = t.date.toLowerCase().replace(/januari|jan/g, '01').replace(/februari|feb/g, '02').replace(/maret|mar/g, '03').replace(/mei|may/g, '05').replace(/juni|jun/g, '06').replace(/juli|jul/g, '07').replace(/agustus|agu/g, '08').replace(/oktober|okt/g, '10').replace(/desember|des/g, '12');
+                const chunks = clean.match(/\d+/g);
+                if (chunks && chunks.length >= 3) {
+                    let year = chunks.find(c => c.length === 4) || new Date().getFullYear().toString();
+                    let rem = chunks.filter(c => c !== year);
+                    if(rem.length >= 2) {
+                        let month = Number(rem[1]) > 12 ? rem[0] : rem[1];
+                        tTime = new Date(`${year}-${month.padStart(2,'0')}-01T12:00:00Z`).getTime(); 
+                    }
+                }
+            }
+            if (isNaN(tTime) || !tTime) return;
+
+            const tDate = new Date(tTime);
+            let inRange = false;
+            
+            if (timeFilter === 'Today') { inRange = tDate.toDateString() === now.toDateString(); } 
+            else if (timeFilter === '7 Days') { inRange = (now - tDate) / (1000 * 3600 * 24) <= 7; } 
+            else if (timeFilter === 'This Month') { inRange = tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear(); } 
+            else if (timeFilter === 'This Year') { inRange = tDate.getFullYear() === now.getFullYear(); } 
+            else if (timeFilter === 'All-Time') { inRange = true; }
+
+            if (inRange) {
+                const store = mapPoints.find(s => (s.name || '').trim().toLowerCase() === (t.customerName || t.customer || '').trim().toLowerCase());
+                if (store) {
+                    const val = Number(String(t.total).replace(/[^0-9-]/g, '')) || 0;
+                    boundaries.forEach(b => {
+                        if (!b.isHidden && checkPointInGeoJSON(store.longitude, store.latitude, b.geometry)) {
+                            revenues[b.id] = (revenues[b.id] || 0) + val;
+                        }
+                    });
+                }
+            }
+        });
+        setZoneRevenues(revenues);
+    }, [salesHeatmapMode, boundaries, mapPoints, transactions, timeFilter]);
+
+    const maxZoneRev = useMemo(() => {
+        const revs = Object.values(zoneRevenues);
+        return revs.length > 0 ? Math.max(...revs) : 1;
+    }, [zoneRevenues]);
+
+    const handlePinClick = (store, mapRef) => {
+        setSelectedStore(store);
+        setSelectedZone(null); 
+        mapRef.flyTo([store.latitude, store.longitude], 16, { duration: 1.2 });
+    };
+
+    const isMobile = window.innerWidth < 1024;
+    const canOverrideGps = isAdmin && (isMobile ? userLocation != null : true);
+
+    const mapTiles = {
+        Standard: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        Dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        Satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+    };
+
+    return (
+        <div className="h-full w-full relative bg-slate-950 font-sans flex flex-col">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] flex gap-2 p-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-2xl shadow-xl">
+                {Object.keys(mapTiles).map(mode => (
+                    <button key={mode} onClick={() => setMapMode(mode)} className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider uppercase transition-all ${mapMode === mode ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+                        {mode}
+                    </button>
+                ))}
+            </div>
+
+            <div className="absolute bottom-[30px] lg:top-4 right-4 z-[1000] flex flex-col gap-3">
+                <button onClick={() => setShowTierEngine(true)} className="w-12 h-12 bg-slate-900/90 hover:bg-blue-600 text-blue-400 hover:text-white rounded-full border border-slate-700 shadow-xl flex justify-center items-center transition-all group relative">
+                    <Activity size={20} className="group-hover:scale-110 transition-transform" />
+                    <span className="absolute right-14 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">RPG Auto-Tier Engine</span>
+                </button>
+                <button onClick={() => setShowImporter(true)} className="w-12 h-12 bg-slate-900/90 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-full border border-slate-700 shadow-xl flex justify-center items-center transition-all group relative">
+                    <Globe size={20} className="group-hover:scale-110 transition-transform" />
+                    <span className="absolute right-14 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Territory Intel</span>
+                </button>
+            </div>
+
+            {showTierEngine && (
+                <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />
+            )}
+
+            {showImporter && (
+                <BorderImporter db={db} appId={appId} user={user} boundaries={boundaries} setBoundaries={setBoundaries} setIsOpen={setShowImporter} setShowBorders={setShowBorders} setUploadedFocus={setUploadedFocus} />
+            )}
+
+            {(salesHeatmapMode || boundaries.length > 0) && (
+                <TacticalDashboard 
+                    boundaries={boundaries} zoneRevenues={zoneRevenues} mapPoints={mapPoints} transactions={transactions}
+                    selectedZone={selectedZone} setSelectedZone={setSelectedZone}
+                    onClose={() => { setSalesHeatmapMode(false); setZoneRevenues({}); }}
+                    salesHeatmapMode={salesHeatmapMode} setSalesHeatmapMode={setSalesHeatmapMode}
+                    selectedAreaType={selectedAreaType} setSelectedAreaType={setSelectedAreaType}
+                    timeFilter={timeFilter} setTimeFilter={setTimeFilter}
+                />
+            )}
+
+            <div className="flex-1 relative z-0">
+                <MapContainer center={[-7.250445, 112.768845]} zoom={12} className={`w-full h-full ${mapMode === 'Dark' ? 'balanced-dark-tile' : ''}`} zoomControl={false} >
+                    <TileLayer url={mapTiles[mapMode]} />
+                    <ZoomControl position="bottomleft" />
+                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
+                    <MapEffectController selectedRegion="All" selectedCity="All" mapPoints={mapPoints} savedHome={mapSettings} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
+                    <AdminControls isAdmin={isAdmin} onSetHome={onSetHome} />
+                    <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
+
+                    {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} />}
+
+                    {showBorders && boundaries.map((bnd) => {
+                        if (bnd.isHidden) return null;
+                        const isSelected = selectedZone?.id === bnd.id;
+                        let fillColor = bnd.color;
+                        let fillOpacity = isSelected ? 0.3 : 0.05;
+                        
+                        if (salesHeatmapMode) {
+                            const rev = zoneRevenues[bnd.id] || 0;
+                            const ratio = maxZoneRev > 0 ? rev / maxZoneRev : 0;
+                            if (rev === 0) { fillColor = '#1e293b'; fillOpacity = 0.2; }
+                            else if (ratio > 0.6) { fillColor = '#10b981'; fillOpacity = 0.5 + (ratio * 0.3); }
+                            else if (ratio > 0.2) { fillColor = '#f59e0b'; fillOpacity = 0.4 + (ratio * 0.3); }
+                            else { fillColor = '#ef4444'; fillOpacity = 0.3 + (ratio * 0.3); }
+                        }
+
+                        return (
+                            <GeoJSON 
+                                key={`${bnd.id}-${salesHeatmapMode}-${fillColor}`}
+                                data={bnd.geometry} 
+                                style={{ color: isSelected ? '#ffffff' : fillColor, weight: isSelected ? 3 : (bnd.level === 'Provinsi' ? 3 : bnd.level === 'Kabupaten' ? 2 : 1), opacity: isSelected ? 1 : (salesHeatmapMode ? 0.8 : 0.6), fillColor: fillColor, fillOpacity: fillOpacity, dashArray: bnd.level === 'Desa' ? '4,4' : '' }}
+                                eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setSelectedZone(bnd); setSelectedStore(null); } }}
+                            />
+                        );
+                    })}
+
+                    {mapPoints.map(store => (
+                        <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} isActive={selectedStore?.id === store.id} />
+                    ))}
+
+                    {mapPoints.filter(s => s.storeType === 'Wholesaler').map(hub => {
+                        const connections = mapPoints.filter(s => s.suppliedBy === hub.id && s.latitude && s.longitude);
+                        return connections.map(c => (
+                            <Polyline key={`link-${hub.id}-${c.id}`} positions={[[hub.latitude, hub.longitude], [c.latitude, c.longitude]]} color="#f59e0b" weight={2} opacity={0.6} className="animated-supply-line" dashArray="8, 12" />
+                        ));
+                    })}
+                </MapContainer>
+                
+                {selectedStore && (
+                    <StoreBottomSheet 
+                        store={selectedStore} mapPoints={mapPoints} transactions={transactions} inventory={inventory} 
+                        db={db} appId={appId} user={user} isAdmin={isAdmin} 
+                        setSelectedStore={setSelectedStore} liveScaleOverride={liveScaleOverride} 
+                        setLiveScaleOverride={setLiveScaleOverride} setEditingStoreId={setEditingStoreId} 
+                        setDragPinCoords={setDragPinCoords} canOverrideGps={canOverrideGps} activeTiers={activeTiers}
+                    />
+                )}
+
+                <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} />
+                <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />
+            </div>
+
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .scrollable-content { overscroll-behavior: contain; }
+                .crt-overlay {
+                    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+                    background-size: 100% 4px; pointer-events: none; position: absolute; inset: 0; z-index: 50; opacity: 0.3;
+                }
+
+                .balanced-dark-tile { filter: brightness(1.2); }
+                .animated-supply-line { stroke-dasharray: 8, 12; animation: flow 30s linear infinite; }
+                
+                @keyframes flow { to { stroke-dashoffset: -1000; } }
+                .venn-heatmap-circle { mix-blend-mode: screen; }
+                
+                @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+                .animate-slide-down { animation: slide-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                
+                @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                
+                @keyframes pulse-ring { 
+                    0% { transform: scale(0.8); opacity: 0.5; } 
+                    80% { transform: scale(2.5); opacity: 0; } 
+                    100% { transform: scale(2.5); opacity: 0; } 
+                }
+                .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+                
+                .leaflet-tooltip-pane { z-index: 600 !important; }
+                .custom-leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+                .custom-leaflet-tooltip::before { display: none !important; }
+            `}</style>
         </div>
     );
 };
