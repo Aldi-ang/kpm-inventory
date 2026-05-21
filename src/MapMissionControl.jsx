@@ -1271,23 +1271,19 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 seasonXP = 0; 
             }
 
-            // --- 2. THE PROMOTION CHECK ---
-            // If it's an active season, aggressively check if their current SeasonXP beats a higher target.
+            // --- 2. STRICT BRACKET PROMOTION CHECK ---
             if (!isNewSeason || seasonXP > 0) {
+                // Default to Unranked if they fail all checks
+                earnedTier = 'Unranked'; 
+
                 for (let [ruleKey, rule] of sortedRules) {
                     const target = Number(String(rule.omsetTarget || 0).replace(/[^0-9]/g, '')) || 0;
+                    
+                    // Because sortedRules goes from Highest (Mythic) to Lowest (Bronze),
+                    // the FIRST target they beat is mathematically their exact bracket.
                     if (seasonXP >= target) {
-                        const actualTargetTier = rule.tierId || rule.targetTier;
-                        const potentialIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(actualTargetTier).toLowerCase());
-                        
-                        // We ONLY compare against their originally determined tier (currentTier or demotedTier).
-                        // If the new target tier is historically "higher" (lower index) than where they currently sit, promote them!
-                        const currentEvalIdx = activeTiers.findIndex(t => String(t.id).toLowerCase() === String(earnedTier).toLowerCase());
-                        
-                        if (potentialIdx !== -1 && potentialIdx < currentEvalIdx) {
-                            earnedTier = actualTargetTier;
-                        }
-                        break; // Stop checking. We found the highest tier they qualify for!
+                        earnedTier = rule.tierId || rule.targetTier;
+                        break; // Stop checking. They found their bracket!
                     }
                 }
             }

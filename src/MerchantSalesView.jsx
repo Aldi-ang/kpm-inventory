@@ -689,8 +689,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             });
                         }
 
+                       // Assign Active Season XP to UI Tracker
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
 
+                        // 🚀 STRICT BRACKET LOGIC: The FIRST rule they beat is their exact bracket.
                         if (metricTotal >= target) {
                             earnedTier = actualTargetTier;
                             debugTarget = target;
@@ -698,12 +700,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-
-
-
-
+                    // 🚀 FIXED: Default to Unranked if they fail all targets!
                     if (!earnedTier) {
-                        earnedTier = sortedRules.length > 0 ? sortedRules[sortedRules.length - 1][0] : (allowedTiers[allowedTiers.length - 1] || 'Retail'); 
+                        earnedTier = 'Unranked'; 
                         debugTarget = 0;
                     }
 
