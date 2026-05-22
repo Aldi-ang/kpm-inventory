@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'; // 🚀 FIXED: Added missing Leaflet CSS to prevent dimensional Map math crashes!
+import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -24,7 +24,6 @@ L.Icon.Default.mergeOptions({
 const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
-    // 🚀 FIXED: Safeguards against undefined arrays if your system has fewer than 3 pricing tiers!
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
     let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
     
@@ -92,7 +91,6 @@ const isPointInPolygon = (point, polygon) => {
 const checkPointInGeoJSON = (lng, lat, geometry) => {
     if (!geometry || !geometry.coordinates) return false;
     const point = [lng, lat];
-    // 🚀 FIXED: Added try-catch and deep array checking to prevent malformed map borders from crashing the app!
     try {
         if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
         if (geometry.type === 'MultiPolygon') {
@@ -181,7 +179,6 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
         if (!watchId.current && "geolocation" in navigator) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
-                    // 🚀 FIXED: Silent tracking engine. NEVER forces a flyTo loop crash!
                     if (!isEditingRef.current) {
                         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
                     }
@@ -228,7 +225,6 @@ const AdminControls = ({ isAdmin, onSetHome }) => {
 const MapClicker = ({ isAddingMode, editingStoreId, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
     useMapEvents({
         click(e) {
-            // Only allow pin updates if we are actively Adding or Editing
             if (isAddingMode || editingStoreId) {
                 setDragPinCoords(e.latlng);
             } else {
@@ -295,7 +291,6 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                     <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                        {/* 🚀 FIXED: Guaranteed String Cast to prevent "Object as React Child" WSOD crashes! */}
                         {String(store.name || 'Unknown')}
                     </div>
                 </LeafletTooltip>
@@ -695,7 +690,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers }) => {
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -872,19 +867,20 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         } catch (error) { console.error(error); }
     };
 
-    // 🚀 FIXED: Direct Map Tier Editor (Performance Tier Only)
     const handleSaveTier = async (newTier) => {
         if (!db || !appId || !user || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
                 tier: newTier
-                // We DO NOT touch priceTier here, keeping pricing and performance completely separate!
             }); 
+            // 🚀 TRIGGER INSTANT REPAINT FOR SINGLE TIER EDIT
+            if (setLocalTierUpdates) {
+                setLocalTierUpdates(prev => ({ ...prev, [store.id]: newTier }));
+            }
         } catch (error) { console.error(error); }
     };
 
-    // 🚀 NEW: Store Deletion Engine for Testing
     const handleDeleteStore = async () => {
         if (!window.confirm(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
         if (!db || !appId || !user || !store?.id) return;
@@ -1012,7 +1008,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
                 {isAdmin && (
                     <>
-                        {/* 🚀 FIXED: Tier Editor & Delete Store UI */}
                         <div className="flex gap-2 mb-4">
                             <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
@@ -1103,7 +1098,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 <div className="space-y-1">
                                                     {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => (
                                                     <div key={i} className="flex justify-between text-[10px]">
-                                                        {/* 🚀 FIXED: Universal Array/Object parsing prevents crash while ensuring Firebase items ALWAYS render */}
                                                         <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
                                                         <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
                                                     </div>
@@ -1128,7 +1122,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 };
 
 // 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
-const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy }) => {
+const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy, setLocalTierUpdates }) => {
     const [rules, setRules] = useState({});
     const [simResults, setSimResults] = useState(null);
     const [isApplying, setIsApplying] = useState(false);
@@ -1182,12 +1176,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         return parseDateStr(t.date);
     };
 
-    // 🚀 NEW: THE MATHEMATICAL POWER LEVEL TRACKER
     const getTierPower = (tierName) => {
         const tId = String(tierName).toLowerCase().trim();
         const safeRules = rules || {};
         
-        // Dynamic Power based on user Settings
         for (let [ruleKey, rule] of Object.entries(safeRules)) {
             if (!rule) continue;
             const ruleTier = String(rule.tierId || rule.targetTier || rule.tier || ruleKey).toLowerCase().trim();
@@ -1196,12 +1188,11 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 return Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
             }
         }
-        // Master Fallback Power Level
         if (tId === 'mythic') return 2500000;
         if (tId === 'epic') return 1000000;
         if (tId === 'grandmaster') return 500000;
         if (tId === 'bronze') return 250000;
-        return 0; // Unranked baseline
+        return 0; 
     };
 
     const runDataCleanse = async () => {
@@ -1256,7 +1247,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
             const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
             const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            return tB - tA; // Always Highest Target to Lowest
+            return tB - tA; 
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
@@ -1266,7 +1257,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
         mapPoints.forEach(store => {
             let currentTier = store.tier || 'Unranked';
-            let oldPower = getTierPower(currentTier); // 🚀 Mathematical Baseline
+            let oldPower = getTierPower(currentTier); 
 
             let lifetimeXP = store.lifetimeXP || 0;
             let seasonXP = store.seasonXP || 0;
@@ -1301,10 +1292,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 else earnedTier = 'Unranked';
             }
 
-            let newPower = getTierPower(earnedTier); // 🚀 Mathematical Earned Rank
+            let newPower = getTierPower(earnedTier); 
 
             if (isNewSeason) {
-                 // 🚀 Mathematical Safety Net: If they dropped in Omset, only demote 1 step
                  if (newPower < oldPower) {
                      const powerLadder = sortedRules.length > 0 
                          ? sortedRules.map(r => ({ id: String(r[1].tierId || r[1].targetTier || r[1].tier || r[0]), power: getTierPower(r[0]) }))
@@ -1316,7 +1306,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                            ];
                      
                      powerLadder.push({ id: 'Unranked', power: 0 });
-                     powerLadder.sort((a, b) => b.power - a.power); // Highest to lowest
+                     powerLadder.sort((a, b) => b.power - a.power); 
                      
                      const oldIdx = powerLadder.findIndex(l => l.power <= oldPower);
                      if (oldIdx !== -1 && oldIdx + 1 < powerLadder.length) {
@@ -1339,7 +1329,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             };
             results.all.push(changeObj);
 
-            // 🚀 FLAWLESS ROUTING: Based purely on Omset Math!
             if (isPromotion) { results.promotions.push(changeObj); results.actions.push(changeObj); }
             else if (isDemotion) { results.demotions.push(changeObj); results.actions.push(changeObj); }
             else { results.steady++; }
@@ -1362,11 +1351,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     payload.lastXPUpdate = new Date().toISOString();
                 }
                 await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), payload);
+                
+                // 🚀 TRIGGER INSTANT MAP REPAINT
+                if (setLocalTierUpdates) {
+                    setLocalTierUpdates(prev => ({ ...prev, [action.storeId]: action.new }));
+                }
+                
                 ops++;
             }
             if (logAudit) logAudit("SEASON_RANK_AUDIT", `Season RPG Engine adjusted ${ops} stores.`);
             if (triggerCapy) triggerCapy(`Season Update Complete! ${ops} store ranks adjusted. 📈`);
-            alert(`✅ Success! ${ops} stores updated.`);
+            alert(`✅ Success! ${ops} stores instantly updated on map.`);
             setSimResults(null);
             onClose();
         } catch(e) { alert("Error applying changes."); }
@@ -1454,7 +1449,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const userId = user?.uid || user?.id || "default";
 
-    // 🚀 FIXED: Bulletproof Array validation. If Firebase passes {} instead of [], it won't crash the .map functions!
     const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
         { id: 'Retail', label: 'Retail', color: '#38bdf8', iconType: 'emoji', value: '🏪' },
         { id: 'Grosir', label: 'Grosir', color: '#f59e0b', iconType: 'emoji', value: '🏢' },
@@ -1462,12 +1456,14 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         { id: 'Platinum', label: 'Platinum', color: '#8b5cf6', iconType: 'emoji', value: '🏆' }
     ], [tierSettings]);
 
+    // 🚀 NEW: THE INSTANT REPAINT OVERRIDE STATE
+    const [localTierUpdates, setLocalTierUpdates] = useState({});
+
     const [selectedStore, setSelectedStore] = useState(null);
     const [selectedZone, setSelectedZone] = useState(null); 
     
     const [filterTier, setFilterTier] = useState(() => activeTiers.map(t => t.id)); 
     
-    // 🚀 FIXED: Stringified dependency prevents "Maximum update depth exceeded" infinite loop WSOD!
     const tierIdsString = activeTiers.map(t => t.id).join(',');
     useEffect(() => {
         setFilterTier(activeTiers.map(t => t.id));
@@ -1482,7 +1478,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [showBorders, setShowBorders] = useState(false); 
     const [showImporter, setShowImporter] = useState(false);
 
-    // 🚀 FIXED: Restored the missing Dashboard state variables that were accidentally deleted!
     const [salesHeatmapMode, setSalesHeatmapMode] = useState(false);
     const [showTacticalDash, setShowTacticalDash] = useState(false);
     
@@ -1586,7 +1581,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const { mapPoints, locationTree } = useMemo(() => {
         const tree = {}; 
         
-        // 🚀 FIXED: Indestructible Array Casting. If Firebase passes an Object {}, it won't crash the .filter()
         const safeCustomers = Array.isArray(customers) ? customers : [];
 
         const validStores = safeCustomers
@@ -1596,11 +1590,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     let lng = parseFloat(c.longitude);
                     
                     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0 || !c.latitude) {
-                        lat = -7.5845; // Default Muntilan Center
+                        lat = -7.5845; 
                         lng = 110.2895;
                     }
 
-                    // 🚀 FIXED: Absolute String Casting for ALL text fields to completely eliminate random UI crashes
                     let safeName = typeof c.name === 'string' ? c.name : String(c.name || 'Unknown Store');
                     let safePhone = typeof c.phone === 'string' ? c.phone : String(c.phone || '');
                     let safeStoreType = typeof c.storeType === 'string' ? c.storeType : String(c.storeType || 'Retailer');
@@ -1631,16 +1624,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     }
                     const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
 
-                    // 🚀 FIXED: Indestructible String validation and fully decoupled Performance vs Pricing tiers!
-                    let rawTier = c.tier || 'Retail';
+                    // 🚀 FIXED: Checks localTierUpdates immediately. This forces the map pin to update instantly without refreshing!
+                    let rawTier = localTierUpdates[c.id] || c.tier || 'Retail';
                     let safePerfTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
-                    // 🚀 FIXED: Default unranked stores to the LOWEST rank (Tier 4), NOT the Highest rank (Tier 1)!
                     if (!safePerfTier) safePerfTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
 
-                    // 🚀 FIXED: Pricing Tiers (Grosir/Ecer) are now 100% decoupled from Performance XP Ranks! They will never overwrite each other again.
                     let safePriceTier = c.priceTier || c.pricingTier || 'Retail';
 
-                    // 🚀 FIXED: Re-inject the safe string fields into the store object so they never crash the UI
                     return { ...c, name: safeName, phone: safePhone, storeType: safeStoreType, address: addr, city: cit, region: reg, latitude: lat, longitude: lng, status, diffDays, daysSinceVisit, isConquered, visitFreq: freq, lastVisit: last, tier: safePerfTier, priceTier: safePriceTier };
                 })
                 .filter(c => c !== null);
@@ -1648,14 +1638,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             const filtered = validStores.filter(c => {
                 if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
                 if (selectedCity !== "All" && c.city !== selectedCity) return false;
-                // Now safely checks against normalized tier, preventing ghosting!
                 if (!filterTier.includes(c.tier)) return false; 
                 return true;
             });
 
         const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
         return { mapPoints: filtered, locationTree: treeArray };
-    }, [customers, filterTier, selectedRegion, selectedCity, activeTiers]);
+    }, [customers, filterTier, selectedRegion, selectedCity, activeTiers, localTierUpdates]);
 
     const networkLinks = useMemo(() => {
         if (!networkMode) return [];
@@ -1678,7 +1667,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // 🚀 FIXED: Armor-plated transactions array
         const safeTrans = Array.isArray(transactions) ? transactions : [];
 
         mapPoints.forEach(store => {
@@ -1737,7 +1725,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
         
-        // 🚀 FIXED: Smart Zoom Engine. It zooms in if you are far, but maintains your zoom if you are already close!
         const minZoom = window.innerWidth < 1024 ? 17 : 15;
         const targetZoom = Math.max(map.getZoom(), minZoom);
         
@@ -1755,7 +1742,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
             
-            {/* 🚀 TARGETING HUD (COMPACT FOR MOBILE) */}
+            {/* 🚀 TARGETING HUD */}
             {(isAddingMode || editingStoreId) && dragPinCoords && (
                 <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-2 items-center w-max min-w-[220px] pointer-events-auto bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.5)] animate-fade-in-up">
                     <div className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1">
@@ -1772,7 +1759,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         </button>
                         <button 
                             onClick={async () => {
-                                // 🚀 FIXED: Robust Array/Object parser to fix cross-map vanishing bugs
                                 const finalLat = Number(parseFloat(dragPinCoords.lat ?? dragPinCoords[0]).toFixed(7));
                                 const finalLng = Number(parseFloat(dragPinCoords.lng ?? dragPinCoords[1]).toFixed(7));
 
@@ -1959,7 +1945,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 />
             )}
 
-            {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} />}
+            {/* 🚀 FIXED: Passed setLocalTierUpdates so the Engine can immediately repaint the map when executing a season! */}
+            {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
 
             <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
@@ -2056,6 +2043,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
             </MapContainer>
 
+            {/* 🚀 FIXED: Passed setLocalTierUpdates so the bottom panel instantly repaints the map when you manually edit a store! */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
@@ -2063,7 +2051,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
                     setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
-                    activeTiers={activeTiers}
+                    activeTiers={activeTiers} setLocalTierUpdates={setLocalTierUpdates}
                 />
             )}
             
