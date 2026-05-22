@@ -1360,26 +1360,32 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                 <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 text-center"><span className="block text-2xl font-black text-slate-300">{simResults.steady}</span><span className="text-[9px] uppercase font-bold text-slate-500">Unchanged</span></div>
                             </div>
                             <div className="max-h-48 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
-                                {simResults.all.map((act, i) => (
-                                    <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
-                                        <span className="font-bold text-white truncate w-1/4">{act.name}</span>
-                                        <div className="flex flex-col items-start w-2/5 font-mono">
-                                            <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
-                                            <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
+                                {simResults.all.map((act, i) => {
+                                    // 🚀 FIXED: Translates raw Database IDs into Human-Readable Labels for the UI
+                                    const oldLabel = activeTiers.find(t => String(t.id).toLowerCase() === String(act.old).toLowerCase())?.label || act.old;
+                                    const newLabel = activeTiers.find(t => String(t.id).toLowerCase() === String(act.new).toLowerCase())?.label || act.new;
+                                    
+                                    return (
+                                        <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
+                                            <span className="font-bold text-white truncate w-1/4">{act.name}</span>
+                                            <div className="flex flex-col items-start w-2/5 font-mono">
+                                                <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                                <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
+                                                <span className="text-slate-500 truncate" title={oldLabel}>{oldLabel}</span>
+                                                {act.old !== act.new ? (
+                                                    <>
+                                                        {act.isPromotion ? <ArrowUpCircle size={12} className="text-emerald-500 shrink-0"/> : <ArrowDownCircle size={12} className="text-red-500 shrink-0"/>}
+                                                        <span className={`truncate ${act.isPromotion ? 'text-emerald-400' : 'text-red-400'}`} title={newLabel}>{newLabel}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-slate-600 ml-1 shrink-0">(=)</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
-                                            <span className="text-slate-500">{act.old}</span>
-                                            {act.old !== act.new ? (
-                                                <>
-                                                    {act.isPromotion ? <ArrowUpCircle size={12} className="text-emerald-500"/> : <ArrowDownCircle size={12} className="text-red-500"/>}
-                                                    <span className={act.isPromotion ? 'text-emerald-400' : 'text-red-400'}>{act.new}</span>
-                                                </>
-                                            ) : (
-                                                <span className="text-slate-600 ml-1">(=)</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                             <div className="flex gap-3">
                                 <button onClick={() => setSimResults(null)} className="flex-1 bg-slate-800 text-slate-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-slate-700 transition-colors">Discard</button>
