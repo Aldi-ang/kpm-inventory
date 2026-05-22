@@ -1242,12 +1242,29 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
     const runSimulation = () => {
         const safeRules = rules || {};
-        const sortedRules = Object.entries(safeRules).sort((a, b) => {
+        
+        // 🚀 MASTER RULESET: Guarantees the math always exists even if Settings are empty!
+        const masterRules = {
+            'Mythic': { type: 'omset', omsetTarget: 2500000, tierId: 'Mythic' },
+            'Epic': { type: 'omset', omsetTarget: 1000000, tierId: 'Epic' },
+            'Grandmaster': { type: 'omset', omsetTarget: 500000, tierId: 'Grandmaster' },
+            'Bronze': { type: 'omset', omsetTarget: 250000, tierId: 'Bronze' },
+            'Unranked': { type: 'omset', omsetTarget: 0, tierId: 'Unranked' }
+        };
+
+        // Inject dynamic DB rules over the master rules
+        for (let [ruleKey, rule] of Object.entries(safeRules)) {
+            if (!rule) continue;
+            const targetTier = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
+            masterRules[targetTier] = { ...masterRules[targetTier], ...rule, tierId: targetTier };
+        }
+
+        const sortedRules = Object.entries(masterRules).sort((a, b) => {
             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
             const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
             const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
             const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            return tB - tA; 
+            return tB - tA; // Highest to Lowest
         });
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
@@ -1266,46 +1283,25 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
             let earnedTier = 'Unranked'; 
-            let matchedDynamic = false;
 
             for (let [ruleKey, rule] of sortedRules) {
-                if (!rule) continue;
-                const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                
-                const isValidTier = activeTiers.some(t => String(t.id).toLowerCase() === ruleTierName.toLowerCase());
-                if (!isValidTier && ruleTierName.toLowerCase() !== 'unranked') continue;
+                const ruleTierName = String(rule.tierId);
+                const ruleType = String(rule.type || 'omset').toLowerCase();
+                const isOmset = ruleType.includes('omset');
+                const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
 
-                const target = getTierPower(ruleTierName);
-
+                // 🚀 FIRST MATCH WINS! The system is no longer allowed to skip valid tiers.
                 if (seasonXP >= target) {
                     earnedTier = ruleTierName;
-                    matchedDynamic = true;
                     break; 
                 }
-            }
-
-            if (!matchedDynamic) {
-                if (seasonXP >= 2500000) earnedTier = 'Mythic';
-                else if (seasonXP >= 1000000) earnedTier = 'Epic';
-                else if (seasonXP >= 500000) earnedTier = 'Grandmaster';
-                else if (seasonXP >= 250000) earnedTier = 'Bronze';
-                else earnedTier = 'Unranked';
             }
 
             let newPower = getTierPower(earnedTier); 
 
             if (isNewSeason) {
                  if (newPower < oldPower) {
-                     const powerLadder = sortedRules.length > 0 
-                         ? sortedRules.map(r => ({ id: String(r[1].tierId || r[1].targetTier || r[1].tier || r[0]), power: getTierPower(r[0]) }))
-                         : [
-                             { id: 'Mythic', power: 2500000 },
-                             { id: 'Epic', power: 1000000 },
-                             { id: 'Grandmaster', power: 500000 },
-                             { id: 'Bronze', power: 250000 }
-                           ];
-                     
-                     powerLadder.push({ id: 'Unranked', power: 0 });
+                     const powerLadder = sortedRules.map(r => ({ id: r[1].tierId, power: getTierPower(r[1].tierId) }));
                      powerLadder.sort((a, b) => b.power - a.power); 
                      
                      const oldIdx = powerLadder.findIndex(l => l.power <= oldPower);
@@ -1338,6 +1334,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         setSimResults(results);
     };
 
+    
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
         if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
@@ -1449,11 +1446,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const userId = user?.uid || user?.id || "default";
 
+    // 🚀 FIXED: Map UI Failsafe now strictly mirrors your MLBB Tiers!
     const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
-        { id: 'Retail', label: 'Retail', color: '#38bdf8', iconType: 'emoji', value: '🏪' },
-        { id: 'Grosir', label: 'Grosir', color: '#f59e0b', iconType: 'emoji', value: '🏢' },
-        { id: 'Ecer', label: 'Ecer', color: '#ef4444', iconType: 'emoji', value: '🚶' },
-        { id: 'Platinum', label: 'Platinum', color: '#8b5cf6', iconType: 'emoji', value: '🏆' }
+        { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
+        { id: 'Epic', label: 'Epic', color: '#8b5cf6', iconType: 'emoji', value: '🔥' },
+        { id: 'Grandmaster', label: 'Grandmaster', color: '#ec4899', iconType: 'emoji', value: '⚔️' },
+        { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },
+        { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
     ], [tierSettings]);
 
     // 🚀 NEW: THE INSTANT REPAINT OVERRIDE STATE
