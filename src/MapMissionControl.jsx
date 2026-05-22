@@ -1176,25 +1176,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         return parseDateStr(t.date);
     };
 
-    const getTierPower = (tierName) => {
-        const tId = String(tierName).toLowerCase().trim();
-        const safeRules = rules || {};
-        
-        for (let [ruleKey, rule] of Object.entries(safeRules)) {
-            if (!rule) continue;
-            const ruleTier = String(rule.tierId || rule.targetTier || rule.tier || ruleKey).toLowerCase().trim();
-            if (ruleTier === tId) {
-                const isOmset = String(rule.type || 'omset').toLowerCase().includes('omset');
-                return Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            }
-        }
-        if (tId === 'mythic') return 2500000;
-        if (tId === 'epic') return 1000000;
-        if (tId === 'grandmaster') return 500000;
-        if (tId === 'bronze') return 250000;
-        return 0; 
-    };
-
     const runDataCleanse = async () => {
         if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
         setIsApplying(true);
@@ -1243,74 +1224,61 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     const runSimulation = () => {
         const safeRules = rules || {};
         
-        // 🚀 MASTER RULESET: Guarantees the math always exists even if Settings are empty!
-        const masterRules = {
-            'Mythic': { type: 'omset', omsetTarget: 2500000, tierId: 'Mythic' },
-            'Epic': { type: 'omset', omsetTarget: 1000000, tierId: 'Epic' },
-            'Grandmaster': { type: 'omset', omsetTarget: 500000, tierId: 'Grandmaster' },
-            'Bronze': { type: 'omset', omsetTarget: 250000, tierId: 'Bronze' },
-            'Unranked': { type: 'omset', omsetTarget: 0, tierId: 'Unranked' }
-        };
-
-        // Inject dynamic DB rules over the master rules
-        for (let [ruleKey, rule] of Object.entries(safeRules)) {
-            if (!rule) continue;
-            const targetTier = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
-            masterRules[targetTier] = { ...masterRules[targetTier], ...rule, tierId: targetTier };
-        }
-
-        const sortedRules = Object.entries(masterRules).sort((a, b) => {
-            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
-            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
-            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-            return tB - tA; // Highest to Lowest
-        });
+        // 🚀 THE DYNAMIC POWER LADDER (100% Agnostic to Tier Names)
+        // It pulls your EXACT active tiers and pairs them with their targets.
+        const powerLadder = activeTiers.map((tier, index) => {
+            let target = 0;
+            const rule = safeRules[tier.id] || safeRules[tier.label];
+            if (rule) {
+                const isOmset = String(rule.type || 'omset').toLowerCase().includes('omset');
+                target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+            } else {
+                // Master Failsafe if user hasn't saved rules yet
+                const defaultTargets = [2500000, 1000000, 500000, 250000, 0];
+                target = defaultTargets[index] || 0;
+            }
+            return { id: tier.id, power: target };
+        }).sort((a, b) => b.power - a.power); // Highest Target to Lowest
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
-        
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
         mapPoints.forEach(store => {
-            let currentTier = store.tier || 'Unranked';
-            let oldPower = getTierPower(currentTier); 
+            // Find current rank in the ladder (Default to bottom tier if broken)
+            let currentTier = store.tier || powerLadder[powerLadder.length - 1].id;
+            let oldPowerStep = powerLadder.find(step => String(step.id).toLowerCase() === String(currentTier).toLowerCase());
+            let oldPower = oldPowerStep ? oldPowerStep.power : 0;
 
             let lifetimeXP = store.lifetimeXP || 0;
             let seasonXP = store.seasonXP || 0;
             let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
-
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
-            let earnedTier = 'Unranked'; 
+            // 🚀 STEP 1: Find Earned Tier
+            // Start at the bottom, look for highest threshold met
+            let earnedTier = powerLadder[powerLadder.length - 1].id; 
+            let newPower = powerLadder[powerLadder.length - 1].power;
 
-            for (let [ruleKey, rule] of sortedRules) {
-                const ruleTierName = String(rule.tierId);
-                const ruleType = String(rule.type || 'omset').toLowerCase();
-                const isOmset = ruleType.includes('omset');
-                const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
-
-                // 🚀 FIRST MATCH WINS! The system is no longer allowed to skip valid tiers.
-                if (seasonXP >= target) {
-                    earnedTier = ruleTierName;
-                    break; 
+            for (let step of powerLadder) {
+                if (seasonXP >= step.power) {
+                    earnedTier = step.id; // Assigns the EXACT matching ID
+                    newPower = step.power;
+                    break;
                 }
             }
 
-            let newPower = getTierPower(earnedTier); 
-
+            // 🚀 STEP 2: Demotion Safety Net
             if (isNewSeason) {
                  if (newPower < oldPower) {
-                     const powerLadder = sortedRules.map(r => ({ id: r[1].tierId, power: getTierPower(r[1].tierId) }));
-                     powerLadder.sort((a, b) => b.power - a.power); 
-                     
-                     const oldIdx = powerLadder.findIndex(l => l.power <= oldPower);
-                     if (oldIdx !== -1 && oldIdx + 1 < powerLadder.length) {
-                         earnedTier = powerLadder[oldIdx + 1].id;
-                         newPower = powerLadder[oldIdx + 1].power;
+                     const oldLadderIdx = powerLadder.findIndex(l => l.power <= oldPower);
+                     // Drop them exactly 1 rank down your custom ladder
+                     if (oldLadderIdx !== -1 && oldLadderIdx + 1 < powerLadder.length) {
+                         earnedTier = powerLadder[oldLadderIdx + 1].id;
+                         newPower = powerLadder[oldLadderIdx + 1].power;
                      } else {
-                         earnedTier = 'Unranked';
-                         newPower = 0;
+                         earnedTier = powerLadder[powerLadder.length - 1].id;
+                         newPower = powerLadder[powerLadder.length - 1].power;
                      }
                  }
                  seasonXP = 0; 
@@ -1334,7 +1302,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         setSimResults(results);
     };
 
-    
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
         if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
