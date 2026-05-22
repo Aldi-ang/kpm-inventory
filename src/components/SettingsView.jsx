@@ -336,27 +336,67 @@ export default function SettingsView({
               <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
                   <div className="flex gap-2">
+                      {/* 🚀 NEW: SMART ADD TIER BUTTON */}
+                      <button onClick={() => {
+                          const hasUnranked = tierSettings.some(t => t.id.toLowerCase() === 'unranked');
+                          const newTier = !hasUnranked 
+                              ? { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
+                              : { id: `Tier_${Date.now()}`, label: 'New Rank', color: '#94a3b8', iconType: 'emoji', value: '❓' };
+                          
+                          const newTiers = [...tierSettings, newTier];
+                          setTierSettings(newTiers);
+                          handleSaveTiers(newTiers);
+                      }} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-md transition-all active:scale-95">
+                          <Plus size={14}/> Add Tier
+                      </button>
+
                       <button onClick={handleExportTiers} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold"><Download size={14}/></button>
                       <label className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer"><Upload size={14}/><input type="file" accept=".json" onChange={handleImportTiers} className="hidden" /></label>
                   </div>
               </div>
               <div className="overflow-x-auto pb-2">
-                  <div className="space-y-3 min-w-[600px]">
+                  <div className="space-y-3 min-w-[650px]">
                       {tierSettings.map((tier, idx) => (
-                          <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700">
+                          <div key={tier.id || idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700 transition-colors hover:border-slate-400 dark:hover:border-slate-500">
                               <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
-                              <input value={tier.label} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].label = e.target.value; setTierSettings(newTiers); }} onBlur={() => handleSaveTiers(tierSettings)} className="w-24 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                              
+                              <input 
+                                  value={tier.label} 
+                                  onChange={(e) => { 
+                                      const newTiers = [...tierSettings]; 
+                                      newTiers[idx].label = e.target.value; 
+                                      // Update ID only if it's a custom-generated tier (preserves core bindings)
+                                      if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
+                                      setTierSettings(newTiers); 
+                                  }} 
+                                  onBlur={() => handleSaveTiers(tierSettings)} 
+                                  className="w-28 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase tracking-wider" 
+                              />
+                              
                               <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
+                              
                               <div className="flex-1">
                                   {tier.iconType === 'image' ? (
-                                      <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change" : "Upload"}<input type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label>
+                                      <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}<input type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label>
                                   ) : (
-                                      <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" />
+                                      <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji Here" />
                                   )}
                               </div>
-                              <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0" style={{ borderColor: tier.color }}>
+                              
+                              <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-inner" style={{ borderColor: tier.color }}>
                                   {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
                               </div>
+
+                              {/* 🚀 NEW: DELETE TIER BUTTON */}
+                              <button onClick={() => {
+                                  if(window.confirm(`Are you sure you want to delete the tier: ${tier.label}?`)) {
+                                      const newTiers = tierSettings.filter((_, i) => i !== idx);
+                                      setTierSettings(newTiers);
+                                      handleSaveTiers(newTiers);
+                                  }
+                              }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-1" title="Delete Tier">
+                                  <Trash2 size={16}/>
+                              </button>
                           </div>
                       ))}
                   </div>
@@ -383,7 +423,6 @@ export default function SettingsView({
 
               <div className="space-y-3">
                   {tierSettings.map((tier, idx) => {
-                      // 🚀 FIXED: Unhidden! You can now explicitly see and set the lowest tier (e.g. Bronze) to 0.
                       const rule = tierRules[tier.id] || defaultLogic;
                       const isOmset = rule.type === 'omset';
 
@@ -429,7 +468,7 @@ export default function SettingsView({
                                               type="text" 
                                               value={rule.omsetTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.omsetTarget || 0)}
                                               onChange={(e) => {
-                                                  const val = e.target.value.replace(/[^0-9]/g, ''); // Strip commas to process raw number
+                                                  const val = e.target.value.replace(/[^0-9]/g, ''); 
                                                   handleUpdateTierRule(tier.id, 'omsetTarget', val === '' ? '' : Number(val));
                                               }}
                                               className="bg-transparent text-xs font-black text-emerald-600 dark:text-emerald-400 p-2 w-32 outline-none text-right"
