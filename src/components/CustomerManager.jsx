@@ -1,5 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+
+// 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
+const isPointInPolygon = (point, polygon) => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        let xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
+        let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
+const checkPointInGeoJSON = (lng, lat, geometry) => {
+    if (!geometry || !geometry.coordinates) return false;
+    const point = [lng, lat];
+    try {
+        if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
+        if (geometry.type === 'MultiPolygon') {
+            for (let poly of geometry.coordinates) {
+                const ring = Array.isArray(poly[0][0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
+                if (isPointInPolygon(point, ring)) return true;
+            }
+        }
+    } catch(e) { }
+    return false;
+};
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder } from 'lucide-react';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
@@ -168,15 +194,74 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
 
-    // 🧠 SMART DICTIONARY: Auto-categorize legacy data
-    const guessProvince = (kabupaten) => {
-        const kab = String(kabupaten || '').toLowerCase();
-        if (kab.includes('magelang') || kab.includes('muntilan') || kab.includes('boyolali') || kab.includes('solo') || kab.includes('surakarta') || kab.includes('klaten') || kab.includes('semarang')) return 'Jawa Tengah';
-        if (kab.includes('yogya') || kab.includes('sleman') || kab.includes('bantul') || kab.includes('gunungkidul') || kab.includes('kulon')) return 'DI Yogyakarta';
-        return 'Unknown Provinsi';
+    const userId = user?.uid || user?.id || 'default';
+
+    // 🚀 MAP BORDER INTEGRATION: Fetch your custom map zones into the CRM
+    const [mapBorders, setMapBorders] = useState([]);
+    useEffect(() => {
+        const loadBorders = async () => {
+            const CACHE_KEY = `cello_map_bnd_${appId}`;
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            let borders = [];
+            
+            if (cachedData) { try { borders = JSON.parse(cachedData); } catch(e) {} }
+            
+            if (borders.length === 0 && db && appId && userId !== 'default') {
+                try {
+                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+                    snap.forEach(d => {
+                        if (d.id.startsWith('bnd_')) {
+                            const data = d.data();
+                            if (data && data.geometryString) {
+                                try { data.geometry = JSON.parse(data.geometryString); borders.push(data); } catch(e) {}
+                            }
+                        }
+                    });
+                    if (borders.length > 0) localStorage.setItem(CACHE_KEY, JSON.stringify(borders));
+                } catch(e) {}
+            }
+            setMapBorders(borders);
+        };
+        loadBorders();
+    }, [db, appId, userId]);
+
+    // 🧠 SMART DICTIONARY (DEEP SCAN)
+    const guessKecamatan = (text) => {
+        const str = String(text || '').toLowerCase();
+        if (str.includes('muntilan') || str.includes('pemuda')) return 'Muntilan';
+        if (str.includes('mertoyudan')) return 'Mertoyudan';
+        if (str.includes('salaman')) return 'Salaman';
+        if (str.includes('secang')) return 'Secang';
+        if (str.includes('borobudur')) return 'Borobudur';
+        if (str.includes('mlati')) return 'Mlati';
+        if (str.includes('depok')) return 'Depok';
+        return '';
     };
 
-    // 🚀 UPGRADED: Search & Folder Engine (4 Tiers)
+    const guessKabupaten = (text) => {
+        const str = String(text || '').toLowerCase();
+        if (str.includes('magelang') || str.includes('muntilan') || str.includes('mertoyudan') || str.includes('salaman') || str.includes('secang') || str.includes('borobudur')) return 'Magelang';
+        if (str.includes('boyolali')) return 'Boyolali';
+        if (str.includes('sleman') || str.includes('mlati') || str.includes('depok')) return 'Sleman';
+        if (str.includes('solo') || str.includes('surakarta')) return 'Surakarta';
+        if (str.includes('bantul')) return 'Bantul';
+        if (str.includes('klaten')) return 'Klaten';
+        return '';
+    };
+
+    const guessProvince = (text) => {
+        const str = String(text || '').toLowerCase();
+        if (str.includes('magelang') || str.includes('muntilan') || str.includes('boyolali') || str.includes('solo') || str.includes('surakarta') || str.includes('klaten') || str.includes('semarang')) return 'Jawa Tengah';
+        if (str.includes('yogya') || str.includes('sleman') || str.includes('bantul') || str.includes('gunungkidul') || str.includes('kulon')) return 'DI Yogyakarta';
+        return '';
+    };
+
+    const sortedBorders = useMemo(() => {
+        const lMap = { 'Desa': 1, 'Kecamatan': 2, 'Kabupaten': 3, 'Provinsi': 4 };
+        return [...mapBorders].sort((a, b) => lMap[a.level] - lMap[b.level]);
+    }, [mapBorders]);
+
+    // 🚀 UPGRADED: Search & Folder Engine
     const searchedCustomers = useMemo(() => {
         if (!searchTerm.trim()) return customers;
         const term = searchTerm.toLowerCase();
@@ -186,17 +271,40 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             String(c.region || '').toLowerCase().includes(term) ||
             String(c.province || '').toLowerCase().includes(term) ||
             String(c.picName || '').toLowerCase().includes(term) ||
-            String(c.nooAgentName || '').toLowerCase().includes(term)
+            String(c.nooAgentName || '').toLowerCase().includes(term) ||
+            String(c.address || '').toLowerCase().includes(term)
         );
     }, [customers, searchTerm]);
 
     const folderStructure = useMemo(() => {
         const structure = {};
         searchedCustomers.forEach(c => {
-            // Strict String casting prevents .trim() crashes on older numerical data
-            const prov = String(c.province || '').trim() || guessProvince(c.region);
-            const kab = String(c.region || '').trim() || 'Unknown Kabupaten';
-            const kec = String(c.city || '').trim() || 'Unknown Kecamatan';
+            let prov = String(c.province || '').trim();
+            let kab = String(c.region || '').trim();
+            let kec = String(c.city || '').trim();
+
+            // 📍 1. GEOSPATIAL AUTO-DETECTION: Check Map Borders!
+            if ((!prov || !kab || !kec) && c.latitude && c.longitude && sortedBorders.length > 0) {
+                for (const border of sortedBorders) {
+                    const geo = border.feature || border.geometry;
+                    if (checkPointInGeoJSON(c.longitude, c.latitude, geo)) {
+                        if (border.level === 'Provinsi' && !prov) prov = border.name;
+                        if (border.level === 'Kabupaten' && !kab) kab = border.name;
+                        if (border.level === 'Kecamatan' && !kec) kec = border.name;
+                    }
+                }
+            }
+
+            // 🧠 2. SMART TEXT DICTIONARY: Scans addresses for clues
+            const searchText = `${c.address || ''} ${c.name || ''} ${kab} ${kec}`.toLowerCase();
+            if (!kec) kec = guessKecamatan(searchText);
+            if (!kab) kab = guessKabupaten(searchText);
+            if (!prov) prov = guessProvince(searchText);
+
+            // 🛡️ 3. ABSOLUTE FALLBACK
+            if (!prov) prov = 'Unknown Provinsi';
+            if (!kab) kab = 'Unknown Kabupaten';
+            if (!kec) kec = 'Unknown Kecamatan';
             
             if (!structure[prov]) structure[prov] = { count: 0, pending: 0, regions: {} };
             if (!structure[prov].regions[kab]) structure[prov].regions[kab] = { count: 0, pending: 0, cities: {} };
@@ -215,7 +323,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             structure[prov].regions[kab].cities[kec].stores.push(c);
         });
         return structure;
-    }, [searchedCustomers]);
+    }, [searchedCustomers, sortedBorders]);
 
     // 🛡️ CRASH PREVENTION: Strict evaluation blocks "null" key lookups
     const activeProv = selectedProvince ? folderStructure[selectedProvince] : null;
