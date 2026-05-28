@@ -151,14 +151,56 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    
+    // 🚀 NEW: Tactical Dashboard State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    const [selectedCity, setSelectedCity] = useState(null);
+
     const [formData, setFormData] = useState({ 
         name: '', phone: '', region: '', city: '', address: '', 
         gmapsUrl: '', embedHtml: '', 
         latitude: '', longitude: '', storeImage: '', 
-        tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0]
+        tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0],
+        picName: '' // NEW: Penanggung Jawab
     });
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
+
+    // 🚀 NEW: Search & Folder Engine
+    const searchedCustomers = useMemo(() => {
+        if (!searchTerm.trim()) return customers;
+        const term = searchTerm.toLowerCase();
+        return customers.filter(c => 
+            (c.name || '').toLowerCase().includes(term) ||
+            (c.city || '').toLowerCase().includes(term) ||
+            (c.region || '').toLowerCase().includes(term) ||
+            (c.picName || '').toLowerCase().includes(term) ||
+            (c.nooAgentName || '').toLowerCase().includes(term)
+        );
+    }, [customers, searchTerm]);
+
+    const folderStructure = useMemo(() => {
+        const structure = {};
+        searchedCustomers.forEach(c => {
+            const region = c.region?.trim() || 'Unknown Region';
+            const city = c.city?.trim() || 'Unknown City';
+            
+            if (!structure[region]) structure[region] = { count: 0, pending: 0, cities: {} };
+            if (!structure[region].cities[city]) structure[region].cities[city] = { count: 0, pending: 0, stores: [] };
+            
+            structure[region].count++;
+            structure[region].cities[city].count++;
+            
+            if (c.status === 'PENDING') {
+                structure[region].pending++;
+                structure[region].cities[city].pending++;
+            }
+            
+            structure[region].cities[city].stores.push(c);
+        });
+        return structure;
+    }, [searchedCustomers]);
     
     useEffect(() => {
         if (croppedImage) {
@@ -236,7 +278,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             name: formData.name.trim(),
             latitude: formData.latitude ? parseFloat(formData.latitude) : null,
             longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-            updatedAt: serverTimestamp()
+            updatedAt: serverTimestamp(),
+            // 🚀 NEW: Stamp the NOO with the active agent's identity
+            nooAgentName: user.displayName || user.email.split('@')[0],
+            nooAgentId: user.uid
         };
         
         try { 
@@ -325,7 +370,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
+                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Map Pin Tier</label>
                             <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none">
@@ -339,6 +384,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                 <option value="Grosir">Grosir (Wholesale)</option>
                                 <option value="Retail">Retail</option>
                                 <option value="Ecer">Ecer (Individual)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">T3/T4 PIC (Penanggung Jawab)</label>
+                            <select value={formData.picName} onChange={e=>setFormData({...formData, picName: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-indigo-600">
+                                <option value="">-- Select PIC --</option>
+                                {/* Replace these with your actual Cello Wholesaler list */}
+                                <option value="Distributor Pusat">Distributor Pusat</option>
+                                <option value="Agen T3 Muntilan">Agen T3 Muntilan</option>
+                                <option value="Agen T4 Yogya">Agen T4 Yogya</option>
                             </select>
                         </div>
                         <div>
@@ -411,55 +466,140 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 </form>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customers.map(c => {
-                    const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
-                    return (
-                        <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
-                            <div>
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex items-center gap-3">
-                                        {c.storeImage ? (
-                                            <img src={c.storeImage} className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm" alt={c.name} />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
-                                                <Store size={20} className="text-slate-400" />
+            {/* 🚀 GLOBAL SEARCH BAR */}
+            <div className="relative mb-6">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search size={20} className="text-slate-400" /></div>
+                <input 
+                    type="text" 
+                    placeholder="Search store name, region, city, or salesperson..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:border-orange-500 outline-none shadow-sm transition-all"
+                />
+            </div>
+
+            {/* 🚀 TACTICAL FOLDER DASHBOARD */}
+            <div className="animate-fade-in relative z-10">
+                {/* BREADCRUMB NAVIGATION */}
+                {(selectedRegion || selectedCity) && (
+                    <div className="flex items-center gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg w-fit">
+                        <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-500 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
+                            <Folder size={16}/> All Regions
+                        </button>
+                        {selectedRegion && (
+                            <>
+                                <ArrowRight size={14} className="text-slate-400"/>
+                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-orange-500' : 'text-slate-500 hover:text-orange-500'}`}>
+                                    {selectedRegion}
+                                </button>
+                            </>
+                        )}
+                        {selectedCity && (
+                            <>
+                                <ArrowRight size={14} className="text-slate-400"/>
+                                <span className="font-bold text-sm text-orange-500">{selectedCity}</span>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* LEVEL 0: REGIONS */}
+                {!selectedRegion && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(folderStructure).map(([region, data]) => (
+                            <div key={region} onClick={() => setSelectedRegion(region)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
+                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                </div>
+                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{region}</h3>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
+                            </div>
+                        ))}
+                        {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Regions Found</p></div>}
+                    </div>
+                )}
+
+                {/* LEVEL 1: CITIES */}
+                {selectedRegion && !selectedCity && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(folderStructure[selectedRegion].cities).map(([city, data]) => (
+                            <div key={city} onClick={() => setSelectedCity(city)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                </div>
+                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{city}</h3>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* LEVEL 2: STORES */}
+                {selectedRegion && selectedCity && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {folderStructure[selectedRegion].cities[selectedCity].stores.map(c => {
+                            const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
+                            return (
+                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                                    
+                                    {/* TOP: Store Header */}
+                                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                                        <div className="flex items-center gap-3">
+                                            {c.storeImage ? (
+                                                <img src={c.storeImage} className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm" alt={c.name} />
+                                            ) : (
+                                                <div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
+                                                    <Store size={24} className="text-slate-400" />
+                                                </div>
+                                            )}
+                                            <div className="min-w-0 pr-2">
+                                                <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors truncate">{c.name}</h3>
+                                                <div className="flex gap-2 items-center mt-1.5">
+                                                    {tierDef ? (
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
+                                                            {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
+                                                        </span>
+                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
+                                                    <span className={`text-[9px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                                        {c.priceTier || 'Retail'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div className="min-w-0 pr-2">
-                                            <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors truncate">{c.name}</h3>
-                                            {(c.city || c.region) && <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 truncate">{c.city} {c.region}</p>}
+                                        </div>
+                                        {c.latitude ? <MapPin size={20} className="text-emerald-500 shrink-0"/> : <MapPin size={20} className="text-slate-300 shrink-0"/>}
+                                    </div>
+
+                                    {/* MIDDLE: Accountability Block */}
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
+                                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate">{c.picName || 'Unassigned'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">NOO By</p>
+                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{c.nooAgentName || 'Admin'}</p>
                                         </div>
                                     </div>
-                                    {c.latitude ? <MapPin size={16} className="text-emerald-500 shrink-0"/> : <MapPin size={16} className="text-slate-500 shrink-0"/>}
-                                </div>
-                                <div className="flex gap-2 items-center flex-wrap">
-                                    {tierDef ? (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
-                                            {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
-                                        </span>
-                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
-                                    
-                                    <span className={`text-[9px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
-                                        {c.priceTier || 'Retail'}
-                                    </span>
-                                </div>
-                            </div>
-                           {isAdmin && (
-                                <div className="flex gap-2 justify-end mt-4 pt-3 border-t dark:border-slate-700">
-                                    
-                                    {/* 🚀 THE NEW APPROVE BUTTON (Only shows if status is PENDING) */}
-                                    {c.status === 'PENDING' && (
-                                        <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1 text-xs bg-emerald-500/20 text-emerald-500 font-bold rounded hover:bg-emerald-500 hover:text-white transition-colors animate-pulse">Approve</button>
-                                    )}
 
-                                    <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-blue-100 text-slate-600 dark:text-slate-300">Edit</button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded hover:bg-red-100 text-red-500">Delete</button>
+                                   {/* BOTTOM: Admin Actions */}
+                                   {isAdmin && (
+                                        <div className="flex gap-2 justify-end mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+                                            {c.status === 'PENDING' && (
+                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-200 font-bold rounded-lg hover:bg-emerald-500 hover:text-white transition-all animate-pulse shadow-sm">
+                                                    Verify NOO
+                                                </button>
+                                            )}
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-4 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-4 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Delete</button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );
