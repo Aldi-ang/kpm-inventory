@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder } from 'lucide-react';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
@@ -647,7 +647,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             );
                         })}
                     </div>
-                )}s
+                )}
             </div>
         </div>
     );
