@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare } from 'lucide-react';
+import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId }) {
+    const [searchTerm, setSearchTerm] = useState('');
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [reportView, setReportView] = useState(false);
@@ -15,10 +16,33 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [printFormat, setPrintFormat] = useState('thermal'); 
     const [printScale, setPrintScale] = useState(100); 
 
-    // 1. RBAC & FOLDER STRUCTURE ENGINE
+    // 🚀 GLOBAL FILTER SEARCH ENGINE 🚀
+    const searchedTransactions = useMemo(() => {
+        if (!searchTerm.trim()) return transactions;
+        const term = searchTerm.toLowerCase();
+        
+        return transactions.filter(t => {
+            const dateMatch = (t.date || '').toLowerCase().includes(term);
+            const customerMatch = (t.customerName || '').toLowerCase().includes(term);
+            const agentMatch = (t.agentName || '').toLowerCase().includes(term);
+            const valueMatch = String(t.total || t.amountPaid || 0).includes(term);
+            
+            let itemsMatch = false;
+            if (t.items) {
+                itemsMatch = t.items.some(i => (i.name || '').toLowerCase().includes(term));
+            } else if (t.type === 'CONSIGNMENT_PAYMENT') {
+                const allItems = [...(t.itemsPaid || []), ...(t.itemsReturned || []), ...(t.itemsRemaining || [])];
+                itemsMatch = allItems.some(i => (i.name || '').toLowerCase().includes(term));
+            }
+
+            return dateMatch || customerMatch || agentMatch || valueMatch || itemsMatch;
+        });
+    }, [transactions, searchTerm]);
+
+    // 1. RBAC & FOLDER STRUCTURE ENGINE (Now fed by Search Engine)
     const reportData = useMemo(() => {
         const structure = {};
-        transactions.forEach(t => {
+        searchedTransactions.forEach(t => {
             if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return;
             
             const agent = t.agentName || 'Admin';
@@ -45,7 +69,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             structure[agent].customers[cust].history.push(t);
         });
         return structure;
-    }, [transactions, userRole, agentProfileId]);
+    }, [searchedTransactions, userRole, agentProfileId]);
 
     useEffect(() => {
         if (userRole !== 'ADMIN') {
@@ -54,10 +78,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         }
     }, [userRole, reportData, selectedAgent]);
 
-    // 2. ANALYTICS FILTERING
+    // 2. ANALYTICS FILTERING (Now fed by Search Engine)
     const filteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
-        return transactions.filter(t => {
+        return searchedTransactions.filter(t => {
             if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return false;
             if (userRole === 'ADMIN' && selectedAgent && (t.agentName || 'Admin') !== selectedAgent) return false;
 
@@ -72,7 +96,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
             return false;
         }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-    }, [transactions, rangeType, targetDate, isAdmin, user, userRole, agentProfileId, selectedAgent]);
+    }, [searchedTransactions, rangeType, targetDate, isAdmin, user, userRole, agentProfileId, selectedAgent]);
 
     const stats = useMemo(() => {
         const totalRev = filteredTransactions.reduce((sum, t) => {
@@ -114,14 +138,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         
         try {
             // 🚀 TIME MACHINE: Parse the requested fake date and force it into a valid millisecond timestamp
-            const rawDate = formData.get('date'); // e.g. "2026-01-15"
-            let fakeTimestamp = serverTimestamp(); // Default to now just in case
+            const rawDate = formData.get('date'); 
+            let fakeTimestamp = serverTimestamp(); 
             
             if (rawDate) {
-                // We create a Date object based on their requested date string at exactly 12:00 PM UTC to be safe
                 const dateObj = new Date(`${rawDate}T12:00:00Z`);
                 if (!isNaN(dateObj.getTime())) {
-                    // Rewrite the exact 'seconds' structure Firebase uses!
                     fakeTimestamp = {
                         seconds: Math.floor(dateObj.getTime() / 1000),
                         nanoseconds: 0
@@ -133,9 +155,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 date: rawDate,
                 customerName: formData.get('customerName'),
                 total: parseFloat(formData.get('total')) || 0,
-                // 🚀 Inject the fake timestamp to permanently trick the RPG Engine!
                 timestamp: fakeTimestamp,
-                updatedAt: serverTimestamp() // We leave this alone so we know when it was edited
+                updatedAt: serverTimestamp() 
             });
             
             alert("✅ Time Travel Successful! The database has been rewritten.");
@@ -193,7 +214,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                     receiptTimeStr = parts[1] || '';
                 }
 
-                // Normal Sales / Normal Retur
                 const isNormalSale = viewingReceipt.type === 'SALE' || viewingReceipt.type === 'RETURN';
                 
                 return (
@@ -220,7 +240,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                                     <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
                                         
-                                        {/* OPTION A: NORMAL SALE/RETUR (Standard Table) */}
                                         {isNormalSale && (
                                             <table className="w-full text-left">
                                                 <thead>
@@ -245,24 +264,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </table>
                                         )}
 
-                                        {/* 🚀 OPTION B: AUDIT INVOICE (Bullet Point System) 🚀 */}
                                         {!isNormalSale && (
                                             <div className="space-y-4">
                                                 <div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
                                                 
-                                                {/* Iterate over all the items that were audited */}
                                                 {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
-                                                    // Deduplicate by Product ID so we only print each product once
                                                     if (!acc.find(i => i.productId === curr.productId)) acc.push(curr);
                                                     return acc;
                                                 }, []).map((item, i) => {
-                                                    
-                                                    // Find the specific data for this product in the arrays
                                                     const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId);
                                                     const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId);
                                                     const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                                     
-                                                    // We only show it if there is SOME activity
                                                     if (!paidItem && !returItem && !remainItem) return null;
 
                                                     const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
@@ -457,129 +470,78 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             </div>
 
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                                
                                 <button onClick={() => {
-    const receipt = document.querySelector('.print-receipt');
-    if (!receipt) return;
+                                    const receipt = document.querySelector('.print-receipt');
+                                    if (!receipt) return;
 
-    const clone = receipt.cloneNode(true);
-    clone.querySelectorAll('.no-print').forEach(el => el.remove());
-    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
+                                    const clone = receipt.cloneNode(true);
+                                    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+                                    clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
 
-    let parentStyles = '';
-    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-        parentStyles += el.outerHTML;
-    });
+                                    let parentStyles = '';
+                                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                                        parentStyles += el.outerHTML;
+                                    });
 
-    const isThermal = clone.classList.contains('format-thermal');
+                                    const isThermal = clone.classList.contains('format-thermal');
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute'; 
-    iframe.style.top = '0'; 
-    iframe.style.left = '0';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    iframe.style.opacity = '0';
-    iframe.style.pointerEvents = 'none';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+                                    const iframe = document.createElement('iframe');
+                                    iframe.style.position = 'absolute'; 
+                                    iframe.style.top = '0'; 
+                                    iframe.style.left = '0';
+                                    iframe.style.width = '1px';
+                                    iframe.style.height = '1px';
+                                    iframe.style.opacity = '0';
+                                    iframe.style.pointerEvents = 'none';
+                                    iframe.style.border = 'none';
+                                    document.body.appendChild(iframe);
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>KPM Invoice</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            ${parentStyles}
-            <style>
-                @media print {
-                    @page { margin: 0; }
-                    html, body { 
-                        background: #ffffff !important; 
-                        color: #000000 !important; 
-                        margin: 0 !important; 
-                        padding: 0 !important; 
-                        width: ${isThermal ? '48mm' : '210mm'} !important; 
-                        height: max-content !important; 
-                        min-height: 0 !important;
-                        overflow: hidden !important;
-                        display: block !important; 
-                        -webkit-print-color-adjust: exact; 
-                        print-color-adjust: exact; 
-                    }
-                    .print-receipt { 
-                        width: ${isThermal ? '48mm' : '100%'} !important;
-                        max-width: 100% !important;
-                        margin: 0 !important;
-                        padding: 0 !important; 
-                        box-sizing: border-box !important;
-                        box-shadow: none !important; 
-                        border: none !important; 
-                        page-break-after: avoid !important;
-                    }
-                    
-                    /* --- 🚀 RESTORED DESIGN & CLARITY --- */
-                    .format-thermal { 
-                        /* Monospace prevents characters from bleeding together on thermal paper */
-                        font-family: 'Courier New', Courier, monospace !important; 
-                    }
-                    .format-thermal * { 
-                        font-size: 11px !important; 
-                        line-height: 1.2 !important; 
-                        color: #000000 !important; 
-                    }
-                    /* Restore balanced font weights to prevent ink bleed */
-                    .format-thermal .font-bold { font-weight: bold !important; }
-                    .format-thermal .font-black { font-weight: 900 !important; }
-                    
-                    /* Restore Table Spacing */
-                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
-                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
-                    .format-thermal .text-right { text-align: right !important; }
-                    .format-thermal .text-center { text-align: center !important; }
+                                    const doc = iframe.contentWindow.document;
+                                    doc.open();
+                                    doc.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                        <head>
+                                            <title>KPM Invoice</title>
+                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                            ${parentStyles}
+                                            <style>
+                                                @media print {
+                                                    @page { margin: 0; }
+                                                    html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; min-height: 0 !important; overflow: hidden !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                    .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; box-shadow: none !important; border: none !important; page-break-after: avoid !important; }
+                                                    .format-thermal { font-family: 'Courier New', Courier, monospace !important; }
+                                                    .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; }
+                                                    .format-thermal .font-bold { font-weight: bold !important; }
+                                                    .format-thermal .font-black { font-weight: 900 !important; }
+                                                    .format-thermal table { width: 100% !important; border-collapse: collapse !important; }
+                                                    .format-thermal th, .format-thermal td { padding: 2px 0 !important; }
+                                                    .format-thermal .text-right { text-align: right !important; }
+                                                    .format-thermal .text-center { text-align: center !important; }
+                                                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
+                                                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
+                                                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
+                                                    .format-thermal .flex { display: flex !important; }
+                                                    .format-thermal .justify-between { justify-content: space-between !important; }
+                                                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
+                                                }
+                                                body { background: white; margin: 0; padding: 0; display: block; }
+                                            </style>
+                                        </head>
+                                        <body>
+                                            ${clone.outerHTML}
+                                            <script>
+                                                window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };
+                                            </script>
+                                        </body>
+                                        </html>
+                                    `);
+                                    doc.close();
 
-                    /* Restore Dashed Lines */
-                    .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; }
-                    .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; }
-                    .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; }
-
-                    /* Restore structural flex layouts */
-                    .format-thermal .flex { display: flex !important; }
-                    .format-thermal .justify-between { justify-content: space-between !important; }
-                    
-                    .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; }
-                }
-                body { background: white; margin: 0; padding: 0; display: block; }
-            </style>
-        </head>
-        <body>
-            ${clone.outerHTML}
-            <script>
-                window.onload = () => {
-                    setTimeout(() => {
-                        window.focus();
-                        window.print();
-                    }, 500);
-                };
-            </script>
-        </body>
-        </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-    }, 10000);
-
-}} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-    <Printer size={14}/> Print Document
-</button>
-
-
-
-
+                                    setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
+                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    <Printer size={14}/> Print Document
+                                </button>
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
                                     if (viewingReceipt.items && viewingReceipt.items.length > 0) {
@@ -593,18 +555,47 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> Share
                                 </button>
-
                             </div>
-
                             <button onClick={() => { setViewingReceipt(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
                         </div>
                     </div>
                 );
             })()}
 
+            {/* 🚀 NEW: GLOBAL SEARCH BAR ENGINE 🚀 */}
+            <div className="print:hidden relative mb-8 z-10 animate-fade-in">
+                <div className="relative w-full shadow-md rounded-2xl group transition-shadow hover:shadow-lg focus-within:shadow-lg">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Search size={22} className={`transition-colors ${searchTerm ? 'text-orange-500' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
+                    </div>
+                    <input 
+                        type="text" 
+                        placeholder="Search date, value, store, product, or salesperson..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-12 py-4 bg-white dark:bg-slate-800 border-2 border-transparent focus:border-orange-500 rounded-2xl text-slate-900 dark:text-white font-medium text-lg outline-none transition-all"
+                    />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => setSearchTerm('')} 
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                            <X size={22} />
+                        </button>
+                    )}
+                </div>
+                {searchTerm && (
+                    <div className="absolute -bottom-6 left-2 flex gap-4 text-xs font-bold text-slate-500 tracking-wider uppercase">
+                        <span>Showing results for: <span className="text-orange-500">"{searchTerm}"</span></span>
+                        <span>•</span>
+                        <span>{searchedTransactions.length} receipts matched</span>
+                    </div>
+                )}
+            </div>
+
             {/* --- ANALYTICS DASHBOARD --- */}
             {reportView && (
-                <div className="animate-fade-in relative z-10">
+                <div className="animate-fade-in relative z-10 mt-6">
                      <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Folders</button>
                         <div className="flex flex-col md:flex-row items-center gap-4">
@@ -614,7 +605,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 ))}
                             </div>
                             <div className="flex items-center gap-3">
-                                {/* 🚀 NEW: DYNAMIC SCALE SLIDER */}
                                 <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border dark:border-slate-700 shadow-sm print:hidden">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scale</span>
                                     <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
@@ -627,7 +617,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         </div>
                      </div>
 
-                     {/* 🚀 MAGIC CSS INJECTION: Listens to the slider and scales the print view */}
                      <style>{`
                          @media print {
                              .print-container {
@@ -639,8 +628,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                      `}</style>
 
                      <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
-                         
-                         {/* HEADER (Compressed for Print) */}
                          <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
@@ -651,14 +638,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                              <div className="text-right"><p className="text-xs print:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
                          </div>
                          
-                         {/* MAIN STATS (Forced 3-columns and reduced padding on print) */}
                          <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
                          </div>
 
-                         {/* MONEY BREAKDOWN (Forced 4-columns to prevent vertical stacking on print) */}
                          <div className="mb-8 print:mb-4 p-6 print:p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Wallet size={20} className="print:w-4 print:h-4 text-emerald-500"/> Money Breakdown</h3>
                             <div className="grid grid-cols-1 lg:grid-cols-4 print:grid-cols-4 gap-4 print:gap-2">
@@ -671,7 +656,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             </div>
                          </div>
 
-                         {/* PRODUCT TABLE (Tightened row heights and scaled down text) */}
                          <div className="mb-8 print:mb-0">
                              <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-orange-500"/> Product Performance</h3>
                              <div className="overflow-x-auto pb-2">
@@ -695,8 +679,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* HIDE DOM LISTS DURING PRINT SO IOS SAFARI DOESN'T FREEZE OR BLOCK */}
-            <div className="hide-on-print w-full">
+            <div className="hide-on-print w-full mt-6">
 
             {/* --- LEVEL 0: AGENT SELECTION --- */}
             {!reportView && !selectedAgent && userRole === 'ADMIN' && (
@@ -825,9 +808,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                         </span>
                                                                     </td>
                                                                     <td className="p-3 text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-[250px] break-words">
-                                                                        {/* 🚀 UPGRADE: Dynamic Details Column 🚀 */}
                                                                         {t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                            // Render Audit Breakdown
                                                                             <div className="space-y-1">
                                                                                 {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
                                                                                     if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
@@ -838,7 +819,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                                 ))}
                                                                             </div>
                                                                         ) : (
-                                                                            // Render Normal Sale/Retur Details
                                                                             t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : 'N/A'
                                                                         )}
 
