@@ -111,15 +111,38 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         e.preventDefault();
         if(!editingTrans || !user) return;
         const formData = new FormData(e.target);
+        
         try {
+            // 🚀 TIME MACHINE: Parse the requested fake date and force it into a valid millisecond timestamp
+            const rawDate = formData.get('date'); // e.g. "2026-01-15"
+            let fakeTimestamp = serverTimestamp(); // Default to now just in case
+            
+            if (rawDate) {
+                // We create a Date object based on their requested date string at exactly 12:00 PM UTC to be safe
+                const dateObj = new Date(`${rawDate}T12:00:00Z`);
+                if (!isNaN(dateObj.getTime())) {
+                    // Rewrite the exact 'seconds' structure Firebase uses!
+                    fakeTimestamp = {
+                        seconds: Math.floor(dateObj.getTime() / 1000),
+                        nanoseconds: 0
+                    };
+                }
+            }
+
             await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
-                date: formData.get('date'),
+                date: rawDate,
                 customerName: formData.get('customerName'),
                 total: parseFloat(formData.get('total')) || 0,
-                updatedAt: serverTimestamp()
+                // 🚀 Inject the fake timestamp to permanently trick the RPG Engine!
+                timestamp: fakeTimestamp,
+                updatedAt: serverTimestamp() // We leave this alone so we know when it was edited
             });
+            
+            alert("✅ Time Travel Successful! The database has been rewritten.");
             setEditingTrans(null);
-        } catch(err) { alert(err.message); }
+        } catch(err) { 
+            alert(err.message); 
+        }
     };
 
     return (
