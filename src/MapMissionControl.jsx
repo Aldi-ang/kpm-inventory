@@ -1091,7 +1091,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
                                                     <div>
                                                         <span className="text-xs font-bold text-white block">{displayDate}</span>
-                                                        <span className="text-[10px] text-slate-500">{displayTime}</span>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] text-slate-500">{displayTime}</span>
+                                                            {/* 🚀 NEW: Dynamic Salesperson Badge */}
+                                                            <span className="text-[9px] bg-slate-800 text-blue-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                                                <User size={10} /> {tx.agentName === 'Admin' ? 'Admin' : (tx.agentName || 'Sales')}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
                                                 </div>
