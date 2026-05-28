@@ -168,6 +168,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
 
+    // 🧠 SMART DICTIONARY: Auto-categorize legacy data
+    const guessProvince = (kabupaten) => {
+        const kab = (kabupaten || '').toLowerCase();
+        if (kab.includes('magelang') || kab.includes('boyolali') || kab.includes('solo') || kab.includes('surakarta') || kab.includes('klaten')) return 'Jawa Tengah';
+        if (kab.includes('yogya') || kab.includes('sleman') || kab.includes('bantul') || kab.includes('gunungkidul')) return 'DI Yogyakarta';
+        return 'Unknown Provinsi';
+    };
+
     // 🚀 UPGRADED: Search & Folder Engine (4 Tiers)
     const searchedCustomers = useMemo(() => {
         if (!searchTerm.trim()) return customers;
@@ -185,7 +193,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const folderStructure = useMemo(() => {
         const structure = {};
         searchedCustomers.forEach(c => {
-            const prov = c.province?.trim() || 'Unknown Provinsi';
+            // If province is missing, guess it based on the region!
+            const prov = c.province?.trim() || guessProvince(c.region);
             const kab = c.region?.trim() || 'Unknown Kabupaten';
             const kec = c.city?.trim() || 'Unknown Kecamatan';
             
@@ -207,6 +216,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         });
         return structure;
     }, [searchedCustomers]);
+
+    // 🛡️ CRASH PREVENTION: Safely resolve the active paths before rendering
+    const activeProv = folderStructure[selectedProvince] || null;
+    const activeKab = activeProv?.regions?.[selectedRegion] || null;
+    const activeKec = activeKab?.cities?.[selectedCity] || null;
     
     useEffect(() => {
         if (croppedImage) {
@@ -539,9 +553,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 )}
 
                 {/* LEVEL 1: KABUPATEN */}
-                {selectedProvince && !selectedRegion && (
+                {selectedProvince && !selectedRegion && activeProv && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(folderStructure[selectedProvince]?.regions || {}).map(([kab, data]) => (
+                        {Object.entries(activeProv.regions).map(([kab, data]) => (
                             <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
@@ -555,9 +569,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 )}
 
                 {/* LEVEL 2: KECAMATAN */}
-                {selectedProvince && selectedRegion && !selectedCity && (
+                {selectedProvince && selectedRegion && !selectedCity && activeKab && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(folderStructure[selectedProvince]?.regions[selectedRegion]?.cities || {}).map(([kec, data]) => (
+                        {Object.entries(activeKab.cities).map(([kec, data]) => (
                             <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
@@ -571,9 +585,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 )}
 
                 {/* LEVEL 3: STORES */}
-                {selectedProvince && selectedRegion && selectedCity && (
+                {selectedProvince && selectedRegion && selectedCity && activeKec && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(folderStructure[selectedProvince]?.regions[selectedRegion]?.cities[selectedCity]?.stores || []).map(c => {
+                        {activeKec.stores.map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
                                 <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
