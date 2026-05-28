@@ -170,9 +170,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     // 🧠 SMART DICTIONARY: Auto-categorize legacy data
     const guessProvince = (kabupaten) => {
-        const kab = (kabupaten || '').toLowerCase();
-        if (kab.includes('magelang') || kab.includes('boyolali') || kab.includes('solo') || kab.includes('surakarta') || kab.includes('klaten')) return 'Jawa Tengah';
-        if (kab.includes('yogya') || kab.includes('sleman') || kab.includes('bantul') || kab.includes('gunungkidul')) return 'DI Yogyakarta';
+        const kab = String(kabupaten || '').toLowerCase();
+        if (kab.includes('magelang') || kab.includes('muntilan') || kab.includes('boyolali') || kab.includes('solo') || kab.includes('surakarta') || kab.includes('klaten') || kab.includes('semarang')) return 'Jawa Tengah';
+        if (kab.includes('yogya') || kab.includes('sleman') || kab.includes('bantul') || kab.includes('gunungkidul') || kab.includes('kulon')) return 'DI Yogyakarta';
         return 'Unknown Provinsi';
     };
 
@@ -181,22 +181,22 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         if (!searchTerm.trim()) return customers;
         const term = searchTerm.toLowerCase();
         return customers.filter(c => 
-            (c.name || '').toLowerCase().includes(term) ||
-            (c.city || '').toLowerCase().includes(term) ||
-            (c.region || '').toLowerCase().includes(term) ||
-            (c.province || '').toLowerCase().includes(term) ||
-            (c.picName || '').toLowerCase().includes(term) ||
-            (c.nooAgentName || '').toLowerCase().includes(term)
+            String(c.name || '').toLowerCase().includes(term) ||
+            String(c.city || '').toLowerCase().includes(term) ||
+            String(c.region || '').toLowerCase().includes(term) ||
+            String(c.province || '').toLowerCase().includes(term) ||
+            String(c.picName || '').toLowerCase().includes(term) ||
+            String(c.nooAgentName || '').toLowerCase().includes(term)
         );
     }, [customers, searchTerm]);
 
     const folderStructure = useMemo(() => {
         const structure = {};
         searchedCustomers.forEach(c => {
-            // If province is missing, guess it based on the region!
-            const prov = c.province?.trim() || guessProvince(c.region);
-            const kab = c.region?.trim() || 'Unknown Kabupaten';
-            const kec = c.city?.trim() || 'Unknown Kecamatan';
+            // Strict String casting prevents .trim() crashes on older numerical data
+            const prov = String(c.province || '').trim() || guessProvince(c.region);
+            const kab = String(c.region || '').trim() || 'Unknown Kabupaten';
+            const kec = String(c.city || '').trim() || 'Unknown Kecamatan';
             
             if (!structure[prov]) structure[prov] = { count: 0, pending: 0, regions: {} };
             if (!structure[prov].regions[kab]) structure[prov].regions[kab] = { count: 0, pending: 0, cities: {} };
@@ -217,10 +217,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         return structure;
     }, [searchedCustomers]);
 
-    // 🛡️ CRASH PREVENTION: Safely resolve the active paths before rendering
-    const activeProv = folderStructure[selectedProvince] || null;
-    const activeKab = activeProv?.regions?.[selectedRegion] || null;
-    const activeKec = activeKab?.cities?.[selectedCity] || null;
+    // 🛡️ CRASH PREVENTION: Strict evaluation blocks "null" key lookups
+    const activeProv = selectedProvince ? folderStructure[selectedProvince] : null;
+    const activeKab = (activeProv && selectedRegion) ? activeProv.regions[selectedRegion] : null;
+    const activeKec = (activeKab && selectedCity) ? activeKab.cities[selectedCity] : null;
     
     useEffect(() => {
         if (croppedImage) {
@@ -555,7 +555,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 1: KABUPATEN */}
                 {selectedProvince && !selectedRegion && activeProv && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(activeProv.regions).map(([kab, data]) => (
+                        {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
                             <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
@@ -571,7 +571,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 2: KECAMATAN */}
                 {selectedProvince && selectedRegion && !selectedCity && activeKab && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(activeKab.cities).map(([kec, data]) => (
+                        {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
                             <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
@@ -587,7 +587,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 3: STORES */}
                 {selectedProvince && selectedRegion && selectedCity && activeKec && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {activeKec.stores.map(c => {
+                        {(activeKec?.stores || []).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
                                 <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
@@ -647,7 +647,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             );
                         })}
                     </div>
-                )}
+                )}s
             </div>
         </div>
     );
