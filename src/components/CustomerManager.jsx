@@ -154,20 +154,21 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     
     // 🚀 NEW: Tactical Dashboard State
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedRegion, setSelectedRegion] = useState(null);
-    const [selectedCity, setSelectedCity] = useState(null);
+    const [selectedProvince, setSelectedProvince] = useState(null); // PROVINSI
+    const [selectedRegion, setSelectedRegion] = useState(null); // KABUPATEN
+    const [selectedCity, setSelectedCity] = useState(null); // KECAMATAN
 
     const [formData, setFormData] = useState({ 
-        name: '', phone: '', region: '', city: '', address: '', 
+        name: '', phone: '', province: '', region: '', city: '', address: '', 
         gmapsUrl: '', embedHtml: '', 
         latitude: '', longitude: '', storeImage: '', 
         tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0],
-        picName: '' // NEW: Penanggung Jawab
+        picName: '' 
     });
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
 
-    // 🚀 NEW: Search & Folder Engine
+    // 🚀 UPGRADED: Search & Folder Engine (4 Tiers)
     const searchedCustomers = useMemo(() => {
         if (!searchTerm.trim()) return customers;
         const term = searchTerm.toLowerCase();
@@ -175,6 +176,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             (c.name || '').toLowerCase().includes(term) ||
             (c.city || '').toLowerCase().includes(term) ||
             (c.region || '').toLowerCase().includes(term) ||
+            (c.province || '').toLowerCase().includes(term) ||
             (c.picName || '').toLowerCase().includes(term) ||
             (c.nooAgentName || '').toLowerCase().includes(term)
         );
@@ -183,21 +185,25 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const folderStructure = useMemo(() => {
         const structure = {};
         searchedCustomers.forEach(c => {
-            const region = c.region?.trim() || 'Unknown Region';
-            const city = c.city?.trim() || 'Unknown City';
+            const prov = c.province?.trim() || 'Unknown Provinsi';
+            const kab = c.region?.trim() || 'Unknown Kabupaten';
+            const kec = c.city?.trim() || 'Unknown Kecamatan';
             
-            if (!structure[region]) structure[region] = { count: 0, pending: 0, cities: {} };
-            if (!structure[region].cities[city]) structure[region].cities[city] = { count: 0, pending: 0, stores: [] };
+            if (!structure[prov]) structure[prov] = { count: 0, pending: 0, regions: {} };
+            if (!structure[prov].regions[kab]) structure[prov].regions[kab] = { count: 0, pending: 0, cities: {} };
+            if (!structure[prov].regions[kab].cities[kec]) structure[prov].regions[kab].cities[kec] = { count: 0, pending: 0, stores: [] };
             
-            structure[region].count++;
-            structure[region].cities[city].count++;
+            structure[prov].count++;
+            structure[prov].regions[kab].count++;
+            structure[prov].regions[kab].cities[kec].count++;
             
             if (c.status === 'PENDING') {
-                structure[region].pending++;
-                structure[region].cities[city].pending++;
+                structure[prov].pending++;
+                structure[prov].regions[kab].pending++;
+                structure[prov].regions[kab].cities[kec].pending++;
             }
             
-            structure[region].cities[city].stores.push(c);
+            structure[prov].regions[kab].cities[kec].stores.push(c);
         });
         return structure;
     }, [searchedCustomers]);
@@ -319,14 +325,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     triggerCapy("Customer added and approved!"); 
                 }
             } 
-            setFormData({ name: '', phone: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0] }); 
+            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '' }); 
             setCoordInput("");
         } catch (err) { console.error(err); } 
     };
 
     const handleEdit = (c) => { 
         setFormData({ 
-            name: c.name, phone: c.phone || '', region: c.region || '', city: c.city || '', 
+            name: c.name, phone: c.phone || '', province: c.province || '', region: c.region || '', city: c.city || '', 
             address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '',
             storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
@@ -363,7 +369,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
@@ -436,8 +442,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-2">
-                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Region (Kabupaten)" />
-                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="City (Kecamatan)" />
+                            <input value={formData.province} onChange={e=>setFormData({...formData, province: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Provinsi" />
+                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Kabupaten" />
+                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Kecamatan" />
                         </div>
 
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
@@ -478,14 +485,24 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 />
             </div>
 
-            {/* 🚀 TACTICAL FOLDER DASHBOARD */}
+            {/* 🚀 TACTICAL FOLDER DASHBOARD (CRASH-PROOFED) */}
             <div className="animate-fade-in relative z-10">
                 {/* BREADCRUMB NAVIGATION */}
-                {(selectedRegion || selectedCity) && (
-                    <div className="flex items-center gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg w-fit">
-                        <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-500 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
-                            <Folder size={16}/> All Regions
+                {(selectedProvince || selectedRegion || selectedCity) && (
+                    <div className="flex flex-wrap items-center gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg w-fit">
+                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-500 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
+                            <Folder size={16}/> Indonesia
                         </button>
+                        
+                        {selectedProvince && (
+                            <>
+                                <ArrowRight size={14} className="text-slate-400"/>
+                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-slate-500 hover:text-orange-500'}`}>
+                                    {selectedProvince}
+                                </button>
+                            </>
+                        )}
+
                         {selectedRegion && (
                             <>
                                 <ArrowRight size={14} className="text-slate-400"/>
@@ -494,6 +511,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                 </button>
                             </>
                         )}
+                        
                         {selectedCity && (
                             <>
                                 <ArrowRight size={14} className="text-slate-400"/>
@@ -503,43 +521,59 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 )}
 
-                {/* LEVEL 0: REGIONS */}
-                {!selectedRegion && (
+                {/* LEVEL 0: PROVINSI */}
+                {!selectedProvince && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(folderStructure).map(([region, data]) => (
-                            <div key={region} onClick={() => setSelectedRegion(region)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                        {Object.entries(folderStructure).map(([prov, data]) => (
+                            <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
+                                    <div className="p-3 bg-red-100 dark:bg-slate-700 rounded-lg text-red-600 group-hover:bg-red-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
                                     {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{region}</h3>
+                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
                             </div>
                         ))}
-                        {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Regions Found</p></div>}
+                        {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
                     </div>
                 )}
 
-                {/* LEVEL 1: CITIES */}
-                {selectedRegion && !selectedCity && (
+                {/* LEVEL 1: KABUPATEN */}
+                {selectedProvince && !selectedRegion && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(folderStructure[selectedRegion].cities).map(([city, data]) => (
-                            <div key={city} onClick={() => setSelectedCity(city)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                        {Object.entries(folderStructure[selectedProvince]?.regions || {}).map(([kab, data]) => (
+                            <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                    <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
                                     {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{city}</h3>
+                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* LEVEL 2: STORES */}
-                {selectedRegion && selectedCity && (
+                {/* LEVEL 2: KECAMATAN */}
+                {selectedProvince && selectedRegion && !selectedCity && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(folderStructure[selectedProvince]?.regions[selectedRegion]?.cities || {}).map(([kec, data]) => (
+                            <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                </div>
+                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* LEVEL 3: STORES */}
+                {selectedProvince && selectedRegion && selectedCity && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {folderStructure[selectedRegion].cities[selectedCity].stores.map(c => {
+                        {(folderStructure[selectedProvince]?.regions[selectedRegion]?.cities[selectedCity]?.stores || []).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
                                 <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
