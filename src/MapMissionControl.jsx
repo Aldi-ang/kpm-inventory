@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity
+    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User
 } from 'lucide-react';
 
 import L from 'leaflet';
