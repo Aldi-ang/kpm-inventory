@@ -299,6 +299,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
     );
 };
 
+// 🚀 UPGRADED TACTICAL DASHBOARD
 const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, selectedZone, setSelectedZone, onClose, salesHeatmapMode, setSalesHeatmapMode, selectedAreaType, setSelectedAreaType, timeFilter, setTimeFilter }) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
@@ -379,9 +380,11 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 z-10 custom-scrollbar relative">
                 {rankedSectors.map((sector, index) => {
                     const rev = zoneRevenues[sector.id] || 0;
-                    const ratio = rev / maxRev;
-                    const barColor = ratio > 0.6 ? 'bg-emerald-500' : ratio > 0.2 ? 'bg-orange-500' : 'bg-red-500';
-                    const textColor = ratio > 0.6 ? 'text-emerald-400' : ratio > 0.2 ? 'text-orange-400' : 'text-red-400';
+                    const target = sector.targetRev; 
+                    const hasTarget = target && target > 0;
+                    const ratio = hasTarget ? Math.min(rev / target, 1) : (rev / maxRev);
+                    const barColor = hasTarget ? (ratio >= 1 ? 'bg-emerald-500' : ratio > 0.5 ? 'bg-orange-500' : 'bg-red-500') : (ratio > 0.6 ? 'bg-emerald-500' : ratio > 0.2 ? 'bg-orange-500' : 'bg-red-500');
+                    const textColor = hasTarget ? (ratio >= 1 ? 'text-emerald-400' : ratio > 0.5 ? 'text-orange-400' : 'text-red-400') : (ratio > 0.6 ? 'text-emerald-400' : ratio > 0.2 ? 'text-orange-400' : 'text-red-400');
                     const isSelected = selectedZone?.id === sector.id;
 
                     return (
@@ -389,9 +392,17 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                             <div className="flex justify-between items-center mb-2">
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span className="text-[10px] font-bold text-slate-500 w-4">{index + 1}.</span>
-                                    <div className="flex flex-col overflow-hidden"><span className="text-xs font-bold text-white uppercase tracking-wider truncate">{sector.name}</span><span className="text-[8px] text-slate-500 uppercase">{sector.level}</span></div>
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className="text-xs font-bold text-white uppercase tracking-wider truncate">
+                                            {sector.name} {sector.assignedAgent && <span className="text-purple-400 ml-1" title="Agent Assigned">👤</span>}
+                                        </span>
+                                        <span className="text-[8px] text-slate-500 uppercase">{sector.level}</span>
+                                    </div>
                                 </div>
-                                <span className={`text-xs font-black ${textColor}`}>{formatRupiah(rev)}</span>
+                                <div className="text-right">
+                                    <span className={`text-xs font-black block ${textColor}`}>{formatRupiah(rev)}</span>
+                                    {hasTarget && <span className="text-[8px] text-slate-500 uppercase tracking-widest block">/ {formatRupiah(target)}</span>}
+                                </div>
                             </div>
                             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex"><div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div></div>
                         </div>
@@ -425,13 +436,16 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     );
 };
 
-const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus }) => {
+// 🚀 UPGRADED BORDER IMPORTER & SECTOR SETTINGS
+const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus, motorists = [] }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
     const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
+    
     const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState("");
+    const [editForm, setEditForm] = useState({ name: "", color: "#3b82f6", targetRev: "", assignedAgent: "none" });
+
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
     const userId = user?.uid || user?.id || 'default';
@@ -479,11 +493,17 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         }
     };
 
-    const handleSaveName = async (id) => {
-        if (!editName || !editName.trim()) { setEditingId(null); return; }
+    // 🚀 NEW SECTOR CONFIGURATION SAVE ENGINE
+    const handleSaveBoundary = async (id) => {
         const targetBoundary = safeBoundaries.find(b => b.id === id);
         if (targetBoundary) {
-            const updatedBoundary = { ...targetBoundary, name: editName.trim() };
+            const updatedBoundary = { 
+                ...targetBoundary, 
+                name: editForm.name.trim() || targetBoundary.name,
+                color: editForm.color || targetBoundary.color,
+                targetRev: editForm.targetRev ? Number(editForm.targetRev) : null,
+                assignedAgent: editForm.assignedAgent !== 'none' ? editForm.assignedAgent : null
+            };
             const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
             setBoundaries(updatedList);
             localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
@@ -606,24 +626,76 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                     </div>
 
                                     {openGroups[level] && groupedBoundaries[level].map(b => (
-                                        <div key={b.id} className={`flex items-center justify-between bg-slate-900 p-2.5 rounded border ml-2 mb-1 group hover:border-slate-500 transition-colors ${b.isHidden ? 'border-red-900/30 opacity-60' : 'border-slate-700'}`}>
+                                        <div key={b.id} className={`flex flex-col bg-slate-900 p-2.5 rounded border ml-2 mb-1 group hover:border-slate-500 transition-colors ${b.isHidden ? 'border-red-900/30 opacity-60' : 'border-slate-700'}`}>
+                                            
+                                            {/* 🚀 EXPANDED SECTOR SETTINGS PANEL */}
                                             {editingId === b.id ? (
-                                                <div className="flex flex-1 items-center gap-2 mr-2">
-                                                    <input type="text" autoFocus value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSaveName(b.id)} className="flex-1 bg-slate-800 border border-blue-500 text-white text-[10px] font-bold p-1.5 rounded outline-none"/>
-                                                    <button onClick={() => handleSaveName(b.id)} className="text-emerald-400 hover:text-emerald-300 bg-emerald-900/30 p-1.5 rounded"><Save size={14}/></button>
+                                                <div className="flex flex-col gap-3 w-full p-2">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1"><Settings size={12}/> Sector Configuration</span>
+                                                        <button onClick={() => setEditingId(null)} className="text-slate-500 hover:text-white"><X size={14}/></button>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Sector Name</label>
+                                                            <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
+                                                        </div>
+                                                        <div className="flex gap-3">
+                                                            <div className="flex-[0.5]">
+                                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Theme</label>
+                                                                <div className="flex items-center justify-center bg-slate-800 border border-slate-600 rounded p-1 h-[32px]">
+                                                                    <input type="color" value={editForm.color} onChange={e => setEditForm({...editForm, color: e.target.value})} className="w-full h-full rounded cursor-pointer bg-transparent border-none p-0"/>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-[1.5]">
+                                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Target Rev (Rp) <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                                <input type="number" placeholder="e.g. 5000000" value={editForm.targetRev} onChange={e => setEditForm({...editForm, targetRev: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 h-[32px] rounded outline-none focus:border-emerald-500"/>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Assigned Agent <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                            <select value={editForm.assignedAgent} onChange={e => setEditForm({...editForm, assignedAgent: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-purple-500 cursor-pointer">
+                                                                <option value="none">-- Unassigned Territory --</option>
+                                                                {(motorists || []).map(m => (
+                                                                    <option key={m.id} value={m.id}>{m.name || m.email?.split('@')[0]} ({m.location || 'Field'})</option>
+                                                                ))}
+                                                                {(!motorists || motorists.length === 0) && <option value="manual_entry_placeholder" disabled>No Agents Found</option>}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => handleSaveBoundary(b.id)} className="w-full bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-bold uppercase tracking-widest mt-2 transition-colors flex items-center justify-center gap-2">
+                                                        <Save size={12}/> Save Sector Configuration
+                                                    </button>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                                                    <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none', opacity: b.isHidden ? 0.2 : 1 }}></div>
-                                                    <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-500 line-through' : 'text-white'}`} title={b.name}>{b.name}</span>
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
+                                                        <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none', opacity: b.isHidden ? 0.2 : 1 }}></div>
+                                                        <div className="flex flex-col truncate">
+                                                            <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-500 line-through' : 'text-white'}`} title={b.name}>
+                                                                {b.name} {b.assignedAgent && <span className="text-purple-400 ml-1 text-[10px]" title="Agent Assigned">👤</span>}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1 shrink-0 opacity-100 lg:opacity-30 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
+                                                        
+                                                        {/* Edit Button opens the Configuration Panel */}
+                                                        <button onClick={() => { 
+                                                            setEditingId(b.id); 
+                                                            setEditForm({
+                                                                name: b.name || "",
+                                                                color: b.color || "#38bdf8",
+                                                                targetRev: b.targetRev || "",
+                                                                assignedAgent: b.assignedAgent || "none"
+                                                            }); 
+                                                        }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Settings size={12}/></button>
+                                                        
+                                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
+                                                    </div>
                                                 </div>
                                             )}
-
-                                            <div className="flex items-center gap-1 shrink-0 opacity-100 lg:opacity-30 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
-                                                {editingId !== b.id && <button onClick={() => { setEditingId(b.id); setEditName(b.name || ""); }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Pencil size={12}/></button>}
-                                                <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -874,7 +946,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { 
                 tier: newTier
             }); 
-            // 🚀 TRIGGER INSTANT REPAINT FOR SINGLE TIER EDIT
             if (setLocalTierUpdates) {
                 setLocalTierUpdates(prev => ({ ...prev, [store.id]: newTier }));
             }
@@ -1093,7 +1164,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                         <span className="text-xs font-bold text-white block">{displayDate}</span>
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             <span className="text-[10px] text-slate-500">{displayTime}</span>
-                                                            {/* 🚀 NEW: Dynamic Salesperson Badge */}
                                                             <span className="text-[9px] bg-slate-800 text-blue-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
                                                                 <User size={10} /> {tx.agentName === 'Admin' ? 'Admin' : (tx.agentName || 'Sales')}
                                                             </span>
@@ -1127,7 +1197,6 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     );
 };
 
-// 🚀 NEW: GAMIFIED RPG ENGINE (COMPUTE ON WRITE ARCHITECTURE)
 const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transactions, onClose, logAudit, triggerCapy, setLocalTierUpdates }) => {
     const [rules, setRules] = useState({});
     const [simResults, setSimResults] = useState(null);
@@ -1230,8 +1299,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     const runSimulation = () => {
         const safeRules = rules || {};
         
-        // 🚀 THE DYNAMIC POWER LADDER (100% Agnostic to Tier Names)
-        // It pulls your EXACT active tiers and pairs them with their targets.
         const powerLadder = activeTiers.map((tier, index) => {
             let target = 0;
             const rule = safeRules[tier.id] || safeRules[tier.label];
@@ -1239,19 +1306,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 const isOmset = String(rule.type || 'omset').toLowerCase().includes('omset');
                 target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
             } else {
-                // Master Failsafe if user hasn't saved rules yet
                 const defaultTargets = [2500000, 1000000, 500000, 250000, 0];
                 target = defaultTargets[index] || 0;
             }
             return { id: tier.id, power: target };
-        }).sort((a, b) => b.power - a.power); // Highest Target to Lowest
+        }).sort((a, b) => b.power - a.power); 
 
         const results = { promotions: [], demotions: [], steady: 0, actions: [], all: [] };
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
         mapPoints.forEach(store => {
-            // Find current rank in the ladder (Default to bottom tier if broken)
             let currentTier = store.tier || powerLadder[powerLadder.length - 1].id;
             let oldPowerStep = powerLadder.find(step => String(step.id).toLowerCase() === String(currentTier).toLowerCase());
             let oldPower = oldPowerStep ? oldPowerStep.power : 0;
@@ -1261,24 +1326,20 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             let lastUpdate = store.lastXPUpdate ? new Date(store.lastXPUpdate) : new Date();
             let isNewSeason = (lastUpdate.getMonth() !== currentMonth || lastUpdate.getFullYear() !== currentYear);
 
-            // 🚀 STEP 1: Find Earned Tier
-            // Start at the bottom, look for highest threshold met
             let earnedTier = powerLadder[powerLadder.length - 1].id; 
             let newPower = powerLadder[powerLadder.length - 1].power;
 
             for (let step of powerLadder) {
                 if (seasonXP >= step.power) {
-                    earnedTier = step.id; // Assigns the EXACT matching ID
+                    earnedTier = step.id; 
                     newPower = step.power;
                     break;
                 }
             }
 
-            // 🚀 STEP 2: Demotion Safety Net
             if (isNewSeason) {
                  if (newPower < oldPower) {
                      const oldLadderIdx = powerLadder.findIndex(l => l.power <= oldPower);
-                     // Drop them exactly 1 rank down your custom ladder
                      if (oldLadderIdx !== -1 && oldLadderIdx + 1 < powerLadder.length) {
                          earnedTier = powerLadder[oldLadderIdx + 1].id;
                          newPower = powerLadder[oldLadderIdx + 1].power;
@@ -1322,7 +1383,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 }
                 await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), payload);
                 
-                // 🚀 TRIGGER INSTANT MAP REPAINT
                 if (setLocalTierUpdates) {
                     setLocalTierUpdates(prev => ({ ...prev, [action.storeId]: action.new }));
                 }
@@ -1367,7 +1427,6 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             </div>
                             <div className="max-h-48 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
                                 {simResults.all.map((act, i) => {
-                                    // 🚀 FIXED: Translates raw Database IDs into Human-Readable Labels for the UI
                                     const oldLabel = activeTiers.find(t => String(t.id).toLowerCase() === String(act.old).toLowerCase())?.label || act.old;
                                     const newLabel = activeTiers.find(t => String(t.id).toLowerCase() === String(act.new).toLowerCase())?.label || act.new;
                                     
@@ -1421,11 +1480,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings }) => {
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [] }) => {
 
     const userId = user?.uid || user?.id || "default";
 
-    // 🚀 FIXED: Map UI Failsafe now strictly mirrors your MLBB Tiers!
     const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
         { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
         { id: 'Epic', label: 'Epic', color: '#8b5cf6', iconType: 'emoji', value: '🔥' },
@@ -1434,7 +1492,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
     ], [tierSettings]);
 
-    // 🚀 NEW: THE INSTANT REPAINT OVERRIDE STATE
     const [localTierUpdates, setLocalTierUpdates] = useState({});
 
     const [selectedStore, setSelectedStore] = useState(null);
@@ -1602,7 +1659,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     }
                     const status = !last ? 'overdue' : (diffDays <= 0 ? 'overdue' : (diffDays <= 2 ? 'soon' : 'ok'));
 
-                    // 🚀 FIXED: Checks localTierUpdates immediately. This forces the map pin to update instantly without refreshing!
                     let rawTier = localTierUpdates[c.id] || c.tier || 'Retail';
                     let safePerfTier = activeTiers.find(t => String(t?.id || '').toLowerCase() === String(rawTier).toLowerCase().trim())?.id;
                     if (!safePerfTier) safePerfTier = activeTiers[activeTiers.length - 1]?.id || 'Retail';
@@ -1913,6 +1969,17 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
+            {/* 🚀 RESTORED: Territory Border Importer */}
+            {showImporter && (
+                <BorderImporter 
+                    db={db} appId={appId} user={user} 
+                    boundaries={boundaries} setBoundaries={setBoundaries} 
+                    setIsOpen={setShowImporter} setShowBorders={setShowBorders} 
+                    setUploadedFocus={setUploadedFocus} 
+                    motorists={motorists || []} 
+                />
+            )}
+
            {showTacticalDash && (
                 <TacticalDashboard 
                     boundaries={sortedBoundaries} zoneRevenues={zoneRevenues} mapPoints={mapPoints} transactions={transactions}
@@ -1923,18 +1990,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 />
             )}
 
-            {/* 🚀 FIXED: Passed setLocalTierUpdates so the Engine can immediately repaint the map when executing a season! */}
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
-
-            {/* 🚀 RESTORED: Territory Border Importer */}
-            {showImporter && (
-                <BorderImporter 
-                    db={db} appId={appId} user={user} 
-                    boundaries={boundaries} setBoundaries={setBoundaries} 
-                    setIsOpen={setShowImporter} setShowBorders={setShowBorders} 
-                    setUploadedFocus={setUploadedFocus} 
-                />
-            )}
 
             <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
@@ -1976,7 +2032,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     if (!geoData || !geoData.type) return null; 
                     
                     const isHeatmap = salesHeatmapMode;
-                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : boundary.color;
+                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : (boundary.color || '#3b82f6');
                     const bndRev = zoneRevenues[boundary.id] || 0;
                     const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
                     const isSelected = selectedZone?.id === boundary.id;
@@ -1992,10 +2048,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     mouseover: (e) => e.target.setStyle({ fillOpacity: isHeatmap ? 0.6 : (isKab ? 0.05 : 0.3), weight: isKab ? 4 : 3 }),
                                     mouseout: (e) => e.target.setStyle({ fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), weight: isSelected ? 4 : (isKab ? 3 : 2) })
                                 });
+                                
+                                const targetHtml = boundary.targetRev ? `<div style="color: #94a3b8; font-size: 9px; margin-top: 2px;">TARGET: ${formatRupiah(boundary.targetRev)}</div>` : '';
+                                const agentHtml = boundary.assignedAgent ? `<div style="color: #c084fc; font-size: 9px; margin-top: 2px; font-weight: bold;">👤 AGENT ASSIGNED</div>` : '';
+
                                 const ttContent = `
                                     <div style="background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
                                         <div style="color: #cbd5e1; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${boundary.name || "Region"}</div>
                                         ${isHeatmap ? `<div style="color: #fbbf24; font-size: 15px; font-weight: 900; font-family: monospace;">${formatRupiah(bndRev)}</div>` : ''}
+                                        ${isHeatmap ? targetHtml : ''}
+                                        ${agentHtml}
                                     </div>`;
                                 layer.bindTooltip(ttContent, { permanent: isHeatmap || isSelected, direction: "center", className: "custom-leaflet-tooltip" });
                             }}
@@ -2031,7 +2093,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
             </MapContainer>
 
-            {/* 🚀 FIXED: Passed setLocalTierUpdates so the bottom panel instantly repaints the map when you manually edit a store! */}
             {activeStore && (
                 <StoreBottomSheet 
                     store={activeStore} mapPoints={mapPoints} transactions={transactions} 
