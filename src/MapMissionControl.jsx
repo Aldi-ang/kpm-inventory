@@ -1855,8 +1855,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
                                     Tier Automation Engine <Settings size={16}/>
                                 </button>
-                                <button onClick={() => alert("Commander, Map Boundaries are currently managed in the backend Firebase Database under mapSettings. The UI Uploader is scheduled for the next patch!")} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-blue-500 transition-all">
-                                    Map Boundaries Setup <Download size={16}/>
+                                <button onClick={() => setShowImporter(!showImporter)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showImporter ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-600 hover:text-white hover:border-blue-500'}`}>
+                                    {showImporter ? 'Close Boundary Setup' : 'Map Boundaries Setup'} <Download size={16}/>
                                 </button>
                             </>
                         )}
@@ -1925,6 +1925,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {/* 🚀 FIXED: Passed setLocalTierUpdates so the Engine can immediately repaint the map when executing a season! */}
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
+
+            {/* 🚀 RESTORED: Territory Border Importer */}
+            {showImporter && (
+                <BorderImporter 
+                    db={db} appId={appId} user={user} 
+                    boundaries={boundaries} setBoundaries={setBoundaries} 
+                    setIsOpen={setShowImporter} setShowBorders={setShowBorders} 
+                    setUploadedFocus={setUploadedFocus} 
+                />
+            )}
 
             <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
