@@ -24,26 +24,49 @@ export default function LandlordDashboard({ db, appId, user }) {
         return () => unsub();
     }, [db, appId, user]);
 
+    // --- UPGRADED: DATABASE SWEEPER FOR PROVISIONING ---
     const handleCreateTenant = async (e) => {
         e.preventDefault();
         const emailClean = newEmail.toLowerCase().trim();
         if (!emailClean || !newName) return;
 
         try {
-            await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailClean), {
-                email: emailClean,
-                name: newName,
-                role: 'COMPANY_OWNER',
-                tier: Number(newTier), 
-                status: 'Active',
-                subscriptionStatus: 'ACTIVE',
-                bossUid: emailClean, 
-                createdAt: new Date().toISOString()
-            });
+            // 1. Search for any auto-generated Tier 4 ghost profiles
+            const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', emailClean));
+            const snap = await getDocs(q);
+            
+            if (!snap.empty) {
+                // 2. If a ghost profile exists, upgrade it directly to Admin
+                const batch = writeBatch(db);
+                snap.docs.forEach(d => {
+                    batch.update(d.ref, {
+                        name: newName,
+                        role: 'COMPANY_OWNER',
+                        tier: Number(newTier),
+                        status: 'Active',
+                        subscriptionStatus: 'ACTIVE'
+                    });
+                });
+                await batch.commit();
+                alert(`✅ Ghost profile found & upgraded! ${emailClean} is now Tier ${newTier}.`);
+            } else {
+                // 3. If they have never logged in, pre-provision normally
+                await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailClean), {
+                    email: emailClean,
+                    name: newName,
+                    role: 'COMPANY_OWNER',
+                    tier: Number(newTier), 
+                    status: 'Active',
+                    subscriptionStatus: 'ACTIVE',
+                    bossUid: emailClean, 
+                    createdAt: new Date().toISOString()
+                });
+                alert(`✅ Provisioned successfully! They are now assigned to Tier ${newTier}.`);
+            }
+            
             setNewEmail('');
             setNewName('');
             setNewTier(2);
-            alert(`✅ Provisioned successfully! They are now assigned to Tier ${newTier}.`);
         } catch (err) {
             console.error(err);
             alert("Failed to create tenant.");
@@ -61,11 +84,14 @@ export default function LandlordDashboard({ db, appId, user }) {
         try {
             const batch = writeBatch(db);
 
-            // 1. Suspend the Boss
-            const bossRef = doc(db, `artifacts/${appId}/employee_directory`, tenant.id);
-            batch.update(bossRef, {
-                subscriptionStatus: isSuspending ? 'SUSPENDED' : 'ACTIVE',
-                status: isSuspending ? 'SUSPENDED' : 'Active'
+            // 1. Suspend the Boss (Sweep by email to catch all linked docs)
+            const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', tenant.email));
+            const snap = await getDocs(q);
+            snap.docs.forEach(d => {
+                batch.update(d.ref, {
+                    subscriptionStatus: isSuspending ? 'SUSPENDED' : 'ACTIVE',
+                    status: isSuspending ? 'SUSPENDED' : 'Active'
+                });
             });
 
             // 2. Cascade Suspend to all Salesmen
@@ -74,7 +100,7 @@ export default function LandlordDashboard({ db, appId, user }) {
             const salesmenSnap = await getDocs(salesmenQ);
 
             salesmenSnap.forEach(sDoc => {
-                batch.update(doc(db, `artifacts/${appId}/employee_directory`, sDoc.id), {
+                batch.update(sDoc.ref, {
                     status: isSuspending ? 'SUSPENDED' : 'Active'
                 });
             });
@@ -86,21 +112,41 @@ export default function LandlordDashboard({ db, appId, user }) {
         }
     };
 
-    // --- NEW: INLINE EDITING LOGIC ---
     const handleEditClick = (tenant) => {
         setEditingId(tenant.id);
         setEditName(tenant.name);
         setEditTier(tenant.tier || 2);
     };
 
+    // --- UPGRADED: DATABASE SWEEPER FOR EDITING ---
     const handleSaveEdit = async (tenant) => {
         if (!editName.trim()) return alert("Name cannot be empty");
         
         try {
-            await updateDoc(doc(db, `artifacts/${appId}/employee_directory`, tenant.id), {
-                name: editName.trim(),
-                tier: Number(editTier)
-            });
+            // Sweep for all documents matching the email and force the upgrade
+            const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', tenant.email));
+            const snap = await getDocs(q);
+            
+            const batch = writeBatch(db);
+            
+            if (!snap.empty) {
+                snap.docs.forEach(d => {
+                    batch.update(d.ref, {
+                        name: editName.trim(),
+                        tier: Number(editTier),
+                        role: 'COMPANY_OWNER' // Force admin clearance
+                    });
+                });
+            } else {
+                // Fallback if no matching email array exists
+                batch.update(doc(db, `artifacts/${appId}/employee_directory`, tenant.id), {
+                    name: editName.trim(),
+                    tier: Number(editTier),
+                    role: 'COMPANY_OWNER'
+                });
+            }
+            
+            await batch.commit();
             setEditingId(null);
         } catch (err) {
             console.error(err);
@@ -108,11 +154,21 @@ export default function LandlordDashboard({ db, appId, user }) {
         }
     };
 
-    // --- NEW: PERMANENT DELETE LOGIC ---
+    // --- UPGRADED: DATABASE SWEEPER FOR DELETING ---
     const handleDelete = async (tenant) => {
         if (window.confirm(`CRITICAL WARNING: Are you sure you want to permanently delete ${tenant.name}? This action cannot be undone.`)) {
             try {
-                await deleteDoc(doc(db, `artifacts/${appId}/employee_directory`, tenant.id));
+                // Sweep and eradicate all ghost profiles matching this email
+                const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', tenant.email));
+                const snap = await getDocs(q);
+                
+                const batch = writeBatch(db);
+                if (!snap.empty) {
+                    snap.docs.forEach(d => batch.delete(d.ref));
+                } else {
+                    batch.delete(doc(db, `artifacts/${appId}/employee_directory`, tenant.id));
+                }
+                await batch.commit();
             } catch (err) {
                 console.error(err);
                 alert("Failed to delete record.");
@@ -211,7 +267,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                                         </div>
                                         
                                         <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
-                                            ID: <span className="text-slate-400">{t.bossUid}</span>
+                                            ID: <span className="text-slate-400">{t.email}</span>
                                         </p>
                                     </div>
 
