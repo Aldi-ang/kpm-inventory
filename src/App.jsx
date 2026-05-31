@@ -276,18 +276,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       triggerCapy("Deep-fetching system databases and intelligence... ⏳");
       
       let mapSettings = [];
-      let mapCollectionName = 'mapBorders';
       try {
-          // 🚀 THE FIX: Deep-Sweep all possible boundary collections using the master userId
-          const borderCollections = ['mapBorders', 'mapSettings', 'boundaries', 'regions'];
-          for (const colName of borderCollections) {
-              const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/${colName}`));
-              if (!snap.empty) {
-                  mapSettings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                  mapCollectionName = colName;
-                  break;
-              }
-          }
+          // 🚀 THE FIX: Strictly lock to mapSettings
+          const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+          mapSettings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (e) { console.warn("Could not fetch map boundaries", e); }
 
       // NEW: Explicitly deep-fetch Competitor Intelligence (Benchmarks)
@@ -459,7 +451,6 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         for (const cust of customers) {
             const custCopy = { ...cust };
             try {
-                // 🚀 THE FIX: Use 'userId' to ensure it grabs from the active vault
                 const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/customers/${cust.id}/benchmarks`));
                 custCopy.benchmarks = benchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             } catch (e) {
@@ -474,21 +465,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     if (type === 'both') {
         exportData.tierSettings = tierSettings;
         try {
-            // 🚀 THE FIX: Deep-Sweep scanner to catch the GeoJSON no matter what it's named
-            let mapData = [];
-            let foundCollection = 'mapBorders';
-            const borderCollections = ['mapBorders', 'mapSettings', 'boundaries', 'regions'];
-            
-            for (const colName of borderCollections) {
-                const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/${colName}`));
-                if (!snap.empty) {
-                    mapData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    foundCollection = colName;
-                    break;
-                }
-            }
-            exportData.mapSettings = mapData;
-            exportData.mapCollectionName = foundCollection;
+            // 🚀 THE FIX: Strictly export from mapSettings
+            const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+            exportData.mapSettings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         } catch (e) { console.warn("Could not fetch map settings", e); }
     }
 
@@ -522,12 +501,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 data.customers.forEach(c => {
                     const cData = { ...c };
                     const benchmarks = cData.benchmarks || [];
-                    delete cData.benchmarks; // Keep main profile clean
+                    delete cData.benchmarks; 
 
-                    // Save customer
                     batch.set(doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id), cData);
-                    
-                    // Save deep competitor data
                     benchmarks.forEach(b => {
                         batch.set(doc(db, `artifacts/${appId}/users/${userId}/customers/${c.id}/benchmarks`, b.id), b);
                     });
@@ -538,24 +514,33 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
             if (targetType === 'both') {
                 if (data.tierSettings) {
                     batch.set(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'tiers'), { list: data.tierSettings });
-                    setTierSettings(data.tierSettings); // Update UI state instantly
+                    setTierSettings(data.tierSettings); 
                 }
-                if (data.mapSettings && Array.isArray(data.mapSettings) && data.mapSettings.length > 0) {
-                    // Target the exact collection the borders originally came from
-                    const targetCollection = data.mapCollectionName || 'mapBorders';
+                if (data.mapSettings && Array.isArray(data.mapSettings)) {
+                    // 🚀 THE FIX: Strictly lock the import to mapSettings so the Map UI can actually find it
                     data.mapSettings.forEach(mapObj => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/${targetCollection}`, mapObj.id), mapObj);
+                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, mapObj.id), mapObj);
                     });
                 }
             }
             
             await batch.commit();
-            triggerCapy(`${targetType.toUpperCase()} data imported successfully!`);
+            triggerCapy(`${targetType.toUpperCase()} data imported successfully! Refreshing map data...`);
+            
+            // Force a rapid reload to ensure the map boundary UI fetches the newly imported data
+            if (targetType === 'both') {
+                setTimeout(() => window.location.reload(), 1500);
+            }
         } catch (err) { alert("Import Failed: " + err.message); }
     };
     reader.readAsText(file);
     e.target.value = null; 
   };
+
+
+
+
+
 
 
 const handleGitHubMirror = async () => {
@@ -2285,7 +2270,6 @@ const handleGitHubMirror = async () => {
               const queueToBatch = (collectionName, items) => {
                   if (items && Array.isArray(items)) {
                       items.forEach(item => {
-                          // 🚀 THE FIX: Use userId for deep restore
                           safeSet(doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, item.id || Date.now().toString()), item);
                       });
                   }
@@ -2297,8 +2281,8 @@ const handleGitHubMirror = async () => {
               queueToBatch('samplings', data.samplings);
               queueToBatch('procurement', data.procurements);
               queueToBatch('audit_logs', data.auditLogs);
-              // 🚀 THE FIX: Dynamically restore to the correct boundary collection
-              queueToBatch(data.mapCollectionName || 'mapBorders', data.mapSettings); 
+              // 🚀 THE FIX: Strictly lock to mapSettings
+              queueToBatch('mapSettings', data.mapSettings); 
 
               // 2. Deep Restore Customers & Competitor Intelligence
               if (data.customers && Array.isArray(data.customers)) {
