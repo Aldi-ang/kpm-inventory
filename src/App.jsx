@@ -276,15 +276,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       triggerCapy("Deep-fetching system databases and intelligence... ⏳");
       
       let mapSettings = [];
-      let mapBorders = [];
       try {
-          // 🚀 SCORCHED EARTH FIX: Fetch EVERYTHING from both possible map folders
-          const snapSettings = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
-          mapSettings = snapSettings.docs.map(d => ({ id: d.id, ...d.data() }));
-          
-          const snapBorders = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapBorders`));
-          mapBorders = snapBorders.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch (e) { console.warn("Could not fetch map boundaries", e); }
+          // 🚀 THE FIX: Use 'userId' (Master Vault) instead of 'user.uid'
+          const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+          mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { console.warn("Could not fetch map settings"); }
 
       // NEW: Explicitly deep-fetch Competitor Intelligence (Benchmarks)
       const deepCustomers = [];
@@ -431,7 +427,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     }
   };
 
-  // --- 2. GRANULAR TEAM SHARING: EXPORT (WITH DEEP FETCH) ---
+ // --- 2. GRANULAR TEAM SHARING: EXPORT (WITH DEEP FETCH) ---
   const handleExportGranular = async (type) => {
     if(!user) return;
     let exportData = {
@@ -455,6 +451,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         for (const cust of customers) {
             const custCopy = { ...cust };
             try {
+                // 🚀 THE FIX: Use userId (Master Vault)
                 const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/customers/${cust.id}/benchmarks`));
                 custCopy.benchmarks = benchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             } catch (e) {
@@ -468,13 +465,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     if (type === 'both') {
         exportData.tierSettings = tierSettings;
         try {
-            // 🚀 SCORCHED EARTH EXPORT: Grab EVERYTHING from both possible map boundary folders
-            const snapSettings = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
-            exportData.mapSettings = snapSettings.docs.map(d => ({ id: d.id, ...d.data() }));
-            
-            const snapBorders = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapBorders`));
-            exportData.mapBorders = snapBorders.docs.map(d => ({ id: d.id, ...d.data() }));
-        } catch (e) { console.warn("Could not fetch map settings", e); }
+            // 🚀 THE FIX: Use userId (Master Vault)
+            const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
+            exportData.mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) { console.warn("Could not fetch map settings"); }
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -500,6 +494,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
             if ((targetType === 'products' || targetType === 'both') && data.inventory) {
                 data.inventory.forEach(item => {
+                    // 🚀 THE FIX: Use userId
                     batch.set(doc(db, `artifacts/${appId}/users/${userId}/products`, item.id), item);
                 });
             }
@@ -521,26 +516,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                     batch.set(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'tiers'), { list: data.tierSettings });
                     setTierSettings(data.tierSettings); 
                 }
-                
-                // 🚀 SCORCHED EARTH IMPORT: Write boundaries to BOTH collections AND BOTH UIDs!
-                // This completely destroys the "Tier 2 Manager Map is Blank" race condition.
-                const mapArrays = [
-                    { items: data.mapSettings, col: 'mapSettings' },
-                    { items: data.mapBorders, col: 'mapBorders' }
-                ];
-                
-                mapArrays.forEach(({ items, col }) => {
-                    if (items && Array.isArray(items)) {
-                        items.forEach(mapObj => {
-                            // Save to Master Boss Vault
-                            batch.set(doc(db, `artifacts/${appId}/users/${userId}/${col}`, mapObj.id), mapObj);
-                            // Forcefully inject directly into the Active User's personal vault!
-                            if (userId !== user.uid) {
-                                batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/${col}`, mapObj.id), mapObj);
-                            }
-                        });
-                    }
-                });
+                if (data.mapSettings && Array.isArray(data.mapSettings)) {
+                    data.mapSettings.forEach(mapObj => {
+                        // 🚀 SCORCHED EARTH: Write boundaries to BOTH Master Vault and Personal Vault!
+                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, mapObj.id), mapObj);
+                        if (userId !== user.uid) {
+                            batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, mapObj.id), mapObj);
+                        }
+                    });
+                }
             }
             
             await batch.commit();
@@ -2288,11 +2272,8 @@ const handleGitHubMirror = async () => {
               const queueToBatch = (collectionName, items) => {
                   if (items && Array.isArray(items)) {
                       items.forEach(item => {
+                          // 🚀 THE FIX: Deep Restore to Master Vault
                           safeSet(doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, item.id || Date.now().toString()), item);
-                          // Backup injection for active user
-                          if (userId !== user.uid) {
-                              safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/${collectionName}`, item.id || Date.now().toString()), item);
-                          }
                       });
                   }
               };
@@ -2303,6 +2284,7 @@ const handleGitHubMirror = async () => {
               queueToBatch('samplings', data.samplings);
               queueToBatch('procurement', data.procurements);
               queueToBatch('audit_logs', data.auditLogs);
+              queueToBatch('mapSettings', data.mapSettings);
               
               // 🚀 SCORCHED EARTH: Restore to both possible map endpoints
               if (data.mapSettings) queueToBatch('mapSettings', data.mapSettings); 
