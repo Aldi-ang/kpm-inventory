@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs } from 'firebase/firestore';
-import { Building2, Power, UserPlus, ShieldAlert, CheckCircle } from 'lucide-react';
+import { Building2, Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck } from 'lucide-react';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
     const [newEmail, setNewEmail] = useState('');
     const [newName, setNewName] = useState('');
+    const [newTier, setNewTier] = useState(2); // 🚀 DEFAULT TO TIER 2
 
     useEffect(() => {
         if (!user) return;
@@ -22,18 +23,21 @@ export default function LandlordDashboard({ db, appId, user }) {
         if (!emailClean || !newName) return;
 
         try {
+            // 🚀 THE FIX: We now explicitly write the 'tier' integer to the database
             await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailClean), {
                 email: emailClean,
                 name: newName,
                 role: 'COMPANY_OWNER',
+                tier: Number(newTier), 
                 status: 'Active',
                 subscriptionStatus: 'ACTIVE',
-                bossUid: emailClean, // Temporary lock until first login
+                bossUid: emailClean, 
                 createdAt: new Date().toISOString()
             });
             setNewEmail('');
             setNewName('');
-            alert("Tenant created! They can now log in to initialize their vault.");
+            setNewTier(2);
+            alert(`✅ Provisioned successfully! They are now assigned to Tier ${newTier}.`);
         } catch (err) {
             console.error(err);
             alert("Failed to create tenant.");
@@ -92,6 +96,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                     </div>
                 </div>
 
+                {/* THE UPGRADED PROVISIONING FORM */}
                 <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-black/60 p-5 rounded-lg border border-white/10 shadow-inner">
                     <input 
                         value={newName} onChange={e=>setNewName(e.target.value)} 
@@ -101,11 +106,22 @@ export default function LandlordDashboard({ db, appId, user }) {
                     />
                     <input 
                         type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} 
-                        placeholder="ADMINISTRATOR IDENTIFIER (EMAIL)" 
+                        placeholder="ADMIN IDENTIFIER (EMAIL)" 
                         className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" 
                         required 
                     />
-                    <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2">
+                    
+                    {/* TIER CLEARANCE SELECTOR */}
+                    <select
+                        value={newTier}
+                        onChange={(e) => setNewTier(e.target.value)}
+                        className="bg-black border border-white/20 text-white p-3 text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 cursor-pointer"
+                    >
+                        <option value="1">TIER 1 (OVERSEER)</option>
+                        <option value="2">TIER 2 (MANAGER)</option>
+                    </select>
+
+                    <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                         <UserPlus size={16}/> Provision
                     </button>
                 </form>
@@ -113,12 +129,27 @@ export default function LandlordDashboard({ db, appId, user }) {
                 <div className="space-y-3">
                     {tenants.map(t => (
                         <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-black/80 border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-emerald-900/50 border-l-4 border-l-emerald-500 hover:bg-emerald-900/10' : 'border-red-900/50 border-l-4 border-l-red-500 hover:bg-red-900/10'}`}>
+                            
                             <div className="text-center md:text-left mb-4 md:mb-0">
-                                <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
-                                <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-1 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
+                                <div className="flex flex-col md:flex-row items-center gap-3">
+                                    <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
+                                    
+                                    {/* CLEARANCE BADGES */}
+                                    <span className={`text-[9px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
+                                        t.tier === 1 
+                                        ? 'border-red-900 text-red-500 bg-red-950/20' 
+                                        : 'border-emerald-900 text-emerald-500 bg-emerald-950/20'
+                                    }`}>
+                                        {t.tier === 1 ? <ShieldAlert size={10}/> : <ShieldCheck size={10}/>}
+                                        TIER {t.tier || 1}
+                                    </span>
+                                </div>
+                                
+                                <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
                                     ID: <span className="text-slate-400">{t.bossUid}</span>
                                 </p>
                             </div>
+
                             <div className="flex items-center gap-6">
                                 {t.subscriptionStatus === 'ACTIVE' ? (
                                     <span className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
