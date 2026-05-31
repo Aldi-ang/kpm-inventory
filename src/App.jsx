@@ -129,9 +129,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [inputPin, setInputPin] = useState("");         
   const [isSetupMode, setIsSetupMode] = useState(false); 
 
-  const [loginError, setLoginError] = useState(null); // <--- Add this to track login errors
+  const [loginError, setLoginError] = useState(null); 
   const [backupToast, setBackupToast] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(localStorage.getItem('passkeyRegistered') === 'true');
+
+  // 🚀 THE ONBOARDING BRIDGE STATE
+  const [pendingMigration, setPendingMigration] = useState(null);
 
 // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
   const [userRole, setUserRole] = useState('ADMIN'); 
@@ -630,6 +633,24 @@ const handleGitHubMirror = async () => {
         const scrambledWordHash = await hashSecretWord(setupSecret);
         const scrambledPinHash = await hashSecretWord(setupPassword);
         
+        // 🚀 THE HANDSHAKE: Execute Account Migration if pending
+        if (pendingMigration) {
+            const batch = writeBatch(db);
+            // Create the true UID profile, forcefully overriding any Tier 4 Ghost
+            batch.set(pendingMigration.newRef, {
+                ...pendingMigration.data,
+                bossUid: user.uid, // Permanently claim the ID
+                createdAt: serverTimestamp(),
+                migratedAt: serverTimestamp()
+            });
+            // Eradicate the old Email profile from the database
+            batch.delete(pendingMigration.oldRef);
+            await batch.commit();
+            
+            setPendingMigration(null);
+            triggerCapy("Account Migration Complete. Welcome to Cello CRM!");
+        }
+
         await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
             pin: scrambledPinHash,           
             recoveryHash: scrambledWordHash, 
@@ -1393,68 +1414,76 @@ const handleGitHubMirror = async () => {
                 setIsSystemOwner(false);
 
                 // 🏢 TIER 2-4 CHECK: NORMAL EMPLOYEES & CLIENTS 🏢
-                const directoryRef = doc(db, `artifacts/${appId}/employee_directory`, email);
-                const directorySnap = await getDoc(directoryRef);
+                const uidRef = doc(db, `artifacts/${appId}/employee_directory`, currentUser.uid);
+                const emailRef = doc(db, `artifacts/${appId}/employee_directory`, email);
 
-                if (directorySnap.exists()) {
-                    const data = directorySnap.data();
+                const uidSnap = await getDoc(uidRef);
+                const emailSnap = await getDoc(emailRef);
 
+                let activeData = null;
+
+                // 🚀 THE INTERCEPT: Check for Architect's pre-provisioned Email profile first
+                if (emailSnap.exists() && emailSnap.data().role === 'COMPANY_OWNER') {
+                    activeData = emailSnap.data();
+                    
+                    // If true UID profile doesn't exist or is a ghost, flag for migration Handshake!
+                    if (!uidSnap.exists() || uidSnap.data().role !== 'COMPANY_OWNER') {
+                        setPendingMigration({ oldRef: emailRef, newRef: uidRef, data: activeData });
+                    }
+                } else if (uidSnap.exists()) {
+                    activeData = uidSnap.data();
+                }
+
+                if (activeData) {
                     // 🚨 KILL SWITCH: Instantly reject suspended Tenants & Salesmen
-                    if (data.subscriptionStatus === 'SUSPENDED' || data.status === 'SUSPENDED') {
+                    if (activeData.subscriptionStatus === 'SUSPENDED' || activeData.status === 'SUSPENDED') {
                         alert("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
                         signOut(auth);
                         setUser(null);
                         return;
                     }
 
-                    // 🚨 AUTO-CLAIM: Translate pre-registered Email to permanent Google UID
-                    if (currentUser.uid === data.bossUid || currentUser.email === data.bossUid) {
-                        if (currentUser.email === data.bossUid) {
-                            await updateDoc(directoryRef, { bossUid: currentUser.uid });
-                        }
-
+                    if (activeData.role === 'COMPANY_OWNER') {
                         // 🚨 THIS IS THE BOSS: They MUST be ADMIN
                         setBossUid(null);
                         setUserRole('ADMIN'); 
                         setAgentProfileId(null);
                         setUser(currentUser);
-                        setIsAdmin(false); // Still requires PIN
+                        setIsAdmin(false); // Still requires PIN setup/login
                     } 
-                    else if (data.status === 'Active') {
-                        setBossUid(data.bossUid);
-                        
-                        setUserRole(data.userRole || 'AGENT'); 
-                        setAgentProfileId(data.agentId);
+                    else {
+                        // Field Agents (Tier 3 / Tier 4)
+                        setBossUid(activeData.bossUid);
+                        setUserRole(activeData.userRole || 'AGENT'); 
+                        setAgentProfileId(activeData.agentId);
 
                         const hijackedUser = {
-                            uid: data.bossUid,            
+                            uid: activeData.bossUid,            
                             email: currentUser.email,
-                            displayName: data.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
+                            displayName: activeData.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
-                            role: data.role,             
-                            userRole: data.userRole || 'AGENT', 
-                            agentId: data.agentId,
-                            location: data.location || "" // 🚀 FIX 1: Blank string allows the app to fetch the real location!
+                            role: activeData.role,             
+                            userRole: activeData.userRole || 'AGENT', 
+                            agentId: activeData.agentId,
+                            location: activeData.location || "" 
                         };
                         
                         setUser(hijackedUser);
                         setIsAdmin(false); 
                         setActiveTab('journey'); 
-                     
-                    } else {
-                        alert("Your access has been revoked by the Administrator.");
-                        signOut(auth);
-                        setUser(null);
                     }
                 } else {
-                    // 🚨 THE FIX: UNKNOWN LOGINS ARE LOCKED OUT 🚨
+                    // 🚨 UNKNOWN LOGINS ARE LOCKED OUT 🚨
                     setBossUid(null);
                     setUserRole('UNAUTHORIZED'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
                     setIsAdmin(false); 
                 }
+
+
+
             } catch (error) {
                 console.error("Traffic Cop Error:", error);
                 // 🚨 SECURE FALLBACK ON ERROR 🚨
@@ -2511,12 +2540,21 @@ const handleGitHubMirror = async () => {
             {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
             {isSetupMode ? (
                 <div className="space-y-4 text-left">
-                    <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
+                    {/* 🚀 NEW: The Welcome Bridge UI */}
+                    {pendingMigration ? (
+                        <div className="mb-6 text-center border-b border-emerald-500/30 pb-4 animate-fade-in">
+                            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to Cello CRM</h3>
+                            <p className="text-emerald-500 text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
+                            <p className="text-slate-400 text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
+                        </div>
+                    ) : (
+                        <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
+                    )}
                     
                     <div className="relative">
                         <input 
                             type="password" 
-                            placeholder="CREATE MASTER PASSWORD" 
+                            placeholder="CREATE MASTER PASSWORD"
                             value={setupPassword}
                             onChange={(e) => setSetupPassword(e.target.value)}
                             className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-lg outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" 
