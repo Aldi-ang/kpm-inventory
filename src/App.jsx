@@ -636,19 +636,23 @@ const handleGitHubMirror = async () => {
         // 🚀 THE HANDSHAKE: Execute Account Migration if pending
         if (pendingMigration) {
             const batch = writeBatch(db);
+            // Safely reconstruct the Document References here
+            const oldRef = doc(db, `artifacts/${appId}/employee_directory`, pendingMigration.oldId);
+            const newRef = doc(db, `artifacts/${appId}/employee_directory`, pendingMigration.newId);
+
             // Create the true UID profile, forcefully overriding any Tier 4 Ghost
-            batch.set(pendingMigration.newRef, {
+            batch.set(newRef, {
                 ...pendingMigration.data,
                 bossUid: user.uid, // Permanently claim the ID
                 createdAt: serverTimestamp(),
                 migratedAt: serverTimestamp()
             });
             // Eradicate the old Email profile from the database
-            batch.delete(pendingMigration.oldRef);
+            batch.delete(oldRef);
             await batch.commit();
             
             setPendingMigration(null);
-            triggerCapy("Account Migration Complete. Welcome to Cello CRM!");
+            triggerCapy(`Account Migration Complete. Welcome to ${appSettings?.companyName || "the system"}!`);
         }
 
         await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
@@ -670,7 +674,7 @@ const handleGitHubMirror = async () => {
         alert("Security Protocol Established! Vault Unlocked.");
     } catch (error) {
         console.error("Save Error:", error);
-        alert(`Database Error: Could not save credentials.`);
+        alert(`Database Error: ${error.message || "Could not save credentials."}`);
     }
   };
 
@@ -1425,10 +1429,11 @@ const handleGitHubMirror = async () => {
                 // 🚀 THE INTERCEPT: Check for Architect's pre-provisioned Email profile first
                 if (emailSnap.exists() && emailSnap.data().role === 'COMPANY_OWNER') {
                     activeData = emailSnap.data();
-                    
+
                     // If true UID profile doesn't exist or is a ghost, flag for migration Handshake!
                     if (!uidSnap.exists() || uidSnap.data().role !== 'COMPANY_OWNER') {
-                        setPendingMigration({ oldRef: emailRef, newRef: uidRef, data: activeData });
+                        // SAFER: Store strings instead of Firebase References in React State to prevent proxy crashes
+                        setPendingMigration({ oldId: email, newId: currentUser.uid, data: activeData });
                     }
                 } else if (uidSnap.exists()) {
                     activeData = uidSnap.data();
@@ -2543,7 +2548,7 @@ const handleGitHubMirror = async () => {
                     {/* 🚀 NEW: The Welcome Bridge UI */}
                     {pendingMigration ? (
                         <div className="mb-6 text-center border-b border-emerald-500/30 pb-4 animate-fade-in">
-                            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to Cello CRM</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
                             <p className="text-emerald-500 text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
                             <p className="text-slate-400 text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
                         </div>
