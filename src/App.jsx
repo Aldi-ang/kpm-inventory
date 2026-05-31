@@ -915,7 +915,6 @@ const handleGitHubMirror = async () => {
       { id: 'Epic', label: 'Epic', color: '#8b5cf6', iconType: 'emoji', value: '🔥' },
       { id: 'Grandmaster', label: 'Grandmaster', color: '#ec4899', iconType: 'emoji', value: '⚔️' },
       { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },
-      // 🚀 INJECTED: Unranked baseline for stores with lowest XP
       { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
   ];
   const [tierSettings, setTierSettings] = useState(DEFAULT_TIERS);
