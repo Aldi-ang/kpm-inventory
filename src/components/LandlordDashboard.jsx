@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs } from 'firebase/firestore';
-import { Building2, Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck } from 'lucide-react';
+import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
+    
+    // Provisioning State
     const [newEmail, setNewEmail] = useState('');
     const [newName, setNewName] = useState('');
-    const [newTier, setNewTier] = useState(2); // 🚀 DEFAULT TO TIER 2
+    const [newTier, setNewTier] = useState(2); // DEFAULT TO TIER 2
+
+    // Editing State
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState('');
+    const [editTier, setEditTier] = useState(2);
 
     useEffect(() => {
         if (!user) return;
@@ -23,7 +30,6 @@ export default function LandlordDashboard({ db, appId, user }) {
         if (!emailClean || !newName) return;
 
         try {
-            // 🚀 THE FIX: We now explicitly write the 'tier' integer to the database
             await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailClean), {
                 email: emailClean,
                 name: newName,
@@ -80,6 +86,40 @@ export default function LandlordDashboard({ db, appId, user }) {
         }
     };
 
+    // --- NEW: INLINE EDITING LOGIC ---
+    const handleEditClick = (tenant) => {
+        setEditingId(tenant.id);
+        setEditName(tenant.name);
+        setEditTier(tenant.tier || 2);
+    };
+
+    const handleSaveEdit = async (tenant) => {
+        if (!editName.trim()) return alert("Name cannot be empty");
+        
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/employee_directory`, tenant.id), {
+                name: editName.trim(),
+                tier: Number(editTier)
+            });
+            setEditingId(null);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to save changes.");
+        }
+    };
+
+    // --- NEW: PERMANENT DELETE LOGIC ---
+    const handleDelete = async (tenant) => {
+        if (window.confirm(`CRITICAL WARNING: Are you sure you want to permanently delete ${tenant.name}? This action cannot be undone.`)) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/employee_directory`, tenant.id));
+            } catch (err) {
+                console.error(err);
+                alert("Failed to delete record.");
+            }
+        }
+    };
+
    return (
         <div className="bg-black/95 border border-red-900/50 p-6 md:p-8 rounded-xl shadow-[0_0_40px_rgba(220,38,38,0.1)] mb-8 animate-fade-in relative overflow-hidden">
             {/* BACKGROUND TEXTURE */}
@@ -96,7 +136,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                     </div>
                 </div>
 
-                {/* THE UPGRADED PROVISIONING FORM */}
+                {/* PROVISIONING FORM */}
                 <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-black/60 p-5 rounded-lg border border-white/10 shadow-inner">
                     <input 
                         value={newName} onChange={e=>setNewName(e.target.value)} 
@@ -111,7 +151,6 @@ export default function LandlordDashboard({ db, appId, user }) {
                         required 
                     />
                     
-                    {/* TIER CLEARANCE SELECTOR */}
                     <select
                         value={newTier}
                         onChange={(e) => setNewTier(e.target.value)}
@@ -130,40 +169,90 @@ export default function LandlordDashboard({ db, appId, user }) {
                     {tenants.map(t => (
                         <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-black/80 border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-emerald-900/50 border-l-4 border-l-emerald-500 hover:bg-emerald-900/10' : 'border-red-900/50 border-l-4 border-l-red-500 hover:bg-red-900/10'}`}>
                             
-                            <div className="text-center md:text-left mb-4 md:mb-0">
-                                <div className="flex flex-col md:flex-row items-center gap-3">
-                                    <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
-                                    
-                                    {/* CLEARANCE BADGES */}
-                                    <span className={`text-[9px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
-                                        t.tier === 1 
-                                        ? 'border-red-900 text-red-500 bg-red-950/20' 
-                                        : 'border-emerald-900 text-emerald-500 bg-emerald-950/20'
-                                    }`}>
-                                        {t.tier === 1 ? <ShieldAlert size={10}/> : <ShieldCheck size={10}/>}
-                                        TIER {t.tier || 1}
-                                    </span>
+                            {editingId === t.id ? (
+                                /* INLINE EDIT MODE */
+                                <div className="w-full flex flex-col md:flex-row gap-3 items-center justify-between animate-fade-in">
+                                    <div className="flex-1 flex gap-2 w-full">
+                                        <input 
+                                            value={editName} 
+                                            onChange={e=>setEditName(e.target.value)} 
+                                            className="flex-1 bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400" 
+                                            placeholder="Update Name"
+                                        />
+                                        <select 
+                                            value={editTier} 
+                                            onChange={e=>setEditTier(e.target.value)} 
+                                            className="bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400 cursor-pointer"
+                                        >
+                                            <option value="1">TIER 1</option>
+                                            <option value="2">TIER 2</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                                        <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-emerald-900/30 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
+                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-slate-900/30 text-slate-500 hover:bg-slate-600 hover:text-white border border-slate-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
+                                    </div>
                                 </div>
-                                
-                                <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
-                                    ID: <span className="text-slate-400">{t.bossUid}</span>
-                                </p>
-                            </div>
+                            ) : (
+                                /* NORMAL DISPLAY MODE */
+                                <>
+                                    <div className="text-center md:text-left mb-4 md:mb-0 w-full md:w-auto">
+                                        <div className="flex flex-col md:flex-row items-center gap-3">
+                                            <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
+                                            
+                                            <span className={`text-[9px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
+                                                t.tier === 1 
+                                                ? 'border-red-900 text-red-500 bg-red-950/20' 
+                                                : 'border-emerald-900 text-emerald-500 bg-emerald-950/20'
+                                            }`}>
+                                                {t.tier === 1 ? <ShieldAlert size={10}/> : <ShieldCheck size={10}/>}
+                                                TIER {t.tier || 1}
+                                            </span>
+                                        </div>
+                                        
+                                        <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
+                                            ID: <span className="text-slate-400">{t.bossUid}</span>
+                                        </p>
+                                    </div>
 
-                            <div className="flex items-center gap-6">
-                                {t.subscriptionStatus === 'ACTIVE' ? (
-                                    <span className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
-                                ) : (
-                                    <span className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
-                                )}
-                                <button 
-                                    onClick={() => toggleSubscription(t)} 
-                                    className={`p-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-red-900/20 text-red-500 border-red-500/50 hover:bg-red-600 hover:text-white' : 'bg-emerald-900/20 text-emerald-500 border-emerald-500/50 hover:bg-emerald-600 hover:text-white'}`}
-                                >
-                                    <Power size={14} />
-                                    {t.subscriptionStatus === 'ACTIVE' ? 'TERMINATE' : 'RESTORE'}
-                                </button>
-                            </div>
+                                    <div className="flex items-center justify-between w-full md:w-auto gap-4 border-t border-white/5 md:border-none pt-4 md:pt-0">
+                                        <div className="hidden md:flex">
+                                            {t.subscriptionStatus === 'ACTIVE' ? (
+                                                <span className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
+                                            ) : (
+                                                <span className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="flex gap-2 w-full md:w-auto">
+                                            <button 
+                                                onClick={() => toggleSubscription(t)} 
+                                                className={`flex-1 md:flex-none p-2 md:px-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-red-900/20 text-red-500 border-red-500/50 hover:bg-red-600 hover:text-white' : 'bg-emerald-900/20 text-emerald-500 border-emerald-500/50 hover:bg-emerald-600 hover:text-white'}`}
+                                                title={t.subscriptionStatus === 'ACTIVE' ? "Suspend User" : "Restore User"}
+                                            >
+                                                <Power size={14} />
+                                                <span className="md:hidden">{t.subscriptionStatus === 'ACTIVE' ? 'SUSPEND' : 'RESTORE'}</span>
+                                            </button>
+
+                                            <button 
+                                                onClick={() => handleEditClick(t)} 
+                                                className="p-2 md:px-3 bg-blue-900/20 text-blue-500 border-blue-500/50 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
+                                                title="Edit User"
+                                            >
+                                                <Edit size={14} />
+                                            </button>
+
+                                            <button 
+                                                onClick={() => handleDelete(t)} 
+                                                className="p-2 md:px-3 bg-slate-900/20 text-slate-500 border-slate-500/50 hover:bg-red-600 hover:border-red-500 hover:text-white transition-all flex items-center justify-center"
+                                                title="Permanently Delete User"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ))}
                     {tenants.length === 0 && (
