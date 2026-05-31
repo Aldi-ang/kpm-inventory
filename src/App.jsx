@@ -462,6 +462,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         exportData.customers = deepCustomers; 
     }
 
+    // 🚀 NEW: Bundle Map Borders & Tier Icons for "Full Configuration" (Both)
+    if (type === 'both') {
+        exportData.tierSettings = tierSettings;
+        try {
+            const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/mapSettings`));
+            exportData.mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) { console.warn("Could not fetch map settings"); }
+    }
+
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -502,6 +511,19 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                         batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${c.id}/benchmarks`, b.id), b);
                     });
                 });
+            }
+
+            // 🚀 NEW: Restore Map Borders and Tier Settings if they exist in the payload
+            if (targetType === 'both') {
+                if (data.tierSettings) {
+                    batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: data.tierSettings });
+                    setTierSettings(data.tierSettings); // Update UI state instantly
+                }
+                if (data.mapSettings && Array.isArray(data.mapSettings)) {
+                    data.mapSettings.forEach(mapObj => {
+                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, mapObj.id), mapObj);
+                    });
+                }
             }
             
             await batch.commit();
