@@ -275,12 +275,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const generateFullSystemPayload = async (type) => {
       triggerCapy("Deep-fetching system databases and intelligence... ⏳");
       
-      let mapSettings = [];
+      let mapBorders = [];
       try {
-          // 🚀 THE FIX: Use 'userId' (Master Vault) instead of 'user.uid'
-          const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
-          mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch (e) { console.warn("Could not fetch map settings"); }
+          // 🚀 THE FIX: Correctly target mapBorders instead of mapSettings
+          const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapBorders`));
+          mapBorders = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) { console.warn("Could not fetch map borders"); }
 
       // NEW: Explicitly deep-fetch Competitor Intelligence (Benchmarks)
       const deepCustomers = [];
@@ -295,7 +295,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
       return {
           meta: { type, ts: getCurrentTimestamp(), user: user.email },
-          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapSettings, mapBorders
+          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders
       };
   };
 
@@ -465,10 +465,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     if (type === 'both') {
         exportData.tierSettings = tierSettings;
         try {
-            // 🚀 THE FIX: Use userId (Master Vault)
-            const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
-            exportData.mapSettings = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        } catch (e) { console.warn("Could not fetch map settings"); }
+            // 🚀 THE FIX: Target mapBorders
+            const mapSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapBorders`));
+            exportData.mapBorders = mapSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) { console.warn("Could not fetch map borders"); }
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -516,12 +516,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                     batch.set(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'tiers'), { list: data.tierSettings });
                     setTierSettings(data.tierSettings); 
                 }
-                if (data.mapSettings && Array.isArray(data.mapSettings)) {
-                    data.mapSettings.forEach(mapObj => {
+                
+                // 🚀 THE FIX: Check for mapBorders (and fallback to mapSettings if older file)
+                const bordersToImport = data.mapBorders || data.mapSettings;
+                if (bordersToImport && Array.isArray(bordersToImport)) {
+                    bordersToImport.forEach(mapObj => {
                         // 🚀 SCORCHED EARTH: Write boundaries to BOTH Master Vault and Personal Vault!
-                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, mapObj.id), mapObj);
+                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/mapBorders`, mapObj.id), mapObj);
                         if (userId !== user.uid) {
-                            batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/mapSettings`, mapObj.id), mapObj);
+                            batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/mapBorders`, mapObj.id), mapObj);
                         }
                     });
                 }
@@ -2284,7 +2287,12 @@ const handleGitHubMirror = async () => {
               queueToBatch('samplings', data.samplings);
               queueToBatch('procurement', data.procurements);
               queueToBatch('audit_logs', data.auditLogs);
-              queueToBatch('mapSettings', data.mapSettings);
+              
+              // 🚀 THE FIX: Restore mapBorders correctly
+              const bordersToRestore = data.mapBorders || data.mapSettings;
+              if (bordersToRestore) {
+                  queueToBatch('mapBorders', bordersToRestore); 
+              }
               
               // 🚀 SCORCHED EARTH: Restore to both possible map endpoints
               if (data.mapSettings) queueToBatch('mapSettings', data.mapSettings); 
