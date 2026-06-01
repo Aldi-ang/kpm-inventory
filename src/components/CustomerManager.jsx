@@ -66,13 +66,15 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 
         if (mapMode === 'street') {
              const loc = hasGPS ? `${customer.latitude},${customer.longitude}` : encodeURIComponent(customer.address || customer.name);
-             src = `https://maps.google.com/maps?q=$${loc}&layer=c&output=svembed`;
+             // Added cbll parameter for accurate street view positioning
+             src = `https://maps.google.com/maps?q=${loc}&layer=c&cbll=${loc}&output=svembed`;
         } else {
-             if (hasGPS) src = `https://maps.google.com/maps?q=$${customer.latitude},${customer.longitude}&z=18&output=embed`;
-             else {
+             if (hasGPS) {
+                 src = `https://maps.google.com/maps?q=${customer.latitude},${customer.longitude}&z=18&output=embed`;
+             } else {
                  let query = customer.address || customer.name;
                  if (customer.city) query += `, ${customer.city}`;
-                 src = `https://maps.google.com/maps?q=$${encodeURIComponent(query)}&z=15&output=embed`;
+                 src = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
              }
         }
 
