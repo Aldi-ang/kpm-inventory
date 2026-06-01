@@ -145,10 +145,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 newItems[index].name = product.name;
                 const tier = editingTrans.priceTier || 'Retail';
                 
-                // Bulletproof String-Stripping Number Cast
-                const pGrosir = parsePrice(product.grosirPrice) || parsePrice(product.price);
-                const pEcer = parsePrice(product.ecerPrice) || parsePrice(product.price);
-                const pRetail = parsePrice(product.retailPrice) || parsePrice(product.price);
+                // 🚀 THE ULTIMATE FALLBACK: Scans every single price field so it never hits 0
+                const fallbackPrice = parsePrice(product.retailPrice) || parsePrice(product.price) || parsePrice(product.grosirPrice) || parsePrice(product.ecerPrice) || 0;
+                
+                const pGrosir = parsePrice(product.grosirPrice) || fallbackPrice;
+                const pEcer = parsePrice(product.ecerPrice) || fallbackPrice;
+                const pRetail = parsePrice(product.retailPrice) || fallbackPrice;
                 
                 const basePrice = tier === 'Grosir' ? pGrosir : tier === 'Ecer' ? pEcer : pRetail;
                 const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
@@ -167,10 +169,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             const product = inventory.find(p => p.id === item.productId);
             if (!product) return item;
             
-            // Bulletproof String-Stripping Number Cast
-            const pGrosir = parsePrice(product.grosirPrice) || parsePrice(product.price);
-            const pEcer = parsePrice(product.ecerPrice) || parsePrice(product.price);
-            const pRetail = parsePrice(product.retailPrice) || parsePrice(product.price);
+            // 🚀 THE ULTIMATE FALLBACK
+            const fallbackPrice = parsePrice(product.retailPrice) || parsePrice(product.price) || parsePrice(product.grosirPrice) || parsePrice(product.ecerPrice) || 0;
+            
+            const pGrosir = parsePrice(product.grosirPrice) || fallbackPrice;
+            const pEcer = parsePrice(product.ecerPrice) || fallbackPrice;
+            const pRetail = parsePrice(product.retailPrice) || fallbackPrice;
             
             const basePrice = newTier === 'Grosir' ? pGrosir : newTier === 'Ecer' ? pEcer : pRetail;
             const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
