@@ -131,14 +131,43 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return { totalRev, totalProfit, count, items, payments, transactions: filteredTransactions };
     }, [filteredTransactions, inventory]);
 
-    const handleEditSubmit = async (e) => {
-        e.preventDefault();
+    const handleEditItemChange = (index, field, value) => {
+        const newItems = [...(editingTrans.items || [])];
+        newItems[index] = { ...newItems[index], [field]: value };
+
+        // Auto-update price if product or unit changes
+        if (field === 'productId' || field === 'unit') {
+            const product = inventory.find(p => p.id === newItems[index].productId);
+            if (product) {
+                newItems[index].name = product.name;
+                const tier = editingTrans.priceTier || 'Retail';
+                const basePrice = tier === 'Grosir' ? (product.grosirPrice || product.price) : tier === 'Ecer' ? (product.ecerPrice || product.price) : (product.retailPrice || product.price);
+                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((product.slopPerKarton || 10) * 10) : 1;
+                newItems[index].calculatedPrice = basePrice * multiplier;
+            }
+        }
+
+        const newTotal = newItems.reduce((sum, item) => sum + ((item.calculatedPrice || 0) * item.qty), 0);
+        setEditingTrans({ ...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal });
+    };
+
+    const handleEditTierChange = (e) => {
+        const newTier = e.target.value;
+        const newItems = (editingTrans.items || []).map(item => {
+            const product = inventory.find(p => p.id === item.productId);
+            if (!product) return item;
+            const basePrice = newTier === 'Grosir' ? (product.grosirPrice || product.price) : newTier === 'Ecer' ? (product.ecerPrice || product.price) : (product.retailPrice || product.price);
+            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((product.slopPerKarton || 10) * 10) : 1;
+            return { ...item, calculatedPrice: basePrice * multiplier };
+        });
+        const newTotal = newItems.reduce((sum, item) => sum + ((item.calculatedPrice || 0) * item.qty), 0);
+        setEditingTrans({ ...editingTrans, priceTier: newTier, items: newItems, total: newTotal, amountPaid: newTotal });
+    };
+
+    const handleEditSubmit = async () => {
         if(!editingTrans || !user) return;
-        const formData = new FormData(e.target);
-        
         try {
-            // 🚀 TIME MACHINE: Parse the requested fake date and force it into a valid millisecond timestamp
-            const rawDate = formData.get('date'); 
+            const rawDate = editingTrans.date; 
             let fakeTimestamp = serverTimestamp(); 
             
             if (rawDate) {
@@ -151,15 +180,26 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 }
             }
 
+            const cleanItems = (editingTrans.items || []).map(i => ({
+                productId: i.productId || '',
+                name: i.name || 'Unknown Item',
+                qty: Number(i.qty) || 1,
+                unit: i.unit || 'Bks',
+                calculatedPrice: Number(i.calculatedPrice) || 0
+            }));
+
             await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
                 date: rawDate,
-                customerName: formData.get('customerName'),
-                total: parseFloat(formData.get('total')) || 0,
+                customerName: editingTrans.customerName,
+                total: Number(editingTrans.total) || 0,
+                amountPaid: Number(editingTrans.total) || 0,
+                priceTier: editingTrans.priceTier || 'Retail',
+                items: cleanItems,
                 timestamp: fakeTimestamp,
                 updatedAt: serverTimestamp() 
             });
             
-            alert("✅ Time Travel Successful! The database has been rewritten.");
+            alert("✅ Advanced Audit Successful! The transaction and items have been rewritten.");
             setEditingTrans(null);
         } catch(err) { 
             alert(err.message); 
@@ -187,18 +227,74 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
              )}
 
             {editingTrans && (
-                 <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
-                         <h3 className="font-bold text-lg mb-4 dark:text-white">Edit Transaction</h3>
-                         <form onSubmit={handleEditSubmit} className="space-y-4">
-                             <div><label className="text-xs font-bold text-slate-500">Date</label><input name="date" type="date" defaultValue={editingTrans.date} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                             <div><label className="text-xs font-bold text-slate-500">Customer</label><input name="customerName" defaultValue={editingTrans.customerName} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                             <div><label className="text-xs font-bold text-slate-500">Total Value (Rp)</label><input name="total" type="number" defaultValue={editingTrans.total || editingTrans.amountPaid} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-700 dark:text-white"/></div>
-                             <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Changes</button></div>
-                         </form>
-                     </div>
-                 </div>
-             )}
+                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border dark:border-slate-700">
+                        <h3 className="font-bold text-xl mb-4 dark:text-white flex items-center gap-2"><Pencil size={22} className="text-orange-500"/> Edit Transaction Data</h3>
+                        
+                        <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-5">
+                            {/* TOP: Basic Info & Pricing Tier */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700">
+                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
+                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-orange-500 uppercase">Pricing Tier</label>
+                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 font-bold text-orange-500 outline-none">
+                                        <option value="Grosir">Grosir</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Ecer">Ecer</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* MIDDLE: Dynamic Items Editor */}
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 flex justify-between items-center border-b border-indigo-100 dark:border-indigo-900/50">
+                                    <span className="font-bold text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Itemized Receipt</span>
+                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="text-[10px] bg-indigo-500 text-white px-3 py-1.5 rounded font-bold hover:bg-indigo-600 shadow active:scale-95 transition-transform">+ ADD ITEM</button>
+                                </div>
+                                <div className="p-3 space-y-2 bg-white dark:bg-slate-800">
+                                    {(editingTrans.items || []).map((item, idx) => (
+                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border dark:border-slate-700">
+                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none min-w-[150px]">
+                                                <option value="">-- Select Product --</option>
+                                                {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            </select>
+                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none" />
+                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none">
+                                                <option value="Bks">Bks</option>
+                                                <option value="Slop">Slop</option>
+                                                <option value="Karton">Karton</option>
+                                            </select>
+                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-emerald-600 font-bold outline-none" placeholder="Price/Unit" />
+                                            <button type="button" onClick={() => {
+                                                const newItems = editingTrans.items.filter((_, i) => i !== idx);
+                                                const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
+                                                setEditingTrans({...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal});
+                                            }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"><Trash2 size={16}/></button>
+                                        </div>
+                                    ))}
+                                    {(!editingTrans.items || editingTrans.items.length === 0) && <p className="text-center text-xs text-slate-400 py-6 italic">No items attached. Admin is overriding manually.</p>}
+                                </div>
+                            </div>
+
+                            {/* BOTTOM: Grand Total Override */}
+                            <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                                <div>
+                                    <span className="font-black text-sm uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">Grand Total</span>
+                                    <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider">Auto-calculates on item change</span>
+                                </div>
+                                <input type="number" value={editingTrans.total} onChange={e=>setEditingTrans({...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value)})} className="w-40 p-2 text-right border-2 border-emerald-200 dark:border-emerald-800 rounded-lg bg-white dark:bg-slate-800 dark:text-white font-black text-xl text-emerald-600 outline-none focus:border-emerald-500 transition-colors" />
+                            </div>
+                        </div>
+
+                        {/* SUBMIT ACTIONS */}
+                        <div className="flex gap-3 pt-5 mt-2 shrink-0">
+                            <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl font-bold transition-colors">Cancel Audit</button>
+                            <button type="button" onClick={handleEditSubmit} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-[0_5px_15px_rgba(249,115,22,0.3)] transition-all active:scale-95">Save Database Changes</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* 🚀 UPGRADE: STORE AUDIT RECEIPT RENDERER 🚀 */}
             {viewingReceipt && (() => {
