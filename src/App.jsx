@@ -2968,9 +2968,16 @@ const handleGitHubMirror = async () => {
                           customers={customers} 
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
-                          allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)} // 🚀 ADD THIS PROP
+                          allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
                           onProcessSale={handleMerchantSale}
                           onInspect={(item) => setExaminingProduct(item)} 
+                          // 🚀 FIXED: Plugged in ALL missing database and RPG engine connections!
+                          db={db}
+                          appId={appId}
+                          isAdmin={isAdmin}
+                          logAudit={logAudit}
+                          triggerCapy={triggerCapy}
+                          transactions={transactions}
                       />
                   </div>
               </div>

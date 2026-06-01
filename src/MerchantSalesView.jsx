@@ -1110,7 +1110,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             <div>
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
-                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
+                                {/* 🚀 FIXED: Added capture="environment" to force the rear camera and block the gallery */}
+                                <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
                                     <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
                                         <img src={nooForm.photoUrl} alt="Store Proof" className="w-full h-48 object-contain" />
@@ -1119,8 +1120,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 ) : (
                                     <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-slate-600 hover:border-orange-500 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
-                                        <span className="text-xs font-bold uppercase tracking-widest">Select or Capture Photo</span>
-                                        <span className="text-[9px] opacity-60">(Camera & Gallery Supported)</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
+                                        <span className="text-[9px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
                                     </button>
                                 )}
                             </div>
