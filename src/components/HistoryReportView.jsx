@@ -141,13 +141,20 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (product) {
                 newItems[index].name = product.name;
                 const tier = editingTrans.priceTier || 'Retail';
-                const basePrice = tier === 'Grosir' ? (product.grosirPrice || product.price) : tier === 'Ecer' ? (product.ecerPrice || product.price) : (product.retailPrice || product.price);
-                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((product.slopPerKarton || 10) * 10) : 1;
+                
+                // Bulletproof Number Casting
+                const pGrosir = Number(product.grosirPrice) || Number(product.price) || 0;
+                const pEcer = Number(product.ecerPrice) || Number(product.price) || 0;
+                const pRetail = Number(product.retailPrice) || Number(product.price) || 0;
+                
+                const basePrice = tier === 'Grosir' ? pGrosir : tier === 'Ecer' ? pEcer : pRetail;
+                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((Number(product.slopPerKarton) || 10) * 10) : 1;
+                
                 newItems[index].calculatedPrice = basePrice * multiplier;
             }
         }
 
-        const newTotal = newItems.reduce((sum, item) => sum + ((item.calculatedPrice || 0) * item.qty), 0);
+        const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
         setEditingTrans({ ...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal });
     };
 
@@ -156,11 +163,19 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         const newItems = (editingTrans.items || []).map(item => {
             const product = inventory.find(p => p.id === item.productId);
             if (!product) return item;
-            const basePrice = newTier === 'Grosir' ? (product.grosirPrice || product.price) : newTier === 'Ecer' ? (product.ecerPrice || product.price) : (product.retailPrice || product.price);
-            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((product.slopPerKarton || 10) * 10) : 1;
+            
+            // Bulletproof Number Casting
+            const pGrosir = Number(product.grosirPrice) || Number(product.price) || 0;
+            const pEcer = Number(product.ecerPrice) || Number(product.price) || 0;
+            const pRetail = Number(product.retailPrice) || Number(product.price) || 0;
+            
+            const basePrice = newTier === 'Grosir' ? pGrosir : newTier === 'Ecer' ? pEcer : pRetail;
+            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product.slopPerKarton) || 10) * 10) : 1;
+            
             return { ...item, calculatedPrice: basePrice * multiplier };
         });
-        const newTotal = newItems.reduce((sum, item) => sum + ((item.calculatedPrice || 0) * item.qty), 0);
+        
+        const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
         setEditingTrans({ ...editingTrans, priceTier: newTier, items: newItems, total: newTotal, amountPaid: newTotal });
     };
 
