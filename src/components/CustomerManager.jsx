@@ -540,9 +540,27 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                                 </label>
                                 {formData.storeImage && (
-                                    <div className="w-10 h-full rounded border border-indigo-200 overflow-hidden shrink-0 group relative">
-                                        <img src={formData.storeImage} className="w-full h-full object-cover" />
-                                        <button type="button" onClick={() => setFormData({...formData, storeImage: ''})} className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100"><X size={12}/></button>
+                                    <div className="flex items-center gap-1.5 h-full shrink-0">
+                                        <button 
+                                            type="button"
+                                            onClick={() => window.open(formData.storeImage, '_blank')}
+                                            title="View full image"
+                                            className="w-10 h-full rounded border border-indigo-200 dark:border-indigo-500/30 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <img src={formData.storeImage} className="w-full h-full object-cover" alt="Store" />
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => {
+                                                if(window.confirm("Are you sure you want to remove this store photo?")) {
+                                                    setFormData({...formData, storeImage: ''});
+                                                }
+                                            }} 
+                                            className="h-full aspect-square bg-slate-50 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-500/20 text-slate-400 hover:text-red-500 border border-slate-200 dark:border-slate-600 hover:border-red-200 dark:hover:border-red-500/50 rounded flex items-center justify-center transition-all"
+                                            title="Remove Photo"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
                                 )}
                             </div>
