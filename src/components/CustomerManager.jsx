@@ -543,7 +543,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     <div className="flex items-center gap-1.5 h-full shrink-0">
                                         <button 
                                             type="button"
-                                            onClick={() => window.open(formData.storeImage, '_blank')}
+                                            onClick={() => {
+                                                const win = window.open("");
+                                                win.document.write(`<html><body style="margin:0; background:#0f172a; display:flex; align-items:center; justify-content:center;"><img src="${formData.storeImage}" style="max-width:100vw; max-height:100vh; object-fit:contain;" /></body></html>`);
+                                                win.document.close();
+                                            }}
                                             title="View full image"
                                             className="w-10 h-full rounded border border-indigo-200 dark:border-indigo-500/30 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
