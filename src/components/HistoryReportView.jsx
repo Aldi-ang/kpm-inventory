@@ -131,6 +131,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return { totalRev, totalProfit, count, items, payments, transactions: filteredTransactions };
     }, [filteredTransactions, inventory]);
 
+    // 🛡️ BRUTE-FORCE NUMBER EXTRACTOR
+    const parsePrice = (val) => Number(String(val || '0').replace(/[^0-9]/g, ''));
+
     const handleEditItemChange = (index, field, value) => {
         const newItems = [...(editingTrans.items || [])];
         newItems[index] = { ...newItems[index], [field]: value };
@@ -142,13 +145,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 newItems[index].name = product.name;
                 const tier = editingTrans.priceTier || 'Retail';
                 
-                // Bulletproof Number Casting
-                const pGrosir = Number(product.grosirPrice) || Number(product.price) || 0;
-                const pEcer = Number(product.ecerPrice) || Number(product.price) || 0;
-                const pRetail = Number(product.retailPrice) || Number(product.price) || 0;
+                // Bulletproof String-Stripping Number Cast
+                const pGrosir = parsePrice(product.grosirPrice) || parsePrice(product.price);
+                const pEcer = parsePrice(product.ecerPrice) || parsePrice(product.price);
+                const pRetail = parsePrice(product.retailPrice) || parsePrice(product.price);
                 
                 const basePrice = tier === 'Grosir' ? pGrosir : tier === 'Ecer' ? pEcer : pRetail;
-                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((Number(product.slopPerKarton) || 10) * 10) : 1;
+                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
                 
                 newItems[index].calculatedPrice = basePrice * multiplier;
             }
@@ -164,13 +167,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             const product = inventory.find(p => p.id === item.productId);
             if (!product) return item;
             
-            // Bulletproof Number Casting
-            const pGrosir = Number(product.grosirPrice) || Number(product.price) || 0;
-            const pEcer = Number(product.ecerPrice) || Number(product.price) || 0;
-            const pRetail = Number(product.retailPrice) || Number(product.price) || 0;
+            // Bulletproof String-Stripping Number Cast
+            const pGrosir = parsePrice(product.grosirPrice) || parsePrice(product.price);
+            const pEcer = parsePrice(product.ecerPrice) || parsePrice(product.price);
+            const pRetail = parsePrice(product.retailPrice) || parsePrice(product.price);
             
             const basePrice = newTier === 'Grosir' ? pGrosir : newTier === 'Ecer' ? pEcer : pRetail;
-            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product.slopPerKarton) || 10) * 10) : 1;
+            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
             
             return { ...item, calculatedPrice: basePrice * multiplier };
         });
