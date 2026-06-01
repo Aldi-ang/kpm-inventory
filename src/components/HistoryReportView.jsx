@@ -134,29 +134,43 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // 🛡️ BRUTE-FORCE NUMBER EXTRACTOR
     const parsePrice = (val) => Number(String(val || '0').replace(/[^0-9]/g, ''));
 
+    // 🛡️ DYNAMIC INVENTORY PRICE INSPECTOR & INSURANCE FALLBACK
+    const getProductPrice = (product, tier, fallbackPrice) => {
+        if (!product) return Number(fallbackPrice) || 0;
+        const tierKey = String(tier).toLowerCase();
+        
+        // 1. Scan product keys dynamically for matches (handles grosirPrice, hargaGrosir, grosir, etc.)
+        for (let key of Object.keys(product)) {
+            if (key.toLowerCase().includes(tierKey)) {
+                const val = Number(String(product[key] || '').replace(/[^0-9]/g, ''));
+                if (val > 0) return val;
+            }
+        }
+        
+        // 2. Try generic backup price fields in your inventory data
+        const generic = Number(String(product.price || product.harga || product.retailPrice || '').replace(/[^0-9]/g, ''));
+        if (generic > 0) return generic;
+        
+        // 3. Absolute Insurance: Maintain the price already printed on the receipt history!
+        return Number(fallbackPrice) || 0;
+    };
+
     const handleEditItemChange = (index, field, value) => {
         const newItems = [...(editingTrans.items || [])];
-        newItems[index] = { ...newItems[index], [field]: value };
+        const currentItem = newItems[index];
+        newItems[index] = { ...currentItem, [field]: value };
 
-        // Auto-update price if product or unit changes
-        if (field === 'productId' || field === 'unit') {
+        if (field === 'productId' || field === 'unit' || field === 'qty') {
             const product = inventory.find(p => p.id === newItems[index].productId);
-            if (product) {
-                newItems[index].name = product.name;
-                const tier = editingTrans.priceTier || 'Retail';
-                
-                // 🚀 THE ULTIMATE FALLBACK: Scans every single price field so it never hits 0
-                const fallbackPrice = parsePrice(product.retailPrice) || parsePrice(product.price) || parsePrice(product.grosirPrice) || parsePrice(product.ecerPrice) || 0;
-                
-                const pGrosir = parsePrice(product.grosirPrice) || fallbackPrice;
-                const pEcer = parsePrice(product.ecerPrice) || fallbackPrice;
-                const pRetail = parsePrice(product.retailPrice) || fallbackPrice;
-                
-                const basePrice = tier === 'Grosir' ? pGrosir : tier === 'Ecer' ? pEcer : pRetail;
-                const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
-                
-                newItems[index].calculatedPrice = basePrice * multiplier;
-            }
+            const tier = editingTrans.priceTier || 'Retail';
+            
+            const currentMultiplier = currentItem.unit === 'Slop' ? 10 : currentItem.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const fallbackPackPrice = (Number(currentItem.calculatedPrice) || 0) / currentMultiplier;
+
+            const basePrice = getProductPrice(product, tier, fallbackPackPrice);
+            const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            
+            newItems[index].calculatedPrice = basePrice * multiplier;
         }
 
         const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
@@ -167,17 +181,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         const newTier = e.target.value;
         const newItems = (editingTrans.items || []).map(item => {
             const product = inventory.find(p => p.id === item.productId);
-            if (!product) return item;
             
-            // 🚀 THE ULTIMATE FALLBACK
-            const fallbackPrice = parsePrice(product.retailPrice) || parsePrice(product.price) || parsePrice(product.grosirPrice) || parsePrice(product.ecerPrice) || 0;
-            
-            const pGrosir = parsePrice(product.grosirPrice) || fallbackPrice;
-            const pEcer = parsePrice(product.ecerPrice) || fallbackPrice;
-            const pRetail = parsePrice(product.retailPrice) || fallbackPrice;
-            
-            const basePrice = newTier === 'Grosir' ? pGrosir : newTier === 'Ecer' ? pEcer : pRetail;
-            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((parsePrice(product.slopPerKarton) || 10) * 10) : 1;
+            const currentMultiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const fallbackPackPrice = (Number(item.calculatedPrice) || 0) / currentMultiplier;
+
+            const basePrice = getProductPrice(product, newTier, fallbackPackPrice);
+            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
             
             return { ...item, calculatedPrice: basePrice * multiplier };
         });
