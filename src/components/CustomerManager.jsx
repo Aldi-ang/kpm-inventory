@@ -518,13 +518,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">T3/T4 PIC (Penanggung Jawab)</label>
-                            <select value={formData.picName} onChange={e=>setFormData({...formData, picName: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-indigo-600">
-                                <option value="">-- Select PIC --</option>
-                                {/* Replace these with your actual Cello Wholesaler list */}
-                                <option value="Distributor Pusat">Distributor Pusat</option>
-                                <option value="Agen T3 Muntilan">Agen T3 Muntilan</option>
-                                <option value="Agen T4 Yogya">Agen T4 Yogya</option>
-                            </select>
+                            <input 
+                                list="pic-suggestions"
+                                placeholder="Type or select Wholesaler name..."
+                                value={formData.picName} 
+                                onChange={e=>setFormData({...formData, picName: e.target.value})} 
+                                className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-indigo-600"
+                            />
+                            <datalist id="pic-suggestions">
+                                {/* Dynamically lists unique PICs already existing in your customer list */}
+                                {[...new Set(customers.map(c => c.picName).filter(Boolean))].map(name => (
+                                    <option key={name} value={name} />
+                                ))}
+                            </datalist>
                         </div>
                         <div>
                             <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Last Visit</label>
