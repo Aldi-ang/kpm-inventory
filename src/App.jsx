@@ -1496,10 +1496,34 @@ const handleGitHubMirror = async () => {
                         setIsAdmin(false); // Still requires PIN setup/login
                     } 
                     else {
+                        // 🛡️ MASQUERADE BLEED AUTO-REPAIR PROTOCOL
+                        let trueAgentId = activeData.agentId;
+                        
+                        // If the database was corrupted by the old matrix view script, 
+                        // we aggressively sweep the boss's roster to find the correct ID via email.
+                        if (activeData.bossUid) {
+                            try {
+                                const rosterSnap = await getDocs(collection(db, `artifacts/${appId}/users/${activeData.bossUid}/motorists`));
+                                const correctProfile = rosterSnap.docs.find(d => d.data().email && d.data().email.toLowerCase().trim() === email);
+                                
+                                if (correctProfile && correctProfile.id !== trueAgentId) {
+                                    trueAgentId = correctProfile.id;
+                                    // 🩹 Heals the corrupted backend document permanently
+                                    await updateDoc(uidRef, { agentId: trueAgentId });
+                                    console.log(`Database Healed: Repaired Corrupted Agent ID for ${email}`);
+                                } else if (!correctProfile && (trueAgentId === 'ADMIN' || trueAgentId === 'ADMIN_VEHICLE')) {
+                                    // Absolute failsafe if completely corrupted
+                                    trueAgentId = null; 
+                                }
+                            } catch (err) {
+                                console.error("Self-Heal Error:", err);
+                            }
+                        }
+
                         // Field Agents (Tier 3 / Tier 4)
                         setBossUid(activeData.bossUid);
                         setUserRole(activeData.userRole || 'AGENT'); 
-                        setAgentProfileId(activeData.agentId);
+                        setAgentProfileId(trueAgentId);
 
                         const hijackedUser = {
                             uid: activeData.bossUid,            
@@ -1509,7 +1533,7 @@ const handleGitHubMirror = async () => {
                             realUid: currentUser.uid,     
                             role: activeData.role,             
                             userRole: activeData.userRole || 'AGENT', 
-                            agentId: activeData.agentId,
+                            agentId: trueAgentId,
                             location: activeData.location || "" 
                         };
                         
