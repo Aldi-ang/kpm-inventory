@@ -92,22 +92,20 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
 
-    // 🚀 GEOFENCE BYPASS STATE (Moved to Top-Level to prevent React Crash)
-    const [bypassHistory, setBypassHistory] = useState([]);
+    // 🚀 GEOFENCE BYPASS STATE (Global Queue Architecture)
+    const [allBypasses, setAllBypasses] = useState([]);
 
     useEffect(() => {
-        if (!selectedAgent || !userId || !db || !appId) {
-            setBypassHistory([]);
-            return;
-        }
+        if (!userId || !db || !appId) return;
+        
+        // We pull ALL bypasses globally, independent of which agent is selected.
         const bypassRef = collection(db, `artifacts/${appId}/users/${userId}/gps_bypasses`);
         const unsub = onSnapshot(bypassRef, (snap) => {
-            const allBypasses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            const agentBypasses = allBypasses.filter(b => b.salesmanId === selectedAgent.id || b.salesmanName === selectedAgent.name);
-            setBypassHistory(agentBypasses.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)));
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setAllBypasses(data.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)));
         });
         return () => unsub();
-    }, [selectedAgent, userId, db, appId]);
+    }, [userId, db, appId]);
 
     useEffect(() => {
         if (selectedAgent) {
@@ -769,7 +767,70 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             </div>
 
             {/* RIGHT PANEL: THE LOADING DOCK */}
-            <div className="hide-on-print flex-1 bg-slate-900 flex flex-col">
+            <div className="hide-on-print flex-1 bg-slate-900 flex flex-col relative">
+                
+                {/* 🚀 GLOBAL GEOFENCE COMMAND CENTER (Always Visible if Pending) 🚀 */}
+                {allBypasses.some(b => b.status === 'PENDING') && (
+                    <div className="m-6 mb-0 bg-slate-800/90 rounded-2xl border-2 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.3)] overflow-hidden shrink-0 animate-fade-in-up z-20 backdrop-blur-sm">
+                        <div className="p-4 bg-orange-500/20 border-b border-orange-500/50 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle size={18} className="text-orange-500 animate-pulse"/>
+                                <h3 className="font-bold text-orange-400 uppercase tracking-widest text-xs">Active HQ Override Requests</h3>
+                            </div>
+                            <span className="bg-orange-500 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                                Action Required
+                            </span>
+                        </div>
+                        <div className="p-4 space-y-3 bg-black/40 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {allBypasses.filter(b => b.status === 'PENDING').map(bypass => (
+                                <div key={bypass.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border border-orange-500/30 bg-orange-900/20 shadow-sm">
+                                    <div className="flex items-start gap-4 w-full">
+                                        {bypass.photoData && (
+                                            <div className="w-16 h-16 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                                <img src={bypass.photoData} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="font-bold text-white text-sm uppercase">{bypass.storeName}</h4>
+                                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-orange-500 text-black">PENDING</span>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 font-mono mb-0.5">Agent: <span className="text-orange-300 font-bold">{bypass.salesmanName}</span> • Time: {new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
+                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                                <MapPin size={10}/> Distance Logged: {bypass.distance} Meters
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 w-full md:w-auto shrink-0 border-t border-orange-500/20 md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
+                                        <button 
+                                            onClick={() => {
+                                                if(window.confirm(`Grant 100m Bypass for ${bypass.storeName}?`)){
+                                                    updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'APPROVED' });
+                                                    if(logAudit) logAudit("GPS_BYPASS_APPROVED", `Granted override for ${bypass.salesmanName} at ${bypass.storeName}`);
+                                                }
+                                            }}
+                                            className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
+                                        >
+                                            Approve Override
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if(window.confirm(`Reject Bypass Request?`)){
+                                                    updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'REJECTED' });
+                                                    if(logAudit) logAudit("GPS_BYPASS_REJECTED", `Denied override for ${bypass.salesmanName} at ${bypass.storeName}`);
+                                                }
+                                            }}
+                                            className="flex-1 md:flex-none bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {selectedAgent ? (
                     <>
                         <div className="p-6 border-b border-slate-800 bg-black/40">
@@ -895,75 +956,54 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 )}
                             </div>
 
-                            {/* 🚀 GEOFENCE BYPASS COMMAND CENTER 🚀 */}
-                            {bypassHistory.length > 0 && (
-                                <div className="mt-6 mb-2 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
-                                    <div className="p-4 bg-black/40 border-b border-slate-700 flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <MapPin size={18} className="text-orange-500"/>
-                                            <h3 className="font-bold text-white uppercase tracking-widest text-xs">Geofence Bypass Log ({bypassHistory.length})</h3>
+                            {/* 🚀 AGENT-SPECIFIC BYPASS HISTORY 🚀 */}
+                            {(() => {
+                                // Smart loose-filter to find history despite ID mismatches
+                                const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
+                                const agentBypasses = allBypasses.filter(b => 
+                                    b.status !== 'PENDING' && // Pending is handled by the Global Queue now
+                                    (
+                                        b.salesmanId === selectedAgent.id || 
+                                        (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
+                                        (b.salesmanName || '').toLowerCase() === agentPrefix
+                                    )
+                                );
+
+                                if (agentBypasses.length === 0) return null;
+
+                                return (
+                                    <div className="mt-6 mb-2 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
+                                        <div className="p-4 bg-black/40 border-b border-slate-700 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Archive size={18} className="text-slate-400"/>
+                                                <h3 className="font-bold text-white uppercase tracking-widest text-xs">Geofence Bypass History</h3>
+                                            </div>
                                         </div>
-                                        {bypassHistory.some(b => b.status === 'PENDING') && (
-                                            <span className="bg-orange-500 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]">
-                                                Action Required
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="p-4 space-y-3 bg-black/10 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                        {bypassHistory.map(bypass => (
-                                            <div key={bypass.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border shadow-sm ${bypass.status === 'PENDING' ? 'bg-orange-900/20 border-orange-500/50' : bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
-                                                <div className="flex items-start gap-4 w-full">
-                                                    {bypass.photoData && (
-                                                        <div className="w-16 h-16 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
-                                                            <img src={bypass.photoData} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
+                                        <div className="p-4 space-y-3 bg-black/10 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                            {agentBypasses.map(bypass => (
+                                                <div key={bypass.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
+                                                    <div className="flex items-start gap-4 w-full">
+                                                        {bypass.photoData && (
+                                                            <div className="w-12 h-12 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                                                <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
+                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                    {bypass.status}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-400 font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
                                                         </div>
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h4 className="font-bold text-white text-sm uppercase">{bypass.storeName}</h4>
-                                                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'PENDING' ? 'bg-orange-500 text-black' : bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
-                                                                {bypass.status}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-[10px] text-slate-400 font-mono mb-0.5">Time: {new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                                        <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                                                            <AlertCircle size={10}/> Distance Logged: {bypass.distance} Meters
-                                                        </p>
                                                     </div>
                                                 </div>
-
-                                                {/* HQ ACTION BUTTONS FOR PENDING REQUESTS */}
-                                                {bypass.status === 'PENDING' && (
-                                                    <div className="flex gap-2 w-full md:w-auto shrink-0 border-t border-slate-700 md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
-                                                        <button 
-                                                            onClick={() => {
-                                                                if(window.confirm(`Grant 100m Bypass for ${bypass.storeName}?`)){
-                                                                    updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'APPROVED' });
-                                                                    logAudit("GPS_BYPASS_APPROVED", `Granted override for ${bypass.salesmanName} at ${bypass.storeName}`);
-                                                                }
-                                                            }}
-                                                            className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-colors shadow-md"
-                                                        >
-                                                            Approve Override
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => {
-                                                                if(window.confirm(`Reject Bypass Request?`)){
-                                                                    updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'REJECTED' });
-                                                                    logAudit("GPS_BYPASS_REJECTED", `Denied override for ${bypass.salesmanName} at ${bypass.storeName}`);
-                                                                }
-                                                            }}
-                                                            className="flex-1 md:flex-none bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-colors shadow-md"
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
                                 <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
