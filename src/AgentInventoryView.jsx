@@ -15,38 +15,43 @@ const getCurrentDate = () => new Date().toISOString().split('T')[0];
 const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], user, motorists = [] }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [dbLiveName, setDbLiveName] = useState("");
+    const [liveProfileData, setLiveProfileData] = useState(null);
 
-    // 🛡️ STRICT EMAIL-FIRST IDENTITY PROTOCOL (Split-Brain Fix)
-    // By searching the Fleet Roster for the Google Email FIRST, we completely bypass 
-    // any corrupted 'ghost' agentProfileId that might be pointing to the Admin Vehicle.
-    const safeAgentProfile = motorists.find(m => 
-        m.email && user?.email && String(m.email).toLowerCase() === String(user.email).toLowerCase()
-    ) || motorists.find(m => m.id === agentProfileId);
+    // 🛡️ ARMOR-PLATED EMAIL ROUTER (Fixes Cache Ghosting & State Bleed)
+    // 1. Sanitize the active Google login email to prevent space/case mismatch
+    const activeEmail = String(user?.email || "").trim().toLowerCase();
     
-    // The Absolute True Document ID for Firebase Listeners & Math Filters
+    // 2. Aggressively sweep Fleet Roster for exact email match FIRST
+    const matchedByEmail = motorists.find(m => 
+        m.email && String(m.email).trim().toLowerCase() === activeEmail
+    );
+    
+    // 3. Fallback to App Router ID only if email fails completely
+    const safeAgentProfile = matchedByEmail || motorists.find(m => m.id === agentProfileId);
+
+    // 4. Absolute True ID locks onto the correct profile
     const trueAgentId = safeAgentProfile?.id || agentProfileId;
 
-    // Derived Name Hierarchy
-    const agentName = dbLiveName || safeAgentProfile?.name || user?.displayName || user?.email?.split('@')[0] || "Agent";
+    // 5. Dynamic Name generation entirely avoids React state-bleed across renders
+    const agentName = liveProfileData?.name || safeAgentProfile?.name || user?.displayName || activeEmail.split('@')[0] || "Agent";
 
     useEffect(() => {
-        // Halt if the app hasn't resolved critical parameters
         if (!db || !appId || !userId || !trueAgentId) {
             setIsLoading(false);
             return;
         }
 
-        // 🎯 TARGETING THE TRUE AGENT ID IN FIRESTORE
+        // 🎯 FORCE TARGET THE CORRECT VEHICLE
         const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, trueAgentId);
         
         const unsub = onSnapshot(agentRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setCanvasItems(Array.isArray(data.activeCanvas) ? data.activeCanvas : []);
-                if (data.name) setDbLiveName(String(data.name)); 
+                setLiveProfileData(data); // Safely store the whole object, wiping old ghost data
             } else {
                 setCanvasItems([]);
+                setLiveProfileData(null); // Instantly erase Boss ghosting
             }
             setIsLoading(false);
         }, (error) => {
