@@ -1459,17 +1459,23 @@ const handleGitHubMirror = async () => {
 
                 let activeData = null;
 
-                // 🚀 THE INTERCEPT: Check for Architect's pre-provisioned Email profile first
-                if (emailSnap.exists() && emailSnap.data().role === 'COMPANY_OWNER') {
-                    activeData = emailSnap.data();
-
-                    // If true UID profile doesn't exist or is a ghost, flag for migration Handshake!
-                    if (!uidSnap.exists() || uidSnap.data().role !== 'COMPANY_OWNER') {
-                        // SAFER: Store strings instead of Firebase References in React State to prevent proxy crashes
-                        setPendingMigration({ oldId: email, newId: currentUser.uid, data: activeData });
-                    }
-                } else if (uidSnap.exists()) {
+                // 🚀 THE FIX: Check True UID First
+                if (uidSnap.exists()) {
                     activeData = uidSnap.data();
+                } 
+                // 🚀 SILENT MIGRATION: Catch pre-provisioned Emails for BOTH Bosses and Agents!
+                else if (emailSnap.exists()) {
+                    activeData = emailSnap.data();
+                    
+                    if (activeData.role === 'COMPANY_OWNER') {
+                        // Require manual Master Password setup for Bosses
+                        setPendingMigration({ oldId: email, newId: currentUser.uid, data: activeData });
+                    } else {
+                        // Auto-link Tier 4 Agents seamlessly in the background!
+                        console.log("Tier 4 Agent detected via Email. Linking to true UID...");
+                        setDoc(uidRef, { ...activeData, uid: currentUser.uid, migratedAt: serverTimestamp() });
+                        deleteDoc(emailRef);
+                    }
                 }
 
                 if (activeData) {
