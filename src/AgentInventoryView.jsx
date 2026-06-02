@@ -17,13 +17,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     const [isLoading, setIsLoading] = useState(true);
     const [dbLiveName, setDbLiveName] = useState("");
 
-    // 🛡️ SELF-HEALING IDENTITY PROTOCOL (Protocol C & RBAC Fix)
-    // If the Employee Directory hands us a broken or missing `agentProfileId`, 
-    // we bypass it by cross-referencing the database using the agent's actual Google Email.
+    // 🛡️ STRICT EMAIL-FIRST IDENTITY PROTOCOL (Split-Brain Fix)
+    // By searching the Fleet Roster for the Google Email FIRST, we completely bypass 
+    // any corrupted 'ghost' agentProfileId that might be pointing to the Admin Vehicle.
     const safeAgentProfile = motorists.find(m => 
-        (m.id && m.id === agentProfileId) || 
-        (m.email && user?.email && String(m.email).toLowerCase() === String(user.email).toLowerCase())
-    );
+        m.email && user?.email && String(m.email).toLowerCase() === String(user.email).toLowerCase()
+    ) || motorists.find(m => m.id === agentProfileId);
     
     // The Absolute True Document ID for Firebase Listeners & Math Filters
     const trueAgentId = safeAgentProfile?.id || agentProfileId;
