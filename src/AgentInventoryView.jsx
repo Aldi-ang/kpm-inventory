@@ -12,29 +12,41 @@ const formatRupiah = (number) => {
 };
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [] }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], user }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [agentName, setAgentName] = useState("");
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!db || !appId || !userId || !agentProfileId) return;
+        // 🛡️ DEFENSIVE PROTOCOL: Instantly grab the Google Auth name so the UI is never blank
+        const fallbackName = user?.displayName || user?.email?.split('@')[0] || "Agent";
+        setAgentName(String(fallbackName));
+
+        // 🛑 LOADER TRAP FIX: If critical IDs are missing, stop loading and exit gracefully
+        if (!db || !appId || !userId || !agentProfileId) {
+            setIsLoading(false);
+            return;
+        }
 
         const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
         
         const unsub = onSnapshot(agentRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setCanvasItems(data.activeCanvas || []);
-                setAgentName(data.name || "Agent");
+                // 🛡️ DATA CASTING: Ensure activeCanvas is an array and safely stringify the name
+                setCanvasItems(Array.isArray(data.activeCanvas) ? data.activeCanvas : []);
+                if (data.name) setAgentName(String(data.name)); 
             } else {
                 setCanvasItems([]);
             }
             setIsLoading(false);
+        }, (error) => {
+            console.error("Agent Sync Error:", error);
+            setIsLoading(false); // Fail gracefully if Firestore denies permissions
         });
 
         return () => unsub();
-    }, [db, appId, userId, agentProfileId]);
+    }, [db, appId, userId, agentProfileId, user]);
 
     // --- CONVERSION ENGINE ---
     const calculateBks = (qty, unit) => {
