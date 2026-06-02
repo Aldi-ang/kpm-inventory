@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
-import { doc, setDoc, collection, getDoc, updateDoc } from 'firebase/firestore'; 
+import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'; 
 
 // 🚀 FIXED: Added isAdmin, logAudit, and triggerCapy to props!
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  
@@ -100,6 +100,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [distanceToStore, setDistanceToStore] = useState(null);
     const [agentLocation, setAgentLocation] = useState(null);
     const [manualOverride, setManualOverride] = useState(false); 
+    const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
     // THE NOO MODAL STATE
     const [showNooModal, setShowNooModal] = useState(false);
@@ -160,7 +161,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
                             const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
                             setDistanceToStore(Math.round(dist));
-                            setGpsStatus(dist <= 50 ? 'verified' : 'manual_override');
+                            
+                            // 🚀 DYNAMIC THRESHOLD (Bypass allows up to 100m)
+                            const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
+                            setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
                         } else {
                             setGpsStatus('bypass'); 
                         }
@@ -270,6 +274,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setShowCustomerDropdown(false);
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
+        setBypassState({ status: 'idle', id: null, photo: null }); 
 
         if (autoLockedDistance !== null) {
             setDistanceToStore(autoLockedDistance);
@@ -295,6 +300,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setLockedTier('Ecer'); 
         updateCartPricing('Ecer');
         setManualOverride(true); 
+        setBypassState({ status: 'idle', id: null, photo: null });
     };
 
     const updateCartPricing = (tier) => {
@@ -393,6 +399,69 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
                 setNooForm(prev => ({ ...prev, photoUrl: compressedDataUrl })); 
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // 🚀 ANTI-FRAUD HQ BYPASS REQUEST ENGINE
+    const handleBypassPhotoCapture = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600; 
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+                
+                setBypassState({ status: 'uploading', id: null, photo: compressedDataUrl });
+                try {
+                    const payload = {
+                        storeId: selectedCustomerInfo?.id || 'UNKNOWN',
+                        storeName: selectedCustomerInfo?.name || customerName,
+                        salesmanId: user?.uid || user?.id || 'UNKNOWN',
+                        salesmanName: user?.displayName || user?.email || 'Field Agent',
+                        latitude: agentLocation?.latitude || 0,
+                        longitude: agentLocation?.longitude || 0,
+                        distance: distanceToStore,
+                        photoData: compressedDataUrl,
+                        status: 'PENDING',
+                        timestamp: new Date().toISOString(),
+                        createdAt: serverTimestamp()
+                    };
+                    const bypassRef = await addDoc(collection(db, `artifacts/${appId}/gps_bypasses`), payload);
+                    setBypassState({ status: 'pending', id: bypassRef.id, photo: compressedDataUrl });
+                    if (triggerCapy) triggerCapy("Bypass proof sent to HQ. Awaiting approval...");
+
+                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL
+                    const unsub = onSnapshot(doc(db, `artifacts/${appId}/gps_bypasses`, bypassRef.id), (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if (data.status === 'APPROVED') {
+                                setBypassState(prev => ({ ...prev, status: 'approved' }));
+                                setGpsStatus('verified'); // Instantly unlock!
+                                if (triggerCapy) triggerCapy("HQ Approved! Geofence widened to 100m. 🟢");
+                                unsub();
+                            } else if (data.status === 'REJECTED') {
+                                setBypassState({ status: 'rejected', id: null, photo: null });
+                                alert("HQ Rejected your Bypass Request.");
+                                unsub();
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error(err);
+                    alert("Failed to submit bypass request.");
+                    setBypassState({ status: 'idle', id: null, photo: null });
+                }
             };
             img.src = event.target.result;
         };
@@ -857,15 +926,35 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
                                 
                                 {gpsStatus === 'manual_override' && (
-                                    <div className="flex items-center gap-2 w-full">
-                                        {canOverrideGps ? (
-                                            <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
-                                                <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
-                                            </span>
-                                        ) : (
-                                            <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
-                                                <Lock size={12}/> Locked: Out of Range ({distanceToStore}m)
-                                            </span>
+                                    <div className="flex flex-col gap-1 w-full">
+                                        <div className="flex items-center gap-2 w-full">
+                                            {canOverrideGps ? (
+                                                <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
+                                                    <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
+                                                </span>
+                                            ) : (
+                                                <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
+                                                    <Lock size={12}/> Locked: Out of Range ({distanceToStore}m)
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {!canOverrideGps && distanceToStore <= 100 && (
+                                            <div className="mt-1">
+                                                {bypassState.status === 'idle' || bypassState.status === 'rejected' ? (
+                                                    <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[9px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                                                        <Camera size={10}/> Request 100m HQ Bypass
+                                                    </button>
+                                                ) : bypassState.status === 'uploading' ? (
+                                                    <span className="text-[9px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                ) : bypassState.status === 'pending' ? (
+                                                    <span className="text-[9px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
+                                                ) : null}
+                                                <input type="file" accept="image/*" capture="environment" id="bypassPhotoCapture" className="hidden" onChange={handleBypassPhotoCapture} />
+                                            </div>
+                                        )}
+                                        {!canOverrideGps && distanceToStore > 100 && (
+                                            <span className="text-[8px] text-slate-500 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
                                         )}
                                     </div>
                                 )}
