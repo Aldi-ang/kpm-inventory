@@ -2531,12 +2531,12 @@ const handleGitHubMirror = async () => {
 
   // --- MAIN APP RENDER (BIOHAZARD THEME) ---
       return (
+        // 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4
         <BiohazardTheme 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             user={user} 
             appSettings={appSettings}
-            {/* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */}
             isAdmin={isAdmin && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN')}
             userRole={userRole}
             onLogin={handleLogin} 
