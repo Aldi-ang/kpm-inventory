@@ -1005,40 +1005,105 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 );
                             })()}
 
+                            {/* 🚀 UNIFIED ACTIVITY LOG (SALES & BYPASSES) 🚀 */}
                             <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
                                 <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
                                     <div className="flex items-center gap-2">
                                         <FileText size={18} className="text-blue-500"/>
-                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Sales History ({agentSales.length})</h3>
+                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Sales)</h3>
                                     </div>
                                     {showHistory ? <ChevronUp size={18} className="text-slate-400"/> : <ChevronDown size={18} className="text-slate-400"/>}
                                 </button>
                                 
-                                {showHistory && (
-                                    <div className="p-4 space-y-3 bg-black/10">
-                                        {agentSales.length === 0 ? (
-                                            <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4">No sales recorded today.</p>
-                                        ) : (
-                                            agentSales.map(tx => (
-                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm">
-                                                    <div>
-                                                        <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
-                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString() : 'Today'} • {tx.paymentType}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
-                                                            <p className="text-emerald-400 font-black text-sm md:text-base">{new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}</p>
-                                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
-                                                        </div>
-                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
-                                                            <FileText size={16}/>
-                                                        </button>
-                                                    </div>
+                                {showHistory && (() => {
+                                    // 1. Compile the agent's historical bypass log
+                                    const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
+                                    const agentBypasses = allBypasses.filter(b => 
+                                        b.status !== 'PENDING' &&
+                                        (
+                                            b.salesmanId === selectedAgent.id || 
+                                            (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
+                                            (b.salesmanName || '').toLowerCase() === agentPrefix
+                                        )
+                                    );
+
+                                    return (
+                                        <div className="p-4 bg-black/10 border-t border-slate-700 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                                                
+                                                {/* LEFT COLUMN: SALES CORRELATION ENGINE */}
+                                                <div className="space-y-3">
+                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Sales Transactions</h4>
+                                                    {agentSales.length === 0 ? (
+                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No sales recorded today.</p>
+                                                    ) : (
+                                                        agentSales.map(tx => {
+                                                            // 2. Identify if this specific sale required an HQ override
+                                                            const linkedBypass = agentBypasses.find(b => 
+                                                                b.status === 'APPROVED' && 
+                                                                (b.storeName || '').toLowerCase() === (tx.customerName || '').toLowerCase() &&
+                                                                (b.timestamp || '').startsWith(todayStr)
+                                                            );
+
+                                                            return (
+                                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm transition-all hover:border-blue-500/50 group">
+                                                                    <div>
+                                                                        <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
+                                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
+                                                                        
+                                                                        {linkedBypass && (
+                                                                            <div className="mt-1.5 flex items-center gap-1 text-[8px] bg-orange-900/30 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
+                                                                                <MapPin size={8}/> 100m Bypass Used
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3 md:gap-4">
+                                                                        <div className="text-right">
+                                                                            <p className="text-emerald-400 font-black text-sm md:text-base">{new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}</p>
+                                                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
+                                                                        </div>
+                                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 group-hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
+                                                                            <FileText size={16}/>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    )}
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
+
+                                                {/* RIGHT COLUMN: GEOFENCE VISUAL LOG */}
+                                                <div className="space-y-3">
+                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><MapPin size={12}/> Geofence Bypass Log</h4>
+                                                    {agentBypasses.length === 0 ? (
+                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No bypass history.</p>
+                                                    ) : (
+                                                        agentBypasses.map(bypass => (
+                                                            <div key={bypass.id} className={`flex items-start gap-3 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
+                                                                {bypass.photoData && (
+                                                                    <div className="w-12 h-12 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                                                        <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
+                                                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                            {bypass.status}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[10px] text-slate-400 font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
+                                                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest">Distance: {bypass.distance}m</p>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                         </div>
