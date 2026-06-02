@@ -913,7 +913,7 @@ const handleGitHubMirror = async () => {
 
 
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('kpm_simulated_account') ? 'journey' : 'dashboard');
   const [darkMode, setDarkMode] = useState(true);
 
 
@@ -1490,9 +1490,21 @@ const handleGitHubMirror = async () => {
                     if (activeData.role === 'COMPANY_OWNER') {
                         // 🚨 THIS IS THE BOSS: They MUST be ADMIN
                         setBossUid(null);
-                        setUserRole('ADMIN'); 
-                        setAgentProfileId(null);
-                        setUser(currentUser);
+                        
+                        // 🎭 MASQUERADE INTERCEPT
+                        const savedSim = localStorage.getItem('kpm_simulated_account');
+                        if (savedSim) {
+                            const sim = JSON.parse(savedSim);
+                            setUserRole(sim.role);
+                            setAgentProfileId(sim.agentId);
+                            // Fake the user profile but keep the real UID for DB writes
+                            setUser({ ...currentUser, displayName: sim.name, email: sim.email || currentUser.email });
+                        } else {
+                            setUserRole('ADMIN'); 
+                            setAgentProfileId(null);
+                            setUser(currentUser);
+                        }
+                        
                         setIsAdmin(false); // Still requires PIN setup/login
                     } 
                     else {
@@ -2518,22 +2530,57 @@ const handleGitHubMirror = async () => {
  
 
   // --- MAIN APP RENDER (BIOHAZARD THEME) ---
-  return (
-    <BiohazardTheme 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        user={user} 
-        appSettings={appSettings}
-        isAdmin={isAdmin}
-        userRole={userRole}
-        onLogin={handleLogin} 
-        setShowAdminLogin={setShowAdminLogin}
-        agentSettings={agentSettings}
-       notifications={combinedNotifications}                   
-        onNotificationClick={handleNotificationClick}
-        appVersion={APP_VERSION} // 🚀 ADDED SO THE SIDEBAR KNOWS THE VERSION   
-    >
-      {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
+      return (
+        <BiohazardTheme 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            user={user} 
+            appSettings={appSettings}
+            isAdmin={isAdmin}
+            userRole={userRole}
+            onLogin={handleLogin} 
+            setShowAdminLogin={setShowAdminLogin}
+            agentSettings={agentSettings}
+            notifications={combinedNotifications}                   
+            onNotificationClick={handleNotificationClick}
+            appVersion={APP_VERSION} // 🚀 ADDED SO THE SIDEBAR KNOWS THE VERSION   
+        >
+          
+          {/* 🎭 MASQUERADE MODE SWITCHER (ADMIN ONLY) */}
+          {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN' || localStorage.getItem('kpm_simulated_account')) && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] bg-slate-950 border border-orange-500/50 rounded-full px-4 py-2 flex items-center gap-3 shadow-[0_0_20px_rgba(249,115,22,0.3)] animate-fade-in font-mono">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-orange-500 animate-pulse hidden md:inline-block">
+                      👁️ Matrix View:
+                  </span>
+                  <select 
+                      value={localStorage.getItem('kpm_simulated_account') ? JSON.parse(localStorage.getItem('kpm_simulated_account')).agentId : 'MASTER_ADMIN'}
+                      onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'MASTER_ADMIN') {
+                              localStorage.removeItem('kpm_simulated_account');
+                              window.location.reload();
+                          } else {
+                              const targetAgent = motorists.find(m => m.id === val);
+                              if(targetAgent) {
+                                  const payload = { agentId: targetAgent.id, role: targetAgent.userRole || 'AGENT', name: targetAgent.name, email: targetAgent.email };
+                                  localStorage.setItem('kpm_simulated_account', JSON.stringify(payload));
+                                  window.location.reload(); 
+                              }
+                          }
+                      }}
+                      className="bg-black text-[10px] md:text-xs text-white font-bold py-1 px-2 outline-none border border-slate-800 hover:border-orange-500 uppercase rounded cursor-pointer transition-colors"
+                  >
+                      <option value="MASTER_ADMIN">👑 Tier 1: Master Admin</option>
+                      {motorists.map(agent => (
+                          <option key={agent.id} value={agent.id}>
+                              🏍️ {agent.name} ({agent.userRole || 'Tier 4'})
+                          </option>
+                      ))}
+                  </select>
+              </div>
+          )}
+
+          {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
       {activeTab === 'agent_inventory' && (
            <AgentInventoryView 
                db={db} 
