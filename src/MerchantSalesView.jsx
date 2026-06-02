@@ -424,25 +424,33 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 setBypassState({ status: 'uploading', id: null, photo: compressedDataUrl });
                 try {
+                    // 🛡️ PROTOCOL C: DEFENSIVE DATA CASTING
                     const payload = {
-                        storeId: selectedCustomerInfo?.id || 'UNKNOWN',
-                        storeName: selectedCustomerInfo?.name || customerName,
-                        salesmanId: user?.uid || user?.id || 'UNKNOWN',
-                        salesmanName: user?.displayName || user?.email || 'Field Agent',
-                        latitude: agentLocation?.latitude || 0,
-                        longitude: agentLocation?.longitude || 0,
-                        distance: distanceToStore,
-                        photoData: compressedDataUrl,
+                        storeId: String(selectedCustomerInfo?.id || 'UNKNOWN'),
+                        storeName: String(selectedCustomerInfo?.name || customerName || 'Unknown Store'),
+                        // Use realUid for the agent's actual identity, fallback to hijacked uid
+                        salesmanId: String(user?.realUid || user?.uid || user?.id || 'UNKNOWN'),
+                        salesmanName: String(user?.displayName || user?.email?.split('@')[0] || 'Field Agent'),
+                        latitude: Number(agentLocation?.latitude || 0),
+                        longitude: Number(agentLocation?.longitude || 0),
+                        distance: Number(distanceToStore || 0),
+                        photoData: String(compressedDataUrl),
                         status: 'PENDING',
                         timestamp: new Date().toISOString(),
                         createdAt: serverTimestamp()
                     };
-                    const bypassRef = await addDoc(collection(db, `artifacts/${appId}/gps_bypasses`), payload);
+
+                    // 🛡️ PATH FIX: Route to the Master Vault, not the global root!
+                    const masterUid = user?.uid || user?.id || 'default';
+                    const dbPath = `artifacts/${appId}/users/${masterUid}/gps_bypasses`;
+
+                    const bypassRef = await addDoc(collection(db, dbPath), payload);
+                    
                     setBypassState({ status: 'pending', id: bypassRef.id, photo: compressedDataUrl });
                     if (triggerCapy) triggerCapy("Bypass proof sent to HQ. Awaiting approval...");
 
-                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL
-                    const unsub = onSnapshot(doc(db, `artifacts/${appId}/gps_bypasses`, bypassRef.id), (docSnap) => {
+                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL (Using corrected path)
+                    const unsub = onSnapshot(doc(db, dbPath, bypassRef.id), (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
                             if (data.status === 'APPROVED') {
@@ -458,8 +466,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     });
                 } catch (err) {
-                    console.error(err);
-                    alert("Failed to submit bypass request.");
+                    console.error("Bypass Error:", err);
+                    alert(`Failed to submit bypass request: ${err.message || "Network Error"}`);
                     setBypassState({ status: 'idle', id: null, photo: null });
                 }
             };
