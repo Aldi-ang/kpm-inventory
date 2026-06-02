@@ -446,10 +446,24 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     const bypassRef = await addDoc(collection(db, dbPath), payload);
                     
+                    // 🔔 HQ COMPANION NOTIFICATION DISPATCH
+                    // This injects the alert straight into the Tier 1/2/3 notification ledger
+                    await addDoc(collection(db, `artifacts/${appId}/users/${masterUid}/notifications`), {
+                        title: "📡 GEOFENCE BYPASS REQUEST",
+                        message: `${payload.salesmanName} is requesting a 100m geofence bypass for ${payload.storeName} (${payload.distance}m away).`,
+                        type: "GPS_BYPASS",
+                        read: false,
+                        isRead: false,
+                        timestamp: serverTimestamp(),
+                        agentId: "ADMIN", // Targets Supervisor dashboards dynamically
+                        bypassId: String(bypassRef.id),
+                        linkToTab: "fleet" // 🚀 DIRECTS ADMIN TO THE FLEET & ROSTER TAB
+                    });
+
                     setBypassState({ status: 'pending', id: bypassRef.id, photo: compressedDataUrl });
                     if (triggerCapy) triggerCapy("Bypass proof sent to HQ. Awaiting approval...");
 
-                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL (Using corrected path)
+                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL
                     const unsub = onSnapshot(doc(db, dbPath, bypassRef.id), (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
