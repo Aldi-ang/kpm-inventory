@@ -17,25 +17,34 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     const [isLoading, setIsLoading] = useState(true);
     const [dbLiveName, setDbLiveName] = useState("");
 
-    // 🛡️ DERIVED STATE ARCHITECTURE
-    // 1. Sync directly with the official Fleet & Roster profile (motorists array).
-    // 2. This prevents React re-renders from accidentally wiping out the company name.
-    const officialProfile = motorists.find(m => m.id === agentProfileId);
-    const agentName = dbLiveName || officialProfile?.name || user?.displayName || user?.email?.split('@')[0] || "Agent";
+    // 🛡️ SELF-HEALING IDENTITY PROTOCOL (Protocol C & RBAC Fix)
+    // If the Employee Directory hands us a broken or missing `agentProfileId`, 
+    // we bypass it by cross-referencing the database using the agent's actual Google Email.
+    const safeAgentProfile = motorists.find(m => 
+        (m.id && m.id === agentProfileId) || 
+        (m.email && user?.email && String(m.email).toLowerCase() === String(user.email).toLowerCase())
+    );
+    
+    // The Absolute True Document ID for Firebase Listeners & Math Filters
+    const trueAgentId = safeAgentProfile?.id || agentProfileId;
+
+    // Derived Name Hierarchy
+    const agentName = dbLiveName || safeAgentProfile?.name || user?.displayName || user?.email?.split('@')[0] || "Agent";
 
     useEffect(() => {
-        if (!db || !appId || !userId || !agentProfileId) {
+        // Halt if the app hasn't resolved critical parameters
+        if (!db || !appId || !userId || !trueAgentId) {
             setIsLoading(false);
             return;
         }
 
-        const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentProfileId);
+        // 🎯 TARGETING THE TRUE AGENT ID IN FIRESTORE
+        const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, trueAgentId);
         
         const unsub = onSnapshot(agentRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setCanvasItems(Array.isArray(data.activeCanvas) ? data.activeCanvas : []);
-                // Update live name ONLY if it differs, letting derived state handle the hierarchy
                 if (data.name) setDbLiveName(String(data.name)); 
             } else {
                 setCanvasItems([]);
@@ -47,7 +56,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         });
 
         return () => unsub();
-    }, [db, appId, userId, agentProfileId]);
+    }, [db, appId, userId, trueAgentId]);
 
     // --- CONVERSION ENGINE ---
     const calculateBks = (qty, unit) => {
@@ -66,7 +75,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     
    // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY (Upgraded to catch Retur)
     const todayTransactions = transactions.filter(t =>
-        t.agentId === agentProfileId &&
+        t.agentId === trueAgentId &&
         t.date === todayDate &&
         (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETUR')
     );
