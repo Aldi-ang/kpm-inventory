@@ -2536,14 +2536,15 @@ const handleGitHubMirror = async () => {
             setActiveTab={setActiveTab} 
             user={user} 
             appSettings={appSettings}
-            isAdmin={isAdmin}
+            {/* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */}
+            isAdmin={isAdmin && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN')}
             userRole={userRole}
             onLogin={handleLogin} 
             setShowAdminLogin={setShowAdminLogin}
             agentSettings={agentSettings}
             notifications={combinedNotifications}                   
             onNotificationClick={handleNotificationClick}
-            appVersion={APP_VERSION} // 🚀 ADDED SO THE SIDEBAR KNOWS THE VERSION   
+            appVersion={APP_VERSION} 
         >
           
           {/* 🎭 MASQUERADE MODE SWITCHER (ADMIN ONLY) */}
