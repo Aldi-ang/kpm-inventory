@@ -1459,22 +1459,28 @@ const handleGitHubMirror = async () => {
 
                 let activeData = null;
 
-                // 🚀 THE FIX: Check True UID First
+                // 🚀 CONTINUOUS SYNC ENGINE (Fixes Profile Deletion & Desync)
                 if (uidSnap.exists()) {
                     activeData = uidSnap.data();
                 } 
-                // 🚀 SILENT MIGRATION: Catch pre-provisioned Emails for BOTH Bosses and Agents!
-                else if (emailSnap.exists()) {
-                    activeData = emailSnap.data();
+                
+                // Always pull the freshest configuration from the Fleet Roster (Email Doc)
+                if (emailSnap.exists()) {
+                    const freshEmailData = emailSnap.data();
                     
-                    if (activeData.role === 'COMPANY_OWNER') {
-                        // Require manual Master Password setup for Bosses
-                        setPendingMigration({ oldId: email, newId: currentUser.uid, data: activeData });
+                    if (freshEmailData.role === 'COMPANY_OWNER') {
+                        if (!activeData) setPendingMigration({ oldId: email, newId: currentUser.uid, data: freshEmailData });
                     } else {
-                        // Auto-link Tier 4 Agents seamlessly in the background!
-                        console.log("Tier 4 Agent detected via Email. Linking to true UID...");
-                        setDoc(uidRef, { ...activeData, uid: currentUser.uid, migratedAt: serverTimestamp() });
-                        deleteDoc(emailRef);
+                        // 🛡️ STRIP CORRUPTION: Ensure Fleet Roster didn't accidentally save the Boss's vehicle
+                        if (freshEmailData.agentId === 'ADMIN' || freshEmailData.agentId === 'ADMIN_VEHICLE') {
+                            freshEmailData.agentId = null; 
+                        }
+                        
+                        // Merge fresh Fleet Roster data into the active session
+                        activeData = { ...activeData, ...freshEmailData };
+                        
+                        // Silently update their permanent UID file WITHOUT deleting the Admin's Email Doc
+                        setDoc(uidRef, { ...activeData, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
                     }
                 }
 
@@ -1493,30 +1499,20 @@ const handleGitHubMirror = async () => {
                         setUserRole('ADMIN'); 
                         setAgentProfileId(null);
                         setUser(currentUser);
-                        setIsAdmin(false); // Still requires PIN setup/login
+                        setIsAdmin(false); 
                     } 
                     else {
-                        // 🛡️ MASQUERADE BLEED AUTO-REPAIR PROTOCOL
+                        // 🛡️ HARD BLOCK: Absolute Ghost Killer
                         let trueAgentId = activeData.agentId;
                         
-                        // If the database was corrupted by the old matrix view script, 
-                        // we aggressively sweep the boss's roster to find the correct ID via email.
-                        if (activeData.bossUid) {
-                            try {
-                                const rosterSnap = await getDocs(collection(db, `artifacts/${appId}/users/${activeData.bossUid}/motorists`));
-                                const correctProfile = rosterSnap.docs.find(d => d.data().email && d.data().email.toLowerCase().trim() === email);
-                                
-                                if (correctProfile && correctProfile.id !== trueAgentId) {
-                                    trueAgentId = correctProfile.id;
-                                    // 🩹 Heals the corrupted backend document permanently
-                                    await updateDoc(uidRef, { agentId: trueAgentId });
-                                    console.log(`Database Healed: Repaired Corrupted Agent ID for ${email}`);
-                                } else if (!correctProfile && (trueAgentId === 'ADMIN' || trueAgentId === 'ADMIN_VEHICLE')) {
-                                    // Absolute failsafe if completely corrupted
-                                    trueAgentId = null; 
-                                }
-                            } catch (err) {
-                                console.error("Self-Heal Error:", err);
+                        // A Tier 3/4 Agent CANNOT be the Boss Vehicle.
+                        if (trueAgentId === 'ADMIN' || trueAgentId === 'ADMIN_VEHICLE') {
+                            console.warn("Corruption blocked: Stripping Admin Vehicle from Tier 4 account.");
+                            trueAgentId = null; // Force empty state until Boss assigns a real vehicle
+                            
+                            // Heal the database locally
+                            if (uidSnap.exists()) {
+                                updateDoc(uidRef, { agentId: null }).catch(e => console.error(e));
                             }
                         }
 
