@@ -12,17 +12,18 @@ const formatRupiah = (number) => {
 };
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], user }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], user, motorists = [] }) => {
     const [canvasItems, setCanvasItems] = useState([]);
-    const [agentName, setAgentName] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [dbLiveName, setDbLiveName] = useState("");
+
+    // 🛡️ DERIVED STATE ARCHITECTURE
+    // 1. Sync directly with the official Fleet & Roster profile (motorists array).
+    // 2. This prevents React re-renders from accidentally wiping out the company name.
+    const officialProfile = motorists.find(m => m.id === agentProfileId);
+    const agentName = dbLiveName || officialProfile?.name || user?.displayName || user?.email?.split('@')[0] || "Agent";
 
     useEffect(() => {
-        // 🛡️ DEFENSIVE PROTOCOL: Instantly grab the Google Auth name so the UI is never blank
-        const fallbackName = user?.displayName || user?.email?.split('@')[0] || "Agent";
-        setAgentName(String(fallbackName));
-
-        // 🛑 LOADER TRAP FIX: If critical IDs are missing, stop loading and exit gracefully
         if (!db || !appId || !userId || !agentProfileId) {
             setIsLoading(false);
             return;
@@ -33,20 +34,20 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         const unsub = onSnapshot(agentRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // 🛡️ DATA CASTING: Ensure activeCanvas is an array and safely stringify the name
                 setCanvasItems(Array.isArray(data.activeCanvas) ? data.activeCanvas : []);
-                if (data.name) setAgentName(String(data.name)); 
+                // Update live name ONLY if it differs, letting derived state handle the hierarchy
+                if (data.name) setDbLiveName(String(data.name)); 
             } else {
                 setCanvasItems([]);
             }
             setIsLoading(false);
         }, (error) => {
             console.error("Agent Sync Error:", error);
-            setIsLoading(false); // Fail gracefully if Firestore denies permissions
+            setIsLoading(false); 
         });
 
         return () => unsub();
-    }, [db, appId, userId, agentProfileId, user]);
+    }, [db, appId, userId, agentProfileId]);
 
     // --- CONVERSION ENGINE ---
     const calculateBks = (qty, unit) => {
