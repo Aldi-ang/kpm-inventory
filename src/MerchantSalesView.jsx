@@ -1113,8 +1113,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-red-500">*</span></label>
-                        {/* 🚀 FIXED: Removed forced camera capture so users can pick from gallery if needed */}
-                        <input type="file" accept="image/*" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
+                        {/* 🚀 ANTI-FRAUD LOCK: 'capture="environment"' strictly forces the live rear camera and disables gallery uploads */}
+                        <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
                             <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
