@@ -1023,7 +1023,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         (
                                             b.salesmanId === selectedAgent.id || 
                                             (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
-                                            (b.salesmanName || '').toLowerCase() === agentPrefix
+                                            (b.salesmanName || '').toLowerCase() === agentPrefix ||
+                                            // 🚀 ROBUST FALLBACK: If a sale was made at this exact store by this agent today, the bypass belongs to them!
+                                            agentSales.some(tx => (tx.customerName || '').toLowerCase() === (b.storeName || '').toLowerCase())
                                         )
                                     );
 
@@ -1038,12 +1040,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                         <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No sales recorded today.</p>
                                                     ) : (
                                                         agentSales.map(tx => {
-                                                            // 2. Identify if this specific sale required an HQ override
-                                                            const linkedBypass = agentBypasses.find(b => 
-                                                                b.status === 'APPROVED' && 
-                                                                (b.storeName || '').toLowerCase() === (tx.customerName || '').toLowerCase() &&
-                                                                (b.timestamp || '').startsWith(todayStr)
-                                                            );
+                                                            // 2. Identify if this specific sale required an HQ override (Timezone Safe!)
+                                                            const linkedBypass = agentBypasses.find(b => {
+                                                                if (b.status !== 'APPROVED') return false;
+                                                                if ((b.storeName || '').toLowerCase() !== (tx.customerName || '').toLowerCase()) return false;
+                                                                
+                                                                // Timezone-safe check: Was the bypass requested within the last 24 hours?
+                                                                const bypassTime = new Date(b.timestamp || b.createdAt?.seconds * 1000 || 0).getTime();
+                                                                const now = new Date().getTime();
+                                                                return (now - bypassTime) < (24 * 60 * 60 * 1000);
+                                                            });
 
                                                             return (
                                                                 <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm transition-all hover:border-blue-500/50 group">
