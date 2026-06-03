@@ -20,6 +20,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState("");
     const [paymentMethod, setPaymentMethod] = useState(allowedPayments[0] || "Cash");
+    const [isProcessingSale, setIsProcessingSale] = useState(false); // 🚀 ANTI-SPAM LOCK
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
@@ -607,7 +608,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleFinalDeal = async () => {
-        if (cart.length === 0 || !customerName.trim() || !txProofPhoto) return;
+        // 🚀 Reject rapid fire clicks if it's already processing
+        if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
+        
+        setIsProcessingSale(true); // 🚀 LOCK THE ENGINE
         
         const finalCust = customerName.trim();
         const finalMethod = isReturMode ? 'Retur/BS' : paymentMethod;
@@ -853,6 +857,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         } catch (error) {
             console.error("Transaction failed:", error);
             alert("Transaction Failed! Please try again.");
+        } finally {
+            setIsProcessingSale(false); // 🚀 UNLOCK THE ENGINE
         }
     };
 
@@ -872,7 +878,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
-    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted;
+    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale;
 
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
@@ -1133,10 +1139,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     
                     <button
                         onClick={handleFinalDeal}
-                        disabled={!canSubmitSale}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        disabled={!canSubmitSale || isProcessingSale}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
-                        {gpsStatus === 'checking' ? 'Awaiting GPS...' :
+                        {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
+                         gpsStatus === 'checking' ? 'Awaiting GPS...' :
                          isGpsRestricted ? <><Lock size={20}/> LOC. RESTRICTED</> :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
                          customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
