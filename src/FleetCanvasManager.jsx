@@ -74,7 +74,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         userRole: 'AGENT',
         location: isAreaAdmin ? branchPathLocation : 'Headquarters', 
         province: myProfile?.province || 'Central Java',
-        canEditRoster: false
+        canEditRoster: false,
+        allowRetur: false
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -159,7 +160,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
                     allowedPayments: newAgent.allowedPayments, allowedTiers: newAgent.allowedTiers,
                     userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
-                    canEditRoster: newAgent.canEditRoster || false 
+                    canEditRoster: newAgent.canEditRoster || false,
+                    allowRetur: newAgent.allowRetur || false
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
@@ -205,7 +207,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
-            canEditRoster: agent.canEditRoster || false
+            canEditRoster: agent.canEditRoster || false,
+            allowRetur: agent.allowRetur || false
         });
         setEditingAgentId(agent.id);
         setIsReadOnlyMode(false);
@@ -218,7 +221,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
-            canEditRoster: agent.canEditRoster || false
+            canEditRoster: agent.canEditRoster || false,
+            allowRetur: agent.allowRetur || false
         });
         setEditingAgentId(agent.id);
         setIsReadOnlyMode(true);
@@ -639,6 +643,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         </label>
                                     </div>
                                 )}
+
+                                {/* 🚀 NEW: OPERATIONAL PRIVILEGES FOR RETUR */}
+                                <div className="mb-4">
+                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Operational Privileges</label>
+                                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
+                                        <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowRetur} onChange={() => setNewAgent({...newAgent, allowRetur: !newAgent.allowRetur})} />
+                                        Allow Tarik Barang / Retur (Return Unsold Goods)
+                                    </label>
+                                </div>
 
                                 <div className="mb-3">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
