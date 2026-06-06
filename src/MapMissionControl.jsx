@@ -2091,6 +2091,36 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         isActive={activeStore && activeStore.id === store.id}
                     />
                 ))}
+
+                {/* 🚀 LIVE AGENT SNAIL FOOTPRINT & RADAR 🚀 */}
+                {activeMotorists.map(agent => {
+                    if (!agent.currentLocation || !agent.currentLocation.lat) return null;
+                    
+                    // 1. Draw the Snail Footprint Trail
+                    const pathCoords = (agent.pathHistory || []).map(p => [p.lat, p.lng]);
+                    // 2. Connect the trail to their current live location
+                    pathCoords.push([agent.currentLocation.lat, agent.currentLocation.lng]);
+
+                    // 3. Create the pulsing Agent Avatar
+                    const agentIcon = L.divIcon({
+                        className: 'agent-live-icon',
+                        html: `<div style="position:relative; z-index: 20000;">
+                                   <div style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; font-size: 18px; animation: pulse 2s infinite;">👤</div>
+                                   <div style="position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">${agent.name?.split(' ')[0] || 'Agent'}</div>
+                               </div>`,
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 17]
+                    });
+
+                    return (
+                        <React.Fragment key={`tracker-${agent.id}`}>
+                            {pathCoords.length > 1 && (
+                                <Polyline positions={pathCoords} pathOptions={{ color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '6, 8', lineCap: 'round' }} />
+                            )}
+                            <Marker position={[agent.currentLocation.lat, agent.currentLocation.lng]} icon={agentIcon} zIndexOffset={20000} />
+                        </React.Fragment>
+                    );
+                })}
             </MapContainer>
 
             {activeStore && (
