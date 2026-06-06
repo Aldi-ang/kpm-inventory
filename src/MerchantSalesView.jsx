@@ -891,7 +891,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 )}
 
                 {debtInfo && debtInfo.status === 'RED' && (
-                    <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65]">
+                    <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
                         <div className="flex items-center gap-2 mb-1">
                             <AlertCircle className="text-red-500 shrink-0" size={16}/>
                             <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
@@ -902,29 +902,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
                     </div>
                 )}
-                
-                <div className={`mb-4 border-2 rounded-xl p-3 flex items-center justify-between transition-colors shadow-lg ${isReturMode ? 'bg-red-900/40 border-red-500' : 'bg-[#2a241e] border-[#8b7256]'} ${!allowRetur ? 'opacity-60 grayscale' : ''}`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg shadow-sm ${isReturMode ? 'bg-red-500/20 text-red-400' : 'bg-[#3e3226] text-[#ffca28]'}`}>
-                            {!allowRetur ? <Lock size={16} className="text-slate-400"/> : <AlertCircle size={16} />}
-                        </div>
-                        <div>
-                            <h4 className={`text-xs font-black uppercase tracking-widest ${isReturMode ? "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]" : "text-[#ffca28]"}`}>
-                                Tarik Barang / Retur
-                            </h4>
-                            <p className={`text-[9px] font-bold tracking-wider ${isReturMode ? "text-red-300" : "text-[#d4c5a3]"}`}>
-                                {!allowRetur ? "Locked by HQ Admin" : "Take back unsold goods to vehicle"}
-                            </p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => allowRetur && setIsReturMode(!isReturMode)} 
-                        disabled={!allowRetur}
-                        className={`w-12 h-6 rounded-full transition-all relative shadow-inner cursor-pointer border-2 ${!allowRetur ? 'bg-slate-800 border-slate-700 cursor-not-allowed' : isReturMode ? 'bg-red-500 border-red-400' : 'bg-[#1a1815] border-[#8b7256]'}`}
-                    >
-                        <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all shadow-md ${!allowRetur ? 'bg-slate-500 left-0.5' : isReturMode ? 'bg-white left-6' : 'bg-[#ffca28] left-0.5'}`}></div>
-                    </button>
-                </div>
 
                 <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
                     <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
