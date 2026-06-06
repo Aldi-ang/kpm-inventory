@@ -2093,7 +2093,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 ))}
 
                 {/* 🚀 LIVE AGENT SNAIL FOOTPRINT & RADAR 🚀 */}
-                {activeMotorists.map(agent => {
+                {(motorists || []).map(agent => {
                     if (!agent.currentLocation || !agent.currentLocation.lat) return null;
                     
                     // 1. Draw the Snail Footprint Trail
