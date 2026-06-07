@@ -23,7 +23,8 @@ export default function BiohazardTheme({
         { id: 'dashboard', label: 'Command Center' },
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
-        { id: 'fleet', label: 'Fleet & Canvas' }, 
+        { id: 'fleet', label: 'Fleet & Canvas' },
+        { id: 'agent_profile', label: 'Agent Dossier' }, // 🚀 NEW RPG DOSSIER TAB
         { id: 'inventory', label: 'Master Vault' },
         { id: 'agent_inventory', label: 'Agent Inventory' },
         { id: 'restock_vault', label: 'Restock Vault' },
@@ -47,7 +48,8 @@ export default function BiohazardTheme({
             return ['map_war_room', 'journey', 'sales'].includes(item.id);
         }
         
-        let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'transactions', 'eod'];
+        // 🚀 THE FIX: Give standard agents access to the Agent Profile (Dossier) tab
+        let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'agent_profile', 'transactions', 'eod'];
         
         // 🚀 THE FIX: Give Area Admins access to the Restock Vault AND the Fleet & Canvas tab!
         if (userRole === 'AREA_ADMIN') {
