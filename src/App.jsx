@@ -30,6 +30,7 @@ import AgentInventoryView from './AgentInventoryView';
 import FleetCanvasManager from './FleetCanvasManager';
 import ConsignmentFinanceView from './ConsignmentFinanceView'; 
 import EODReconciliationView from './EODReconciliationView'; 
+import AgentProfileView from './AgentProfileView'; // 🚀 ADD THIS NEW IMPORT
 
 
 // --- REUSABLE UI COMPONENTS ---
@@ -2861,6 +2862,17 @@ const handleGitHubMirror = async () => {
                 isAdmin={isAdmin} 
                 motorists={motorists}
             />
+          )}
+
+          {/* 🚀 NEW: THE RPG DOSSIER ROUTE */}
+          {activeTab === 'agent_profile' && (
+              <AgentProfileView 
+                  motorists={motorists}
+                  transactions={transactions}
+                  inventory={inventory}
+                  userRole={userRole}
+                  agentProfileId={agentProfileId}
+              />
           )}
           
           {activeTab === 'inventory' && userRole === 'ADMIN' && (
