@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
-    Calendar, Truck, Award, Target, Zap, Lock, Crosshair
+    Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
+    MapPin, AlertCircle // 🚀 THE FIX: ADDED MISSING ICONS
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
