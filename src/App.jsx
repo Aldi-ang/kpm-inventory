@@ -2872,8 +2872,12 @@ const handleGitHubMirror = async () => {
                   inventory={inventory}
                   userRole={userRole}
                   agentProfileId={agentProfileId}
+                  db={db}              // 🚀 NEW: Database Access
+                  appId={appId}        // 🚀 NEW: Database Access
+                  userId={userId}      // 🚀 NEW: Database Access
               />
           )}
+
           
           {activeTab === 'inventory' && userRole === 'ADMIN' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
