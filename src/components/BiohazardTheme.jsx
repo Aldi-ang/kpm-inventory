@@ -20,11 +20,11 @@ export default function BiohazardTheme({
     };
 
     const allMenuItems = [
+        { id: 'agent_profile', label: 'Agent Profile' }, // 🚀 RENAMED AND MOVED TO THE ABSOLUTE TOP
         { id: 'dashboard', label: 'Command Center' },
         { id: 'map_war_room', label: 'Map System' },
         { id: 'journey', label: 'Journey Plan' },
-        { id: 'fleet', label: 'Fleet & Canvas' },
-        { id: 'agent_profile', label: 'Agent Dossier' }, // 🚀 NEW RPG DOSSIER TAB
+        { id: 'fleet', label: 'Fleet & Canvas' }, 
         { id: 'inventory', label: 'Master Vault' },
         { id: 'agent_inventory', label: 'Agent Inventory' },
         { id: 'restock_vault', label: 'Restock Vault' },
@@ -38,7 +38,6 @@ export default function BiohazardTheme({
         { id: 'audit', label: 'Audit Logs' },
         { id: 'settings', label: 'Settings' }
     ];
-
     const visibleMenu = allMenuItems.filter(item => {
         if (userRole === 'ADMIN') {
             if (isAdmin) {
