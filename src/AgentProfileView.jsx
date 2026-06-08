@@ -7,10 +7,11 @@ import {
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { doc, updateDoc } from 'firebase/firestore'; // 🚀 DATABASE INJECTION
+import { doc, updateDoc } from 'firebase/firestore'; 
 
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
     
+    // If Admin, show the first motorist by default. If Agent, strictly lock to their own profile.
     const [selectedId, setSelectedId] = useState(() => {
         if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
         return motorists && motorists.length > 0 ? motorists[0].id : null;
@@ -21,10 +22,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
     const activeAgent = motorists?.find(m => m.id === selectedId);
     
-    // 🚀 SECURITY: Only the Boss or the Agent themselves can change their photo
+    // SECURITY: Only the Boss or the Agent themselves can change their photo
     const canEditProfile = userRole === 'ADMIN' || activeAgent?.id === agentProfileId;
 
-    // 🚀 IMAGE UPLOAD HANDLER
+    // IMAGE UPLOAD HANDLER
     const handleAvatarUpload = async (e) => {
         const file = e.target.files[0];
         if (!file || !activeAgent || !db || !canEditProfile) return;
@@ -54,6 +55,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         { name: 'Mythic', min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
     ];
 
+    // Crunch all the math for the selected agent
     const stats = useMemo(() => {
         if (!activeAgent) return null;
 
@@ -64,7 +66,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
         
-        // 🚀 ADVANCED CHART ARRAYS
+        // Setup Chart Data Arrays
         const last7Days = Array.from({length: 7}, (_, i) => {
             const d = new Date(); d.setDate(d.getDate() - (6 - i));
             return { date: d.toISOString().split('T')[0], label: d.toLocaleDateString('id-ID', {weekday:'short'}), cash: 0, titip: 0 };
@@ -95,23 +97,23 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         if (t.paymentType !== 'Titip') todayCash += (t.total || 0);
                     }
 
-                    // 📊 POPULATE THE CHART ARRAYS
+                    // Populate Chart Arrays
                     if (txDateStr) {
                         const txDateObj = new Date(txDateStr);
                         const isTitip = t.paymentType === 'Titip';
                         
-                        // 7D Matrix
+                        // 7D
                         const day7Node = last7Days.find(d => d.date === txDateStr);
                         if (day7Node) day7Node[isTitip ? 'titip' : 'cash'] += (t.total || 0);
 
-                        // 1M Matrix
+                        // 1M
                         if (txDateObj.getMonth() === currentMonth && txDateObj.getFullYear() === currentYear) {
                             const dateNum = txDateObj.getDate();
                             const weekIdx = dateNum <= 7 ? 0 : dateNum <= 14 ? 1 : dateNum <= 21 ? 2 : 3;
                             thisMonth[weekIdx][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                         }
 
-                        // 1Y Matrix
+                        // 1Y
                         if (txDateObj.getFullYear() === currentYear) {
                             thisYear[txDateObj.getMonth()][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                         }
@@ -127,6 +129,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         (activeAgent.activeCanvas || []).forEach(item => {
             const product = inventory?.find(p => p.id === item.productId);
             let price = product ? (product.priceEcer || product.priceRetail || 0) : item.calculatedPrice || 0;
+            
             let qtyInBks = item.qty;
             if (product) {
                 if (item.unit === 'Slop') qtyInBks = item.qty * (product.packsPerSlop || 10);
@@ -156,102 +159,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(num);
     const chartDataToRender = chartFilter === '7D' ? stats.chartData7D : chartFilter === '1M' ? stats.chartData1M : stats.chartData1Y;
-    // If Admin, show the first motorist by default. If Agent, strictly lock to their own profile.
-    const [selectedId, setSelectedId] = useState(() => {
-        if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
-        return motorists && motorists.length > 0 ? motorists[0].id : null;
-    });
-
-    const activeAgent = motorists?.find(m => m.id === selectedId);
-
-    // RPG Tier Engine
-    const tiers = [
-        { name: 'Bronze', min: 0, hex: '#d97706', color: 'text-amber-600', bg: 'bg-amber-900/30', border: 'border-amber-600/50', glow: 'shadow-[0_0_20px_rgba(217,119,6,0.4)]' },
-        { name: 'Silver', min: 25000000, hex: '#94a3b8', color: 'text-slate-300', bg: 'bg-slate-700/30', border: 'border-slate-400/50', glow: 'shadow-[0_0_20px_rgba(148,163,184,0.4)]' },
-        { name: 'Gold', min: 100000000, hex: '#facc15', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-400/50', glow: 'shadow-[0_0_20px_rgba(250,204,21,0.4)]' },
-        { name: 'Platinum', min: 250000000, hex: '#22d3ee', color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-400/50', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' },
-        { name: 'Diamond', min: 500000000, hex: '#c084fc', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-400/50', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.4)]' },
-        { name: 'Mythic', min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
-    ];
-
-    // Crunch all the math for the selected agent
-    const stats = useMemo(() => {
-        if (!activeAgent) return null;
-
-        let lifetimeOmset = 0; let todayOmset = 0; let todayCash = 0; let titipIssued = 0; let titipCollected = 0;
-        const todayStr = new Date().toISOString().split('T')[0];
-        
-        // Setup Chart Data (Last 7 Days)
-        const last7Days = Array.from({length: 7}, (_, i) => {
-            const d = new Date(); d.setDate(d.getDate() - (6 - i));
-            return { date: d.toISOString().split('T')[0], shortDate: d.toLocaleDateString('id-ID', {weekday:'short'}), cash: 0, titip: 0 };
-        });
-
-        // 🏆 Achievement Trackers
-        const uniqueStores = new Set();
-        let perfectDays = 0; // Placeholder for EOD perfection
-
-        (transactions || []).forEach(t => {
-            if (t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase())) {
-                const txDate = t.date || (t.timestamp ? new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0] : null);
-                
-                if (t.type === 'SALE') {
-                    lifetimeOmset += (t.total || 0);
-                    if (t.customerName) uniqueStores.add(t.customerName);
-
-                    if (t.paymentType === 'Titip') titipIssued += (t.total || 0);
-                    
-                    if (txDate === todayStr) {
-                        todayOmset += (t.total || 0);
-                        if (t.paymentType !== 'Titip') todayCash += (t.total || 0);
-                    }
-
-                    // Populate Chart
-                    const chartDay = last7Days.find(d => d.date === txDate);
-                    if (chartDay) {
-                        if (t.paymentType === 'Titip') chartDay.titip += (t.total || 0);
-                        else chartDay.cash += (t.total || 0);
-                    }
-                }
-                if (t.type === 'CONSIGNMENT_PAYMENT') titipCollected += (t.amountPaid || t.total || 0);
-            }
-        });
-
-        const activeTitipResponsibility = Math.max(0, titipIssued - titipCollected);
-        
-        let canvasValue = 0;
-        (activeAgent.activeCanvas || []).forEach(item => {
-            const product = inventory?.find(p => p.id === item.productId);
-            let price = product ? (product.priceEcer || product.priceRetail || 0) : item.calculatedPrice || 0;
-            
-            // Convert to base Bks for value calc
-            let qtyInBks = item.qty;
-            if (product) {
-                if (item.unit === 'Slop') qtyInBks = item.qty * (product.packsPerSlop || 10);
-                if (item.unit === 'Bal') qtyInBks = item.qty * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
-                if (item.unit === 'Karton') qtyInBks = item.qty * (product.balsPerCarton || 4) * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
-            }
-            canvasValue += (qtyInBks * price);
-        });
-
-        let currentTier = tiers[0]; let nextTier = tiers[1];
-        for (let i = tiers.length - 1; i >= 0; i--) {
-            if (lifetimeOmset >= tiers[i].min) {
-                currentTier = tiers[i]; nextTier = tiers[i + 1] || null; break;
-            }
-        }
-        const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeOmset - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
-
-        return { 
-            lifetimeOmset, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
-            currentTier, nextTier, progressPercent, chartData: last7Days,
-            achievements: { stores: uniqueStores.size, titipCollected }
-        };
-    }, [activeAgent, transactions, inventory]);
-
-    if (!activeAgent || !stats) return <div className="p-8 text-white">No Agent Data Found.</div>;
-
-    const formatRp = (num) => new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(num);
 
     return (
         <div className="flex h-full min-h-screen bg-black font-sans">
@@ -269,7 +176,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 onClick={() => setSelectedId(agent.id)}
                                 className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${selectedId === agent.id ? 'bg-blue-900/20 border-blue-500/50 shadow-inner' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
                             >
-                                <div className={`w-10 h-10 rounded-full bg-slate-800 border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-600 text-slate-500'} flex items-center justify-center shrink-0`}><User size={18}/></div>
+                                <div className={`w-10 h-10 rounded-full bg-slate-800 border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-600 text-slate-500'} flex items-center justify-center shrink-0 overflow-hidden`}>
+                                    {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
+                                </div>
                                 <div className="overflow-hidden">
                                     <p className={`font-bold text-sm truncate ${selectedId === agent.id ? 'text-white' : 'text-slate-300'}`}>{agent.name}</p>
                                     <p className="text-[10px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
@@ -308,6 +217,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 )}
                                 <input type="file" id="avatar-upload" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
                             </div>
+                            
                             <div>
                                 <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${stats.currentTier.border} ${stats.currentTier.color} mb-2 shadow-md bg-black/50`}>
                                     <TrendingUp size={12}/> {stats.currentTier.name} OPERATIVE
@@ -315,7 +225,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <h1 className="text-3xl lg:text-4xl font-black text-white leading-none uppercase tracking-wide truncate mb-2">{activeAgent.name}</h1>
                                 <div className="flex items-center gap-3 flex-wrap">
                                     <ShieldCheck size={16} className="text-emerald-500"/>
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">ID: {activeAgent.id.substring(0,8)}</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
                                     <span className="text-slate-600">|</span>
                                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest"><MapPin size={10} className="inline mr-1 text-orange-500"/>{activeAgent.location || 'Field'}</span>
                                 </div>
@@ -397,7 +307,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartDataToRender}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                                        <XAxis dataKey="shortDate" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                                        <XAxis dataKey="label" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                                         <Tooltip 
                                             cursor={{fill: '#0f172a'}}
                                             contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}
