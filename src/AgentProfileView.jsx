@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
-    MapPin, AlertCircle, Camera
+    MapPin, AlertCircle, Camera, Phone, Mail, Edit3, Save, Clock
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -11,19 +11,33 @@ import { doc, updateDoc } from 'firebase/firestore';
 
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
     
-    // If Admin, show the first motorist by default. If Agent, strictly lock to their own profile.
+    // 🚀 LOCATION FILTER & SEARCH STATE
+    const [locationFilter, setLocationFilter] = useState('ALL');
+    
     const [selectedId, setSelectedId] = useState(() => {
         if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
         return motorists && motorists.length > 0 ? motorists[0].id : null;
     });
 
-    const [chartFilter, setChartFilter] = useState('7D'); // '7D', '1M', '1Y'
+    const [chartFilter, setChartFilter] = useState('7D');
     const [isUploading, setIsUploading] = useState(false);
+    
+    // 🚀 BIO EDITOR STATE
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bioText, setBioText] = useState('');
 
     const activeAgent = motorists?.find(m => m.id === selectedId);
-    
-    // SECURITY: Only the Boss or the Agent themselves can change their photo
     const canEditProfile = userRole === 'ADMIN' || activeAgent?.id === agentProfileId;
+
+    // Sync bio text when selecting different agents
+    useEffect(() => {
+        setBioText(activeAgent?.bio || '');
+        setIsEditingBio(false);
+    }, [activeAgent]);
+
+    // 🚀 DIRECTORY FILTER LOGIC
+    const uniqueLocations = useMemo(() => ['ALL', ...new Set((motorists || []).map(m => m.location || 'Field'))], [motorists]);
+    const filteredMotorists = motorists?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
 
     // IMAGE UPLOAD HANDLER
     const handleAvatarUpload = async (e) => {
@@ -45,6 +59,18 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         reader.readAsDataURL(file);
     };
 
+    // BIO SAVE HANDLER
+    const handleBioSave = async () => {
+        if (!db || !activeAgent || !canEditProfile) return;
+        try {
+            const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
+            await updateDoc(agentRef, { bio: bioText });
+            setIsEditingBio(false);
+        } catch(err) {
+            alert("Failed to save record: " + err.message);
+        }
+    };
+
     // RPG Tier Engine
     const tiers = [
         { name: 'Bronze', min: 0, hex: '#d97706', color: 'text-amber-600', bg: 'bg-amber-900/30', border: 'border-amber-600/50', glow: 'shadow-[0_0_20px_rgba(217,119,6,0.4)]' },
@@ -55,7 +81,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         { name: 'Mythic', min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
     ];
 
-    // Crunch all the math for the selected agent
     const stats = useMemo(() => {
         if (!activeAgent) return null;
 
@@ -66,7 +91,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
         
-        // Setup Chart Data Arrays
         const last7Days = Array.from({length: 7}, (_, i) => {
             const d = new Date(); d.setDate(d.getDate() - (6 - i));
             return { date: d.toISOString().split('T')[0], label: d.toLocaleDateString('id-ID', {weekday:'short'}), cash: 0, titip: 0 };
@@ -97,23 +121,19 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         if (t.paymentType !== 'Titip') todayCash += (t.total || 0);
                     }
 
-                    // Populate Chart Arrays
                     if (txDateStr) {
                         const txDateObj = new Date(txDateStr);
                         const isTitip = t.paymentType === 'Titip';
                         
-                        // 7D
                         const day7Node = last7Days.find(d => d.date === txDateStr);
                         if (day7Node) day7Node[isTitip ? 'titip' : 'cash'] += (t.total || 0);
 
-                        // 1M
                         if (txDateObj.getMonth() === currentMonth && txDateObj.getFullYear() === currentYear) {
                             const dateNum = txDateObj.getDate();
                             const weekIdx = dateNum <= 7 ? 0 : dateNum <= 14 ? 1 : dateNum <= 21 ? 2 : 3;
                             thisMonth[weekIdx][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                         }
 
-                        // 1Y
                         if (txDateObj.getFullYear() === currentYear) {
                             thisYear[txDateObj.getMonth()][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                         }
@@ -129,7 +149,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         (activeAgent.activeCanvas || []).forEach(item => {
             const product = inventory?.find(p => p.id === item.productId);
             let price = product ? (product.priceEcer || product.priceRetail || 0) : item.calculatedPrice || 0;
-            
             let qtyInBks = item.qty;
             if (product) {
                 if (item.unit === 'Slop') qtyInBks = item.qty * (product.packsPerSlop || 10);
@@ -147,9 +166,18 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         }
         const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeOmset - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
 
+        // Calculate Days in Service
+        let daysInService = 'NEW';
+        if (activeAgent?.createdAt) {
+            const createdTime = activeAgent.createdAt.seconds ? activeAgent.createdAt.seconds * 1000 : new Date(activeAgent.createdAt).getTime();
+            if (!isNaN(createdTime)) {
+                daysInService = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24))) + " Days";
+            }
+        }
+
         return { 
             lifetimeOmset, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
-            currentTier, nextTier, progressPercent, 
+            currentTier, nextTier, progressPercent, daysInService,
             chartData7D: last7Days, chartData1M: thisMonth, chartData1Y: thisYear,
             achievements: { stores: uniqueStores.size, titipCollected }
         };
@@ -166,25 +194,40 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             {/* LEFT SIDEBAR: AGENT DIRECTORY (ONLY VISIBLE TO ADMINS) */}
             {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
                 <div className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
-                    <div className="p-5 border-b border-slate-800 bg-black sticky top-0 z-10">
+                    <div className="p-4 border-b border-slate-800 bg-black sticky top-0 z-10 space-y-3">
                         <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={14} className="text-emerald-500"/> Agent Directory</h2>
+                        {/* 🚀 DEPLOYMENT ZONE FILTER */}
+                        <div className="relative">
+                            <MapPin size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <select 
+                                value={locationFilter} 
+                                onChange={(e) => setLocationFilter(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] uppercase font-bold rounded-lg pl-8 pr-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                            >
+                                {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc === 'ALL' ? 'ALL DEPLOYMENT ZONES' : loc}</option>)}
+                            </select>
+                        </div>
                     </div>
                     <div className="p-3 space-y-2">
-                        {(motorists || []).map(agent => (
-                            <button 
-                                key={agent.id} 
-                                onClick={() => setSelectedId(agent.id)}
-                                className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${selectedId === agent.id ? 'bg-blue-900/20 border-blue-500/50 shadow-inner' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
-                            >
-                                <div className={`w-10 h-10 rounded-full bg-slate-800 border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-600 text-slate-500'} flex items-center justify-center shrink-0 overflow-hidden`}>
-                                    {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
-                                </div>
-                                <div className="overflow-hidden">
-                                    <p className={`font-bold text-sm truncate ${selectedId === agent.id ? 'text-white' : 'text-slate-300'}`}>{agent.name}</p>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
-                                </div>
-                            </button>
-                        ))}
+                        {filteredMotorists.length === 0 ? (
+                            <p className="text-center text-[10px] text-slate-600 uppercase font-bold py-4">No agents in this zone.</p>
+                        ) : (
+                            filteredMotorists.map(agent => (
+                                <button 
+                                    key={agent.id} 
+                                    onClick={() => setSelectedId(agent.id)}
+                                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${selectedId === agent.id ? 'bg-blue-900/20 border-blue-500/50 shadow-inner' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full bg-slate-800 border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-600 text-slate-500'} flex items-center justify-center shrink-0 overflow-hidden`}>
+                                        {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className={`font-bold text-sm truncate ${selectedId === agent.id ? 'text-white' : 'text-slate-300'}`}>{agent.name}</p>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
+                                    </div>
+                                </button>
+                            ))
+                        )}
                     </div>
                 </div>
             )}
@@ -219,8 +262,13 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                             
                             <div>
-                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${stats.currentTier.border} ${stats.currentTier.color} mb-2 shadow-md bg-black/50`}>
-                                    <TrendingUp size={12}/> {stats.currentTier.name} OPERATIVE
+                                <div className="flex items-center flex-wrap">
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${stats.currentTier.border} ${stats.currentTier.color} mb-2 shadow-md bg-black/50`}>
+                                        <TrendingUp size={12}/> {stats.currentTier.name} OPERATIVE
+                                    </div>
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-slate-700 text-slate-400 mb-2 ml-2 shadow-md bg-black/50`}>
+                                        <Clock size={12}/> Active Duty: {stats.daysInService}
+                                    </div>
                                 </div>
                                 <h1 className="text-3xl lg:text-4xl font-black text-white leading-none uppercase tracking-wide truncate mb-2">{activeAgent.name}</h1>
                                 <div className="flex items-center gap-3 flex-wrap">
@@ -253,6 +301,76 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* 📋 SECTOR 1.5: OPERATIONAL LOGISTICS & BIO */}
+                <div className="p-6 md:p-10 max-w-7xl mx-auto pb-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        {/* CREDENTIALS CARD */}
+                        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
+                            
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"><Phone size={10}/> Comms</p>
+                                    <p className="text-xs font-bold text-slate-300 truncate">{activeAgent.phone || 'No Data'}</p>
+                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{activeAgent.email || 'No Email'}</p>
+                                </div>
+                                <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"><Truck size={10}/> Assignment</p>
+                                    <p className="text-xs font-bold text-slate-300 truncate">{activeAgent.role || 'Motorist'}</p>
+                                    <p className="text-[10px] text-emerald-500 font-mono mt-0.5 truncate">{activeAgent.vehicle || 'No Mount'}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5"><Lock size={10}/> Clearance Levels</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {activeAgent.canEditRoster ? 
+                                        <span className="text-[9px] bg-purple-900/30 text-purple-400 border border-purple-500/30 px-2 py-1 rounded uppercase font-bold">Roster Control: GRANTED</span> : 
+                                        <span className="text-[9px] bg-slate-800 text-slate-500 border border-slate-700 px-2 py-1 rounded uppercase font-bold">Roster Control: DENIED</span>
+                                    }
+                                    {activeAgent.allowRetur ? 
+                                        <span className="text-[9px] bg-red-900/30 text-red-400 border border-red-500/30 px-2 py-1 rounded uppercase font-bold">Tarik Barang: GRANTED</span> : 
+                                        <span className="text-[9px] bg-slate-800 text-slate-500 border border-slate-700 px-2 py-1 rounded uppercase font-bold">Tarik Barang: DENIED</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* BIO & SERVICE RECORD */}
+                        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Calendar size={14} className="text-orange-500"/> Service Record & Bio</h3>
+                                {canEditProfile && !isEditingBio && (
+                                    <button onClick={() => setIsEditingBio(true)} className="text-slate-500 hover:text-white transition-colors" title="Edit Service Record"><Edit3 size={14}/></button>
+                                )}
+                                {canEditProfile && isEditingBio && (
+                                    <button onClick={handleBioSave} className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/50 bg-emerald-900/20 px-2 py-1 rounded-md"><Save size={12}/> Save</button>
+                                )}
+                            </div>
+
+                            <div className="flex-1 bg-black/30 rounded-xl border border-slate-800/50 p-4 relative group overflow-hidden">
+                                {isEditingBio ? (
+                                    <textarea 
+                                        value={bioText}
+                                        onChange={(e) => setBioText(e.target.value)}
+                                        placeholder="Enter agent background, internal notes, or personal goals..."
+                                        className="w-full h-full min-h-[100px] bg-transparent text-sm text-slate-300 resize-none outline-none custom-scrollbar"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <div className="h-full overflow-y-auto custom-scrollbar pr-2 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                                        {activeAgent.bio || <span className="text-slate-600 italic">No service record or bio on file.</span>}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
