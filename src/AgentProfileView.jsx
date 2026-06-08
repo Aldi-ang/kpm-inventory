@@ -3,61 +3,112 @@ import {
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
     MapPin, AlertCircle, Camera, Phone, Edit3, Save, Clock,
-    Star, Menu, X, ChevronRight, Sparkles
+    Star, Menu, X, ChevronRight, Sparkles, Settings, Plus, Trash2, Image as ImageIcon
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { doc, updateDoc } from 'firebase/firestore'; 
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
     
-    // 🚀 TACTICAL DRAWER STATE (Sidebar Toggle)
+    // 🚀 TACTICAL DRAWER & LOCATION STATE
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+    const [locationFilter, setLocationFilter] = useState('ALL');
     
-    // Resize listener for responsive sidebar
+    // 🚀 MASTER ADMIN AUTO-SYNTHESIS
+    const [ownerProfile, setOwnerProfile] = useState(null);
+    useEffect(() => {
+        if(userRole === 'ADMIN' && db && appId && userId) {
+            const fetchOwner = async () => {
+                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/motorists`, 'master_owner'));
+                if(snap.exists()) setOwnerProfile({id: 'master_owner', userRole: 'ADMIN', name: 'Master Owner', ...snap.data()});
+                else setOwnerProfile({id: 'master_owner', userRole: 'ADMIN', name: 'Master Owner', location: 'Headquarters', allowedPayments: ['Cash','Titip','Transfer'], allowedTiers: ['Grosir','Retail'], canEditRoster: true, allowRetur: true});
+            }
+            fetchOwner();
+        }
+    }, [db, appId, userId, userRole]);
+
+    const allAgents = useMemo(() => {
+        let list = [...(motorists || [])];
+        if (ownerProfile && !list.find(m => m.id === 'master_owner')) list.unshift(ownerProfile);
+        return list;
+    }, [motorists, ownerProfile]);
+
+    const [selectedId, setSelectedId] = useState(() => {
+        if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
+        return allAgents && allAgents.length > 0 ? allAgents[0].id : null;
+    });
+
+    const activeAgent = allAgents?.find(m => m.id === selectedId);
+    const canEditProfile = userRole === 'ADMIN' || activeAgent?.id === agentProfileId || activeAgent?.id === 'master_owner';
+
+    // 🚀 BIO & UPLOAD STATE
+    const [chartFilter, setChartFilter] = useState('7D');
+    const [isUploading, setIsUploading] = useState(false);
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bioText, setBioText] = useState('');
+
     useEffect(() => {
         const handleResize = () => { if (window.innerWidth > 1024) setIsSidebarOpen(true); else setIsSidebarOpen(false); };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const [locationFilter, setLocationFilter] = useState('ALL');
-    const [selectedId, setSelectedId] = useState(() => {
-        if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
-        return motorists && motorists.length > 0 ? motorists[0].id : null;
-    });
-
-    const [chartFilter, setChartFilter] = useState('7D');
-    const [isUploading, setIsUploading] = useState(false);
-    const [isEditingBio, setIsEditingBio] = useState(false);
-    const [bioText, setBioText] = useState('');
-
-    const activeAgent = motorists?.find(m => m.id === selectedId);
-    const canEditProfile = userRole === 'ADMIN' || activeAgent?.id === agentProfileId;
-
     useEffect(() => {
         setBioText(activeAgent?.bio || '');
         setIsEditingBio(false);
     }, [activeAgent]);
 
-    const uniqueLocations = useMemo(() => ['ALL', ...new Set((motorists || []).map(m => m.location || 'Field'))], [motorists]);
-    const filteredMotorists = motorists?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
+    const uniqueLocations = useMemo(() => ['ALL', ...new Set((allAgents || []).map(m => m.location || 'Field'))], [allAgents]);
+    const filteredMotorists = allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
+
+    // 🚀 DYNAMIC RPG RANK ENGINE
+    const [rpgData, setRpgData] = useState({
+        expMultiplier: 1, // Default: 1 Rupiah = 1 EXP
+        ranks: [
+            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', perks: 'Standard Clearance', logo: '' },
+            { id: '2', name: 'Silver', min: 25000000, hex: '#94a3b8', perks: 'Access to Basic Promos', logo: '' },
+            { id: '3', name: 'Gold', min: 100000000, hex: '#facc15', perks: 'Priority Stock Allocations', logo: '' },
+            { id: '4', name: 'Platinum', min: 250000000, hex: '#22d3ee', perks: 'Extended GPS Bypasses', logo: '' },
+            { id: '5', name: 'Diamond', min: 500000000, hex: '#c084fc', perks: 'Exclusive Agent Bonuses', logo: '' },
+            { id: '6', name: 'Mythic', min: 1000000000, hex: '#f43f5e', perks: 'Master Tier Authority', logo: '' }
+        ]
+    });
+    const [showRankConfig, setShowRankConfig] = useState(false);
+    const [editingRpgData, setEditingRpgData] = useState(null);
+
+    useEffect(() => {
+        if (!db || !appId) return;
+        const fetchRanks = async () => {
+            const snap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'rpg_ranks'));
+            if (snap.exists() && snap.data().ranks) setRpgData(snap.data());
+        };
+        fetchRanks();
+    }, [db, appId]);
+
+    // 🚀 STAR SYSTEM LOGIC (Based on Role Tier)
+    const getRoleStars = (role) => {
+        if (role === 'ADMIN' || role === 'COMPANY_OWNER') return 5; // Tier 2/1 (Owner)
+        if (role === 'AREA_ADMIN') return 4; // Tier 3 (Regional Admin)
+        return 3; // Tier 4 (Salesman / Motorist / AGENT)
+    };
+    const roleStars = getRoleStars(activeAgent?.userRole);
 
     const handleAvatarUpload = async (e) => {
         const file = e.target.files[0];
         if (!file || !activeAgent || !db || !canEditProfile) return;
-        
         setIsUploading(true);
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
                 const base64 = event.target.result;
                 const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
-                await updateDoc(agentRef, { profileImage: base64 });
-            } catch(err) {
-                alert("Upload failed: " + err.message);
-            }
+                if(activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, profileImage: base64 });
+                else await updateDoc(agentRef, { profileImage: base64 });
+                // Optimistic local update for Owner
+                if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: base64}));
+            } catch(err) { alert("Upload failed: " + err.message); }
             setIsUploading(false);
         };
         reader.readAsDataURL(file);
@@ -67,22 +118,35 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (!db || !activeAgent || !canEditProfile) return;
         try {
             const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
-            await updateDoc(agentRef, { bio: bioText });
+            if(activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, bio: bioText });
+            else await updateDoc(agentRef, { bio: bioText });
+            if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, bio: bioText}));
             setIsEditingBio(false);
-        } catch(err) {
-            alert("Failed to save record: " + err.message);
-        }
+        } catch(err) { alert("Failed to save record: " + err.message); }
     };
 
-    // 🚀 RPG RARITY SYSTEM (1★ to 6★)
-    const tiers = [
-        { name: 'Bronze', stars: 1, min: 0, hex: '#d97706', color: 'text-amber-600', bg: 'bg-amber-900/30', border: 'border-amber-600/50', glow: 'shadow-[0_0_20px_rgba(217,119,6,0.4)]' },
-        { name: 'Silver', stars: 2, min: 25000000, hex: '#94a3b8', color: 'text-slate-300', bg: 'bg-slate-700/30', border: 'border-slate-400/50', glow: 'shadow-[0_0_20px_rgba(148,163,184,0.4)]' },
-        { name: 'Gold', stars: 3, min: 100000000, hex: '#facc15', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-400/50', glow: 'shadow-[0_0_20px_rgba(250,204,21,0.4)]' },
-        { name: 'Platinum', stars: 4, min: 250000000, hex: '#22d3ee', color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-400/50', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' },
-        { name: 'Diamond', stars: 5, min: 500000000, hex: '#c084fc', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-400/50', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.4)]' },
-        { name: 'Mythic', stars: 6, min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
-    ];
+    const handleSaveRankConfig = async () => {
+        try {
+            // Sort ranks by minimum EXP required
+            const sortedRanks = [...editingRpgData.ranks].sort((a,b) => Number(a.min) - Number(b.min));
+            const finalData = { ...editingRpgData, ranks: sortedRanks };
+            await setDoc(doc(db, `artifacts/${appId}/settings`, 'rpg_ranks'), finalData);
+            setRpgData(finalData);
+            setShowRankConfig(false);
+        } catch (error) { alert("Failed to save Rank Configuration."); }
+    };
+
+    const handleRankLogoUpload = (e, index) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const newRanks = [...editingRpgData.ranks];
+            newRanks[index].logo = event.target.result;
+            setEditingRpgData({...editingRpgData, ranks: newRanks});
+        };
+        reader.readAsDataURL(file);
+    };
 
     const stats = useMemo(() => {
         if (!activeAgent) return null;
@@ -102,7 +166,11 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const uniqueStores = new Set();
 
         (transactions || []).forEach(t => {
-            if (t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase())) {
+            // Master Admin sees global stats, agents see their own
+            const isOwnerView = activeAgent.id === 'master_owner';
+            const belongsToAgent = t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase());
+
+            if (isOwnerView || belongsToAgent) {
                 const txDateStr = t.date || (t.timestamp ? new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0] : null);
                 
                 if (t.type === 'SALE') {
@@ -132,48 +200,65 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
         const activeTitipResponsibility = Math.max(0, titipIssued - titipCollected);
         let canvasValue = 0;
-        (activeAgent.activeCanvas || []).forEach(item => {
-            const product = inventory?.find(p => p.id === item.productId);
-            let price = product ? (product.priceEcer || product.priceRetail || 0) : item.calculatedPrice || 0;
-            let qtyInBks = item.qty;
-            if (product) {
-                if (item.unit === 'Slop') qtyInBks = item.qty * (product.packsPerSlop || 10);
-                if (item.unit === 'Bal') qtyInBks = item.qty * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
-                if (item.unit === 'Karton') qtyInBks = item.qty * (product.balsPerCarton || 4) * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
-            }
-            canvasValue += (qtyInBks * price);
-        });
-
-        let currentTier = tiers[0]; let nextTier = tiers[1];
-        for (let i = tiers.length - 1; i >= 0; i--) {
-            if (lifetimeOmset >= tiers[i].min) { currentTier = tiers[i]; nextTier = tiers[i + 1] || null; break; }
+        
+        // Master Admin doesn't have a physical canvas
+        if (activeAgent.id !== 'master_owner') {
+            (activeAgent.activeCanvas || []).forEach(item => {
+                const product = inventory?.find(p => p.id === item.productId);
+                let price = product ? (product.priceEcer || product.priceRetail || 0) : item.calculatedPrice || 0;
+                let qtyInBks = item.qty;
+                if (product) {
+                    if (item.unit === 'Slop') qtyInBks = item.qty * (product.packsPerSlop || 10);
+                    if (item.unit === 'Bal') qtyInBks = item.qty * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
+                    if (item.unit === 'Karton') qtyInBks = item.qty * (product.balsPerCarton || 4) * (product.slopsPerBal || 20) * (product.packsPerSlop || 10);
+                }
+                canvasValue += (qtyInBks * price);
+            });
         }
-        const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeOmset - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
+
+        // 🚀 DYNAMIC EXP MATH
+        const lifetimeEXP = lifetimeOmset * (rpgData.expMultiplier || 1);
+        const sortedRanks = [...rpgData.ranks].sort((a,b) => Number(a.min) - Number(b.min));
+        
+        let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 }; 
+        let nextTier = sortedRanks[1] || null;
+        
+        for (let i = sortedRanks.length - 1; i >= 0; i--) {
+            if (lifetimeEXP >= Number(sortedRanks[i].min)) { 
+                currentTier = sortedRanks[i]; 
+                nextTier = sortedRanks[i + 1] || null; 
+                break; 
+            }
+        }
+        
+        const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
 
         let daysInService = 'NEW';
         if (activeAgent?.createdAt) {
             const createdTime = activeAgent.createdAt.seconds ? activeAgent.createdAt.seconds * 1000 : new Date(activeAgent.createdAt).getTime();
             if (!isNaN(createdTime)) daysInService = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24))) + " Days";
+        } else if (activeAgent.id === 'master_owner') {
+            daysInService = 'DAY ONE';
         }
 
         return { 
-            lifetimeOmset, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
+            lifetimeOmset, lifetimeEXP, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
             currentTier, nextTier, progressPercent, daysInService,
             chartData7D: last7Days, chartData1M: thisMonth, chartData1Y: thisYear,
             achievements: { stores: uniqueStores.size, titipCollected }
         };
-    }, [activeAgent, transactions, inventory]);
+    }, [activeAgent, transactions, inventory, rpgData]);
 
     if (!activeAgent || !stats) return <div className="p-8 text-white">No Agent Data Found.</div>;
 
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(num);
     const chartDataToRender = chartFilter === '7D' ? stats.chartData7D : chartFilter === '1M' ? stats.chartData1M : stats.chartData1Y;
 
-    // Helper to render the Gacha Stars
+    // Helper to render the Role-Based Stars (Max 5)
     const renderRarityStars = (count, hex) => (
         <div className="flex gap-1 mt-1 mb-2">
-            {[...Array(6)].map((_, i) => (
-                <Star key={i} size={14} className={`transition-all duration-500 ${i < count ? 'fill-current drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] scale-110 animate-pulse' : 'text-slate-800 opacity-30'}`} style={{ color: i < count ? hex : undefined }} />
+            {[...Array(5)].map((_, i) => (
+                <Star key={i} size={16} className={`transition-all duration-500 ${i < count ? 'fill-current drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110 animate-pulse' : 'text-slate-800 opacity-30'}`} style={{ color: i < count ? hex : undefined }} />
             ))}
         </div>
     );
@@ -181,6 +266,69 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     return (
         <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
             
+            {/* 🚀 SETTINGS MODAL (TIER 1 ADMIN ONLY) */}
+            {showRankConfig && userRole === 'ADMIN' && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[99999] flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                    <div className="max-w-4xl w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative">
+                        <button onClick={() => setShowRankConfig(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Settings className="text-blue-500"/> Rank & EXP Architecture</h2>
+                        
+                        <div className="bg-black/50 p-6 rounded-xl border border-slate-800 mb-8">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Global Experience Multiplier</label>
+                            <div className="flex items-center gap-4">
+                                <span className="text-emerald-500 font-black">1 Rupiah (Omset) = </span>
+                                <input 
+                                    type="number" 
+                                    value={editingRpgData.expMultiplier} 
+                                    onChange={(e) => setEditingRpgData({...editingRpgData, expMultiplier: Number(e.target.value)})}
+                                    className="bg-slate-950 border border-slate-700 text-white px-4 py-2 rounded-lg font-mono text-center w-32 focus:border-blue-500 outline-none"
+                                />
+                                <span className="text-blue-500 font-black">EXP Points</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest border-b border-slate-800 pb-2">Active Progression Tiers</h3>
+                            {editingRpgData.ranks.map((rank, idx) => (
+                                <div key={idx} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
+                                    <div className="relative group cursor-pointer w-16 h-16 rounded-lg border-2 overflow-hidden shrink-0 bg-black flex items-center justify-center" style={{ borderColor: rank.hex }}>
+                                        {rank.logo ? <img src={rank.logo} className="w-full h-full object-contain p-1" /> : <ImageIcon className="text-slate-600"/>}
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center"><Camera size={16} className="text-white"/></div>
+                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={(e) => handleRankLogoUpload(e, idx)} />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1 w-full">
+                                        <div>
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Rank Name</label>
+                                            <input type="text" value={rank.name} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].name = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-sm outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">EXP Required</label>
+                                            <input type="number" value={rank.min} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].min = Number(e.target.value); setEditingRpgData({...editingRpgData, ranks: r})}} className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-sm outline-none font-mono" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Theme (Hex)</label>
+                                            <div className="flex gap-2">
+                                                <input type="color" value={rank.hex} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].hex = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} className="w-10 h-10 rounded cursor-pointer bg-transparent border-0 p-0" />
+                                                <input type="text" value={rank.hex} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].hex = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} className="w-full bg-black border border-slate-800 text-slate-400 px-2 py-2 rounded text-xs outline-none font-mono uppercase" />
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Perks / Features</label>
+                                            <input type="text" value={rank.perks || ''} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].perks = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} placeholder="e.g. 5% Bonus" className="w-full bg-black border border-slate-800 text-emerald-400 px-3 py-2 rounded text-xs outline-none" />
+                                            <button onClick={() => { const r = [...editingRpgData.ranks]; r.splice(idx, 1); setEditingRpgData({...editingRpgData, ranks: r})}} className="absolute -right-2 -top-6 text-red-500 hover:text-red-400"><Trash2 size={14}/></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', perks: '', logo: ''}]})} className="w-full py-3 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={16}/> Add New Rank Tier</button>
+                        </div>
+
+                        <button onClick={handleSaveRankConfig} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2"><Save size={18}/> Deploy Rank Architecture</button>
+                    </div>
+                </div>
+            )}
+
             {/* 🚀 DRAWER OVERLAY FOR MOBILE */}
             {isSidebarOpen && window.innerWidth <= 1024 && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsSidebarOpen(false)}></div>
@@ -221,7 +369,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
                                         </div>
                                         <div className="overflow-hidden">
-                                            <p className={`font-bold text-sm truncate transition-colors ${selectedId === agent.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{agent.name}</p>
+                                            <p className={`font-bold text-sm truncate transition-colors flex items-center gap-1 ${selectedId === agent.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{agent.name} {agent.id === 'master_owner' && <ShieldCheck size={12} className="text-yellow-500"/>}</p>
                                             <p className="text-[9px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
                                         </div>
                                         {selectedId === agent.id && <ChevronRight size={14} className="text-blue-500 absolute right-3 opacity-50"/>}
@@ -236,18 +384,23 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             {/* 🚀 RIGHT MAIN PANEL: THE DOSSIER */}
             <div className="flex-1 h-screen overflow-y-auto custom-scrollbar relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed" style={{ backgroundColor: '#0f172a' }}>
                 
-                {/* 🚀 TOP NAVIGATION TOGGLE (GAMER STYLE) */}
-                {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
-                    <div className="absolute top-6 left-6 z-30">
+                {/* 🚀 TOP NAVIGATION TOGGLES */}
+                <div className="absolute top-6 left-6 z-30 flex gap-3">
+                    {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-black/80 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl text-slate-400 hover:text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95 group">
                             {isSidebarOpen ? <X size={20}/> : <Menu size={20} className="group-hover:animate-pulse"/>}
                         </button>
-                    </div>
-                )}
+                    )}
+                    {userRole === 'ADMIN' && (
+                        <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className="bg-black/80 backdrop-blur-md border border-slate-700 px-4 py-2.5 rounded-xl text-slate-400 hover:text-blue-400 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                            <Settings size={16}/> Rank Config
+                        </button>
+                    )}
+                </div>
 
                 {/* 🛡️ SECTOR 1: THE IDENTITY & RANK CARD */}
-                <div className="pt-20 pb-10 px-6 md:px-10 border-b border-slate-800 relative overflow-hidden bg-gradient-to-br from-black via-slate-900 to-black">
-                    <div className={`absolute -top-40 -right-40 w-[600px] h-[600px] ${stats.currentTier.bg} rounded-full blur-[150px] pointer-events-none opacity-20 transition-colors duration-1000`}></div>
+                <div className="pt-24 pb-10 px-6 md:px-10 border-b border-slate-800 relative overflow-hidden bg-gradient-to-br from-black via-slate-900 to-black">
+                    <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none opacity-20 transition-colors duration-1000" style={{ backgroundColor: stats.currentTier.hex }}></div>
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none"></div>
                     
                     <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
@@ -255,14 +408,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         {/* AVATAR & IDENTITY */}
                         <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 min-w-[350px]">
                             <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500" onClick={() => canEditProfile && document.getElementById('avatar-upload').click()}>
-                                <div className={`w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center border-[3px] ${stats.currentTier.border} ${stats.currentTier.bg} ${stats.currentTier.glow} backdrop-blur-md shrink-0 overflow-hidden relative shadow-2xl`} style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
+                                <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center border-[3px] backdrop-blur-md shrink-0 overflow-hidden relative shadow-2xl transition-all duration-500" style={{ borderColor: stats.currentTier.hex, backgroundColor: `${stats.currentTier.hex}30`, boxShadow: `0 0 25px ${stats.currentTier.hex}60`, clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                                     {isUploading ? (
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white z-20"></div>
                                     ) : activeAgent.profileImage ? (
                                         <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
                                     ) : (
-                                        <User size={64} className={`${stats.currentTier.color} z-0 opacity-50`}/>
+                                        <User size={64} className="z-0 opacity-50" style={{ color: stats.currentTier.hex }}/>
                                     )}
                                 </div>
                                 {canEditProfile && (
@@ -275,14 +428,15 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                             
                             <div className="mt-2 md:mt-0">
-                                {/* 🚀 THE STARS (Rarity System) */}
-                                {renderRarityStars(stats.currentTier.stars, stats.currentTier.hex)}
+                                {/* 🚀 THE DYNAMIC ROLE STARS */}
+                                {renderRarityStars(roleStars, stats.currentTier.hex)}
                                 
                                 <div className="flex items-center justify-center md:justify-start flex-wrap gap-2 mb-2">
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-l-2 ${stats.currentTier.color} bg-black/50 shadow-md backdrop-blur-sm`} style={{ borderLeftColor: stats.currentTier.hex }}>
-                                        <Sparkles size={12}/> {stats.currentTier.name} OPERATIVE
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-l-2 bg-black/50 shadow-md backdrop-blur-sm" style={{ borderLeftColor: stats.currentTier.hex, color: stats.currentTier.hex }}>
+                                        {stats.currentTier.logo ? <img src={stats.currentTier.logo} className="w-3 h-3 object-contain"/> : <Sparkles size={12}/>} 
+                                        {stats.currentTier.name} OPERATIVE
                                     </div>
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-slate-700/50 text-emerald-400 bg-black/50 shadow-md backdrop-blur-sm`}>
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-slate-700/50 text-emerald-400 bg-black/50 shadow-md backdrop-blur-sm">
                                         <Clock size={12}/> Active: {stats.daysInService}
                                     </div>
                                 </div>
@@ -302,19 +456,22 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             
                             <div className="flex justify-between items-end mb-3 relative z-10">
                                 <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Lifetime Career EXP</span>
-                                <span className={`text-2xl font-black ${stats.currentTier.color} drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight`}>Rp {new Intl.NumberFormat('id-ID').format(stats.lifetimeOmset)}</span>
+                                <span className="text-2xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight" style={{ color: stats.currentTier.hex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} XP</span>
                             </div>
                             <div className="h-5 w-full bg-slate-950 rounded-md overflow-hidden border border-slate-800 shadow-inner relative mb-3 z-10 skew-x-[-10deg]">
                                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 pointer-events-none"></div>
-                                <div className={`h-full ${stats.currentTier.bg.replace('/30','/80')} transition-all duration-1000 ease-out relative shadow-[0_0_15px_currentColor]`} style={{ width: `${stats.progressPercent}%`, backgroundColor: stats.currentTier.hex }}>
+                                <div className="h-full transition-all duration-1000 ease-out relative" style={{ width: `${stats.progressPercent}%`, backgroundColor: stats.currentTier.hex, boxShadow: `0 0 15px ${stats.currentTier.hex}` }}>
                                     <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
                                     <div className="absolute top-0 right-0 w-4 h-full bg-white/50 skew-x-[20deg] animate-[flow_2s_infinite]"></div>
                                 </div>
                             </div>
                             <div className="flex justify-between items-center relative z-10">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stats.currentTier.name} RANK</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stats.currentTier.name} RANK</span>
+                                    {stats.currentTier.perks && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded text-white font-bold tracking-widest border border-white/20">Perks: {stats.currentTier.perks}</span>}
+                                </div>
                                 {stats.nextTier ? (
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Next Phase: <span className="text-white">{stats.nextTier.name}</span> <span className="text-slate-600 ml-1">(Rp {formatRp(stats.nextTier.min - stats.lifetimeOmset)} req)</span></span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Next Phase: <span className="text-white">{stats.nextTier.name}</span> <span className="text-slate-600 ml-1">({formatRp(stats.nextTier.min - stats.lifetimeEXP)} req)</span></span>
                                 ) : (
                                     <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest animate-pulse">MAXIMUM RANK REACHED</span>
                                 )}
@@ -323,16 +480,15 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     </div>
                 </div>
 
-                {/* 💰 SECTOR 2: THE FINANCIAL HERO LAYOUT (Fixing the Squish) */}
+                {/* 💰 SECTOR 2: THE FINANCIAL HERO LAYOUT */}
                 <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
                     
                     <div>
                         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><DollarSign size={14} className="text-emerald-500"/> Live Financial Matrix</h3>
                         
-                        {/* 🚀 ASYMMETRICAL GRID: 1 Big Hero Line, 2 Smaller Blocks */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             
-                            {/* HERO BLOCK: Today's Omset (Spans Full Width) */}
+                            {/* HERO BLOCK */}
                             <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-emerald-950/40 to-slate-900 border border-emerald-900/50 rounded-2xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-start md:items-center justify-between group hover:-translate-y-1 transition-all duration-300 hover:border-emerald-500/50 relative overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 2% 100%, 0 85%)' }}>
                                 <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-emerald-500/20 transition-colors"></div>
                                 <div>
@@ -345,7 +501,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <div className="hidden md:flex w-20 h-20 rounded-full bg-emerald-900/30 border border-emerald-500/30 items-center justify-center shadow-inner group-hover:scale-110 group-hover:rotate-12 transition-all duration-500"><Wallet size={32} className="text-emerald-400"/></div>
                             </div>
 
-                            {/* SMALL BLOCK 1: Canvas Value */}
+                            {/* SMALL BLOCKS */}
                             <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex items-center justify-between group hover:-translate-y-1 transition-all duration-300 hover:border-blue-500/50 hover:bg-slate-800 relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                                 <div>
@@ -355,8 +511,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <Truck size={24} className="text-slate-700 group-hover:text-blue-500 transition-colors opacity-50 group-hover:opacity-100"/>
                             </div>
                             
-                            {/* SMALL BLOCK 2: Consignment Risk */}
-                            <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex items-center justify-between group cursor-help hover:-translate-y-1 transition-all duration-300 hover:border-orange-500/50 hover:bg-slate-800 relative overflow-hidden" title="Total unpaid Titip issued by this agent floating in the market">
+                            <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex items-center justify-between group cursor-help hover:-translate-y-1 transition-all duration-300 hover:border-orange-500/50 hover:bg-slate-800 relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
                                 <div>
                                     <p className="text-[9px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5"><AlertCircle size={12}/> Consignment Risk (Titip)</p>
@@ -371,7 +526,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     {/* 📋 SECTOR 1.5: OPERATIONAL LOGISTICS & BIO */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
                         
-                        {/* CREDENTIALS CARD */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group hover:border-slate-700 transition-colors">
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><ShieldCheck size={100}/></div>
                             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
@@ -382,8 +536,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     <p className="text-xs font-bold text-slate-200 truncate">{activeAgent.phone || 'No Data'}</p>
                                 </div>
                                 <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm">
-                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Truck size={10} className="text-blue-400"/> Vehicle Mount</p>
-                                    <p className="text-xs font-bold text-emerald-400 font-mono tracking-wider truncate">{activeAgent.vehicle || 'No Mount'}</p>
+                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Truck size={10} className="text-blue-400"/> Assignment / Mount</p>
+                                    <p className="text-xs font-bold text-emerald-400 font-mono tracking-wider truncate">{activeAgent.id === 'master_owner' ? 'HQ Override' : (activeAgent.vehicle || 'No Mount')}</p>
                                 </div>
                             </div>
 
@@ -396,7 +550,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                         </div>
 
-                        {/* BIO & SERVICE RECORD */}
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col group hover:border-slate-700 transition-colors">
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Calendar size={100}/></div>
                             <div className="flex justify-between items-center mb-5 relative z-10">
