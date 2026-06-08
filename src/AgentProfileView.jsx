@@ -145,7 +145,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (role === 'AREA_ADMIN') return 4; // Tier 3
         return 3; // Tier 4
     };
-    const roleStars = getRoleStars(activeAgent?.userRole);
+    const roleStars = getRoleStars(activeAgent?.userRole || activeAgent?.role);
 
     const handleBioSave = async () => {
         if (!db || !activeAgent || !canEditProfile) return;

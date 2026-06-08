@@ -2872,9 +2872,9 @@ const handleGitHubMirror = async () => {
                   inventory={inventory}
                   userRole={userRole}
                   agentProfileId={agentProfileId}
-                  db={db}              // 🚀 NEW: Database Access
-                  appId={appId}        // 🚀 NEW: Database Access
-                  userId={userId}      // 🚀 NEW: Database Access
+                  db={db}              
+                  appId={appId}        
+                  userId={user?.uid}
               />
           )}
 
