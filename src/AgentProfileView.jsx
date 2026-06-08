@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
-    MapPin, AlertCircle, Camera, Phone, Mail, Edit3, Save, Clock
+    MapPin, AlertCircle, Camera, Phone, Edit3, Save, Clock,
+    Star, Menu, X, ChevronRight, Sparkles
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -11,9 +12,17 @@ import { doc, updateDoc } from 'firebase/firestore';
 
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
     
-    // 🚀 LOCATION FILTER & SEARCH STATE
-    const [locationFilter, setLocationFilter] = useState('ALL');
+    // 🚀 TACTICAL DRAWER STATE (Sidebar Toggle)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
     
+    // Resize listener for responsive sidebar
+    useEffect(() => {
+        const handleResize = () => { if (window.innerWidth > 1024) setIsSidebarOpen(true); else setIsSidebarOpen(false); };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const [locationFilter, setLocationFilter] = useState('ALL');
     const [selectedId, setSelectedId] = useState(() => {
         if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && agentProfileId) return agentProfileId;
         return motorists && motorists.length > 0 ? motorists[0].id : null;
@@ -21,25 +30,20 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
     const [chartFilter, setChartFilter] = useState('7D');
     const [isUploading, setIsUploading] = useState(false);
-    
-    // 🚀 BIO EDITOR STATE
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
 
     const activeAgent = motorists?.find(m => m.id === selectedId);
     const canEditProfile = userRole === 'ADMIN' || activeAgent?.id === agentProfileId;
 
-    // Sync bio text when selecting different agents
     useEffect(() => {
         setBioText(activeAgent?.bio || '');
         setIsEditingBio(false);
     }, [activeAgent]);
 
-    // 🚀 DIRECTORY FILTER LOGIC
     const uniqueLocations = useMemo(() => ['ALL', ...new Set((motorists || []).map(m => m.location || 'Field'))], [motorists]);
     const filteredMotorists = motorists?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
 
-    // IMAGE UPLOAD HANDLER
     const handleAvatarUpload = async (e) => {
         const file = e.target.files[0];
         if (!file || !activeAgent || !db || !canEditProfile) return;
@@ -59,7 +63,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         reader.readAsDataURL(file);
     };
 
-    // BIO SAVE HANDLER
     const handleBioSave = async () => {
         if (!db || !activeAgent || !canEditProfile) return;
         try {
@@ -71,39 +74,31 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         }
     };
 
-    // RPG Tier Engine
+    // 🚀 RPG RARITY SYSTEM (1★ to 6★)
     const tiers = [
-        { name: 'Bronze', min: 0, hex: '#d97706', color: 'text-amber-600', bg: 'bg-amber-900/30', border: 'border-amber-600/50', glow: 'shadow-[0_0_20px_rgba(217,119,6,0.4)]' },
-        { name: 'Silver', min: 25000000, hex: '#94a3b8', color: 'text-slate-300', bg: 'bg-slate-700/30', border: 'border-slate-400/50', glow: 'shadow-[0_0_20px_rgba(148,163,184,0.4)]' },
-        { name: 'Gold', min: 100000000, hex: '#facc15', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-400/50', glow: 'shadow-[0_0_20px_rgba(250,204,21,0.4)]' },
-        { name: 'Platinum', min: 250000000, hex: '#22d3ee', color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-400/50', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' },
-        { name: 'Diamond', min: 500000000, hex: '#c084fc', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-400/50', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.4)]' },
-        { name: 'Mythic', min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
+        { name: 'Bronze', stars: 1, min: 0, hex: '#d97706', color: 'text-amber-600', bg: 'bg-amber-900/30', border: 'border-amber-600/50', glow: 'shadow-[0_0_20px_rgba(217,119,6,0.4)]' },
+        { name: 'Silver', stars: 2, min: 25000000, hex: '#94a3b8', color: 'text-slate-300', bg: 'bg-slate-700/30', border: 'border-slate-400/50', glow: 'shadow-[0_0_20px_rgba(148,163,184,0.4)]' },
+        { name: 'Gold', stars: 3, min: 100000000, hex: '#facc15', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-400/50', glow: 'shadow-[0_0_20px_rgba(250,204,21,0.4)]' },
+        { name: 'Platinum', stars: 4, min: 250000000, hex: '#22d3ee', color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-400/50', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' },
+        { name: 'Diamond', stars: 5, min: 500000000, hex: '#c084fc', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-400/50', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.4)]' },
+        { name: 'Mythic', stars: 6, min: 1000000000, hex: '#f43f5e', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50', glow: 'shadow-[0_0_20px_rgba(244,63,94,0.4)]' }
     ];
 
     const stats = useMemo(() => {
         if (!activeAgent) return null;
 
         let lifetimeOmset = 0; let todayOmset = 0; let todayCash = 0; let titipIssued = 0; let titipCollected = 0;
-        
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
+        const today = new Date(); const todayStr = today.toISOString().split('T')[0];
+        const currentMonth = today.getMonth(); const currentYear = today.getFullYear();
         
         const last7Days = Array.from({length: 7}, (_, i) => {
             const d = new Date(); d.setDate(d.getDate() - (6 - i));
             return { date: d.toISOString().split('T')[0], label: d.toLocaleDateString('id-ID', {weekday:'short'}), cash: 0, titip: 0 };
         });
 
-        const thisMonth = [
-            { label: 'Week 1', cash: 0, titip: 0 }, { label: 'Week 2', cash: 0, titip: 0 },
-            { label: 'Week 3', cash: 0, titip: 0 }, { label: 'Week 4', cash: 0, titip: 0 }
-        ];
-
+        const thisMonth = [ { label: 'Wk 1', cash: 0, titip: 0 }, { label: 'Wk 2', cash: 0, titip: 0 }, { label: 'Wk 3', cash: 0, titip: 0 }, { label: 'Wk 4', cash: 0, titip: 0 } ];
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const thisYear = monthNames.map(m => ({ label: m, cash: 0, titip: 0 }));
-
         const uniqueStores = new Set();
 
         (transactions || []).forEach(t => {
@@ -113,30 +108,22 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 if (t.type === 'SALE') {
                     lifetimeOmset += (t.total || 0);
                     if (t.customerName) uniqueStores.add(t.customerName);
-
                     if (t.paymentType === 'Titip') titipIssued += (t.total || 0);
-                    
                     if (txDateStr === todayStr) {
                         todayOmset += (t.total || 0);
                         if (t.paymentType !== 'Titip') todayCash += (t.total || 0);
                     }
-
                     if (txDateStr) {
                         const txDateObj = new Date(txDateStr);
                         const isTitip = t.paymentType === 'Titip';
-                        
                         const day7Node = last7Days.find(d => d.date === txDateStr);
                         if (day7Node) day7Node[isTitip ? 'titip' : 'cash'] += (t.total || 0);
-
                         if (txDateObj.getMonth() === currentMonth && txDateObj.getFullYear() === currentYear) {
                             const dateNum = txDateObj.getDate();
                             const weekIdx = dateNum <= 7 ? 0 : dateNum <= 14 ? 1 : dateNum <= 21 ? 2 : 3;
                             thisMonth[weekIdx][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                         }
-
-                        if (txDateObj.getFullYear() === currentYear) {
-                            thisYear[txDateObj.getMonth()][isTitip ? 'titip' : 'cash'] += (t.total || 0);
-                        }
+                        if (txDateObj.getFullYear() === currentYear) thisYear[txDateObj.getMonth()][isTitip ? 'titip' : 'cash'] += (t.total || 0);
                     }
                 }
                 if (t.type === 'CONSIGNMENT_PAYMENT') titipCollected += (t.amountPaid || t.total || 0);
@@ -144,7 +131,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         });
 
         const activeTitipResponsibility = Math.max(0, titipIssued - titipCollected);
-        
         let canvasValue = 0;
         (activeAgent.activeCanvas || []).forEach(item => {
             const product = inventory?.find(p => p.id === item.productId);
@@ -160,19 +146,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
         let currentTier = tiers[0]; let nextTier = tiers[1];
         for (let i = tiers.length - 1; i >= 0; i--) {
-            if (lifetimeOmset >= tiers[i].min) {
-                currentTier = tiers[i]; nextTier = tiers[i + 1] || null; break;
-            }
+            if (lifetimeOmset >= tiers[i].min) { currentTier = tiers[i]; nextTier = tiers[i + 1] || null; break; }
         }
         const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeOmset - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
 
-        // Calculate Days in Service
         let daysInService = 'NEW';
         if (activeAgent?.createdAt) {
             const createdTime = activeAgent.createdAt.seconds ? activeAgent.createdAt.seconds * 1000 : new Date(activeAgent.createdAt).getTime();
-            if (!isNaN(createdTime)) {
-                daysInService = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24))) + " Days";
-            }
+            if (!isNaN(createdTime)) daysInService = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24))) + " Days";
         }
 
         return { 
@@ -188,92 +169,127 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(num);
     const chartDataToRender = chartFilter === '7D' ? stats.chartData7D : chartFilter === '1M' ? stats.chartData1M : stats.chartData1Y;
 
+    // Helper to render the Gacha Stars
+    const renderRarityStars = (count, hex) => (
+        <div className="flex gap-1 mt-1 mb-2">
+            {[...Array(6)].map((_, i) => (
+                <Star key={i} size={14} className={`transition-all duration-500 ${i < count ? 'fill-current drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] scale-110 animate-pulse' : 'text-slate-800 opacity-30'}`} style={{ color: i < count ? hex : undefined }} />
+            ))}
+        </div>
+    );
+
     return (
-        <div className="flex h-full min-h-screen bg-black font-sans">
+        <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
             
-            {/* LEFT SIDEBAR: AGENT DIRECTORY (ONLY VISIBLE TO ADMINS) */}
+            {/* 🚀 DRAWER OVERLAY FOR MOBILE */}
+            {isSidebarOpen && window.innerWidth <= 1024 && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsSidebarOpen(false)}></div>
+            )}
+
+            {/* 🚀 LEFT SIDEBAR: TACTICAL DIRECTORY DRAWER */}
             {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
-                <div className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
-                    <div className="p-4 border-b border-slate-800 bg-black sticky top-0 z-10 space-y-3">
-                        <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={14} className="text-emerald-500"/> Agent Directory</h2>
-                        {/* 🚀 DEPLOYMENT ZONE FILTER */}
-                        <div className="relative">
-                            <MapPin size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <select 
-                                value={locationFilter} 
-                                onChange={(e) => setLocationFilter(e.target.value)}
-                                className="w-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] uppercase font-bold rounded-lg pl-8 pr-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                            >
-                                {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc === 'ALL' ? 'ALL DEPLOYMENT ZONES' : loc}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="p-3 space-y-2">
-                        {filteredMotorists.length === 0 ? (
-                            <p className="text-center text-[10px] text-slate-600 uppercase font-bold py-4">No agents in this zone.</p>
-                        ) : (
-                            filteredMotorists.map(agent => (
-                                <button 
-                                    key={agent.id} 
-                                    onClick={() => setSelectedId(agent.id)}
-                                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${selectedId === agent.id ? 'bg-blue-900/20 border-blue-500/50 shadow-inner' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
+                <div className={`fixed lg:relative top-0 left-0 h-full bg-slate-950/95 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-50 shadow-[20px_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-0'}`}>
+                    <div className="w-72 flex flex-col h-full">
+                        <div className="p-4 border-b border-slate-800 bg-black/50 sticky top-0 z-10 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={14} className="text-emerald-500"/> Agent Directory</h2>
+                                <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-white"><X size={18}/></button>
+                            </div>
+                            <div className="relative group">
+                                <MapPin size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                                <select 
+                                    value={locationFilter} 
+                                    onChange={(e) => setLocationFilter(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] uppercase font-bold rounded-lg pl-8 pr-3 py-2.5 outline-none focus:border-blue-500 appearance-none cursor-pointer transition-colors hover:border-slate-500 shadow-inner"
                                 >
-                                    <div className={`w-10 h-10 rounded-full bg-slate-800 border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-600 text-slate-500'} flex items-center justify-center shrink-0 overflow-hidden`}>
-                                        {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <p className={`font-bold text-sm truncate ${selectedId === agent.id ? 'text-white' : 'text-slate-300'}`}>{agent.name}</p>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
-                                    </div>
-                                </button>
-                            ))
-                        )}
+                                    {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc === 'ALL' ? 'ALL DEPLOYMENT ZONES' : loc}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="p-3 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+                            {filteredMotorists.length === 0 ? (
+                                <p className="text-center text-[10px] text-slate-600 uppercase font-bold py-4">No agents in this zone.</p>
+                            ) : (
+                                filteredMotorists.map(agent => (
+                                    <button 
+                                        key={agent.id} 
+                                        onClick={() => { setSelectedId(agent.id); if(window.innerWidth <= 1024) setIsSidebarOpen(false); }}
+                                        className={`w-full text-left p-3 rounded-xl border transition-all duration-300 flex items-center gap-3 group relative overflow-hidden ${selectedId === agent.id ? 'bg-blue-900/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)] translate-x-1' : 'bg-slate-900/50 border-slate-800/50 hover:border-slate-600 hover:bg-slate-800'}`}
+                                    >
+                                        {selectedId === agent.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]"></div>}
+                                        <div className={`w-10 h-10 rounded-full border ${selectedId === agent.id ? 'border-blue-400 text-blue-400' : 'border-slate-700 text-slate-500 bg-black'} flex items-center justify-center shrink-0 overflow-hidden`}>
+                                            {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className={`font-bold text-sm truncate transition-colors ${selectedId === agent.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{agent.name}</p>
+                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
+                                        </div>
+                                        {selectedId === agent.id && <ChevronRight size={14} className="text-blue-500 absolute right-3 opacity-50"/>}
+                                    </button>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* RIGHT MAIN PANEL: THE DOSSIER */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-900 pb-12 relative">
+            {/* 🚀 RIGHT MAIN PANEL: THE DOSSIER */}
+            <div className="flex-1 h-screen overflow-y-auto custom-scrollbar relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed" style={{ backgroundColor: '#0f172a' }}>
                 
+                {/* 🚀 TOP NAVIGATION TOGGLE (GAMER STYLE) */}
+                {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
+                    <div className="absolute top-6 left-6 z-30">
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-black/80 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl text-slate-400 hover:text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95 group">
+                            {isSidebarOpen ? <X size={20}/> : <Menu size={20} className="group-hover:animate-pulse"/>}
+                        </button>
+                    </div>
+                )}
+
                 {/* 🛡️ SECTOR 1: THE IDENTITY & RANK CARD */}
-                <div className="p-6 md:p-10 border-b-2 border-slate-800 bg-gradient-to-br from-slate-900 to-black relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-                    <div className={`absolute bottom-0 left-0 w-[600px] h-[600px] ${stats.currentTier.bg} rounded-full blur-[120px] pointer-events-none opacity-30 transition-colors duration-1000`}></div>
+                <div className="pt-20 pb-10 px-6 md:px-10 border-b border-slate-800 relative overflow-hidden bg-gradient-to-br from-black via-slate-900 to-black">
+                    <div className={`absolute -top-40 -right-40 w-[600px] h-[600px] ${stats.currentTier.bg} rounded-full blur-[150px] pointer-events-none opacity-20 transition-colors duration-1000`}></div>
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none"></div>
                     
-                    <div className="flex flex-col xl:flex-row gap-8 relative z-10">
+                    <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
+                        
                         {/* AVATAR & IDENTITY */}
-                        <div className="flex items-center gap-6 min-w-[350px]">
-                            <div className="relative group" onClick={() => canEditProfile && document.getElementById('avatar-upload').click()}>
-                                <div className={`w-28 h-28 rounded-3xl flex items-center justify-center border-4 ${stats.currentTier.border} ${stats.currentTier.bg} ${stats.currentTier.glow} backdrop-blur-sm shrink-0 transition-all duration-500 overflow-hidden ${canEditProfile ? 'cursor-pointer' : ''}`}>
+                        <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 min-w-[350px]">
+                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500" onClick={() => canEditProfile && document.getElementById('avatar-upload').click()}>
+                                <div className={`w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center border-[3px] ${stats.currentTier.border} ${stats.currentTier.bg} ${stats.currentTier.glow} backdrop-blur-md shrink-0 overflow-hidden relative shadow-2xl`} style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                                     {isUploading ? (
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white z-20"></div>
                                     ) : activeAgent.profileImage ? (
-                                        <img src={activeAgent.profileImage} className="w-full h-full object-cover" alt="Profile" />
+                                        <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
                                     ) : (
-                                        <User size={48} className={stats.currentTier.color}/>
+                                        <User size={64} className={`${stats.currentTier.color} z-0 opacity-50`}/>
                                     )}
                                 </div>
                                 {canEditProfile && (
-                                    <div className="absolute inset-0 bg-black/60 rounded-3xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                                        <Camera size={24} className="text-white" />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
+                                        <Camera size={24} className="text-white mb-1" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Change Intel</span>
                                     </div>
                                 )}
                                 <input type="file" id="avatar-upload" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
                             </div>
                             
-                            <div>
-                                <div className="flex items-center flex-wrap">
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${stats.currentTier.border} ${stats.currentTier.color} mb-2 shadow-md bg-black/50`}>
-                                        <TrendingUp size={12}/> {stats.currentTier.name} OPERATIVE
+                            <div className="mt-2 md:mt-0">
+                                {/* 🚀 THE STARS (Rarity System) */}
+                                {renderRarityStars(stats.currentTier.stars, stats.currentTier.hex)}
+                                
+                                <div className="flex items-center justify-center md:justify-start flex-wrap gap-2 mb-2">
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-l-2 ${stats.currentTier.color} bg-black/50 shadow-md backdrop-blur-sm`} style={{ borderLeftColor: stats.currentTier.hex }}>
+                                        <Sparkles size={12}/> {stats.currentTier.name} OPERATIVE
                                     </div>
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-slate-700 text-slate-400 mb-2 ml-2 shadow-md bg-black/50`}>
-                                        <Clock size={12}/> Active Duty: {stats.daysInService}
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-slate-700/50 text-emerald-400 bg-black/50 shadow-md backdrop-blur-sm`}>
+                                        <Clock size={12}/> Active: {stats.daysInService}
                                     </div>
                                 </div>
-                                <h1 className="text-3xl lg:text-4xl font-black text-white leading-none uppercase tracking-wide truncate mb-2">{activeAgent.name}</h1>
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <ShieldCheck size={16} className="text-emerald-500"/>
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
+                                <h1 className="text-4xl lg:text-5xl font-black text-white leading-none uppercase tracking-tighter drop-shadow-lg mb-3">{activeAgent.name}</h1>
+                                <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
+                                    <ShieldCheck size={16} className="text-blue-500"/>
+                                    <span className="text-[10px] text-slate-400 font-mono tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
                                     <span className="text-slate-600">|</span>
                                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest"><MapPin size={10} className="inline mr-1 text-orange-500"/>{activeAgent.location || 'Field'}</span>
                                 </div>
@@ -281,140 +297,148 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         </div>
 
                         {/* XP PROGRESS BAR */}
-                        <div className="flex-1 flex flex-col justify-center bg-black/40 p-6 rounded-2xl border border-slate-800 shadow-inner backdrop-blur-sm">
-                            <div className="flex justify-between items-end mb-2">
-                                <span className="text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5"><Activity size={14} className="text-blue-500"/> Lifetime Career Omset</span>
-                                <span className={`text-xl font-black ${stats.currentTier.color} drop-shadow-md`}>Rp {new Intl.NumberFormat('id-ID').format(stats.lifetimeOmset)}</span>
+                        <div className="flex-1 flex flex-col justify-center bg-black/60 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-slate-600 transition-colors">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors pointer-events-none"></div>
+                            
+                            <div className="flex justify-between items-end mb-3 relative z-10">
+                                <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Lifetime Career EXP</span>
+                                <span className={`text-2xl font-black ${stats.currentTier.color} drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight`}>Rp {new Intl.NumberFormat('id-ID').format(stats.lifetimeOmset)}</span>
                             </div>
-                            <div className="h-4 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-700 shadow-inner relative mb-2">
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>
-                                <div className={`h-full ${stats.currentTier.bg.replace('/30','/80')} transition-all duration-1000 ease-out relative`} style={{ width: `${stats.progressPercent}%`, backgroundColor: stats.currentTier.hex }}>
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
+                            <div className="h-5 w-full bg-slate-950 rounded-md overflow-hidden border border-slate-800 shadow-inner relative mb-3 z-10 skew-x-[-10deg]">
+                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 pointer-events-none"></div>
+                                <div className={`h-full ${stats.currentTier.bg.replace('/30','/80')} transition-all duration-1000 ease-out relative shadow-[0_0_15px_currentColor]`} style={{ width: `${stats.progressPercent}%`, backgroundColor: stats.currentTier.hex }}>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
+                                    <div className="absolute top-0 right-0 w-4 h-full bg-white/50 skew-x-[20deg] animate-[flow_2s_infinite]"></div>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center relative z-10">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stats.currentTier.name} RANK</span>
                                 {stats.nextTier ? (
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next: {stats.nextTier.name} <span className="text-slate-600">(Rp {formatRp(stats.nextTier.min - stats.lifetimeOmset)} left)</span></span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Next Phase: <span className="text-white">{stats.nextTier.name}</span> <span className="text-slate-600 ml-1">(Rp {formatRp(stats.nextTier.min - stats.lifetimeOmset)} req)</span></span>
                                 ) : (
-                                    <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest animate-pulse">MAX RANK REACHED</span>
+                                    <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest animate-pulse">MAXIMUM RANK REACHED</span>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 📋 SECTOR 1.5: OPERATIONAL LOGISTICS & BIO */}
-                <div className="p-6 md:p-10 max-w-7xl mx-auto pb-0">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 💰 SECTOR 2: THE FINANCIAL HERO LAYOUT (Fixing the Squish) */}
+                <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
+                    
+                    <div>
+                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><DollarSign size={14} className="text-emerald-500"/> Live Financial Matrix</h3>
+                        
+                        {/* 🚀 ASYMMETRICAL GRID: 1 Big Hero Line, 2 Smaller Blocks */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            {/* HERO BLOCK: Today's Omset (Spans Full Width) */}
+                            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-emerald-950/40 to-slate-900 border border-emerald-900/50 rounded-2xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-start md:items-center justify-between group hover:-translate-y-1 transition-all duration-300 hover:border-emerald-500/50 relative overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 2% 100%, 0 85%)' }}>
+                                <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-emerald-500/20 transition-colors"></div>
+                                <div>
+                                    <p className="text-[10px] text-emerald-500/80 font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2"><Wallet size={14}/> Today's Gross Revenue (Omset)</p>
+                                    <p className="text-4xl md:text-5xl font-black text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.4)]">Rp {formatRp(stats.todayOmset)}</p>
+                                    <div className="flex items-center gap-3 mt-3">
+                                        <p className="text-[10px] text-emerald-200 uppercase tracking-widest font-bold bg-emerald-900/50 border border-emerald-500/30 px-2.5 py-1 rounded-sm shadow-inner">Cash Flow: Rp {formatRp(stats.todayCash)}</p>
+                                    </div>
+                                </div>
+                                <div className="hidden md:flex w-20 h-20 rounded-full bg-emerald-900/30 border border-emerald-500/30 items-center justify-center shadow-inner group-hover:scale-110 group-hover:rotate-12 transition-all duration-500"><Wallet size={32} className="text-emerald-400"/></div>
+                            </div>
+
+                            {/* SMALL BLOCK 1: Canvas Value */}
+                            <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex items-center justify-between group hover:-translate-y-1 transition-all duration-300 hover:border-blue-500/50 hover:bg-slate-800 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                                <div>
+                                    <p className="text-[9px] text-blue-400/80 font-bold uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5"><Truck size={12}/> Active Canvas Value</p>
+                                    <p className="text-2xl font-black text-blue-400 font-mono drop-shadow-[0_0_10px_rgba(59,130,246,0.3)] tracking-tight">Rp {formatRp(stats.canvasValue)}</p>
+                                </div>
+                                <Truck size={24} className="text-slate-700 group-hover:text-blue-500 transition-colors opacity-50 group-hover:opacity-100"/>
+                            </div>
+                            
+                            {/* SMALL BLOCK 2: Consignment Risk */}
+                            <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex items-center justify-between group cursor-help hover:-translate-y-1 transition-all duration-300 hover:border-orange-500/50 hover:bg-slate-800 relative overflow-hidden" title="Total unpaid Titip issued by this agent floating in the market">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                                <div>
+                                    <p className="text-[9px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5"><AlertCircle size={12}/> Consignment Risk (Titip)</p>
+                                    <p className="text-2xl font-black text-orange-500 font-mono drop-shadow-[0_0_10px_rgba(249,115,22,0.3)] tracking-tight">Rp {formatRp(stats.activeTitipResponsibility)}</p>
+                                </div>
+                                <AlertCircle size={24} className="text-slate-700 group-hover:text-orange-500 transition-colors opacity-50 group-hover:opacity-100"/>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* 📋 SECTOR 1.5: OPERATIONAL LOGISTICS & BIO */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
                         
                         {/* CREDENTIALS CARD */}
-                        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group hover:border-slate-700 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><ShieldCheck size={100}/></div>
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
                             
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"><Phone size={10}/> Comms</p>
-                                    <p className="text-xs font-bold text-slate-300 truncate">{activeAgent.phone || 'No Data'}</p>
-                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{activeAgent.email || 'No Email'}</p>
+                            <div className="grid grid-cols-2 gap-3 mb-3 relative z-10">
+                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm">
+                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Phone size={10} className="text-blue-400"/> Comms Link</p>
+                                    <p className="text-xs font-bold text-slate-200 truncate">{activeAgent.phone || 'No Data'}</p>
                                 </div>
-                                <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"><Truck size={10}/> Assignment</p>
-                                    <p className="text-xs font-bold text-slate-300 truncate">{activeAgent.role || 'Motorist'}</p>
-                                    <p className="text-[10px] text-emerald-500 font-mono mt-0.5 truncate">{activeAgent.vehicle || 'No Mount'}</p>
+                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm">
+                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Truck size={10} className="text-blue-400"/> Vehicle Mount</p>
+                                    <p className="text-xs font-bold text-emerald-400 font-mono tracking-wider truncate">{activeAgent.vehicle || 'No Mount'}</p>
                                 </div>
                             </div>
 
-                            <div className="bg-black/30 p-3 rounded-xl border border-slate-800/50">
-                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5"><Lock size={10}/> Clearance Levels</p>
+                            <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm relative z-10">
+                                <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Lock size={10} className="text-blue-400"/> System Clearance</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {activeAgent.canEditRoster ? 
-                                        <span className="text-[9px] bg-purple-900/30 text-purple-400 border border-purple-500/30 px-2 py-1 rounded uppercase font-bold">Roster Control: GRANTED</span> : 
-                                        <span className="text-[9px] bg-slate-800 text-slate-500 border border-slate-700 px-2 py-1 rounded uppercase font-bold">Roster Control: DENIED</span>
-                                    }
-                                    {activeAgent.allowRetur ? 
-                                        <span className="text-[9px] bg-red-900/30 text-red-400 border border-red-500/30 px-2 py-1 rounded uppercase font-bold">Tarik Barang: GRANTED</span> : 
-                                        <span className="text-[9px] bg-slate-800 text-slate-500 border border-slate-700 px-2 py-1 rounded uppercase font-bold">Tarik Barang: DENIED</span>
-                                    }
+                                    <span className={`text-[8px] border px-2 py-1 rounded shadow-inner uppercase font-black tracking-widest ${activeAgent.canEditRoster ? 'bg-purple-900/30 text-purple-400 border-purple-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>Roster Control: {activeAgent.canEditRoster ? 'GRANTED' : 'DENIED'}</span>
+                                    <span className={`text-[8px] border px-2 py-1 rounded shadow-inner uppercase font-black tracking-widest ${activeAgent.allowRetur ? 'bg-red-900/30 text-red-400 border-red-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>Tarik Barang: {activeAgent.allowRetur ? 'GRANTED' : 'DENIED'}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* BIO & SERVICE RECORD */}
-                        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Calendar size={14} className="text-orange-500"/> Service Record & Bio</h3>
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col group hover:border-slate-700 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Calendar size={100}/></div>
+                            <div className="flex justify-between items-center mb-5 relative z-10">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Calendar size={14} className="text-orange-500"/> Service Record</h3>
                                 {canEditProfile && !isEditingBio && (
-                                    <button onClick={() => setIsEditingBio(true)} className="text-slate-500 hover:text-white transition-colors" title="Edit Service Record"><Edit3 size={14}/></button>
+                                    <button onClick={() => setIsEditingBio(true)} className="text-slate-500 hover:text-white transition-colors bg-slate-800 p-1.5 rounded-md border border-slate-700"><Edit3 size={12}/></button>
                                 )}
                                 {canEditProfile && isEditingBio && (
-                                    <button onClick={handleBioSave} className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/50 bg-emerald-900/20 px-2 py-1 rounded-md"><Save size={12}/> Save</button>
+                                    <button onClick={handleBioSave} className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest border border-emerald-500/50 bg-emerald-900/30 px-3 py-1.5 rounded-md shadow-[0_0_10px_rgba(16,185,129,0.2)]"><Save size={12}/> Save Intel</button>
                                 )}
                             </div>
 
-                            <div className="flex-1 bg-black/30 rounded-xl border border-slate-800/50 p-4 relative group overflow-hidden">
+                            <div className="flex-1 bg-black/40 rounded-xl border border-slate-800/50 p-4 relative group overflow-hidden backdrop-blur-sm z-10">
                                 {isEditingBio ? (
                                     <textarea 
                                         value={bioText}
                                         onChange={(e) => setBioText(e.target.value)}
-                                        placeholder="Enter agent background, internal notes, or personal goals..."
+                                        placeholder="Enter operational history, warnings, or personal goals..."
                                         className="w-full h-full min-h-[100px] bg-transparent text-sm text-slate-300 resize-none outline-none custom-scrollbar"
                                         autoFocus
                                     />
                                 ) : (
-                                    <div className="h-full overflow-y-auto custom-scrollbar pr-2 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                                        {activeAgent.bio || <span className="text-slate-600 italic">No service record or bio on file.</span>}
+                                    <div className="h-full overflow-y-auto custom-scrollbar pr-2 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-mono text-[11px]">
+                                        {activeAgent.bio || <span className="text-slate-600 italic">No operational record on file. Agent is a blank slate.</span>}
                                     </div>
                                 )}
                             </div>
                         </div>
 
                     </div>
-                </div>
 
-                {/* 💰 SECTOR 2: THE FINANCIAL & CONSIGNMENT LEDGER */}
-                <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-                    
-                    <div>
-                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><DollarSign size={14}/> Live Financial Ledger</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg flex items-center justify-between group transition-all hover:border-blue-500 hover:bg-slate-800">
-                                <div>
-                                    <p className="text-[10px] text-blue-400/80 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Truck size={12}/> Active Canvas Value</p>
-                                    <p className="text-2xl font-black text-blue-400 font-mono drop-shadow-[0_0_10px_rgba(96,165,250,0.3)]">Rp {formatRp(stats.canvasValue)}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-orange-950/20 border border-orange-900/50 rounded-2xl p-5 shadow-lg flex items-center justify-between group cursor-help transition-all hover:border-orange-500 hover:bg-orange-900/20" title="Total unpaid Titip issued by this agent floating in the market">
-                                <div>
-                                    <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><AlertCircle size={12}/> Consignment Risk (Titip)</p>
-                                    <p className="text-2xl font-black text-orange-500 font-mono drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]">Rp {formatRp(stats.activeTitipResponsibility)}</p>
-                                </div>
-                            </div>
-
-                            <div className="bg-emerald-950/20 border border-emerald-900/50 rounded-2xl p-5 shadow-lg flex items-center justify-between group transition-all hover:border-emerald-500 hover:bg-emerald-900/20">
-                                <div>
-                                    <p className="text-[10px] text-emerald-500/80 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Wallet size={12}/> Today's Total Omset</p>
-                                    <p className="text-2xl font-black text-emerald-500 font-mono drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]">Rp {formatRp(stats.todayOmset)}</p>
-                                    <p className="text-[10px] text-emerald-600 uppercase tracking-widest mt-1 font-bold bg-emerald-900/30 px-2 py-0.5 rounded inline-block">Cash Generated: Rp {formatRp(stats.todayCash)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-8">
                         {/* 📈 SECTOR 4: PERFORMANCE MATRIX (CHART) */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl group hover:border-slate-700 transition-colors">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><TrendingUp size={14}/> Performance Matrix</h3>
-                                <div className="flex items-center gap-1 bg-black p-1 rounded-lg border border-slate-800 shadow-inner">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><TrendingUp size={14}/> Timeline Analytics</h3>
+                                <div className="flex items-center gap-1 bg-black/50 p-1 rounded-lg border border-slate-800 shadow-inner">
                                     {['7D', '1M', '1Y'].map(f => (
                                         <button 
                                             key={f} 
                                             onClick={() => setChartFilter(f)} 
-                                            className={`px-3 py-1 rounded text-[9px] font-black uppercase transition-all ${chartFilter === f ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${chartFilter === f ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                                         >
                                             {f}
                                         </button>
@@ -437,49 +461,51 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 </ResponsiveContainer>
                             </div>
                             <div className="flex justify-center gap-6 mt-4">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div> Cash Sales</span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div> Consignment (Titip)</span>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-[0_0_5px_#10b981]"></div> Cash Flow</span>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-sm bg-orange-500 shadow-[0_0_5px_#f59e0b]"></div> Consignment</span>
                             </div>
                         </div>
 
                         {/* 🏆 SECTOR 3: THE TROPHY ROOM */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Award size={14}/> The Trophy Room</h3>
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl group hover:border-slate-700 transition-colors">
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Award size={14}/> The Trophy Room</h3>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Achievement 1: The Pioneer */}
-                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${stats.achievements.stores >= 10 ? 'bg-blue-900/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-slate-950 border-slate-800 opacity-50 grayscale'}`}>
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${stats.achievements.stores >= 10 ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-600'}`}>
+                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${stats.achievements.stores >= 10 ? 'bg-gradient-to-b from-blue-900/40 to-slate-900 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-1' : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`}>
+                                    {stats.achievements.stores >= 10 && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/20 rounded-full blur-xl pointer-events-none"></div>}
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${stats.achievements.stores >= 10 ? 'bg-blue-500 text-white shadow-[0_0_15px_#3b82f6]' : 'bg-slate-800 text-slate-600'}`}>
                                         <Target size={24}/>
                                     </div>
                                     <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.achievements.stores >= 10 ? 'text-blue-400' : 'text-slate-500'}`}>The Pioneer</h4>
-                                    <p className="text-[9px] text-slate-500 leading-tight">Secured transactions across 10 unique store locations.</p>
-                                    <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                                        <div className="bg-blue-500 h-full" style={{ width: `${Math.min(100, (stats.achievements.stores / 10) * 100)}%`}}></div>
+                                    <p className="text-[9px] text-slate-400 leading-tight">Secured transactions across 10 unique store locations.</p>
+                                    <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800">
+                                        <div className="bg-blue-500 h-full shadow-[0_0_5px_#3b82f6]" style={{ width: `${Math.min(100, (stats.achievements.stores / 10) * 100)}%`}}></div>
                                     </div>
                                 </div>
 
                                 {/* Achievement 2: The Debt Collector */}
-                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${stats.achievements.titipCollected >= 5000000 ? 'bg-orange-900/20 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-slate-950 border-slate-800 opacity-50 grayscale'}`}>
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${stats.achievements.titipCollected >= 5000000 ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-600'}`}>
+                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${stats.achievements.titipCollected >= 5000000 ? 'bg-gradient-to-b from-orange-900/40 to-slate-900 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:-translate-y-1' : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`}>
+                                    {stats.achievements.titipCollected >= 5000000 && <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/20 rounded-full blur-xl pointer-events-none"></div>}
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${stats.achievements.titipCollected >= 5000000 ? 'bg-orange-500 text-white shadow-[0_0_15px_#f59e0b]' : 'bg-slate-800 text-slate-600'}`}>
                                         <Zap size={24}/>
                                     </div>
                                     <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.achievements.titipCollected >= 5000000 ? 'text-orange-400' : 'text-slate-500'}`}>Debt Collector</h4>
-                                    <p className="text-[9px] text-slate-500 leading-tight">Successfully collected Rp 5.000.000 in past-due Titip.</p>
-                                    <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                                        <div className="bg-orange-500 h-full" style={{ width: `${Math.min(100, (stats.achievements.titipCollected / 5000000) * 100)}%`}}></div>
+                                    <p className="text-[9px] text-slate-400 leading-tight">Successfully collected Rp 5.000.000 in past-due Titip.</p>
+                                    <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800">
+                                        <div className="bg-orange-500 h-full shadow-[0_0_5px_#f59e0b]" style={{ width: `${Math.min(100, (stats.achievements.titipCollected / 5000000) * 100)}%`}}></div>
                                     </div>
                                 </div>
 
                                 {/* Achievement 3: Vault Keeper (Locked) */}
-                                <div className="p-4 rounded-xl border bg-slate-950 border-slate-800 opacity-50 grayscale flex flex-col items-center text-center">
+                                <div className="p-4 rounded-xl border bg-slate-950/50 border-slate-800/50 opacity-60 grayscale flex flex-col items-center text-center">
                                     <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-slate-800 text-slate-600"><Lock size={20}/></div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-500">Vault Keeper</h4>
                                     <p className="text-[9px] text-slate-500 leading-tight">Execute 7 flawless EOD stock opnames. (Locked)</p>
                                 </div>
 
                                 {/* Achievement 4: Ghost Rider (Locked) */}
-                                <div className="p-4 rounded-xl border bg-slate-950 border-slate-800 opacity-50 grayscale flex flex-col items-center text-center">
+                                <div className="p-4 rounded-xl border bg-slate-950/50 border-slate-800/50 opacity-60 grayscale flex flex-col items-center text-center">
                                     <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-slate-800 text-slate-600"><Crosshair size={20}/></div>
                                     <h4 className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-500">Ghost Rider</h4>
                                     <p className="text-[9px] text-slate-500 leading-tight">Complete 50 sales without an HQ GPS Bypass. (Locked)</p>
