@@ -37,6 +37,85 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     }
 };
 
+// 🚀 TRIPLE-A GAMING BORDER ENGINE 🚀
+const CrazyRankBorder = ({ index }) => {
+    if (index >= 5) return (
+        <div className="absolute -inset-5 z-0 pointer-events-none">
+            {/* Mythic: Absolute Hellfire */}
+            <div className="absolute inset-3 rounded-full bg-[conic-gradient(from_var(--border-angle),#f43f5e,#fb923c,#facc15,#fb923c,#f43f5e)] animate-[borderSpin_2s_linear_infinite] shadow-[0_0_50px_#f43f5e]"></div>
+            <div className="absolute inset-2 rounded-full bg-[conic-gradient(from_var(--border-angle),#facc15,#f43f5e,#facc15)] animate-[borderSpin_1.5s_linear_infinite_reverse] opacity-80 blur-[2px]"></div>
+            
+            {/* The Floating Crown Gem */}
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-100 via-yellow-400 to-yellow-600 rotate-45 z-20 shadow-[0_0_25px_#facc15] border-2 border-orange-300 flex items-center justify-center">
+                <div className="w-5 h-5 bg-red-600 rounded-full blur-[2px] animate-pulse"></div>
+            </div>
+            
+            {/* Bottom Wing Spikes */}
+            <div className="absolute -bottom-2 -left-4 w-16 h-8 bg-gradient-to-r from-red-600 to-orange-400 skew-x-[45deg] rounded shadow-[0_0_20px_#f43f5e]"></div>
+            <div className="absolute -bottom-2 -right-4 w-16 h-8 bg-gradient-to-l from-red-600 to-orange-400 skew-x-[-45deg] rounded shadow-[0_0_20px_#f43f5e]"></div>
+            
+            {/* Side Orbs */}
+            <div className="absolute top-1/2 -left-4 w-6 h-6 bg-gradient-to-tr from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_20px_#facc15] animate-bounce"></div>
+            <div className="absolute top-1/2 -right-4 w-6 h-6 bg-gradient-to-tl from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_20px_#facc15] animate-bounce" style={{ animationDelay: '0.5s' }}></div>
+            
+            {/* Particles */}
+            <div className="absolute -top-8 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-[floatUp_1s_infinite]"></div>
+            <div className="absolute top-1/4 -right-8 w-3 h-3 bg-orange-400 rounded-full animate-[floatUp_1.5s_infinite_0.5s]"></div>
+            <div className="absolute -bottom-6 left-1/3 w-2 h-2 bg-red-400 rounded-full animate-[floatUp_2s_infinite_1s]"></div>
+        </div>
+    );
+
+    if (index === 4) return (
+        <div className="absolute -inset-4 z-0 pointer-events-none">
+            {/* Diamond: Ethereal Purple/Pink */}
+            <div className="absolute inset-2 rounded-full bg-[conic-gradient(from_var(--border-angle),#c084fc,#e879f9,transparent,#c084fc)] animate-[borderSpin_3s_linear_infinite] shadow-[0_0_40px_#c084fc]"></div>
+            
+            {/* 4 Corner Diamond Jewels */}
+            <div className="absolute top-0 left-0 w-8 h-8 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_20px_#e879f9] border-[2px] border-white/70"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_20px_#e879f9] border-[2px] border-white/70"></div>
+            <div className="absolute top-1 right-1 w-5 h-5 bg-purple-300 rotate-45 z-20 animate-pulse shadow-[0_0_10px_#c084fc]"></div>
+            <div className="absolute bottom-1 left-1 w-5 h-5 bg-purple-300 rotate-45 z-20 animate-pulse shadow-[0_0_10px_#c084fc]"></div>
+        </div>
+    );
+
+    if (index === 3) return (
+        <div className="absolute -inset-3 z-0 pointer-events-none">
+            {/* Platinum: Cyberpunk Tech */}
+            <div className="absolute inset-1 bg-gradient-to-tr from-cyan-400 via-white to-cyan-400 rounded-full animate-[borderPulse_2s_ease_infinite] shadow-[0_0_30px_#22d3ee]"></div>
+            <div className="absolute inset-0 border-4 border-cyan-300 rounded-full border-dashed animate-[spin_6s_linear_infinite]"></div>
+            <div className="absolute -inset-1 border-2 border-blue-500 rounded-full border-dotted animate-[spin_8s_linear_infinite_reverse]"></div>
+            
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-cyan-200 shadow-[0_0_15px_#22d3ee] rounded-full"></div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-cyan-200 shadow-[0_0_15px_#22d3ee] rounded-full"></div>
+        </div>
+    );
+
+    if (index === 2) return (
+        <div className="absolute -inset-2 z-0 pointer-events-none">
+            {/* Gold: Majestic Glow */}
+            <div className="absolute inset-1 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_25px_#facc15] animate-[borderPulse_3s_ease_infinite]"></div>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600 rounded-full border-2 border-yellow-100 shadow-[0_0_15px_#fef08a] flex items-center justify-center">
+                <div className="w-10 h-1 bg-white/50 rounded-full"></div>
+            </div>
+        </div>
+    );
+
+    if (index === 1) return (
+        <div className="absolute -inset-1.5 z-0 pointer-events-none rounded-full overflow-hidden">
+            {/* Silver: Sharp Sheen */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-500 to-slate-200 rounded-full shadow-[0_0_15px_#94a3b8] border-2 border-slate-300"></div>
+            <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-white/80 skew-x-[-20deg] animate-[flow_2.5s_infinite]"></div>
+        </div>
+    );
+
+    // Bronze (Index 0)
+    return (
+        <div className="absolute -inset-1 z-0 pointer-events-none">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-700 via-orange-900 to-amber-700 rounded-full shadow-[0_0_10px_#b45309] border-[4px] border-[#78350f]"></div>
+        </div>
+    );
+};
+
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -227,7 +306,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             const belongsToAgent = t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase());
 
             if (isOwnerView || belongsToAgent) {
-                // 🚀 SAFE DATE PARSING
                 let txDateStr = t.date;
                 let txDateObj = null;
                 
@@ -346,43 +424,17 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             </div>
         );
     };
-
-    // 🚀 SAFE HEX PARSER FOR CSS BORDERS
-    const getAvatarBorderStyles = (index, hexInput) => {
-        try {
-            const hex = (hexInput || '#64748b').padEnd(7, '0');
-            const r = parseInt(hex.slice(1,3) || '64', 16);
-            const g = parseInt(hex.slice(3,5) || '74', 16);
-            const b = parseInt(hex.slice(5,7) || '8b', 16);
-
-            if (index >= 5) {
-                return { wrapper: `shadow-[0_0_40px_rgba(${r},${g},${b},0.8)]`, animatedBg: "avatar-mythic-bg", innerPadding: "p-[5px]" };
-            } else if (index === 4) {
-                return { wrapper: `shadow-[0_0_30px_rgba(${r},${g},${b},0.6)]`, animatedBg: "avatar-diamond-bg", innerPadding: "p-[4px]" };
-            } else if (index === 3) {
-                return { wrapper: `shadow-[0_0_20px_rgba(${r},${g},${b},0.5)]`, animatedBg: "avatar-platinum-bg", innerPadding: "p-[4px]" };
-            } else if (index === 2) {
-                return { wrapper: `shadow-[0_0_20px_rgba(${r},${g},${b},0.5)] animate-pulse`, animatedBg: "", innerPadding: "p-[4px]", staticColor: hex };
-            } else {
-                return { wrapper: `shadow-[0_0_10px_rgba(${r},${g},${b},0.3)]`, animatedBg: "", innerPadding: "p-[3px]", staticColor: hex };
-            }
-        } catch (e) {
-            return { wrapper: `shadow-[0_0_10px_rgba(100,116,139,0.3)]`, animatedBg: "", innerPadding: "p-[3px]", staticColor: '#64748b' };
-        }
-    };
     
     const safeCurrentHex = stats.currentTier.hex || '#64748b';
-    const avatarStyles = getAvatarBorderStyles(stats.tierIndex, safeCurrentHex);
 
     return (
         <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
             <style>{`
                 @property --border-angle { syntax: '<angle>'; inherits: true; initial-value: 0turn; }
-                .avatar-mythic-bg { background-image: conic-gradient(from var(--border-angle), #f43f5e, #fb923c, #facc15, #fb923c, #f43f5e); animation: borderSpin 2.5s linear infinite; }
-                .avatar-diamond-bg { background-image: conic-gradient(from var(--border-angle), #c084fc, #e879f9, transparent, #c084fc); animation: borderSpin 4s linear infinite; }
-                .avatar-platinum-bg { background-image: linear-gradient(45deg, #22d3ee, #ffffff, #22d3ee); background-size: 200% 200%; animation: borderPulse 3s ease infinite; }
                 @keyframes borderSpin { to { --border-angle: 1turn; } }
-                @keyframes borderPulse { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+                @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-40px) scale(0); opacity: 0; } }
+                @keyframes borderPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
+                @keyframes flow { 0% { left: -100%; } 100% { left: 200%; } }
             `}</style>
 
             {cropImageSrc && (
@@ -391,7 +443,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         <Cropper
                             image={cropImageSrc} crop={crop} zoom={zoom} aspect={1}
                             onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom}
-                            cropShape={cropTarget === 'avatar' ? 'rect' : 'round'}
+                            cropShape={cropTarget === 'avatar' ? 'round' : 'round'}
                             showGrid={false}
                         />
                     </div>
@@ -404,7 +456,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
             {showRankConfig && (userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
                 <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col p-6 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
-                    <div className="max-w-5xl w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative">
+                    <div className="max-w-5xl w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative mt-4 md:mt-10">
                         <button onClick={() => setShowRankConfig(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Settings className="text-blue-500"/> Rank & EXP Architecture</h2>
                         
@@ -540,21 +592,25 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     
                     <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
                         
+                        {/* 🚀 THE MLBB CRAZY GAMING AVATAR BORDER 🚀 */}
                         <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 min-w-[350px]">
-                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
-                                <div className={`relative w-32 h-32 md:w-40 md:h-40 ${avatarStyles.innerPadding} rounded-2xl ${avatarStyles.wrapper}`} style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)', backgroundColor: avatarStyles.staticColor || 'transparent' }}>
-                                    {avatarStyles.animatedBg && <div className={`absolute inset-0 ${avatarStyles.animatedBg}`}></div>}
-                                    <div className="absolute inset-[4px] bg-black z-10" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
-                                        {activeAgent.profileImage ? (
-                                            <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
-                                        ) : (
-                                            <div className="flex h-full items-center justify-center"><User size={64} className="z-0 opacity-50" style={{ color: safeCurrentHex }}/></div>
-                                        )}
-                                    </div>
+                            
+                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32 md:w-40 md:h-40" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
+                                
+                                <CrazyRankBorder index={stats.tierIndex} />
+
+                                {/* The Actual Profile Image */}
+                                <div className="absolute inset-[6px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+                                    {activeAgent.profileImage ? (
+                                        <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center"><User size={64} className="z-0 opacity-50" style={{ color: safeCurrentHex }}/></div>
+                                    )}
                                 </div>
+
                                 {canEditProfile && (
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
+                                    <div className="absolute inset-[6px] rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30">
                                         <Camera size={24} className="text-white mb-1" />
                                         <span className="text-[9px] font-black uppercase tracking-widest text-white">Change Intel</span>
                                     </div>
@@ -562,7 +618,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar')} />
                             </div>
                             
-                            <div className="mt-2 md:mt-0">
+                            <div className="mt-4 md:mt-0">
                                 {renderRarityStars(roleStars, safeCurrentHex)}
                                 <div className="flex items-center justify-center md:justify-start flex-wrap gap-2 mb-2">
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-l-2 bg-black/50 shadow-md backdrop-blur-sm" style={{ borderLeftColor: safeCurrentHex, color: safeCurrentHex }}>
