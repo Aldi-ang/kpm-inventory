@@ -43,7 +43,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
     const [locationFilter, setLocationFilter] = useState('ALL');
     const [showRankConfig, setShowRankConfig] = useState(false);
-    const [chartFilter, setChartFilter] = useState('1W'); // '1W', '1M', '1Y'
+    const [chartFilter, setChartFilter] = useState('1W'); 
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
     const [showCanvasBreakdown, setShowCanvasBreakdown] = useState(false);
@@ -76,21 +76,17 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const activeAgent = allAgents?.find(m => m.id === selectedId);
     const canEditProfile = userRole === 'ADMIN' || userRole === 'COMPANY_OWNER' || activeAgent?.id === agentProfileId || activeAgent?.id === 'master_owner';
 
-    // 🚀 DIRECTORY FILTER LOGIC (THE MISSING ENGINE)
-    const uniqueLocations = useMemo(() => ['ALL', ...new Set((allAgents || []).map(m => m.location || 'Field'))], [allAgents]);
-    const filteredMotorists = allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
-
-    // 🚀 DYNAMIC RPG RANK & TIMELINE ENGINE
+    // 🚀 DYNAMIC RPG RANK ENGINE (Now with Achievement Titles)
     const [rpgData, setRpgData] = useState({
         expMultiplier: 1, 
-        workingDays: [1,2,3,4,5,6], // 1=Mon, 0=Sun
+        workingDays: [1,2,3,4,5,6], 
         ranks: [
-            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', perks: 'Standard Clearance', logo: '' },
-            { id: '2', name: 'Silver', min: 25000000, hex: '#94a3b8', perks: 'Access to Basic Promos', logo: '' },
-            { id: '3', name: 'Gold', min: 100000000, hex: '#facc15', perks: 'Priority Stock Allocations', logo: '' },
-            { id: '4', name: 'Platinum', min: 250000000, hex: '#22d3ee', perks: 'Extended GPS Bypasses', logo: '' },
-            { id: '5', name: 'Diamond', min: 500000000, hex: '#c084fc', perks: 'Exclusive Agent Bonuses', logo: '' },
-            { id: '6', name: 'Mythic', min: 1000000000, hex: '#f43f5e', perks: 'Master Tier Authority', logo: '' }
+            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', title: 'The Wanderer', logo: '' },
+            { id: '2', name: 'Silver', min: 25000000, hex: '#94a3b8', title: 'The Hustler', logo: '' },
+            { id: '3', name: 'Gold', min: 100000000, hex: '#facc15', title: 'The Market King', logo: '' },
+            { id: '4', name: 'Platinum', min: 250000000, hex: '#22d3ee', title: 'The Syndicate Boss', logo: '' },
+            { id: '5', name: 'Diamond', min: 500000000, hex: '#c084fc', title: 'The Robin Hood', logo: '' },
+            { id: '6', name: 'Mythic', min: 1000000000, hex: '#f43f5e', title: 'The Sales Boomer', logo: '' }
         ]
     });
     const [editingRpgData, setEditingRpgData] = useState(null);
@@ -99,16 +95,25 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (!db || !appId) return;
         const fetchSettings = async () => {
             const snap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'rpg_ranks'));
-            if (snap.exists() && snap.data().ranks) setRpgData(snap.data());
+            if (snap.exists() && snap.data().ranks) {
+                const loaded = snap.data();
+                // Legacy Map: Convert old 'perks' to 'title' if needed
+                loaded.ranks = loaded.ranks.map(r => ({...r, title: r.title || r.perks || 'No Title'}));
+                setRpgData(loaded);
+            }
         };
         fetchSettings();
     }, [db, appId]);
+
+    // 🚀 DIRECTORY FILTER LOGIC
+    const uniqueLocations = useMemo(() => ['ALL', ...new Set((allAgents || []).map(m => m.location || 'Field'))], [allAgents]);
+    const filteredMotorists = allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
 
     useEffect(() => { setBioText(activeAgent?.bio || ''); setIsEditingBio(false); }, [activeAgent]);
 
     // 🚀 IMAGE CROPPER STATE
     const [cropImageSrc, setCropImageSrc] = useState(null);
-    const [cropTarget, setCropTarget] = useState(null); // 'avatar' or rank index (number)
+    const [cropTarget, setCropTarget] = useState(null); 
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -121,6 +126,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const reader = new FileReader();
         reader.onload = () => { setCropImageSrc(reader.result); setCropTarget(target); setCrop({x:0, y:0}); setZoom(1); };
         reader.readAsDataURL(file);
+        e.target.value = null; // Reset input
     };
 
     const handleExecuteCrop = async () => {
@@ -133,7 +139,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 else await updateDoc(agentRef, { profileImage: croppedImageBase64 });
                 if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: croppedImageBase64}));
             } else {
-                // It's a Rank Logo
                 const newRanks = [...editingRpgData.ranks];
                 newRanks[cropTarget].logo = croppedImageBase64;
                 setEditingRpgData({...editingRpgData, ranks: newRanks});
@@ -143,11 +148,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         setCropTarget(null);
     };
 
-    // 🚀 STAR SYSTEM LOGIC (God-Mode Tier 1 gets 6 Stars)
     const getRoleStars = (role) => {
-        if (role === 'ADMIN' || role === 'COMPANY_OWNER' || role === 'DEVELOPER') return 6; // Tier 1 / Owner
-        if (role === 'AREA_ADMIN') return 4; // Tier 3
-        return 3; // Tier 4
+        if (role === 'ADMIN' || role === 'COMPANY_OWNER' || role === 'DEVELOPER') return 6; 
+        if (role === 'AREA_ADMIN') return 4; 
+        return 3; 
     };
     const roleStars = getRoleStars(activeAgent?.userRole || activeAgent?.role);
 
@@ -197,7 +201,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const today = new Date(); const todayStr = today.toISOString().split('T')[0];
         const currentMonth = today.getMonth(); const currentYear = today.getFullYear();
         
-        // 🚀 FIXED TIMELINE LOGIC (Mon-Sun of Current Week)
         const getMonday = (d) => {
             const date = new Date(d); const day = date.getDay();
             const diff = date.getDate() - day + (day === 0 ? -6 : 1);
@@ -283,16 +286,19 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             });
         }
 
-        // 🚀 DYNAMIC EXP MATH (With Manual Override)
         const lifetimeEXP = (lifetimeOmset * (rpgData.expMultiplier || 1)) + (activeAgent.manualExp || 0);
         const sortedRanks = [...rpgData.ranks].sort((a,b) => Number(a.min) - Number(b.min));
         
         let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 }; 
         let nextTier = sortedRanks[1] || null;
+        let tierIndex = 0;
         
         for (let i = sortedRanks.length - 1; i >= 0; i--) {
             if (lifetimeEXP >= Number(sortedRanks[i].min)) { 
-                currentTier = sortedRanks[i]; nextTier = sortedRanks[i + 1] || null; break; 
+                currentTier = sortedRanks[i]; 
+                nextTier = sortedRanks[i + 1] || null; 
+                tierIndex = i;
+                break; 
             }
         }
         const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
@@ -305,7 +311,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
         return { 
             lifetimeOmset, lifetimeEXP, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
-            currentTier, nextTier, progressPercent, daysInService,
+            currentTier, nextTier, tierIndex, progressPercent, daysInService,
             chartData1W: thisWeek, chartData1M: thisMonth, chartData1Y: thisYear,
             achievements: { stores: uniqueStores.size, titipCollected },
             canvasBreakdown, activeDebtList
@@ -326,9 +332,67 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         </div>
     );
 
+    // 🚀 MLBB STYLED AVATAR BORDERS CALCULATOR
+    const getAvatarBorderStyles = (index, hex) => {
+        if (index >= 5) { // Mythic Effect
+            return {
+                wrapper: `shadow-[0_0_40px_rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},0.8)]`,
+                animatedBg: "avatar-mythic-bg",
+                innerPadding: "p-[5px]"
+            };
+        } else if (index === 4) { // Diamond Effect
+            return {
+                wrapper: `shadow-[0_0_30px_rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},0.6)]`,
+                animatedBg: "avatar-diamond-bg",
+                innerPadding: "p-[4px]"
+            };
+        } else if (index === 3) { // Platinum Effect
+            return {
+                wrapper: `shadow-[0_0_20px_rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},0.5)]`,
+                animatedBg: "avatar-platinum-bg",
+                innerPadding: "p-[4px]"
+            };
+        } else if (index === 2) { // Gold Effect
+            return {
+                wrapper: `shadow-[0_0_20px_rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},0.5)] animate-pulse`,
+                animatedBg: "",
+                innerPadding: "p-[4px]",
+                staticColor: hex
+            };
+        } else { // Silver & Bronze
+            return {
+                wrapper: `shadow-[0_0_10px_rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},0.3)]`,
+                animatedBg: "",
+                innerPadding: "p-[3px]",
+                staticColor: hex
+            };
+        }
+    };
+    const avatarStyles = getAvatarBorderStyles(stats.tierIndex, stats.currentTier.hex);
+
     return (
         <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
-            
+            <style>{`
+                /* CSS Magic for MLBB Avatar Borders */
+                @property --border-angle { syntax: '<angle>'; inherits: true; initial-value: 0turn; }
+                
+                .avatar-mythic-bg {
+                    background-image: conic-gradient(from var(--border-angle), #f43f5e, #fb923c, #facc15, #fb923c, #f43f5e);
+                    animation: borderSpin 2.5s linear infinite;
+                }
+                .avatar-diamond-bg {
+                    background-image: conic-gradient(from var(--border-angle), #c084fc, #e879f9, transparent, #c084fc);
+                    animation: borderSpin 4s linear infinite;
+                }
+                .avatar-platinum-bg {
+                    background-image: linear-gradient(45deg, #22d3ee, #ffffff, #22d3ee);
+                    background-size: 200% 200%;
+                    animation: borderPulse 3s ease infinite;
+                }
+                @keyframes borderSpin { to { --border-angle: 1turn; } }
+                @keyframes borderPulse { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+            `}</style>
+
             {/* 🚀 IMAGE CROPPER MODAL */}
             {cropImageSrc && (
                 <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col items-center justify-center p-6">
@@ -349,12 +413,12 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
             {/* 🚀 SETTINGS MODAL (TIER 1 ADMIN ONLY) */}
             {showRankConfig && (userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[99999] flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col p-6 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
                     <div className="max-w-5xl w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative">
                         <button onClick={() => setShowRankConfig(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Settings className="text-blue-500"/> Rank & EXP Architecture</h2>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
                             <div className="bg-black/50 p-6 rounded-xl border border-slate-800">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Global Experience Multiplier</label>
                                 <div className="flex items-center gap-4">
@@ -378,7 +442,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         <div className="space-y-4 mb-8">
                             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest border-b border-slate-800 pb-2">Active Progression Tiers</h3>
                             {editingRpgData.ranks.map((rank, idx) => (
-                                <div key={idx} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col lg:flex-row gap-5 items-start lg:items-center relative">
+                                <div key={idx} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row gap-5 items-start xl:items-center relative">
                                     <div className="relative group cursor-pointer w-20 h-20 rounded-lg border-[3px] overflow-hidden shrink-0 bg-black flex items-center justify-center shadow-lg" style={{ borderColor: rank.hex }} onClick={() => document.getElementById(`logo-upload-${idx}`).click()}>
                                         {rank.logo ? <img src={rank.logo} className="w-full h-full object-contain p-1" /> : <ImageIcon className="text-slate-600" size={32}/>}
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera size={20} className="text-white"/></div>
@@ -401,17 +465,17 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                                 <input type="text" value={rank.hex} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].hex = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} className="w-full bg-black border border-slate-800 text-slate-400 px-2 py-2 rounded text-xs outline-none font-mono uppercase" />
                                             </div>
                                         </div>
-                                        <div className="md:col-span-4 relative flex gap-2 items-end">
-                                            <div className="flex-1">
-                                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Perks / Features</label>
-                                                <input type="text" value={rank.perks || ''} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].perks = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} placeholder="e.g. 5% Bonus" className="w-full bg-black border border-slate-800 text-emerald-400 px-3 py-2 rounded text-xs outline-none focus:border-emerald-500 transition-colors" />
+                                        <div className="md:col-span-4 relative flex flex-col justify-end">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Achievement Title</label>
+                                            <div className="flex gap-2">
+                                                <input type="text" value={rank.title || ''} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].title = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} placeholder="e.g. The Sales Boomer" className="w-full bg-black border border-slate-800 text-emerald-400 px-3 py-2 rounded text-xs outline-none focus:border-emerald-500 transition-colors" />
+                                                <button onClick={() => { const r = [...editingRpgData.ranks]; r.splice(idx, 1); setEditingRpgData({...editingRpgData, ranks: r})}} className="w-9 h-9 bg-red-900/20 border border-red-500/50 text-red-500 rounded flex items-center justify-center shrink-0 hover:bg-red-500 hover:text-white transition-colors"><Trash2 size={16}/></button>
                                             </div>
-                                            <button onClick={() => { const r = [...editingRpgData.ranks]; r.splice(idx, 1); setEditingRpgData({...editingRpgData, ranks: r})}} className="w-9 h-9 bg-red-900/20 border border-red-500/50 text-red-500 rounded flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"><Trash2 size={16}/></button>
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                            <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', perks: '', logo: ''}]})} className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Rank Tier</button>
+                            <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', title: '', logo: ''}]})} className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Rank Tier</button>
                         </div>
 
                         <button onClick={handleSaveRankConfig} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Rank Architecture</button>
@@ -485,11 +549,21 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     
                     <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
                         
+                        {/* 🚀 AVATAR & IDENTITY (MLBB BORDERS) 🚀 */}
                         <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 min-w-[350px]">
-                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
-                                <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center border-[3px] backdrop-blur-md shrink-0 overflow-hidden relative shadow-2xl transition-all duration-500" style={{ borderColor: stats.currentTier.hex, backgroundColor: `${stats.currentTier.hex}30`, boxShadow: `0 0 25px ${stats.currentTier.hex}60`, clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                                    {activeAgent.profileImage ? <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" /> : <User size={64} className="z-0 opacity-50" style={{ color: stats.currentTier.hex }}/>}
+                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
+                                <div className={`relative w-32 h-32 md:w-40 md:h-40 ${avatarStyles.innerPadding} rounded-2xl ${avatarStyles.wrapper}`} style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)', backgroundColor: avatarStyles.staticColor || 'transparent' }}>
+                                    {avatarStyles.animatedBg && <div className={`absolute inset-0 ${avatarStyles.animatedBg}`}></div>}
+                                    <div className="absolute inset-[4px] bg-black z-10" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+                                        {isUploading ? (
+                                            <div className="flex h-full items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white z-20"></div></div>
+                                        ) : activeAgent.profileImage ? (
+                                            <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center"><User size={64} className="z-0 opacity-50" style={{ color: stats.currentTier.hex }}/></div>
+                                        )}
+                                    </div>
                                 </div>
                                 {canEditProfile && (
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30" style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)' }}>
@@ -541,10 +615,16 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     <div className="absolute top-0 right-0 w-4 h-full bg-white/50 skew-x-[20deg] animate-[flow_2s_infinite]"></div>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center relative z-10">
-                                <div className="flex items-center gap-2">
+                            
+                            {/* 🚀 ACHIEVEMENT TITLE ROW 🚀 */}
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative z-10 gap-3 mt-1">
+                                <div className="flex flex-col gap-1">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stats.currentTier.name} RANK</span>
-                                    {stats.currentTier.perks && <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded text-white font-bold tracking-widest border border-white/20 shadow-sm">{stats.currentTier.perks}</span>}
+                                    {stats.currentTier.title && (
+                                        <span className="text-xs font-black uppercase tracking-[0.2em] animate-pulse" style={{ color: stats.currentTier.hex, textShadow: `0 0 10px ${stats.currentTier.hex}` }}>
+                                            « {stats.currentTier.title} »
+                                        </span>
+                                    )}
                                 </div>
                                 {stats.nextTier ? (
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Next Phase: <span className="text-white">{stats.nextTier.name}</span> <span className="text-slate-600 ml-1">({formatRp(stats.nextTier.min - stats.lifetimeEXP)} req)</span></span>
