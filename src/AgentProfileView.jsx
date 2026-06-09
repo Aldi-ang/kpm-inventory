@@ -76,6 +76,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const activeAgent = allAgents?.find(m => m.id === selectedId);
     const canEditProfile = userRole === 'ADMIN' || userRole === 'COMPANY_OWNER' || activeAgent?.id === agentProfileId || activeAgent?.id === 'master_owner';
 
+    // 🚀 DIRECTORY FILTER LOGIC (THE MISSING ENGINE)
+    const uniqueLocations = useMemo(() => ['ALL', ...new Set((allAgents || []).map(m => m.location || 'Field'))], [allAgents]);
+    const filteredMotorists = allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
+
     // 🚀 DYNAMIC RPG RANK & TIMELINE ENGINE
     const [rpgData, setRpgData] = useState({
         expMultiplier: 1, 
