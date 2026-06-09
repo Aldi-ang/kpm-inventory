@@ -30,80 +30,70 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         canvas.width = pixelCrop.width;
         canvas.height = pixelCrop.height;
         ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL('image/png', 1.0); // 🚀 FIX: Switched to PNG to preserve transparent custom borders
     } catch (e) {
         console.error("Cropper Error:", e);
         return null;
     }
 };
 
-// 🚀 TRIPLE-A GAMING BORDER ENGINE 🚀
-const CrazyRankBorder = ({ index }) => {
+// 🚀 REFINED TRIPLE-A GAMING BORDER ENGINE 🚀
+const CrazyRankBorder = ({ index, hex }) => {
     if (index >= 5) return (
-        <div className="absolute -inset-5 z-0 pointer-events-none">
-            {/* Mythic: Absolute Hellfire */}
-            <div className="absolute inset-3 rounded-full bg-[conic-gradient(from_var(--border-angle),#f43f5e,#fb923c,#facc15,#fb923c,#f43f5e)] animate-[borderSpin_2s_linear_infinite] shadow-[0_0_50px_#f43f5e]"></div>
-            <div className="absolute inset-2 rounded-full bg-[conic-gradient(from_var(--border-angle),#facc15,#f43f5e,#facc15)] animate-[borderSpin_1.5s_linear_infinite_reverse] opacity-80 blur-[2px]"></div>
+        <div className="absolute -inset-2 z-0 pointer-events-none">
+            {/* Mythic: Refined Hellfire Aura */}
+            <div className="absolute inset-[-4px] rounded-full bg-[conic-gradient(from_var(--border-angle),#f43f5e,#fb923c,#facc15,#fb923c,#f43f5e)] animate-[borderSpin_2.5s_linear_infinite] opacity-80 blur-[6px]"></div>
             
-            {/* The Floating Crown Gem */}
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-100 via-yellow-400 to-yellow-600 rotate-45 z-20 shadow-[0_0_25px_#facc15] border-2 border-orange-300 flex items-center justify-center">
-                <div className="w-5 h-5 bg-red-600 rounded-full blur-[2px] animate-pulse"></div>
+            {/* Scaled-down Floating Crown Gem */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-br from-yellow-100 via-yellow-400 to-yellow-600 rotate-45 z-20 shadow-[0_0_15px_#facc15] border-2 border-orange-300 flex items-center justify-center">
+                <div className="w-3 h-3 bg-red-600 rounded-full blur-[1px] animate-pulse"></div>
             </div>
             
-            {/* Bottom Wing Spikes */}
-            <div className="absolute -bottom-2 -left-4 w-16 h-8 bg-gradient-to-r from-red-600 to-orange-400 skew-x-[45deg] rounded shadow-[0_0_20px_#f43f5e]"></div>
-            <div className="absolute -bottom-2 -right-4 w-16 h-8 bg-gradient-to-l from-red-600 to-orange-400 skew-x-[-45deg] rounded shadow-[0_0_20px_#f43f5e]"></div>
-            
-            {/* Side Orbs */}
-            <div className="absolute top-1/2 -left-4 w-6 h-6 bg-gradient-to-tr from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_20px_#facc15] animate-bounce"></div>
-            <div className="absolute top-1/2 -right-4 w-6 h-6 bg-gradient-to-tl from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_20px_#facc15] animate-bounce" style={{ animationDelay: '0.5s' }}></div>
+            {/* Refined Side Orbs */}
+            <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-tr from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_15px_#facc15] animate-bounce"></div>
+            <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-tl from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_15px_#facc15] animate-bounce" style={{ animationDelay: '0.5s' }}></div>
             
             {/* Particles */}
-            <div className="absolute -top-8 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-[floatUp_1s_infinite]"></div>
-            <div className="absolute top-1/4 -right-8 w-3 h-3 bg-orange-400 rounded-full animate-[floatUp_1.5s_infinite_0.5s]"></div>
-            <div className="absolute -bottom-6 left-1/3 w-2 h-2 bg-red-400 rounded-full animate-[floatUp_2s_infinite_1s]"></div>
+            <div className="absolute -top-4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-[floatUp_1.5s_infinite]"></div>
+            <div className="absolute top-1/4 -right-4 w-2.5 h-2.5 bg-orange-400 rounded-full animate-[floatUp_2s_infinite_0.5s]"></div>
         </div>
     );
 
     if (index === 4) return (
-        <div className="absolute -inset-4 z-0 pointer-events-none">
+        <div className="absolute -inset-1.5 z-0 pointer-events-none">
             {/* Diamond: Ethereal Purple/Pink */}
-            <div className="absolute inset-2 rounded-full bg-[conic-gradient(from_var(--border-angle),#c084fc,#e879f9,transparent,#c084fc)] animate-[borderSpin_3s_linear_infinite] shadow-[0_0_40px_#c084fc]"></div>
+            <div className="absolute inset-[-2px] rounded-full bg-[conic-gradient(from_var(--border-angle),#c084fc,#e879f9,transparent,#c084fc)] animate-[borderSpin_3s_linear_infinite] shadow-[0_0_20px_#c084fc] blur-[2px]"></div>
             
             {/* 4 Corner Diamond Jewels */}
-            <div className="absolute top-0 left-0 w-8 h-8 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_20px_#e879f9] border-[2px] border-white/70"></div>
-            <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_20px_#e879f9] border-[2px] border-white/70"></div>
-            <div className="absolute top-1 right-1 w-5 h-5 bg-purple-300 rotate-45 z-20 animate-pulse shadow-[0_0_10px_#c084fc]"></div>
-            <div className="absolute bottom-1 left-1 w-5 h-5 bg-purple-300 rotate-45 z-20 animate-pulse shadow-[0_0_10px_#c084fc]"></div>
+            <div className="absolute top-0 left-0 w-5 h-5 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_10px_#e879f9] border-[1px] border-white/70"></div>
+            <div className="absolute bottom-0 right-0 w-5 h-5 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_10px_#e879f9] border-[1px] border-white/70"></div>
         </div>
     );
 
     if (index === 3) return (
-        <div className="absolute -inset-3 z-0 pointer-events-none">
+        <div className="absolute -inset-1.5 z-0 pointer-events-none">
             {/* Platinum: Cyberpunk Tech */}
-            <div className="absolute inset-1 bg-gradient-to-tr from-cyan-400 via-white to-cyan-400 rounded-full animate-[borderPulse_2s_ease_infinite] shadow-[0_0_30px_#22d3ee]"></div>
-            <div className="absolute inset-0 border-4 border-cyan-300 rounded-full border-dashed animate-[spin_6s_linear_infinite]"></div>
-            <div className="absolute -inset-1 border-2 border-blue-500 rounded-full border-dotted animate-[spin_8s_linear_infinite_reverse]"></div>
-            
-            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-cyan-200 shadow-[0_0_15px_#22d3ee] rounded-full"></div>
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-3 bg-cyan-200 shadow-[0_0_15px_#22d3ee] rounded-full"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400 via-white to-cyan-400 rounded-full animate-[borderPulse_2s_ease_infinite] shadow-[0_0_20px_#22d3ee] blur-[2px]"></div>
+            <div className="absolute inset-0 border-[3px] border-cyan-300 rounded-full border-dashed animate-[spin_6s_linear_infinite]"></div>
+            <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-10 h-2 bg-cyan-200 shadow-[0_0_10px_#22d3ee] rounded-full"></div>
+            <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-10 h-2 bg-cyan-200 shadow-[0_0_10px_#22d3ee] rounded-full"></div>
         </div>
     );
 
     if (index === 2) return (
-        <div className="absolute -inset-2 z-0 pointer-events-none">
+        <div className="absolute -inset-1 z-0 pointer-events-none">
             {/* Gold: Majestic Glow */}
-            <div className="absolute inset-1 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_25px_#facc15] animate-[borderPulse_3s_ease_infinite]"></div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600 rounded-full border-2 border-yellow-100 shadow-[0_0_15px_#fef08a] flex items-center justify-center">
-                <div className="w-10 h-1 bg-white/50 rounded-full"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_20px_#facc15] animate-[borderPulse_3s_ease_infinite] blur-[1px]"></div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-3.5 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600 rounded-full border border-yellow-100 shadow-[0_0_10px_#fef08a] flex items-center justify-center">
+                <div className="w-6 h-0.5 bg-white/50 rounded-full"></div>
             </div>
         </div>
     );
 
     if (index === 1) return (
-        <div className="absolute -inset-1.5 z-0 pointer-events-none rounded-full overflow-hidden">
+        <div className="absolute -inset-1 z-0 pointer-events-none rounded-full overflow-hidden">
             {/* Silver: Sharp Sheen */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-500 to-slate-200 rounded-full shadow-[0_0_15px_#94a3b8] border-2 border-slate-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-500 to-slate-200 rounded-full shadow-[0_0_10px_#94a3b8] border-2 border-slate-300"></div>
             <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-white/80 skew-x-[-20deg] animate-[flow_2.5s_infinite]"></div>
         </div>
     );
@@ -111,7 +101,7 @@ const CrazyRankBorder = ({ index }) => {
     // Bronze (Index 0)
     return (
         <div className="absolute -inset-1 z-0 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-700 via-orange-900 to-amber-700 rounded-full shadow-[0_0_10px_#b45309] border-[4px] border-[#78350f]"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-700 via-orange-900 to-amber-700 rounded-full shadow-[0_0_10px_#b45309] border-[3px] border-[#78350f]"></div>
         </div>
     );
 };
@@ -159,12 +149,12 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         expMultiplier: 1, 
         workingDays: [1,2,3,4,5,6], 
         ranks: [
-            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', title: 'The Wanderer', logo: '' },
-            { id: '2', name: 'Silver', min: 25000000, hex: '#94a3b8', title: 'The Hustler', logo: '' },
-            { id: '3', name: 'Gold', min: 100000000, hex: '#facc15', title: 'The Market King', logo: '' },
-            { id: '4', name: 'Platinum', min: 250000000, hex: '#22d3ee', title: 'The Syndicate Boss', logo: '' },
-            { id: '5', name: 'Diamond', min: 500000000, hex: '#c084fc', title: 'The Robin Hood', logo: '' },
-            { id: '6', name: 'Mythic', min: 1000000000, hex: '#f43f5e', title: 'The Sales Boomer', logo: '' }
+            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', title: 'The Wanderer', logo: '', borderImage: '' },
+            { id: '2', name: 'Silver', min: 25000000, hex: '#94a3b8', title: 'The Hustler', logo: '', borderImage: '' },
+            { id: '3', name: 'Gold', min: 100000000, hex: '#facc15', title: 'The Market King', logo: '', borderImage: '' },
+            { id: '4', name: 'Platinum', min: 250000000, hex: '#22d3ee', title: 'The Syndicate Boss', logo: '', borderImage: '' },
+            { id: '5', name: 'Diamond', min: 500000000, hex: '#c084fc', title: 'The Robin Hood', logo: '', borderImage: '' },
+            { id: '6', name: 'Mythic', min: 1000000000, hex: '#f43f5e', title: 'The Sales Boomer', logo: '', borderImage: '' }
         ]
     });
     const [editingRpgData, setEditingRpgData] = useState(null);
@@ -176,7 +166,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 const snap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'rpg_ranks'));
                 if (snap.exists() && snap.data().ranks) {
                     const loaded = snap.data();
-                    loaded.ranks = loaded.ranks.map(r => ({...r, title: r.title || r.perks || 'No Title', hex: r.hex || '#64748b'}));
+                    loaded.ranks = loaded.ranks.map(r => ({...r, title: r.title || r.perks || 'No Title', hex: r.hex || '#64748b', borderImage: r.borderImage || ''}));
                     setRpgData(loaded);
                 }
             } catch (e) { console.warn("Rank Config Fetch Error", e); }
@@ -218,9 +208,16 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 if(activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, profileImage: croppedImageBase64 });
                 else await updateDoc(agentRef, { profileImage: croppedImageBase64 });
                 if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: croppedImageBase64}));
-            } else {
+            } else if (typeof cropTarget === 'number') {
+                // Rank Logo
                 const newRanks = [...editingRpgData.ranks];
                 newRanks[cropTarget].logo = croppedImageBase64;
+                setEditingRpgData({...editingRpgData, ranks: newRanks});
+            } else if (typeof cropTarget === 'string' && cropTarget.startsWith('border-')) {
+                // 🚀 NEW: Custom Border Overlay
+                const targetIdx = parseInt(cropTarget.split('-')[1]);
+                const newRanks = [...editingRpgData.ranks];
+                newRanks[targetIdx].borderImage = croppedImageBase64;
                 setEditingRpgData({...editingRpgData, ranks: newRanks});
             }
         } catch (e) { alert("Crop Failed: " + e.message); }
@@ -432,7 +429,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             <style>{`
                 @property --border-angle { syntax: '<angle>'; inherits: true; initial-value: 0turn; }
                 @keyframes borderSpin { to { --border-angle: 1turn; } }
-                @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-40px) scale(0); opacity: 0; } }
+                @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-30px) scale(0); opacity: 0; } }
                 @keyframes borderPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
                 @keyframes flow { 0% { left: -100%; } 100% { left: 200%; } }
             `}</style>
@@ -443,7 +440,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         <Cropper
                             image={cropImageSrc} crop={crop} zoom={zoom} aspect={1}
                             onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom}
-                            cropShape={cropTarget === 'avatar' ? 'round' : 'round'}
+                            cropShape={cropTarget === 'avatar' ? 'round' : 'rect'}
                             showGrid={false}
                         />
                     </div>
@@ -455,8 +452,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             )}
 
             {showRankConfig && (userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col p-6 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
-                    <div className="max-w-5xl w-full mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl relative mt-4 md:mt-10">
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto custom-scrollbar">
+                    <div className="max-w-5xl w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                         <button onClick={() => setShowRankConfig(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
                         <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Settings className="text-blue-500"/> Rank & EXP Architecture</h2>
                         
@@ -485,10 +482,26 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest border-b border-slate-800 pb-2">Active Progression Tiers</h3>
                             {editingRpgData.ranks.map((rank, idx) => (
                                 <div key={idx} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row gap-5 items-start xl:items-center relative">
-                                    <div className="relative group cursor-pointer w-20 h-20 rounded-lg border-[3px] overflow-hidden shrink-0 bg-black flex items-center justify-center shadow-lg" style={{ borderColor: rank.hex || '#64748b' }} onClick={() => document.getElementById(`logo-upload-${idx}`).click()}>
-                                        {rank.logo ? <img src={rank.logo} className="w-full h-full object-contain p-1" /> : <ImageIcon className="text-slate-600" size={32}/>}
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera size={20} className="text-white"/></div>
-                                        <input type="file" id={`logo-upload-${idx}`} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, idx)} />
+                                    
+                                    <div className="flex gap-4">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[7px] text-slate-500 uppercase tracking-widest text-center font-bold">Rank Icon</label>
+                                            <div className="relative group cursor-pointer w-16 h-16 rounded-lg border-[3px] overflow-hidden bg-black flex items-center justify-center shadow-lg" style={{ borderColor: rank.hex || '#64748b' }} onClick={() => document.getElementById(`logo-upload-${idx}`).click()}>
+                                                {rank.logo ? <img src={rank.logo} className="w-full h-full object-contain p-1" /> : <ImageIcon className="text-slate-600" size={24}/>}
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera size={16} className="text-white"/></div>
+                                                <input type="file" id={`logo-upload-${idx}`} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, idx)} />
+                                            </div>
+                                        </div>
+
+                                        {/* 🚀 NEW: CUSTOM AVATAR BORDER UPLOAD 🚀 */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[7px] text-slate-500 uppercase tracking-widest text-center font-bold">Custom Border</label>
+                                            <div className="relative group cursor-pointer w-16 h-16 rounded-lg border-2 border-dashed border-slate-600 overflow-hidden bg-black flex items-center justify-center hover:border-blue-500 transition-colors" onClick={() => document.getElementById(`border-upload-${idx}`).click()}>
+                                                {rank.borderImage ? <img src={rank.borderImage} className="w-full h-full object-contain" /> : <ImageIcon className="text-slate-600" size={20}/>}
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity"><Camera size={14} className="text-white"/><span className="text-[6px] font-bold text-white mt-0.5">UPLOAD PNG</span></div>
+                                                <input type="file" id={`border-upload-${idx}`} className="hidden" accept="image/png" onChange={(e) => handleFileSelect(e, `border-${idx}`)} />
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 w-full">
@@ -517,7 +530,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     </div>
                                 </div>
                             ))}
-                            <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', title: '', logo: ''}]})} className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Rank Tier</button>
+                            <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', title: '', logo: '', borderImage: ''}]})} className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Rank Tier</button>
                         </div>
 
                         <button onClick={handleSaveRankConfig} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Rank Architecture</button>
@@ -593,14 +606,19 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
                         
                         {/* 🚀 THE MLBB CRAZY GAMING AVATAR BORDER 🚀 */}
-                        <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 min-w-[350px]">
+                        <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 lg:gap-10 min-w-[350px]">
                             
                             <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32 md:w-40 md:h-40" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
                                 
-                                <CrazyRankBorder index={stats.tierIndex} />
+                                {/* If user uploaded a custom frame PNG, use it. Otherwise, use the CSS CrazyBorder */}
+                                {stats.currentTier.borderImage ? (
+                                    <img src={stats.currentTier.borderImage} className="absolute inset-[ -25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none drop-shadow-[0_0_15px_currentColor]" style={{ color: safeCurrentHex }} />
+                                ) : (
+                                    <CrazyRankBorder index={stats.tierIndex} hex={safeCurrentHex} />
+                                )}
 
                                 {/* The Actual Profile Image */}
-                                <div className="absolute inset-[6px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
+                                <div className="absolute inset-[4px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
                                     {activeAgent.profileImage ? (
                                         <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
@@ -610,7 +628,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 </div>
 
                                 {canEditProfile && (
-                                    <div className="absolute inset-[6px] rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30">
+                                    <div className="absolute inset-[4px] rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-30">
                                         <Camera size={24} className="text-white mb-1" />
                                         <span className="text-[9px] font-black uppercase tracking-widest text-white">Change Intel</span>
                                     </div>
@@ -639,19 +657,21 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                         </div>
 
+                        {/* XP PROGRESS BAR - COLLISION FIXED */}
                         <div className="flex-1 flex flex-col justify-center bg-black/60 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-slate-600 transition-colors">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors pointer-events-none"></div>
                             
-                            <div className="flex justify-between items-end mb-3 relative z-10">
-                                <div className="flex items-center gap-3">
+                            <div className="flex justify-between items-start mb-4 relative z-10 gap-4">
+                                <div className="flex flex-col gap-1">
                                     <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Lifetime Career EXP</span>
-                                    {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                                        <button onClick={handleManualExpSave} className="text-blue-500 hover:text-white bg-blue-900/20 border border-blue-500/30 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition-colors flex items-center gap-1"><Edit3 size={10}/> Override</button>
-                                    )}
+                                    <span className="text-3xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight leading-none mt-1" style={{ color: safeCurrentHex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} <span className="text-lg">XP</span></span>
                                 </div>
-                                <span className="text-2xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight" style={{ color: safeCurrentHex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} XP</span>
+                                {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                                    <button onClick={handleManualExpSave} className="text-blue-500 hover:text-white bg-blue-900/20 border border-blue-500/30 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 shrink-0"><Edit3 size={12}/> Override</button>
+                                )}
                             </div>
-                            <div className="h-5 w-full bg-slate-950 rounded-md overflow-hidden border border-slate-800 shadow-inner relative mb-3 z-10 skew-x-[-10deg]">
+                            
+                            <div className="h-5 w-full bg-slate-950 rounded-md overflow-hidden border border-slate-800 shadow-inner relative mb-4 z-10 skew-x-[-10deg]">
                                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 pointer-events-none"></div>
                                 <div className="h-full transition-all duration-1000 ease-out relative" style={{ width: `${stats.progressPercent}%`, backgroundColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
                                     <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
