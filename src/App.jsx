@@ -2864,8 +2864,7 @@ const handleGitHubMirror = async () => {
             />
           )}
 
-          {/* 🚀 NEW: THE RPG DOSSIER ROUTE */}
-          {activeTab === 'agent_profile' && (
+        {activeTab === 'agent_profile' && (
               <AgentProfileView 
                   motorists={motorists}
                   transactions={transactions}
@@ -2874,7 +2873,7 @@ const handleGitHubMirror = async () => {
                   agentProfileId={agentProfileId}
                   db={db}              
                   appId={appId}        
-                  userId={user?.uid}
+                  userId={user?.uid}   
               />
           )}
 
