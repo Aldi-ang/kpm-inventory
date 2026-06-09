@@ -4,7 +4,7 @@ import {
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
     MapPin, AlertCircle, Camera, Phone, Edit3, Save, Clock,
     Star, Menu, X, ChevronRight, Sparkles, Settings, Plus, Trash2, Image as ImageIcon,
-    List, CheckCircle
+    List, Trophy, Medal, PackageOpen, Crown
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -30,75 +30,55 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         canvas.width = pixelCrop.width;
         canvas.height = pixelCrop.height;
         ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
-        return canvas.toDataURL('image/png', 1.0); // 🚀 FIX: Switched to PNG to preserve transparent custom borders
+        return canvas.toDataURL('image/png', 1.0); 
     } catch (e) {
         console.error("Cropper Error:", e);
         return null;
     }
 };
 
-// 🚀 REFINED TRIPLE-A GAMING BORDER ENGINE 🚀
 const CrazyRankBorder = ({ index, hex }) => {
     if (index >= 5) return (
         <div className="absolute -inset-2 z-0 pointer-events-none">
-            {/* Mythic: Refined Hellfire Aura */}
             <div className="absolute inset-[-4px] rounded-full bg-[conic-gradient(from_var(--border-angle),#f43f5e,#fb923c,#facc15,#fb923c,#f43f5e)] animate-[borderSpin_2.5s_linear_infinite] opacity-80 blur-[6px]"></div>
-            
-            {/* Scaled-down Floating Crown Gem */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-br from-yellow-100 via-yellow-400 to-yellow-600 rotate-45 z-20 shadow-[0_0_15px_#facc15] border-2 border-orange-300 flex items-center justify-center">
                 <div className="w-3 h-3 bg-red-600 rounded-full blur-[1px] animate-pulse"></div>
             </div>
-            
-            {/* Refined Side Orbs */}
             <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-tr from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_15px_#facc15] animate-bounce"></div>
             <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gradient-to-tl from-red-600 to-yellow-400 rounded-full z-20 shadow-[0_0_15px_#facc15] animate-bounce" style={{ animationDelay: '0.5s' }}></div>
-            
-            {/* Particles */}
             <div className="absolute -top-4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-[floatUp_1.5s_infinite]"></div>
             <div className="absolute top-1/4 -right-4 w-2.5 h-2.5 bg-orange-400 rounded-full animate-[floatUp_2s_infinite_0.5s]"></div>
         </div>
     );
-
     if (index === 4) return (
         <div className="absolute -inset-1.5 z-0 pointer-events-none">
-            {/* Diamond: Ethereal Purple/Pink */}
             <div className="absolute inset-[-2px] rounded-full bg-[conic-gradient(from_var(--border-angle),#c084fc,#e879f9,transparent,#c084fc)] animate-[borderSpin_3s_linear_infinite] shadow-[0_0_20px_#c084fc] blur-[2px]"></div>
-            
-            {/* 4 Corner Diamond Jewels */}
             <div className="absolute top-0 left-0 w-5 h-5 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_10px_#e879f9] border-[1px] border-white/70"></div>
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-gradient-to-br from-fuchsia-200 via-fuchsia-400 to-purple-600 rotate-45 z-20 shadow-[0_0_10px_#e879f9] border-[1px] border-white/70"></div>
         </div>
     );
-
     if (index === 3) return (
         <div className="absolute -inset-1.5 z-0 pointer-events-none">
-            {/* Platinum: Cyberpunk Tech */}
             <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400 via-white to-cyan-400 rounded-full animate-[borderPulse_2s_ease_infinite] shadow-[0_0_20px_#22d3ee] blur-[2px]"></div>
             <div className="absolute inset-0 border-[3px] border-cyan-300 rounded-full border-dashed animate-[spin_6s_linear_infinite]"></div>
             <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-10 h-2 bg-cyan-200 shadow-[0_0_10px_#22d3ee] rounded-full"></div>
             <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-10 h-2 bg-cyan-200 shadow-[0_0_10px_#22d3ee] rounded-full"></div>
         </div>
     );
-
     if (index === 2) return (
         <div className="absolute -inset-1 z-0 pointer-events-none">
-            {/* Gold: Majestic Glow */}
             <div className="absolute inset-0 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-700 rounded-full shadow-[0_0_20px_#facc15] animate-[borderPulse_3s_ease_infinite] blur-[1px]"></div>
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-3.5 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600 rounded-full border border-yellow-100 shadow-[0_0_10px_#fef08a] flex items-center justify-center">
                 <div className="w-6 h-0.5 bg-white/50 rounded-full"></div>
             </div>
         </div>
     );
-
     if (index === 1) return (
         <div className="absolute -inset-1 z-0 pointer-events-none rounded-full overflow-hidden">
-            {/* Silver: Sharp Sheen */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-500 to-slate-200 rounded-full shadow-[0_0_10px_#94a3b8] border-2 border-slate-300"></div>
             <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-white/80 skew-x-[-20deg] animate-[flow_2.5s_infinite]"></div>
         </div>
     );
-
-    // Bronze (Index 0)
     return (
         <div className="absolute -inset-1 z-0 pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-700 via-orange-900 to-amber-700 rounded-full shadow-[0_0_10px_#b45309] border-[3px] border-[#78350f]"></div>
@@ -209,12 +189,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 else await updateDoc(agentRef, { profileImage: croppedImageBase64 });
                 if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: croppedImageBase64}));
             } else if (typeof cropTarget === 'number') {
-                // Rank Logo
                 const newRanks = [...editingRpgData.ranks];
                 newRanks[cropTarget].logo = croppedImageBase64;
                 setEditingRpgData({...editingRpgData, ranks: newRanks});
             } else if (typeof cropTarget === 'string' && cropTarget.startsWith('border-')) {
-                // 🚀 NEW: Custom Border Overlay
                 const targetIdx = parseInt(cropTarget.split('-')[1]);
                 const newRanks = [...editingRpgData.ranks];
                 newRanks[targetIdx].borderImage = croppedImageBase64;
@@ -276,6 +254,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (!activeAgent) return null;
 
         let lifetimeOmset = 0; let todayOmset = 0; let todayCash = 0; let titipIssued = 0; let titipCollected = 0;
+        let totalItemsSold = 0; let ecerItemsSold = 0;
+        const yearlyAgentOmset = {};
+
         const today = new Date(); const todayStr = today.toISOString().split('T')[0];
         const currentMonth = today.getMonth(); const currentYear = today.getFullYear();
         
@@ -299,6 +280,22 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const storeDebt = {};
 
         (transactions || []).forEach(t => {
+            // 🚀 HALL OF FAME: Calculate global yearly omset for MVP race
+            if (t.type === 'SALE') {
+                let txDateStr = t.date;
+                try {
+                    if (!txDateStr && t.timestamp && t.timestamp.seconds) {
+                        txDateStr = new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0];
+                    }
+                } catch(e) { txDateStr = null; }
+
+                if (txDateStr && txDateStr.startsWith(currentYear.toString())) {
+                    const aId = t.agentId || 'UNKNOWN';
+                    if (!yearlyAgentOmset[aId]) yearlyAgentOmset[aId] = 0;
+                    yearlyAgentOmset[aId] += (t.total || 0);
+                }
+            }
+
             const isOwnerView = activeAgent.id === 'master_owner';
             const belongsToAgent = t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase());
 
@@ -318,6 +315,22 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 if (t.type === 'SALE') {
                     lifetimeOmset += (t.total || 0);
                     if (t.customerName) uniqueStores.add(t.customerName);
+
+                    // 🚀 VOLUME & ECER MATH
+                    const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                    let tQty = 0;
+                    itemsList.forEach(i => {
+                        const product = inventory?.find(p => p.id === i.productId);
+                        let mult = 1;
+                        if (i.unit === 'Slop') mult = product?.packsPerSlop || 10;
+                        if (i.unit === 'Bal') mult = (product?.slopsPerBal || 20) * (product?.packsPerSlop || 10);
+                        if (i.unit === 'Karton') mult = (product?.balsPerCarton || 4) * (product?.slopsPerBal || 20) * (product?.packsPerSlop || 10);
+                        tQty += (Number(i.qty) || 0) * mult;
+                    });
+                    totalItemsSold += tQty;
+                    
+                    const isEcer = itemsList.some(i => i.priceTier === 'Ecer') || (t.customerName || '').toLowerCase().includes('ecer') || (t.customerName || '').toLowerCase().includes('walk-in');
+                    if (isEcer) ecerItemsSold += tQty;
                     
                     if (t.paymentType === 'Titip') {
                         titipIssued += (t.total || 0);
@@ -332,10 +345,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     }
                     if (txDateStr && txDateObj) {
                         const isTitip = t.paymentType === 'Titip';
-                        
                         const dayWeekNode = thisWeek.find(d => d.date === txDateStr);
                         if (dayWeekNode) dayWeekNode[isTitip ? 'titip' : 'cash'] += (t.total || 0);
-                        
                         if (txDateObj.getMonth() === currentMonth && txDateObj.getFullYear() === currentYear) {
                             const dateNum = txDateObj.getDate();
                             const weekIdx = dateNum <= 7 ? 0 : dateNum <= 14 ? 1 : dateNum <= 21 ? 2 : 3;
@@ -350,6 +361,17 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 }
             }
         });
+
+        // 🚀 DETERMINE REGIONAL MVP (Highest Yearly Omset excluding Admin/Owner)
+        let topAgentId = null;
+        let maxYearOmset = 0;
+        Object.keys(yearlyAgentOmset).forEach(aId => {
+            if (aId !== 'master_owner' && aId !== 'ADMIN' && yearlyAgentOmset[aId] > maxYearOmset) {
+                maxYearOmset = yearlyAgentOmset[aId];
+                topAgentId = aId;
+            }
+        });
+        const isTopAgentOfYear = (activeAgent.id === topAgentId) && maxYearOmset > 0;
 
         const activeTitipResponsibility = Math.max(0, titipIssued - titipCollected);
         const activeDebtList = Object.keys(storeDebt).filter(k => storeDebt[k] > 0).map(k => ({ store: k, amount: storeDebt[k] })).sort((a,b) => b.amount - a.amount);
@@ -390,18 +412,21 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         }
         const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
 
-        let daysInService = 'NEW';
+        let daysInServiceNum = 0;
         if (activeAgent?.createdAt) {
             const createdTime = activeAgent.createdAt.seconds ? activeAgent.createdAt.seconds * 1000 : new Date(activeAgent.createdAt).getTime();
-            if (!isNaN(createdTime)) daysInService = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24))) + " Days";
-        } else if (activeAgent.id === 'master_owner') daysInService = 'DAY ONE';
+            if (!isNaN(createdTime)) daysInServiceNum = Math.max(0, Math.floor((new Date().getTime() - createdTime) / (1000 * 60 * 60 * 24)));
+        } else if (activeAgent.id === 'master_owner') daysInServiceNum = 999;
+
+        const daysInService = daysInServiceNum === 999 ? 'DAY ONE' : (daysInServiceNum > 0 ? `${daysInServiceNum} Days` : 'NEW');
+        const currentYearString = currentYear.toString();
 
         return { 
             lifetimeOmset, lifetimeEXP, todayOmset, todayCash, activeTitipResponsibility, canvasValue, 
-            currentTier, nextTier, tierIndex, progressPercent, daysInService,
+            currentTier, nextTier, tierIndex, progressPercent, daysInService, daysInServiceNum,
             chartData1W: thisWeek, chartData1M: thisMonth, chartData1Y: thisYear,
-            achievements: { stores: uniqueStores.size, titipCollected },
-            canvasBreakdown, activeDebtList
+            achievements: { stores: uniqueStores.size, titipCollected, totalItemsSold, ecerItemsSold },
+            canvasBreakdown, activeDebtList, isTopAgentOfYear, currentYearString
         };
     }, [activeAgent, transactions, inventory, rpgData]);
 
@@ -424,6 +449,29 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     
     const safeCurrentHex = stats.currentTier.hex || '#64748b';
 
+    // 🚀 GENERIC ACHIEVEMENT CARD RENDERER
+    const AchievementCard = ({ icon, title, desc, progress, target, colorHex, shadowClass }) => {
+        const percent = Math.min(100, (progress / target) * 100);
+        const isUnlocked = progress >= target;
+        
+        return (
+            <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${isUnlocked ? `border-white/20 hover:-translate-y-1 ${shadowClass}` : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`} style={isUnlocked ? { background: `linear-gradient(to bottom, ${colorHex}40, #0f172a)` } : {}}>
+                {isUnlocked && <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full blur-xl pointer-events-none"></div>}
+                
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${isUnlocked ? 'bg-black/40 shadow-inner' : 'bg-slate-800 text-slate-600'}`} style={isUnlocked ? { color: colorHex } : {}}>
+                    {icon}
+                </div>
+                
+                <h4 className="text-[10px] font-black uppercase tracking-widest mb-1" style={isUnlocked ? { color: colorHex } : { color: '#64748b' }}>{title}</h4>
+                <p className="text-[9px] text-slate-400 leading-tight h-6 flex items-center justify-center">{desc}</p>
+                
+                <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800">
+                    <div className="h-full transition-all shadow-inner" style={{ width: `${percent}%`, backgroundColor: isUnlocked ? colorHex : '#475569' }}></div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
             <style>{`
@@ -431,7 +479,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 @keyframes borderSpin { to { --border-angle: 1turn; } }
                 @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-30px) scale(0); opacity: 0; } }
                 @keyframes borderPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
-                @keyframes flow { 0% { left: -100%; } 100% { left: 200%; } }
             `}</style>
 
             {cropImageSrc && (
@@ -493,7 +540,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             </div>
                                         </div>
 
-                                        {/* 🚀 NEW: CUSTOM AVATAR BORDER UPLOAD 🚀 */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[7px] text-slate-500 uppercase tracking-widest text-center font-bold">Custom Border</label>
                                             <div className="relative group cursor-pointer w-16 h-16 rounded-lg border-2 border-dashed border-slate-600 overflow-hidden bg-black flex items-center justify-center hover:border-blue-500 transition-colors" onClick={() => document.getElementById(`border-upload-${idx}`).click()}>
@@ -605,19 +651,16 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     
                     <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
                         
-                        {/* 🚀 THE MLBB CRAZY GAMING AVATAR BORDER 🚀 */}
                         <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 lg:gap-10 min-w-[350px]">
                             
                             <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32 md:w-40 md:h-40" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
                                 
-                                {/* If user uploaded a custom frame PNG, use it. Otherwise, use the CSS CrazyBorder */}
                                 {stats.currentTier.borderImage ? (
-                                    <img src={stats.currentTier.borderImage} className="absolute inset-[ -25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none drop-shadow-[0_0_15px_currentColor]" style={{ color: safeCurrentHex }} />
+                                    <img src={stats.currentTier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none drop-shadow-[0_0_15px_currentColor]" style={{ color: safeCurrentHex }} />
                                 ) : (
                                     <CrazyRankBorder index={stats.tierIndex} hex={safeCurrentHex} />
                                 )}
 
-                                {/* The Actual Profile Image */}
                                 <div className="absolute inset-[4px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
                                     {activeAgent.profileImage ? (
@@ -657,7 +700,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                         </div>
 
-                        {/* XP PROGRESS BAR - COLLISION FIXED */}
                         <div className="flex-1 flex flex-col justify-center bg-black/60 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-slate-600 transition-colors">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors pointer-events-none"></div>
                             
@@ -836,7 +878,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         </div>
                     </div>
 
+                    {/* 🚀 SECTOR 3: HALL OF FAME & TIMELINE ANALYTICS 🚀 */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-8">
+                        
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl group hover:border-slate-700 transition-colors">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
@@ -867,36 +911,102 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         </div>
 
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl group hover:border-slate-700 transition-colors">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Award size={14}/> The Trophy Room</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${stats.achievements.stores >= 10 ? 'bg-gradient-to-b from-blue-900/40 to-slate-900 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-1' : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`}>
-                                    {stats.achievements.stores >= 10 && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/20 rounded-full blur-xl pointer-events-none"></div>}
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${stats.achievements.stores >= 10 ? 'bg-blue-500 text-white shadow-[0_0_15px_#3b82f6]' : 'bg-slate-800 text-slate-600'}`}><Target size={24}/></div>
-                                    <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.achievements.stores >= 10 ? 'text-blue-400' : 'text-slate-500'}`}>The Pioneer</h4>
-                                    <p className="text-[9px] text-slate-400 leading-tight">Secured transactions across 10 unique store locations.</p>
-                                    <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800"><div className="bg-blue-500 h-full shadow-[0_0_5px_#3b82f6]" style={{ width: `${Math.min(100, (stats.achievements.stores / 10) * 100)}%`}}></div></div>
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Award size={14}/> Hall of Fame & Achievements</h3>
+                            
+                            {/* 🚀 THE MCL REGIONAL MVP TROPHY 🚀 */}
+                            <div className="mb-8 flex justify-center">
+                                <div className={`relative w-full max-w-md p-6 rounded-2xl border-2 flex flex-col items-center text-center overflow-hidden transition-all duration-700 ${stats.isTopAgentOfYear ? 'bg-gradient-to-b from-yellow-900/40 to-slate-900 border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-[1.02]' : 'bg-slate-950/50 border-slate-800/50 grayscale opacity-40'}`}>
+                                    {stats.isTopAgentOfYear && <div className="absolute top-0 w-full h-full bg-[conic-gradient(from_0deg,transparent,#facc15,transparent)] animate-[spin_4s_linear_infinite] opacity-10"></div>}
+                                    
+                                    <div className="relative z-10 mb-4">
+                                        <Trophy size={64} className={stats.isTopAgentOfYear ? 'text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]' : 'text-slate-600'} />
+                                        {stats.isTopAgentOfYear && <Sparkles size={24} className="absolute -top-2 -right-2 text-yellow-200 animate-ping"/>}
+                                    </div>
+                                    
+                                    <h4 className={`text-sm font-black uppercase tracking-widest mb-1 ${stats.isTopAgentOfYear ? 'text-yellow-400' : 'text-slate-500'}`}>Regional MVP {stats.currentYearString}</h4>
+                                    <p className="text-[10px] text-slate-400 max-w-[200px]">Highest grossing sales operative in the current fiscal year.</p>
+                                    {stats.isTopAgentOfYear && <div className="mt-4 px-4 py-1.5 bg-yellow-900/50 border border-yellow-500/50 rounded-full text-[9px] font-black text-yellow-300 uppercase tracking-widest shadow-inner">Active Champion</div>}
                                 </div>
-                                <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${stats.achievements.titipCollected >= 5000000 ? 'bg-gradient-to-b from-orange-900/40 to-slate-900 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:-translate-y-1' : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`}>
-                                    {stats.achievements.titipCollected >= 5000000 && <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/20 rounded-full blur-xl pointer-events-none"></div>}
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${stats.achievements.titipCollected >= 5000000 ? 'bg-orange-500 text-white shadow-[0_0_15px_#f59e0b]' : 'bg-slate-800 text-slate-600'}`}><Zap size={24}/></div>
-                                    <h4 className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.achievements.titipCollected >= 5000000 ? 'text-orange-400' : 'text-slate-500'}`}>Debt Collector</h4>
-                                    <p className="text-[9px] text-slate-400 leading-tight">Successfully collected Rp 5.000.000 in past-due Titip.</p>
-                                    <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800"><div className="bg-orange-500 h-full shadow-[0_0_5px_#f59e0b]" style={{ width: `${Math.min(100, (stats.achievements.titipCollected / 5000000) * 100)}%`}}></div></div>
-                                </div>
-                                <div className="p-4 rounded-xl border bg-slate-950/50 border-slate-800/50 opacity-60 grayscale flex flex-col items-center text-center">
-                                    <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-slate-800 text-slate-600"><Lock size={20}/></div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-500">Vault Keeper</h4>
-                                    <p className="text-[9px] text-slate-500 leading-tight">Execute 7 flawless EOD stock opnames. (Locked)</p>
-                                </div>
-                                <div className="p-4 rounded-xl border bg-slate-950/50 border-slate-800/50 opacity-60 grayscale flex flex-col items-center text-center">
-                                    <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-slate-800 text-slate-600"><Crosshair size={20}/></div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-500">Ghost Rider</h4>
-                                    <p className="text-[9px] text-slate-500 leading-tight">Complete 50 sales without an HQ GPS Bypass. (Locked)</p>
-                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                
+                                <AchievementCard 
+                                    icon={<Calendar size={20}/>} 
+                                    title="Company Veteran" 
+                                    desc={`Served ${stats.daysInServiceNum} Days.`} 
+                                    progress={stats.daysInServiceNum} 
+                                    target={365} 
+                                    colorHex="#3b82f6" 
+                                    shadowClass="shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                                />
+
+                                <AchievementCard 
+                                    icon={<PackageOpen size={20}/>} 
+                                    title="Logistics Titan" 
+                                    desc={`Moved ${formatFullRp(stats.achievements.totalItemsSold)} items.`} 
+                                    progress={stats.achievements.totalItemsSold} 
+                                    target={10000} 
+                                    colorHex="#10b981" 
+                                    shadowClass="shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                                />
+
+                                <AchievementCard 
+                                    icon={<Crown size={20}/>} 
+                                    title="Retail Warlord" 
+                                    desc={`Sold ${formatFullRp(stats.achievements.ecerItemsSold)} units to Ecer.`} 
+                                    progress={stats.achievements.ecerItemsSold} 
+                                    target={1000} 
+                                    colorHex="#ec4899" 
+                                    shadowClass="shadow-[0_0_15px_rgba(236,72,153,0.15)]"
+                                />
+
+                                <AchievementCard 
+                                    icon={<Target size={20}/>} 
+                                    title="The Vanguard" 
+                                    desc={`Secured ${stats.achievements.stores} unique stores.`} 
+                                    progress={stats.achievements.stores} 
+                                    target={50} 
+                                    colorHex="#8b5cf6" 
+                                    shadowClass="shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+                                />
+
+                                <AchievementCard 
+                                    icon={<Zap size={20}/>} 
+                                    title="Debt Collector" 
+                                    desc={`Collected Rp ${formatRp(stats.achievements.titipCollected)}.`} 
+                                    progress={stats.achievements.titipCollected} 
+                                    target={50000000} 
+                                    colorHex="#f97316" 
+                                    shadowClass="shadow-[0_0_15px_rgba(249,115,22,0.15)]"
+                                />
+                                
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const AchievementCard = ({ icon, title, desc, progress, target, colorHex, shadowClass }) => {
+    const percent = Math.min(100, (progress / target) * 100);
+    const isUnlocked = progress >= target;
+    
+    return (
+        <div className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all duration-500 relative overflow-hidden ${isUnlocked ? `border-white/20 hover:-translate-y-1 ${shadowClass}` : 'bg-slate-950/50 border-slate-800/50 opacity-60 grayscale'}`} style={isUnlocked ? { background: `linear-gradient(to bottom, ${colorHex}30, #0f172a)` } : {}}>
+            {isUnlocked && <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full blur-xl pointer-events-none"></div>}
+            
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 transition-colors ${isUnlocked ? 'bg-black/40 shadow-inner' : 'bg-slate-800 text-slate-600'}`} style={isUnlocked ? { color: colorHex } : {}}>
+                {icon}
+            </div>
+            
+            <h4 className="text-[10px] font-black uppercase tracking-widest mb-1" style={isUnlocked ? { color: colorHex } : { color: '#64748b' }}>{title}</h4>
+            <p className="text-[9px] text-slate-400 leading-tight h-6 flex items-center justify-center">{desc}</p>
+            
+            <div className="w-full bg-slate-950 h-1.5 rounded-full mt-3 overflow-hidden border border-slate-800">
+                <div className="h-full transition-all shadow-[inset_0_0_5px_rgba(0,0,0,0.5)]" style={{ width: `${percent}%`, backgroundColor: isUnlocked ? colorHex : '#475569' }}></div>
             </div>
         </div>
     );
