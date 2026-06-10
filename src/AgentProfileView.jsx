@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 import Cropper from 'react-easy-crop';
-import { hasClearance, DYNAMIC_TIERS } from '../config/permissions';
+import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
