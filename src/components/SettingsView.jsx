@@ -6,7 +6,7 @@ import LandlordDashboard from './LandlordDashboard';
 import CrownTransferProtocol from './CrownTransferProtocol';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, injectDynamicPermissions } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions } from '../config/permissions';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole, // <-- Added userRole here
