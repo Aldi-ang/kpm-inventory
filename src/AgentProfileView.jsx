@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 import Cropper from 'react-easy-crop';
-import { hasClearance } from '../config/permissions'; // 🚀 IMPORT THE BRAIN MATRIX
+import { hasClearance } from './config/permissions'; // 🚀 IMPORT THE BRAIN MATRIX
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
