@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 import Cropper from 'react-easy-crop';
+import { hasClearance } from '../config/permissions'; // 🚀 IMPORT THE BRAIN MATRIX
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
@@ -123,7 +124,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     });
 
     const activeAgent = allAgents?.find(m => m.id === selectedId);
-    const canEditProfile = userRole === 'ADMIN' || userRole === 'COMPANY_OWNER' || activeAgent?.id === agentProfileId || activeAgent?.id === 'master_owner';
+    // 🚀 MATRIX: Can edit if they have global editing rights OR if it's their personal profile
+    const canEditProfile = hasClearance(userRole, 'edit_agent_roles') || activeAgent?.id === agentProfileId || activeAgent?.id === 'master_owner';
 
     const [rpgData, setRpgData] = useState({
         expMultiplier: 1, 
@@ -599,7 +601,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsSidebarOpen(false)}></div>
             )}
 
-            {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN' || userRole === 'COMPANY_OWNER') && (
+            {/* 🚀 MATRIX: Directory sidebar access */}
+            {hasClearance(userRole, 'view_dashboard') && (
                 <div className={`fixed lg:relative top-0 left-0 h-full bg-slate-950/95 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-50 shadow-[20px_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-0'}`}>
                     <div className="w-72 flex flex-col h-full">
                         <div className="p-4 border-b border-slate-800 bg-black/50 sticky top-0 z-10 space-y-3">
@@ -644,12 +647,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             <div className="flex-1 h-screen overflow-y-auto custom-scrollbar relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed" style={{ backgroundColor: '#0f172a' }}>
                 
                 <div className="absolute top-6 left-6 z-30 flex gap-3">
-                    {(userRole === 'ADMIN' || userRole === 'AREA_ADMIN' || userRole === 'COMPANY_OWNER') && (
+                    {/* 🚀 MATRIX: If they have dashboard rights, they need the Directory Toggle */}
+                    {hasClearance(userRole, 'view_dashboard') && (
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-black/80 backdrop-blur-md border border-slate-700 p-2.5 rounded-xl text-slate-400 hover:text-white hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95 group">
                             {isSidebarOpen ? <X size={20}/> : <Menu size={20} className="group-hover:animate-pulse"/>}
                         </button>
                     )}
-                    {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                    {/* 🚀 MATRIX: Rank Config Button Access */}
+                    {hasClearance(userRole, 'edit_rank_config') && (
                         <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className="bg-black/80 backdrop-blur-md border border-slate-700 px-4 py-2.5 rounded-xl text-slate-400 hover:text-blue-400 hover:border-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                             <Settings size={16}/> Rank Config
                         </button>
@@ -723,7 +728,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Lifetime Career EXP</span>
                                     <span className="text-3xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight leading-none mt-1" style={{ color: safeCurrentHex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} <span className="text-lg">XP</span></span>
                                 </div>
-                                {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                                {/* 🚀 MATRIX: Override EXP access */}
+                                {hasClearance(userRole, 'edit_agent_roles') && (
                                     <button onClick={handleManualExpSave} className="text-blue-500 hover:text-white bg-blue-900/20 border border-blue-500/30 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 shrink-0"><Edit3 size={12}/> Override</button>
                                 )}
                             </div>
