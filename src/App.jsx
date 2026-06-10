@@ -190,7 +190,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           try {
               const permSnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'));
               if (permSnap.exists() && permSnap.data().matrix) {
-                  injectDynamicPermissions(permSnap.data().matrix);
+                  // 🚀 PASS BOTH THE MATRIX AND THE CUSTOM TIERS
+                  injectDynamicPermissions(permSnap.data().matrix, permSnap.data().tiers);
               }
           } catch (e) {
               console.warn("Failed to boot custom permission matrix", e);

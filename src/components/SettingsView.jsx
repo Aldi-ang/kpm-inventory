@@ -678,11 +678,12 @@ export default function SettingsView({
     );
 }
 
-// 🚀 PLUG & PLAY: THE MATRIX EDITOR COMPONENT (Placed at the bottom)
+// 🚀 PLUG & PLAY: THE DYNAMIC MATRIX EDITOR
 const PermissionMatrixEditor = ({ db, appId, userRole }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
+    const [tiers, setTiers] = React.useState(DYNAMIC_TIERS);
     const [isSaving, setIsSaving] = React.useState(false);
 
     const ALL_FEATURES = [
@@ -707,56 +708,81 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];
 
-    const TARGET_TIERS = [
-        { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER', color: 'text-yellow-500' },
-        { id: CORPORATE_TIERS.TIER_3, label: 'T3: REGIONAL', color: 'text-purple-400' },
-        { id: CORPORATE_TIERS.TIER_4, label: 'T4: CAPTAIN', color: 'text-blue-400' },
-        { id: CORPORATE_TIERS.TIER_5, label: 'T5: OPERATIVE', color: 'text-emerald-400' },
-        { id: CORPORATE_TIERS.TIER_6, label: 'T6: ROOKIE', color: 'text-slate-400' }
-    ];
-
     const togglePermission = (tierId, featureId) => {
         const newMatrix = { ...matrix };
         const tierPerms = [...(newMatrix[tierId] || [])];
-        if (tierPerms.includes(featureId)) {
-            newMatrix[tierId] = tierPerms.filter(f => f !== featureId);
-        } else {
-            newMatrix[tierId] = [...tierPerms, featureId];
-        }
+        if (tierPerms.includes(featureId)) newMatrix[tierId] = tierPerms.filter(f => f !== featureId);
+        else newMatrix[tierId] = [...tierPerms, featureId];
         setMatrix(newMatrix);
+    };
+
+    const handleAddTier = () => {
+        const name = prompt("Enter new Tier Name (e.g., T7: WAREHOUSE):");
+        if (!name) return;
+        const newId = `CUSTOM_TIER_${Date.now()}`;
+        setTiers([...tiers, { id: newId, label: name.toUpperCase(), color: 'text-cyan-400' }]);
+        setMatrix({ ...matrix, [newId]: [] });
+    };
+
+    const handleRenameTier = (id) => {
+        const current = tiers.find(t => t.id === id);
+        const newName = prompt(`Rename ${current.label}:`, current.label);
+        if (newName) setTiers(tiers.map(t => t.id === id ? { ...t, label: newName.toUpperCase() } : t));
+    };
+
+    const handleDeleteTier = (id) => {
+        if (!id.startsWith('CUSTOM_')) return alert("Cannot delete factory core tiers, but you can rename them!");
+        if (window.confirm("Delete this custom tier?")) {
+            setTiers(tiers.filter(t => t.id !== id));
+            const newMatrix = { ...matrix };
+            delete newMatrix[id];
+            setMatrix(newMatrix);
+        }
     };
 
     const saveMatrixToFirebase = async () => {
         setIsSaving(true);
         try {
-            await setDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'), { matrix });
-            injectDynamicPermissions(matrix); 
-            alert("Matrix Deployed to Global Server.");
-        } catch (e) {
-            alert("Matrix Deployment Failed.");
-        }
+            await setDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'), { matrix, tiers });
+            injectDynamicPermissions(matrix, tiers); 
+            alert("Matrix & Tiers Deployed to Global Server.");
+        } catch (e) { alert("Matrix Deployment Failed."); }
         setIsSaving(false);
     };
 
     return (
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl mt-8">
             <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
                 <div>
                     <h2 className="text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Live Configuration</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Click a Tier name to Edit/Rename</p>
                 </div>
-                <button onClick={saveMatrixToFirebase} disabled={isSaving} className="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
-                    <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={handleAddTier} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
+                        <Plus size={16}/> Add Tier
+                    </button>
+                    <button onClick={saveMatrixToFirebase} disabled={isSaving} className="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
+                        <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
+                    </button>
+                </div>
             </div>
 
-            <div className="overflow-x-auto custom-scrollbar">
+            <div className="overflow-x-auto custom-scrollbar pb-4">
                 <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                         <tr>
                             <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
-                            {TARGET_TIERS.map(tier => (
-                                <th key={tier.id} className={`p-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-800 text-center bg-slate-950/50 ${tier.color}`}>{tier.label}</th>
+                            {tiers.map(tier => (
+                                <th key={tier.id} className="p-3 border-b border-slate-800 text-center bg-slate-950/50 group">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
+                                            {tier.label} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
+                                        </button>
+                                        {tier.id.startsWith('CUSTOM_') && (
+                                            <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>
+                                        )}
+                                    </div>
+                                </th>
                             ))}
                         </tr>
                     </thead>
@@ -764,7 +790,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
                         {ALL_FEATURES.map((feature) => (
                             <tr key={feature.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                                 <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
-                                {TARGET_TIERS.map(tier => {
+                                {tiers.map(tier => {
                                     const hasAccess = (matrix[tier.id] || []).includes(feature.id);
                                     return (
                                         <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">

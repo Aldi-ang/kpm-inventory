@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 import Cropper from 'react-easy-crop';
-import { hasClearance } from './config/permissions'; // 🚀 IMPORT THE BRAIN MATRIX
+import { hasClearance, DYNAMIC_TIERS } from '../config/permissions';
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
@@ -206,18 +206,29 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         setIsUploading(false);
     };
 
-    // 🚀 6-TIER CORPORATE HIERARCHY ENGINE (FRONTEND MASKING)
+    // 🚀 DYNAMIC CORPORATE HIERARCHY ENGINE
     const getCorporateIdentity = (agent) => {
         const role = agent?.userRole || agent?.role || 'FIELD_OPERATIVE';
         const isMaster = agent?.id === 'master_owner';
         
-        if (isMaster || role === 'DEVELOPER') return { stars: 6, title: 'SYSTEM ARCHITECT', tier: 'TIER 1', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50' };
-        if (role === 'ADMIN' || role === 'COMPANY_OWNER') return { stars: 5, title: 'COMPANY OWNER', tier: 'TIER 2', color: 'text-yellow-500', bg: 'bg-yellow-900/30', border: 'border-yellow-500/50' };
-        if (role === 'AREA_ADMIN') return { stars: 4, title: 'REGIONAL MANAGER', tier: 'TIER 3', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-500/50' };
-        if (role === 'FLEET_CAPTAIN') return { stars: 3, title: 'FLEET CAPTAIN', tier: 'TIER 4', color: 'text-blue-400', bg: 'bg-blue-900/30', border: 'border-blue-500/50' };
-        if (role === 'ROOKIE') return { stars: 1, title: 'ROOKIE / TRAINEE', tier: 'TIER 6', color: 'text-slate-400', bg: 'bg-slate-800/50', border: 'border-slate-600/50' };
+        if (isMaster || role === 'DEVELOPER' || role === 'ADMIN') return { stars: 6, title: 'SYSTEM ARCHITECT', tier: 'TIER 1', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50' };
         
-        // Default to Tier 5
+        // Magically syncs with whatever you name them in Settings!
+        const foundTier = DYNAMIC_TIERS.find(t => t.id === role);
+        if (foundTier) {
+            const parts = foundTier.label.split(':');
+            const tierStr = parts.length > 1 ? parts[0].trim() : 'TIER';
+            const titleStr = parts.length > 1 ? parts[1].trim() : foundTier.label;
+            
+            let stars = 2; // Default
+            if (tierStr.includes('2')) stars = 5;
+            if (tierStr.includes('3')) stars = 4;
+            if (tierStr.includes('4')) stars = 3;
+            if (tierStr.includes('6')) stars = 1;
+
+            return { stars, title: titleStr, tier: tierStr, color: foundTier.color || 'text-cyan-400', bg: 'bg-slate-800/50', border: 'border-slate-500/50' };
+        }
+        
         return { stars: 2, title: 'FIELD OPERATIVE', tier: 'TIER 5', color: 'text-emerald-400', bg: 'bg-emerald-900/30', border: 'border-emerald-500/50' };
     };
     
@@ -848,7 +859,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             value={activeAgent.userRole || activeAgent.role || 'FIELD_OPERATIVE'}
                                             onChange={async (e) => {
                                                 const newVal = e.target.value;
-                                                const fieldToUpdate = ['ADMIN','COMPANY_OWNER','AREA_ADMIN'].includes(newVal) ? 'userRole' : 'role';
+                                                const fieldToUpdate = ['COMPANY_OWNER','AREA_ADMIN'].includes(newVal) ? 'userRole' : 'role';
                                                 try {
                                                     const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
                                                     await updateDoc(agentRef, { [fieldToUpdate]: newVal });
@@ -856,11 +867,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             }}
                                             className={`w-full bg-slate-900 border border-slate-700 text-[10px] font-black uppercase tracking-widest rounded outline-none p-1.5 cursor-pointer ${corpIdentity.color}`}
                                         >
-                                            <option value="ADMIN">Tier 2: Owner</option>
-                                            <option value="AREA_ADMIN">Tier 3: Regional</option>
-                                            <option value="FLEET_CAPTAIN">Tier 4: Captain</option>
-                                            <option value="FIELD_OPERATIVE">Tier 5: Operative</option>
-                                            <option value="ROOKIE">Tier 6: Rookie</option>
+                                            {/* Automatically populates with your custom tiers! */}
+                                            {DYNAMIC_TIERS.map(t => (
+                                                <option key={t.id} value={t.id}>{t.label}</option>
+                                            ))}
                                         </select>
                                     ) : (
                                         <p className={`text-[10px] font-black uppercase tracking-widest truncate ${corpIdentity.color}`}>{corpIdentity.title}</p>
