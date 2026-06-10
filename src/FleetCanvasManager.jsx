@@ -5,7 +5,7 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
-import { DYNAMIC_TIERS } from '../config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
+import { DYNAMIC_TIERS } from './config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     const isAreaAdmin = userRole === 'AREA_ADMIN';
