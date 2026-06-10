@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard'; 
 import CrownTransferProtocol from './CrownTransferProtocol';
 
+// 🚀 IMPORT THE MATRIX BRAIN
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, injectDynamicPermissions } from '../config/permissions';
+
 export default function SettingsView({
-    user, userId, db, appId, isAdmin, isSystemOwner,
+    user, userId, db, appId, isAdmin, isSystemOwner, userRole, // <-- Added userRole here
     showCrownTransfer, setShowCrownTransfer, triggerCapy, setShowAdminLogin,
     sessionStatus, setSessionStatus, auditLogs,
     handleMasterProtocol, handleSingleBackup, handleRestoreData,
@@ -137,7 +140,6 @@ export default function SettingsView({
         { id: 'security', label: 'Security & Data', icon: <ShieldCheck size={18} /> },
     ];
     
-    // Inject Architect Tab ONLY for Tier 1
     if (isSystemOwner) {
         navTabs.push({ id: 'architect', label: 'Architect (Tier 1)', icon: <Lock size={18} /> });
     }
@@ -145,7 +147,6 @@ export default function SettingsView({
     return (
       <div className="animate-fade-in max-w-6xl mx-auto pb-20">
           
-          {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 dark:border-white/10 pb-4">
               <div>
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white uppercase tracking-tighter">Command Center</h2>
@@ -163,10 +164,7 @@ export default function SettingsView({
               </div>
           </div>
 
-          {/* SPLIT SCREEN ARCHITECTURE */}
           <div className="flex flex-col md:flex-row gap-8">
-              
-              {/* LEFT SIDEBAR */}
               <div className="w-full md:w-56 shrink-0 flex flex-col gap-2">
                   {navTabs.map(tab => (
                       <button
@@ -184,7 +182,6 @@ export default function SettingsView({
                   ))}
               </div>
 
-              {/* RIGHT WORKSPACE */}
               <div className="flex-1 min-w-0 space-y-6">
 
                   {/* ---------------------------------------------------- */}
@@ -399,7 +396,6 @@ export default function SettingsView({
                                               return (
                                                   <div key={tier.id} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:border-red-500/30">
                                                       
-                                                      {/* TIER BADGE */}
                                                       <div className="flex items-center gap-3 min-w-[140px] shrink-0">
                                                           <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: tier.color }}></div>
                                                           <div>
@@ -410,7 +406,6 @@ export default function SettingsView({
 
                                                       <ChevronRight className="hidden lg:block text-slate-400 shrink-0" size={16}/>
 
-                                                      {/* THE LOGIC BUILDER */}
                                                       <div className="flex-1 flex flex-wrap items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
                                                           
                                                           <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
@@ -509,7 +504,6 @@ export default function SettingsView({
                                       </div>
                                   </button>
 
-                                  {/* INDICATORS */}
                                   <div className="grid grid-cols-3 gap-3 mb-6">
                                       <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isRecoverySecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
                                           {isRecoverySecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
@@ -637,6 +631,9 @@ export default function SettingsView({
                   {activeTab === 'architect' && isSystemOwner && (
                       <div className="animate-fade-in space-y-6">
                           
+                          {/* 🚀 THE NEW PERMISSION MATRIX EDITOR 🚀 */}
+                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} />
+
                           {/* LANDLORD DASHBOARD */}
                           <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
                              <LandlordDashboard db={db} appId={appId} user={user} />
@@ -680,3 +677,108 @@ export default function SettingsView({
       </div>
     );
 }
+
+// 🚀 PLUG & PLAY: THE MATRIX EDITOR COMPONENT (Placed at the bottom)
+const PermissionMatrixEditor = ({ db, appId, userRole }) => {
+    if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
+
+    const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
+    const [isSaving, setIsSaving] = React.useState(false);
+
+    const ALL_FEATURES = [
+        { id: 'view_dashboard', label: 'Command Center' },
+        { id: 'view_map', label: 'Map System' },
+        { id: 'view_journey', label: 'Journey Plan' },
+        { id: 'view_fleet', label: 'Fleet & Canvas' },
+        { id: 'view_master_vault', label: 'Master Vault' },
+        { id: 'view_agent_inventory', label: 'Agent Inventory' },
+        { id: 'view_restock_vault', label: 'Restock Vault' },
+        { id: 'view_sales', label: 'Sales Terminal' },
+        { id: 'view_receivables', label: 'Receivables & Consign' },
+        { id: 'view_eod', label: 'EOD Setoran' },
+        { id: 'view_stock_opname', label: 'Stock Opname' },
+        { id: 'view_customers', label: 'Customers' },
+        { id: 'view_sampling', label: 'Sampling' },
+        { id: 'view_reports', label: 'Reports' },
+        { id: 'view_audit_logs', label: 'Audit Logs' },
+        { id: 'view_settings', label: 'Settings Panel' },
+        { id: 'view_agent_profile', label: 'Agent Profile' },
+        { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
+        { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
+    ];
+
+    const TARGET_TIERS = [
+        { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER', color: 'text-yellow-500' },
+        { id: CORPORATE_TIERS.TIER_3, label: 'T3: REGIONAL', color: 'text-purple-400' },
+        { id: CORPORATE_TIERS.TIER_4, label: 'T4: CAPTAIN', color: 'text-blue-400' },
+        { id: CORPORATE_TIERS.TIER_5, label: 'T5: OPERATIVE', color: 'text-emerald-400' },
+        { id: CORPORATE_TIERS.TIER_6, label: 'T6: ROOKIE', color: 'text-slate-400' }
+    ];
+
+    const togglePermission = (tierId, featureId) => {
+        const newMatrix = { ...matrix };
+        const tierPerms = [...(newMatrix[tierId] || [])];
+        if (tierPerms.includes(featureId)) {
+            newMatrix[tierId] = tierPerms.filter(f => f !== featureId);
+        } else {
+            newMatrix[tierId] = [...tierPerms, featureId];
+        }
+        setMatrix(newMatrix);
+    };
+
+    const saveMatrixToFirebase = async () => {
+        setIsSaving(true);
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'), { matrix });
+            injectDynamicPermissions(matrix); 
+            alert("Matrix Deployed to Global Server.");
+        } catch (e) {
+            alert("Matrix Deployment Failed.");
+        }
+        setIsSaving(false);
+    };
+
+    return (
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 className="text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Live Configuration</p>
+                </div>
+                <button onClick={saveMatrixToFirebase} disabled={isSaving} className="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
+                    <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
+                </button>
+            </div>
+
+            <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                        <tr>
+                            <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
+                            {TARGET_TIERS.map(tier => (
+                                <th key={tier.id} className={`p-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-800 text-center bg-slate-950/50 ${tier.color}`}>{tier.label}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ALL_FEATURES.map((feature) => (
+                            <tr key={feature.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
+                                {TARGET_TIERS.map(tier => {
+                                    const hasAccess = (matrix[tier.id] || []).includes(feature.id);
+                                    return (
+                                        <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
+                                            <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600 hover:text-slate-400'}`}>
+                                                {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
+                                            </button>
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};

@@ -31,7 +31,7 @@ import FleetCanvasManager from './FleetCanvasManager';
 import ConsignmentFinanceView from './ConsignmentFinanceView'; 
 import EODReconciliationView from './EODReconciliationView'; 
 import AgentProfileView from './AgentProfileView'; // 🚀 ADD THIS NEW IMPORT
-
+import { injectDynamicPermissions } from './config/permissions'; // 🚀 NEW: THE BRAIN MATRIX
 
 // --- REUSABLE UI COMPONENTS ---
 import NotificationBell from './components/NotificationBell';
@@ -181,6 +181,23 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       adminCanvas, setAdminCanvas, 
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
+
+  // 🚀 NEW: MATRIX BOOTLOADER 🚀
+  // Downloads the custom permissions from Firebase when the app starts
+  useEffect(() => {
+      if (!db || !appId) return;
+      const bootPermissions = async () => {
+          try {
+              const permSnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'));
+              if (permSnap.exists() && permSnap.data().matrix) {
+                  injectDynamicPermissions(permSnap.data().matrix);
+              }
+          } catch (e) {
+              console.warn("Failed to boot custom permission matrix", e);
+          }
+      };
+      bootPermissions();
+  }, [db, appId]);
 
   // 🚀 COMMANDER FIX: REAL-TIME CUSTOMER SYNC ENGINE
   // This completely overrides the static, stale memory. The exact millisecond you drop a pin, 
@@ -3216,7 +3233,7 @@ const handleGitHubMirror = async () => {
           {activeTab === 'settings' && (
               <SettingsView 
                   user={user} userId={userId} db={db} appId={appId}
-                  isAdmin={isAdmin} isSystemOwner={isSystemOwner}
+                  isAdmin={isAdmin} isSystemOwner={isSystemOwner} userRole={userRole}
                   showCrownTransfer={showCrownTransfer} setShowCrownTransfer={setShowCrownTransfer}
                   triggerCapy={triggerCapy} setShowAdminLogin={setShowAdminLogin}
                   sessionStatus={sessionStatus} setSessionStatus={setSessionStatus} auditLogs={auditLogs}
