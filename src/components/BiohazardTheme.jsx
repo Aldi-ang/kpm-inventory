@@ -5,6 +5,9 @@ import { auth } from '../config/firebase';
 import NotificationBell from './NotificationBell';
 import MusicPlayer from '../MusicPlayer'; 
 
+// 🚀 IMPORT THE BRAIN
+import { hasClearance } from '../config/permissions'; 
+
 export default function BiohazardTheme({ 
     activeTab, setActiveTab, children, user, appSettings, 
     isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings, 
@@ -19,50 +22,29 @@ export default function BiohazardTheme({
         }
     };
 
+    // 🚀 LINK EACH TAB TO A PERMISSION STRING
     const allMenuItems = [
-        { id: 'agent_profile', label: 'Agent Profile' }, // 🚀 RENAMED AND MOVED TO THE ABSOLUTE TOP
-        { id: 'dashboard', label: 'Command Center' },
-        { id: 'map_war_room', label: 'Map System' },
-        { id: 'journey', label: 'Journey Plan' },
-        { id: 'fleet', label: 'Fleet & Canvas' }, 
-        { id: 'inventory', label: 'Master Vault' },
-        { id: 'agent_inventory', label: 'Agent Inventory' },
-        { id: 'restock_vault', label: 'Restock Vault' },
-        { id: 'sales', label: 'Sales Terminal' },
-        { id: 'receivables', label: 'Receivables & Consignment' },
-        { id: 'eod', label: 'EOD Setoran' },
-        { id: 'stock_opname', label: 'Stock Opname' },
-        { id: 'customers', label: 'Customers' },
-        { id: 'sampling', label: 'Sampling' },
-        { id: 'transactions', label: 'Reports' },
-        { id: 'audit', label: 'Audit Logs' },
-        { id: 'settings', label: 'Settings' }
+        { id: 'agent_profile', label: 'Agent Profile', feature: 'view_agent_profile' },
+        { id: 'dashboard', label: 'Command Center', feature: 'view_dashboard' },
+        { id: 'map_war_room', label: 'Map System', feature: 'view_map' },
+        { id: 'journey', label: 'Journey Plan', feature: 'view_journey' },
+        { id: 'fleet', label: 'Fleet & Canvas', feature: 'view_fleet' }, 
+        { id: 'inventory', label: 'Master Vault', feature: 'view_master_vault' },
+        { id: 'agent_inventory', label: 'Agent Inventory', feature: 'view_agent_inventory' },
+        { id: 'restock_vault', label: 'Restock Vault', feature: 'view_restock_vault' },
+        { id: 'sales', label: 'Sales Terminal', feature: 'view_sales' },
+        { id: 'receivables', label: 'Receivables & Consignment', feature: 'view_receivables' },
+        { id: 'eod', label: 'EOD Setoran', feature: 'view_eod' },
+        { id: 'stock_opname', label: 'Stock Opname', feature: 'view_stock_opname' },
+        { id: 'customers', label: 'Customers', feature: 'view_customers' },
+        { id: 'sampling', label: 'Sampling', feature: 'view_sampling' },
+        { id: 'transactions', label: 'Reports', feature: 'view_reports' },
+        { id: 'audit', label: 'Audit Logs', feature: 'view_audit_logs' },
+        { id: 'settings', label: 'Settings', feature: 'view_settings' }
     ];
-    const visibleMenu = allMenuItems.filter(item => {
-        if (userRole === 'ADMIN') {
-            if (isAdmin) {
-                if (item.id === 'agent_inventory') return false;
-                return true; 
-            }
-            return ['map_war_room', 'journey', 'sales'].includes(item.id);
-        }
-        
-        // 🚀 THE FIX: Give standard agents access to the Agent Profile (Dossier) tab
-        let allowedTabs = ['map_war_room', 'journey', 'sales', 'agent_inventory', 'agent_profile', 'transactions', 'eod'];
-        
-        // 🚀 THE FIX: Give Area Admins access to the Restock Vault AND the Fleet & Canvas tab!
-        if (userRole === 'AREA_ADMIN') {
-            allowedTabs.push('restock_vault', 'fleet');
-        }
-        
-        if (typeof agentSettings !== 'undefined' && agentSettings?.allowedTiers) {
-            if (agentSettings.allowedTiers.includes('Grosir') || agentSettings.allowedTiers.includes('Distributor')) {
-                allowedTabs.push('receivables');
-            }
-        }
-        
-        return allowedTabs.includes(item.id);
-    });
+
+    // 🚀 THE MAGIC: The Matrix automatically filters the sidebar based on their Corporate Tier
+    const visibleMenu = allMenuItems.filter(item => hasClearance(userRole, item.feature));
 
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
@@ -121,7 +103,8 @@ export default function BiohazardTheme({
                 )}
 
                 <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-white/10 pt-3 boot-3">
-                    {userRole === 'ADMIN' && !isAdmin && (
+                    {/* 🚀 HIDDEN DOOR: Show Master Vault button if they aren't fully unlocked but have Tier 2 settings */}
+                    {hasClearance(userRole, 'view_master_vault') && !isAdmin && (
                         <div className="px-2 mb-3">
                             <button 
                                 onClick={() => { if (setShowAdminLogin) setShowAdminLogin(true); setIsMobileMenuOpen(false); }} 
@@ -136,7 +119,6 @@ export default function BiohazardTheme({
 
                     {user ? (
                         <div className="flex items-center gap-2">
-                            {/* 🚨 REMOVED THE BELL FROM DOWN HERE 🚨 */}
                             <img 
                                 src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
                                 className="w-7 h-7 rounded border border-white/30 object-cover bg-black"
@@ -178,7 +160,6 @@ export default function BiohazardTheme({
                     </div>
 
                     <div className="flex items-center gap-6">
-                        {/* 🚀 THE BELL IS NOW IN THE TOP RIGHT (VERCEL STYLE) */}
                         <div className="z-[9999]">
                             <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
                         </div>
@@ -218,15 +199,13 @@ export default function BiohazardTheme({
                     .print-modal-wrapper { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; background: white !important; display: block !important; padding: 0 !important; margin: 0 !important; z-index: 999999 !important; }
                     .print-receipt { background-color: white !important; color: black !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; border-radius: 0 !important; overflow: visible !important; max-height: none !important; page-break-after: avoid !important; page-break-inside: avoid !important; }
                     
-                    /* 🚀 THE 58MM FIX */
                     .print-receipt.format-thermal { 
                         width: 100% !important; 
-                        max-width: 55mm !important; /* Slightly under 58mm to prevent edge-clipping */
+                        max-width: 55mm !important; 
                         padding: 2mm !important; 
                         margin: 0 !important;
                         box-sizing: border-box !important;
                     }
-                    /* 🚀 FORCE TEXT WRAPPING FOR LONG ITEM NAMES */
                     .print-receipt.format-thermal * {
                         word-wrap: break-word !important;
                         white-space: pre-wrap !important;
