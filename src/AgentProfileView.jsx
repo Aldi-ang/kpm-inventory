@@ -204,12 +204,23 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         setIsUploading(false);
     };
 
-    const getRoleStars = (role) => {
-        if (role === 'ADMIN' || role === 'COMPANY_OWNER' || role === 'DEVELOPER') return 6; 
-        if (role === 'AREA_ADMIN') return 4; 
-        return 3; 
+    // 🚀 6-TIER CORPORATE HIERARCHY ENGINE (FRONTEND MASKING)
+    const getCorporateIdentity = (agent) => {
+        const role = agent?.userRole || agent?.role || 'FIELD_OPERATIVE';
+        const isMaster = agent?.id === 'master_owner';
+        
+        if (isMaster || role === 'DEVELOPER') return { stars: 6, title: 'SYSTEM ARCHITECT', tier: 'TIER 1', color: 'text-rose-500', bg: 'bg-rose-900/30', border: 'border-rose-500/50' };
+        if (role === 'ADMIN' || role === 'COMPANY_OWNER') return { stars: 5, title: 'COMPANY OWNER', tier: 'TIER 2', color: 'text-yellow-500', bg: 'bg-yellow-900/30', border: 'border-yellow-500/50' };
+        if (role === 'AREA_ADMIN') return { stars: 4, title: 'REGIONAL MANAGER', tier: 'TIER 3', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-500/50' };
+        if (role === 'FLEET_CAPTAIN') return { stars: 3, title: 'FLEET CAPTAIN', tier: 'TIER 4', color: 'text-blue-400', bg: 'bg-blue-900/30', border: 'border-blue-500/50' };
+        if (role === 'ROOKIE') return { stars: 1, title: 'ROOKIE / TRAINEE', tier: 'TIER 6', color: 'text-slate-400', bg: 'bg-slate-800/50', border: 'border-slate-600/50' };
+        
+        // Default to Tier 5
+        return { stars: 2, title: 'FIELD OPERATIVE', tier: 'TIER 5', color: 'text-emerald-400', bg: 'bg-emerald-900/30', border: 'border-emerald-500/50' };
     };
-    const roleStars = getRoleStars(activeAgent?.userRole || activeAgent?.role);
+    
+    const corpIdentity = getCorporateIdentity(activeAgent);
+    const roleStars = corpIdentity.stars;
 
     const handleBioSave = async () => {
         if (!db || !activeAgent || !canEditProfile) return;
@@ -690,7 +701,11 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                         <Clock size={12}/> Active: {stats.daysInService}
                                     </div>
                                 </div>
-                                <h1 className="text-4xl lg:text-5xl font-black text-white leading-none uppercase tracking-tighter drop-shadow-lg mb-3">{activeAgent.name}</h1>
+                                {/* 🚀 CORPORATE COMMAND TAG */}
+                                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${corpIdentity.border} ${corpIdentity.bg} ${corpIdentity.color} mb-2 shadow-inner`}>
+                                    <ShieldCheck size={12}/> {corpIdentity.tier} : {corpIdentity.title}
+                                </div>
+                                <h1 className="text-4xl lg:text-5xl font-black text-white leading-none uppercase tracking-tighter drop-shadow-lg mb-2">{activeAgent.name}</h1>
                                 <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
                                     <ShieldCheck size={16} className="text-blue-500"/>
                                     <span className="text-[10px] text-slate-400 font-mono tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
@@ -819,8 +834,33 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><ShieldCheck size={100}/></div>
                             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
                             
-                            <div className="grid grid-cols-2 gap-3 mb-3 relative z-10">
-                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 relative z-10">
+                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm relative group/role">
+                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ShieldCheck size={10} className="text-blue-400"/> Corp. Assignment</p>
+                                    {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && activeAgent.id !== 'master_owner' ? (
+                                        <select 
+                                            value={activeAgent.userRole || activeAgent.role || 'FIELD_OPERATIVE'}
+                                            onChange={async (e) => {
+                                                const newVal = e.target.value;
+                                                const fieldToUpdate = ['ADMIN','COMPANY_OWNER','AREA_ADMIN'].includes(newVal) ? 'userRole' : 'role';
+                                                try {
+                                                    const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
+                                                    await updateDoc(agentRef, { [fieldToUpdate]: newVal });
+                                                } catch(err) { alert("Promotion Failed: " + err.message); }
+                                            }}
+                                            className={`w-full bg-slate-900 border border-slate-700 text-[10px] font-black uppercase tracking-widest rounded outline-none p-1.5 cursor-pointer ${corpIdentity.color}`}
+                                        >
+                                            <option value="ADMIN">Tier 2: Owner</option>
+                                            <option value="AREA_ADMIN">Tier 3: Regional</option>
+                                            <option value="FLEET_CAPTAIN">Tier 4: Captain</option>
+                                            <option value="FIELD_OPERATIVE">Tier 5: Operative</option>
+                                            <option value="ROOKIE">Tier 6: Rookie</option>
+                                        </select>
+                                    ) : (
+                                        <p className={`text-[10px] font-black uppercase tracking-widest truncate ${corpIdentity.color}`}>{corpIdentity.title}</p>
+                                    )}
+                                </div>
+                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm flex flex-col justify-center">
                                     <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Phone size={10} className="text-blue-400"/> Comms Link</p>
                                     <p className="text-xs font-bold text-slate-200 truncate">{activeAgent.phone || 'No Data'}</p>
                                 </div>
