@@ -32,10 +32,9 @@ export const ROLE_PERMISSIONS = {
         'view_sales', 'view_receivables', 'view_eod', 'view_reports', 'view_agent_profile'
     ],
 
-    [CORPORATE_TIERS.TIER_5]: [ 
+    [CORPORATE_TIERS.TIER_5]: [ // Tier 5 (Field Operative)
         'view_map', 'view_journey', 'view_agent_inventory',
-        'view_sales', 'view_eod', 'view_reports', 'view_agent_profile',
-        'view_master_vault' // <-- Just added this!
+        'view_sales', 'view_eod', 'view_reports', 'view_agent_profile','view_master_vault'
     ],
 
     [CORPORATE_TIERS.TIER_6]: [ // Tier 6 (Rookie)
