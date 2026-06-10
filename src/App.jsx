@@ -2602,9 +2602,10 @@ const handleGitHubMirror = async () => {
             setActiveTab={setActiveTab} 
             user={user} 
             appSettings={appSettings}
+
             /* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */
             isAdmin={isAdmin && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN')}
-            userRole={userRole}
+            userRole={"FIELD_OPERATIVE"}
             onLogin={handleLogin} 
             setShowAdminLogin={setShowAdminLogin}
             agentSettings={agentSettings}
