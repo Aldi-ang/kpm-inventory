@@ -9,7 +9,6 @@ export const CORPORATE_TIERS = {
 };
 
 // THE MASTER PERMISSION MATRIX
-// Add or remove strings here to instantly update the entire app's UI
 export const ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], // Tier 1 sees everything, always.
 
@@ -44,10 +43,15 @@ export const ROLE_PERMISSIONS = {
 };
 
 // 🚀 THE UNIVERSAL ACCESS CHECKER 🚀
-// Import this function into ANY file to instantly check if a user is allowed to see a button or tab
 export const hasClearance = (userRole, requiredFeature) => {
     // If no role is provided, default them to the lowest safe clearance (Tier 5)
-    const role = userRole || CORPORATE_TIERS.TIER_5; 
+    let role = userRole || CORPORATE_TIERS.TIER_5; 
+    
+    // 🚀 THE FIX: Legacy Translation Engine
+    // Automatically bumps your legacy 'ADMIN' account to 'DEVELOPER' (Tier 1)
+    if (role === 'ADMIN') {
+        role = CORPORATE_TIERS.TIER_1;
+    }
     
     // Tier 1 Bypass
     if (ROLE_PERMISSIONS[role]?.includes('ALL_ACCESS')) return true;
