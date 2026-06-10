@@ -5,6 +5,7 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
+import { DYNAMIC_TIERS } from '../config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     const isAreaAdmin = userRole === 'AREA_ADMIN';
@@ -583,14 +584,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 <input disabled={isReadOnlyMode} type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className={`flex-1 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none font-mono ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
                                 {isAdmin && !isReadOnlyMode && (
                                     <select 
-                                        className={`bg-slate-900 border rounded p-2.5 text-xs font-bold transition-colors cursor-pointer outline-none ${newAgent.userRole === 'ADMIN' ? 'border-orange-500 text-orange-500' : newAgent.userRole === 'AREA_ADMIN' ? 'border-purple-500 text-purple-400' : 'border-slate-700 text-white focus:border-blue-500'}`}
-                                        value={newAgent.userRole || 'AGENT'} 
+                                        className="bg-slate-900 border border-slate-600 rounded p-2.5 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer outline-none text-white focus:border-blue-500"
+                                        value={newAgent.userRole || 'FIELD_OPERATIVE'} 
                                         onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
                                         style={{ colorScheme: 'dark' }}
+                                        title="Assign Corporate Matrix Tier"
                                     >
-                                        <option value="AGENT" className="bg-slate-900 text-white">Tier 4: Salesman</option>
-                                        <option value="AREA_ADMIN" className="bg-slate-900 text-purple-500">Tier 3: Area Admin</option>
-                                        <option value="ADMIN" className="bg-slate-900 text-orange-500">Tier 2: HQ Admin</option>
+                                        {DYNAMIC_TIERS.map(t => (
+                                            <option key={t.id} value={t.id} className="bg-slate-900 text-white">
+                                                {t.label}
+                                            </option>
+                                        ))}
                                     </select>
                                 )}
                             </div>

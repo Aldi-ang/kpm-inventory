@@ -852,29 +852,11 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-5 flex items-center gap-2"><ShieldCheck size={14} className="text-blue-500"/> Operator Credentials</h3>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 relative z-10">
-                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm relative group/role">
+                                <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm flex flex-col justify-center">
                                     <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ShieldCheck size={10} className="text-blue-400"/> Corp. Assignment</p>
-                                    {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && activeAgent.id !== 'master_owner' ? (
-                                        <select 
-                                            value={activeAgent.userRole || activeAgent.role || 'FIELD_OPERATIVE'}
-                                            onChange={async (e) => {
-                                                const newVal = e.target.value;
-                                                const fieldToUpdate = ['COMPANY_OWNER','AREA_ADMIN'].includes(newVal) ? 'userRole' : 'role';
-                                                try {
-                                                    const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
-                                                    await updateDoc(agentRef, { [fieldToUpdate]: newVal });
-                                                } catch(err) { alert("Promotion Failed: " + err.message); }
-                                            }}
-                                            className={`w-full bg-slate-900 border border-slate-700 text-[10px] font-black uppercase tracking-widest rounded outline-none p-1.5 cursor-pointer ${corpIdentity.color}`}
-                                        >
-                                            {/* Automatically populates with your custom tiers! */}
-                                            {DYNAMIC_TIERS.map(t => (
-                                                <option key={t.id} value={t.id}>{t.label}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <p className={`text-[10px] font-black uppercase tracking-widest truncate ${corpIdentity.color}`}>{corpIdentity.title}</p>
-                                    )}
+                                    <p className={`text-xs font-black uppercase tracking-widest truncate drop-shadow-md ${corpIdentity.color}`}>
+                                        {corpIdentity.tier}: {corpIdentity.title}
+                                    </p>
                                 </div>
                                 <div className="bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm flex flex-col justify-center">
                                     <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Phone size={10} className="text-blue-400"/> Comms Link</p>
