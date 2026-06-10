@@ -678,13 +678,17 @@ export default function SettingsView({
     );
 }
 
-// 🚀 PLUG & PLAY: THE DYNAMIC MATRIX EDITOR
+// 🚀 PLUG & PLAY: THE DYNAMIC DRAG-AND-DROP MATRIX EDITOR
 const PermissionMatrixEditor = ({ db, appId, userRole }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS);
     const [isSaving, setIsSaving] = React.useState(false);
+
+    // DND States
+    const [draggedIdx, setDraggedIdx] = React.useState(null);
+    const [dragOverIdx, setDragOverIdx] = React.useState(null);
 
     const ALL_FEATURES = [
         { id: 'view_dashboard', label: 'Command Center' },
@@ -716,24 +720,77 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
         setMatrix(newMatrix);
     };
 
+    // 🚀 DRAG AND DROP HANDLERS
+    const handleDragStart = (e, idx) => {
+        setDraggedIdx(idx);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e, idx) => {
+        e.preventDefault();
+        setDragOverIdx(idx);
+    };
+
+    const handleDrop = (e, targetIdx) => {
+        e.preventDefault();
+        if (draggedIdx === null || draggedIdx === targetIdx) {
+            setDragOverIdx(null);
+            return;
+        }
+
+        const newTiers = [...tiers];
+        const [moved] = newTiers.splice(draggedIdx, 1);
+        newTiers.splice(targetIdx, 0, moved);
+
+        // Auto-renumber the labels based on their new left-to-right positions!
+        const renumbered = newTiers.map((t, idx) => {
+            const cleanName = t.label.replace(/^T\d+:\s*/, '');
+            return { ...t, label: `T${idx + 2}: ${cleanName}` };
+        });
+
+        setTiers(renumbered);
+        setDraggedIdx(null);
+        setDragOverIdx(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIdx(null);
+        setDragOverIdx(null);
+    };
+
+    // 🚀 TIER EDITING HANDLERS
     const handleAddTier = () => {
-        const name = prompt("Enter new Tier Name (e.g., T7: WAREHOUSE):");
-        if (!name) return;
+        const name = prompt("Enter new Rank Name (e.g., WAREHOUSE):");
+        if (!name || name.trim() === '') return;
         const newId = `CUSTOM_TIER_${Date.now()}`;
-        setTiers([...tiers, { id: newId, label: name.toUpperCase(), color: 'text-cyan-400' }]);
+        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
+        setTiers(newTiers);
         setMatrix({ ...matrix, [newId]: [] });
     };
 
-    const handleRenameTier = (id) => {
+    const handleRenameTier = (id, currentIndex) => {
         const current = tiers.find(t => t.id === id);
-        const newName = prompt(`Rename ${current.label}:`, current.label);
-        if (newName) setTiers(tiers.map(t => t.id === id ? { ...t, label: newName.toUpperCase() } : t));
+        const cleanName = current.label.replace(/^T\d+:\s*/, '');
+        const newName = prompt(`Rename Rank T${currentIndex + 2}:`, cleanName);
+        if (newName && newName.trim() !== '') {
+            setTiers(tiers.map((t, idx) => 
+                t.id === id ? { ...t, label: `T${idx + 2}: ${newName.toUpperCase().trim()}` } : t
+            ));
+        }
     };
 
     const handleDeleteTier = (id) => {
-        if (!id.startsWith('CUSTOM_')) return alert("Cannot delete factory core tiers, but you can rename them!");
-        if (window.confirm("Delete this custom tier?")) {
-            setTiers(tiers.filter(t => t.id !== id));
+        if (!id.startsWith('CUSTOM_')) return alert("System core tiers cannot be deleted, but you can rename and move them!");
+        if (window.confirm("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
+            const remaining = tiers.filter(t => t.id !== id);
+            
+            // Re-number after deletion
+            const renumbered = remaining.map((t, idx) => {
+                const cleanName = t.label.replace(/^T\d+:\s*/, '');
+                return { ...t, label: `T${idx + 2}: ${cleanName}` };
+            });
+            
+            setTiers(renumbered);
             const newMatrix = { ...matrix };
             delete newMatrix[id];
             setMatrix(newMatrix);
@@ -745,7 +802,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
         try {
             await setDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'), { matrix, tiers });
             injectDynamicPermissions(matrix, tiers); 
-            alert("Matrix & Tiers Deployed to Global Server.");
+            alert("Matrix & Hierarchy Deployed to Global Server.");
         } catch (e) { alert("Matrix Deployment Failed."); }
         setIsSaving(false);
     };
@@ -755,7 +812,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
             <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
                 <div>
                     <h2 className="text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Click a Tier name to Edit/Rename</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Drag columns to reorder ranks. Click names to rename.</p>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={handleAddTier} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
@@ -768,22 +825,37 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
             </div>
 
             <div className="overflow-x-auto custom-scrollbar pb-4">
-                <table className="w-full text-left border-collapse min-w-[800px]">
+                <table className="w-full text-left border-collapse min-w-[800px] select-none">
                     <thead>
                         <tr>
                             <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
-                            {tiers.map(tier => (
-                                <th key={tier.id} className="p-3 border-b border-slate-800 text-center bg-slate-950/50 group">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
-                                            {tier.label} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
-                                        </button>
-                                        {tier.id.startsWith('CUSTOM_') && (
-                                            <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>
-                                        )}
-                                    </div>
-                                </th>
-                            ))}
+                            {tiers.map((tier, idx) => {
+                                const cleanName = tier.label.replace(/^T\d+:\s*/, '');
+                                return (
+                                    <th 
+                                        key={tier.id} 
+                                        draggable 
+                                        onDragStart={(e) => handleDragStart(e, idx)}
+                                        onDragOver={(e) => handleDragOver(e, idx)}
+                                        onDrop={(e) => handleDrop(e, idx)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`p-3 border-b border-slate-800 text-center bg-slate-950/50 group cursor-move transition-all duration-200 ${dragOverIdx === idx ? 'bg-slate-800 border-b-emerald-500 border-b-2 shadow-inner' : ''} ${draggedIdx === idx ? 'opacity-20' : ''}`}
+                                        title="Drag to adjust Rank Hierarchy"
+                                    >
+                                        <div className="flex flex-col items-center justify-center gap-0.5">
+                                            <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => handleRenameTier(tier.id, idx)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
+                                                    {cleanName} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
+                                                </button>
+                                                {tier.id.startsWith('CUSTOM_') && (
+                                                    <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </th>
+                                );
+                            })}
                         </tr>
                     </thead>
                     <tbody>
