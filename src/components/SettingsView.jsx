@@ -678,15 +678,18 @@ export default function SettingsView({
     );
 }
 
-// 🚀 PLUG & PLAY: THE DYNAMIC DRAG-AND-DROP MATRIX EDITOR
+// 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR
 const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS);
     const [isSaving, setIsSaving] = React.useState(false);
+    
+    // Mobile View State
+    const [activeMobileTierId, setActiveMobileTierId] = React.useState(tiers[0]?.id);
 
-    // DND States
+    // DND States (Desktop)
     const [draggedIdx, setDraggedIdx] = React.useState(null);
     const [dragOverIdx, setDragOverIdx] = React.useState(null);
 
@@ -720,42 +723,37 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setMatrix(newMatrix);
     };
 
-    // 🚀 DRAG AND DROP HANDLERS
-    const handleDragStart = (e, idx) => {
-        setDraggedIdx(idx);
-        e.dataTransfer.effectAllowed = "move";
-    };
-
-    const handleDragOver = (e, idx) => {
-        e.preventDefault();
-        setDragOverIdx(idx);
-    };
-
+    // 🚀 DESKTOP DRAG AND DROP HANDLERS
+    const handleDragStart = (e, idx) => { setDraggedIdx(idx); e.dataTransfer.effectAllowed = "move"; };
+    const handleDragOver = (e, idx) => { e.preventDefault(); setDragOverIdx(idx); };
     const handleDrop = (e, targetIdx) => {
         e.preventDefault();
-        if (draggedIdx === null || draggedIdx === targetIdx) {
-            setDragOverIdx(null);
-            return;
-        }
-
+        if (draggedIdx === null || draggedIdx === targetIdx) { setDragOverIdx(null); return; }
         const newTiers = [...tiers];
         const [moved] = newTiers.splice(draggedIdx, 1);
         newTiers.splice(targetIdx, 0, moved);
+        recalculateTierRanks(newTiers);
+        setDraggedIdx(null); setDragOverIdx(null);
+    };
+    const handleDragEnd = () => { setDraggedIdx(null); setDragOverIdx(null); };
 
-        // Auto-renumber the labels based on their new left-to-right positions!
-        const renumbered = newTiers.map((t, idx) => {
+    // 🚀 MOBILE REORDER HANDLERS
+    const handleShiftTier = (id, direction) => {
+        const idx = tiers.findIndex(t => t.id === id);
+        if ((direction === -1 && idx === 0) || (direction === 1 && idx === tiers.length - 1)) return;
+        const newTiers = [...tiers];
+        const temp = newTiers[idx];
+        newTiers[idx] = newTiers[idx + direction];
+        newTiers[idx + direction] = temp;
+        recalculateTierRanks(newTiers);
+    };
+
+    const recalculateTierRanks = (tierArray) => {
+        const renumbered = tierArray.map((t, idx) => {
             const cleanName = t.label.replace(/^T\d+:\s*/, '');
             return { ...t, label: `T${idx + 2}: ${cleanName}` };
         });
-
         setTiers(renumbered);
-        setDraggedIdx(null);
-        setDragOverIdx(null);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedIdx(null);
-        setDragOverIdx(null);
     };
 
     // 🚀 TIER EDITING HANDLERS
@@ -766,16 +764,15 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
         setTiers(newTiers);
         setMatrix({ ...matrix, [newId]: [] });
+        setActiveMobileTierId(newId);
     };
 
-    const handleRenameTier = (id, currentIndex) => {
-        const current = tiers.find(t => t.id === id);
-        const cleanName = current.label.replace(/^T\d+:\s*/, '');
-        const newName = prompt(`Rename Rank T${currentIndex + 2}:`, cleanName);
+    const handleRenameTier = (id) => {
+        const idx = tiers.findIndex(t => t.id === id);
+        const cleanName = tiers[idx].label.replace(/^T\d+:\s*/, '');
+        const newName = prompt(`Rename Rank T${idx + 2}:`, cleanName);
         if (newName && newName.trim() !== '') {
-            setTiers(tiers.map((t, idx) => 
-                t.id === id ? { ...t, label: `T${idx + 2}: ${newName.toUpperCase().trim()}` } : t
-            ));
+            setTiers(tiers.map((t, i) => t.id === id ? { ...t, label: `T${i + 2}: ${newName.toUpperCase().trim()}` } : t));
         }
     };
 
@@ -783,17 +780,11 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         if (!id.startsWith('CUSTOM_')) return alert("System core tiers cannot be deleted, but you can rename and move them!");
         if (window.confirm("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
             const remaining = tiers.filter(t => t.id !== id);
-            
-            // Re-number after deletion
-            const renumbered = remaining.map((t, idx) => {
-                const cleanName = t.label.replace(/^T\d+:\s*/, '');
-                return { ...t, label: `T${idx + 2}: ${cleanName}` };
-            });
-            
-            setTiers(renumbered);
+            recalculateTierRanks(remaining);
             const newMatrix = { ...matrix };
             delete newMatrix[id];
             setMatrix(newMatrix);
+            if (activeMobileTierId === id) setActiveMobileTierId(remaining[0]?.id);
         }
     };
 
@@ -807,24 +798,84 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setIsSaving(false);
     };
 
+    // Safety fallback for mobile
+    const activeTier = tiers.find(t => t.id === activeMobileTierId) || tiers[0];
+    const activeTierIdx = tiers.findIndex(t => t.id === activeTier?.id);
+
     return (
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl mt-8">
-            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 lg:p-6 shadow-2xl mt-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
                 <div>
-                    <h2 className="text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Tier 1 Overrides - Drag columns to reorder ranks. Click names to rename.</p>
+                    <h2 className="text-lg lg:text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 hidden lg:block">Tier 1 Overrides - Drag columns to reorder ranks.</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 lg:hidden">Select a tier below to edit its permissions.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={handleAddTier} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
+                <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                    <button onClick={handleAddTier} className="flex-1 lg:flex-none justify-center bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
                         <Plus size={16}/> Add Tier
                     </button>
-                    <button onClick={saveMatrixToFirebase} disabled={isSaving} className="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
+                    <button onClick={saveMatrixToFirebase} disabled={isSaving} className="flex-1 lg:flex-none justify-center bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
                         <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
                     </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto custom-scrollbar pb-4">
+            {/* ========================================= */}
+            {/* 📱 MOBILE VIEW (Hidden on large screens)  */}
+            {/* ========================================= */}
+            <div className="block lg:hidden space-y-4">
+                {/* Horizontal Tier Scroller */}
+                <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar snap-x">
+                    {tiers.map((t) => (
+                        <button 
+                            key={t.id} 
+                            onClick={() => setActiveMobileTierId(t.id)}
+                            className={`snap-start whitespace-nowrap px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMobileTierId === t.id ? 'bg-slate-800 text-white border border-emerald-500 shadow-inner' : 'bg-slate-950/50 text-slate-500 border border-slate-800 hover:text-slate-300'}`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Active Tier Controls */}
+                {activeTier && (
+                    <div className="bg-slate-950/50 rounded-xl border border-slate-800 p-4">
+                        <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-4">
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronLeft size={18}/></button>
+                                <span className={`text-xs font-black uppercase tracking-widest ${activeTier.color}`}>{activeTier.label}</span>
+                                <button onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronRight size={18}/></button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => handleRenameTier(activeTier.id)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><Edit size={14}/></button>
+                                {activeTier.id.startsWith('CUSTOM_') && (
+                                    <button onClick={() => handleDeleteTier(activeTier.id)} className="text-red-500 hover:text-red-400 p-1 bg-red-950/30 rounded"><Trash2 size={14}/></button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Toggle List */}
+                        <div className="space-y-2">
+                            {ALL_FEATURES.map(feature => {
+                                const hasAccess = (matrix[activeTier.id] || []).includes(feature.id);
+                                return (
+                                    <div key={feature.id} className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
+                                        <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
+                                        <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600'}`}>
+                                            {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ========================================= */}
+            {/* 💻 DESKTOP VIEW (Hidden on small screens) */}
+            {/* ========================================= */}
+            <div className="hidden lg:block overflow-x-auto custom-scrollbar pb-4">
                 <table className="w-full text-left border-collapse min-w-[800px] select-none">
                     <thead>
                         <tr>
@@ -833,24 +884,17 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                 const cleanName = tier.label.replace(/^T\d+:\s*/, '');
                                 return (
                                     <th 
-                                        key={tier.id} 
-                                        draggable 
-                                        onDragStart={(e) => handleDragStart(e, idx)}
-                                        onDragOver={(e) => handleDragOver(e, idx)}
-                                        onDrop={(e) => handleDrop(e, idx)}
-                                        onDragEnd={handleDragEnd}
+                                        key={tier.id} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}
                                         className={`p-3 border-b border-slate-800 text-center bg-slate-950/50 group cursor-move transition-all duration-200 ${dragOverIdx === idx ? 'bg-slate-800 border-b-emerald-500 border-b-2 shadow-inner' : ''} ${draggedIdx === idx ? 'opacity-20' : ''}`}
                                         title="Drag to adjust Rank Hierarchy"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-0.5">
                                             <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
                                             <div className="flex items-center gap-1">
-                                                <button onClick={() => handleRenameTier(tier.id, idx)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
+                                                <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
                                                     {cleanName} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
                                                 </button>
-                                                {tier.id.startsWith('CUSTOM_') && (
-                                                    <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>
-                                                )}
+                                                {tier.id.startsWith('CUSTOM_') && <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
                                             </div>
                                         </div>
                                     </th>
