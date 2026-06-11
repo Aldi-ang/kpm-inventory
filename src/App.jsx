@@ -31,7 +31,6 @@ import FleetCanvasManager from './FleetCanvasManager';
 import ConsignmentFinanceView from './ConsignmentFinanceView'; 
 import EODReconciliationView from './EODReconciliationView'; 
 import AgentProfileView from './AgentProfileView'; 
-import HallOfFameView from './HallOfFameView'; // 🚀 NEW: Import the Leaderboard
 import { injectDynamicPermissions } from './config/permissions'; // 🚀 NEW: THE BRAIN MATRIX
 
 // --- REUSABLE UI COMPONENTS ---
@@ -3235,10 +3234,6 @@ const handleGitHubMirror = async () => {
          )}
 
 
-        {/* 🚀 HALL OF FAME VIEW */}
-          {activeTab === 'hall_of_fame' && (
-              <HallOfFameView motorists={motorists} transactions={transactions} />
-          )}
 
 
           {activeTab === 'settings' && (

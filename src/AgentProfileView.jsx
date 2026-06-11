@@ -13,6 +13,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import { calculateAgentLevel, checkUnlockedBadges } from './config/achievements';
+import HallOfFameView from './HallOfFameView'; // 🚀 NEW: Import it here!
 
 const BadgeIconMap = { Flame, Zap, Target, Crown, ShieldCheck: Trophy };
 
@@ -99,7 +100,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
     const [showCanvasBreakdown, setShowCanvasBreakdown] = useState(false);
+  
     const [showTitipBreakdown, setShowTitipBreakdown] = useState(false);
+    const [showHallOfFame, setShowHallOfFame] = useState(false); // 🚀 NEW: State to open leaderboard
 
     const [ownerProfile, setOwnerProfile] = useState(null);
     useEffect(() => {
@@ -534,6 +537,18 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 </div>
             )}
 
+
+
+            {/* 🚀 NEW: HALL OF FAME OVERLAY MODAL */}
+            {showHallOfFame && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col p-4 md:p-8 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
+                    <button onClick={() => setShowHallOfFame(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white z-50 bg-black/50 p-2 rounded-full border border-slate-700"><X size={24}/></button>
+                    <div className="w-full mt-10 lg:mt-4">
+                        <HallOfFameView motorists={motorists} transactions={transactions} rpgData={rpgData} />
+                    </div>
+                </div>
+            )}
+
             {showRankConfig && (userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
                 <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
                     <div className="max-w-4xl w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -682,6 +697,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <Settings size={16}/> Rank Config
                         </button>
                     )}
+                    {/* 🚀 NEW: HALL OF FAME MODAL BUTTON */}
+                    <button onClick={() => setShowHallOfFame(true)} className="bg-gradient-to-r from-amber-600 to-amber-500 text-white border border-amber-400/50 px-4 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg">
+                        <Trophy size={16} className="animate-bounce-slow"/> Leaderboard
+                    </button>
                 </div>
 
                 <div className="pt-24 pb-10 px-6 md:px-10 border-b border-slate-800 relative overflow-hidden bg-gradient-to-br from-black via-slate-900 to-black">
