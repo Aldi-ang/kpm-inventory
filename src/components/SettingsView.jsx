@@ -632,7 +632,7 @@ export default function SettingsView({
                       <div className="animate-fade-in space-y-6">
                           
                           {/* 🚀 THE NEW PERMISSION MATRIX EDITOR 🚀 */}
-                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} />
+                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
 
                           {/* LANDLORD DASHBOARD */}
                           <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
@@ -679,7 +679,7 @@ export default function SettingsView({
 }
 
 // 🚀 PLUG & PLAY: THE DYNAMIC DRAG-AND-DROP MATRIX EDITOR
-const PermissionMatrixEditor = ({ db, appId, userRole }) => {
+const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
@@ -800,7 +800,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole }) => {
     const saveMatrixToFirebase = async () => {
         setIsSaving(true);
         try {
-            await setDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'), { matrix, tiers });
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), { matrix, tiers });
             injectDynamicPermissions(matrix, tiers); 
             alert("Matrix & Hierarchy Deployed to Global Server.");
         } catch (e) { alert("Matrix Deployment Failed."); }

@@ -187,10 +187,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
   // Downloads the custom permissions from Firebase when the app starts
   useEffect(() => {
-      if (!db || !appId) return;
+      // 🚀 FIX: Wait for userId so we know which Vault to unlock
+      if (!db || !appId || !userId || userId === 'default') return; 
       const bootPermissions = async () => {
           try {
-              const permSnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'));
+              // 🚀 FIX: Route the download directly into the Boss's Secure Vault
+              const permSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'));
               if (permSnap.exists() && permSnap.data().matrix) {
                   injectDynamicPermissions(permSnap.data().matrix, permSnap.data().tiers);
                   setMatrixTick(prev => prev + 1); // 🚀 FIRE THE PULSE! Forces Sidebar to Redraw.
@@ -200,7 +202,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           }
       };
       bootPermissions();
-  }, [db, appId]);
+  }, [db, appId, userId]); // 🚀 FIX: Added userId to dependency array
 
   // 🚀 COMMANDER FIX: REAL-TIME CUSTOMER SYNC ENGINE
   // This completely overrides the static, stale memory. The exact millisecond you drop a pin, 
