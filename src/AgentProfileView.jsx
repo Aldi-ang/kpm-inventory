@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
     MapPin, AlertCircle, Camera, Phone, Edit3, Save, Clock,
     Star, Menu, X, ChevronRight, Sparkles, Settings, Plus, Trash2, Image as ImageIcon,
-    List, Trophy, Medal, PackageOpen, Crown
+    List, Trophy, Medal, PackageOpen, Crown, Flame
 } from 'lucide-react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -13,7 +14,6 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import { calculateAgentLevel, checkUnlockedBadges } from './config/achievements';
-import { Trophy, Star, Zap, Target, Crown, Flame, Medal } from 'lucide-react';
 
 const BadgeIconMap = { Flame, Zap, Target, Crown, ShieldCheck: Trophy };
 

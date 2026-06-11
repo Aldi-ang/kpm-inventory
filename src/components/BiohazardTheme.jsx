@@ -40,6 +40,7 @@ export default function BiohazardTheme({
         { id: 'sampling', label: 'Sampling', feature: 'view_sampling' },
         { id: 'transactions', label: 'Reports', feature: 'view_reports' },
         { id: 'audit', label: 'Audit Logs', feature: 'view_audit_logs' },
+        { id: 'hall_of_fame', label: '🏆 Hall of Fame', feature: 'view_journey' }, // 🚀 NEW: Everyone can see the leaderboard!
         { id: 'settings', label: 'Settings', feature: 'view_settings' }
     ];
 
