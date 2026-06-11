@@ -8,7 +8,7 @@ export const CORPORATE_TIERS = {
     TIER_6: 'ROOKIE'             
 };
 
-// 🚀 NEW: DYNAMIC TIER LABELS
+// 🚀 DYNAMIC TIER LABELS
 export let DYNAMIC_TIERS = [
     { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER', color: 'text-yellow-500' },
     { id: CORPORATE_TIERS.TIER_3, label: 'T3: REGIONAL', color: 'text-purple-400' },
@@ -46,9 +46,25 @@ export const injectDynamicPermissions = (firebaseMatrix, firebaseTiers) => {
     }
 };
 
+// 🚀 THE FIX: AGGRESSIVE TRANSLATOR AND SAFETY NET
 export const hasClearance = (userRole, requiredFeature) => {
     let role = userRole || CORPORATE_TIERS.TIER_5; 
-    if (role === 'ADMIN') role = CORPORATE_TIERS.TIER_1;
-    if (ROLE_PERMISSIONS[role]?.includes('ALL_ACCESS')) return true;
-    return ROLE_PERMISSIONS[role]?.includes(requiredFeature) || false;
+    
+    // 1. Aggressive Legacy Translator (Catches old Firebase tags)
+    if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
+    else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
+    else if (role === 'AREA_ADMIN') role = CORPORATE_TIERS.TIER_3;
+    else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
+    else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
+    else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
+
+    // 2. The Safety Net (Prevents blank sidebars if a rank is corrupted or deleted)
+    let activePerms = ROLE_PERMISSIONS[role];
+    if (!activePerms) {
+        // Force fallback to Tier 5 Operative defaults
+        activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile'];
+    }
+    
+    if (activePerms.includes('ALL_ACCESS')) return true;
+    return activePerms.includes(requiredFeature) || false;
 };
