@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
     User, Activity, TrendingUp, ShieldCheck, DollarSign, Wallet, 
     Calendar, Truck, Award, Target, Zap, Lock, Crosshair, 
