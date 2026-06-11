@@ -12,8 +12,17 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; 
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
-import { calculateAgentLevel, checkUnlockedBadges } from './config/achievements';
-import HallOfFameView from './HallOfFameView'; // 🚀 NEW: Import it here!
+import HallOfFameView from './HallOfFameView';
+
+const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
+
+const DEFAULT_BADGES = [
+    { id: '1', source: 'daysInServiceNum', target: 365, title: 'Company Veteran', desc: 'Served {val} / {max} Days.', icon: 'Calendar', hex: '#3b82f6' },
+    { id: '2', source: 'totalItemsSold', target: 10000, title: 'Logistics Titan', desc: 'Moved {val} / {max} items.', icon: 'PackageOpen', hex: '#10b981' },
+    { id: '3', source: 'ecerItemsSold', target: 1000, title: 'Retail Warlord', desc: 'Sold {val} / {max} units to Ecer.', icon: 'Crown', hex: '#ec4899' },
+    { id: '4', source: 'stores', target: 50, title: 'The Vanguard', desc: 'Secured {val} / {max} stores.', icon: 'Target', hex: '#8b5cf6' },
+    { id: '5', source: 'titipCollected', target: 50000000, title: 'Debt Collector', desc: 'Collected {val} / {max}.', icon: 'Zap', hex: '#f97316' }
+];
 
 const BadgeIconMap = { Flame, Zap, Target, Crown, ShieldCheck: Trophy };
 
@@ -97,6 +106,30 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const [locationFilter, setLocationFilter] = useState('ALL');
     const [showRankConfig, setShowRankConfig] = useState(false);
     const [chartFilter, setChartFilter] = useState('1W'); 
+    
+    // 🚀 NEW: DYNAMIC ACHIEVEMENT ENGINE STATES
+    const [showBadgeConfig, setShowBadgeConfig] = useState(false);
+    const [badgeData, setBadgeData] = useState(DEFAULT_BADGES);
+    const [editingBadges, setEditingBadges] = useState(null);
+
+    useEffect(() => {
+        if (!db || !appId) return;
+        const fetchBadges = async () => {
+            try {
+                const snap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
+                if (snap.exists() && snap.data().badges) setBadgeData(snap.data().badges);
+            } catch (e) {}
+        };
+        fetchBadges();
+    }, [db, appId]);
+
+    const handleSaveBadgeConfig = async () => {
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'), { badges: editingBadges });
+            setBadgeData(editingBadges);
+            setShowBadgeConfig(false);
+        } catch (error) { alert("Failed to save Achievements."); }
+    }; 
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
     const [showCanvasBreakdown, setShowCanvasBreakdown] = useState(false);
@@ -238,13 +271,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         return { stars: 2, title: 'FIELD OPERATIVE', tier: 'TIER 5', color: 'text-emerald-400', bg: 'bg-emerald-900/30', border: 'border-emerald-500/50' };
     };
     
-    // 🚀 GAMIFICATION ENGINE
-    // Calculates Level, EXP, and Badges on the fly based on raw sales data
-    const agentTransactions = transactions?.filter(t => t.agentId === activeAgent?.id && t.type === 'SALE') || [];
-    const totalOmset = agentTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-    const { level, progress, nextLevelOmset } = calculateAgentLevel(totalOmset);
-    const agentStats = { totalOmset, totalTransactions: agentTransactions.length };
-    const unlockedBadges = checkUnlockedBadges(agentStats);
+  
 
 
     const corpIdentity = getCorporateIdentity(activeAgent);
@@ -545,6 +572,64 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     <button onClick={() => setShowHallOfFame(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white z-50 bg-black/50 p-2 rounded-full border border-slate-700"><X size={24}/></button>
                     <div className="w-full mt-10 lg:mt-4">
                         <HallOfFameView motorists={motorists} transactions={transactions} rpgData={rpgData} />
+                    </div>
+                </div>
+            )}
+
+
+            {/* 🚀 NEW: DYNAMIC ACHIEVEMENT EDITOR MODAL */}
+            {showBadgeConfig && (userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
+                    <div className="max-w-4xl w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl relative mt-10 md:mt-0">
+                        <button onClick={() => setShowBadgeConfig(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Award className="text-yellow-500"/> Achievement Config</h2>
+                        
+                        <div className="space-y-4 mb-8">
+                            {editingBadges.map((badge, idx) => (
+                                <div key={idx} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col xl:flex-row gap-5 relative">
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 w-full">
+                                        <div className="md:col-span-3">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Badge Title</label>
+                                            <input type="text" value={badge.title} onChange={(e) => { const b = [...editingBadges]; b[idx].title = e.target.value; setEditingBadges(b); }} className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-sm outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div className="md:col-span-3">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Data Source</label>
+                                            <select value={badge.source} onChange={(e) => { const b = [...editingBadges]; b[idx].source = e.target.value; setEditingBadges(b); }} className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-xs outline-none focus:border-blue-500">
+                                                <option value="daysInServiceNum">Days Served</option>
+                                                <option value="totalItemsSold">Total Items Sold</option>
+                                                <option value="ecerItemsSold">Ecer Items Sold</option>
+                                                <option value="stores">Stores Conquered</option>
+                                                <option value="titipCollected">Debt Collected (Rp)</option>
+                                                <option value="lifetimeOmset">Gross Revenue (Rp)</option>
+                                                <option value="lifetimeEXP">Total EXP</option>
+                                            </select>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Target Number</label>
+                                            <input type="number" value={badge.target} onChange={(e) => { const b = [...editingBadges]; b[idx].target = Number(e.target.value); setEditingBadges(b); }} className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-sm outline-none font-mono focus:border-blue-500" />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Theme / Color</label>
+                                            <div className="flex gap-2">
+                                                <input type="color" value={badge.hex || '#ffffff'} onChange={(e) => { const b = [...editingBadges]; b[idx].hex = e.target.value; setEditingBadges(b); }} className="w-8 h-9 rounded cursor-pointer bg-transparent border-0 p-0 shrink-0" />
+                                                <select value={badge.icon} onChange={(e) => { const b = [...editingBadges]; b[idx].icon = e.target.value; setEditingBadges(b); }} className="w-full bg-black border border-slate-800 text-white px-2 py-2 rounded text-xs outline-none">
+                                                    {Object.keys(DynamicIconMap).map(k => <option key={k} value={k}>{k}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="md:col-span-2 relative flex flex-col justify-end">
+                                            <button onClick={() => { const b = [...editingBadges]; b.splice(idx, 1); setEditingBadges(b); }} className="w-full bg-red-900/20 border border-red-500/50 text-red-500 rounded py-2 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"><Trash2 size={14}/> Remove</button>
+                                        </div>
+                                        <div className="md:col-span-12">
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Description Template (Use {'{val}'} and {'{max}'} as placeholders)</label>
+                                            <input type="text" value={badge.desc} onChange={(e) => { const b = [...editingBadges]; b[idx].desc = e.target.value; setEditingBadges(b); }} placeholder="e.g. Sold {val} out of {max} items." className="w-full bg-black border border-slate-800 text-emerald-400 px-3 py-2 rounded text-xs outline-none focus:border-emerald-500" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button onClick={() => setEditingBadges([...editingBadges, { id: Date.now().toString(), source: 'totalItemsSold', target: 1000, title: 'New Badge', desc: 'Reached {val} / {max}', icon: 'Star', hex: '#ffffff' }])} className="w-full py-4 border-2 border-dashed border-slate-700 text-slate-400 hover:text-white hover:border-blue-500 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Badge</button>
+                        </div>
+                        <button onClick={handleSaveBadgeConfig} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(202,138,4,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Achievements</button>
                     </div>
                 </div>
             )}
@@ -1020,7 +1105,12 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         </div>
 
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl group hover:border-slate-700 transition-colors">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><Award size={14}/> Hall of Fame & Achievements</h3>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><Award size={14}/> Hall of Fame & Achievements</h3>
+                                {(userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                                    <button onClick={() => { setEditingBadges(JSON.parse(JSON.stringify(badgeData))); setShowBadgeConfig(true); }} className="text-slate-500 hover:text-white transition-colors bg-slate-800 p-1.5 rounded-md border border-slate-700" title="Configure Achievements"><Edit3 size={12}/></button>
+                                )}
+                            </div>
                             
                             {/* 🚀 THE MCL REGIONAL MVP TROPHY 🚀 */}
                             <div className="mb-8 flex justify-center">
@@ -1039,57 +1129,39 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
 
                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                
-                                <AchievementCard 
-                                    icon={<Calendar size={20}/>} 
-                                    title="Company Veteran" 
-                                    desc={`Served ${stats.daysInServiceNum} Days.`} 
-                                    progress={stats.daysInServiceNum} 
-                                    target={365} 
-                                    colorHex="#3b82f6" 
-                                    shadowClass="shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                                />
+                                {badgeData.map(badge => {
+                                    const BadgeIcon = DynamicIconMap[badge.icon] || Star;
+                                    
+                                    // Dynamically fetch the correct stat
+                                    let currentProgress = 0;
+                                    if (badge.source === 'daysInServiceNum') currentProgress = stats.daysInServiceNum;
+                                    else if (badge.source === 'lifetimeOmset') currentProgress = stats.lifetimeOmset;
+                                    else if (badge.source === 'lifetimeEXP') currentProgress = stats.lifetimeEXP;
+                                    else if (badge.source === 'totalItemsSold') currentProgress = stats.achievements.totalItemsSold;
+                                    else if (badge.source === 'ecerItemsSold') currentProgress = stats.achievements.ecerItemsSold;
+                                    else if (badge.source === 'stores') currentProgress = stats.achievements.stores;
+                                    else if (badge.source === 'titipCollected') currentProgress = stats.achievements.titipCollected;
 
-                                <AchievementCard 
-                                    icon={<PackageOpen size={20}/>} 
-                                    title="Logistics Titan" 
-                                    desc={`Moved ${formatFullRp(stats.achievements.totalItemsSold)} items.`} 
-                                    progress={stats.achievements.totalItemsSold} 
-                                    target={10000} 
-                                    colorHex="#10b981" 
-                                    shadowClass="shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-                                />
+                                    // Auto-Format text
+                                    const formattedCurrent = badge.source.includes('Omset') || badge.source.includes('Titip') || badge.source.includes('EXP') || badge.source.includes('Items') ? formatRp(currentProgress) : currentProgress;
+                                    const formattedTarget = badge.source.includes('Omset') || badge.source.includes('Titip') || badge.source.includes('EXP') || badge.source.includes('Items') ? formatRp(badge.target) : badge.target;
+                                    
+                                    // Inject template string!
+                                    const filledDesc = (badge.desc || '').replace('{val}', formattedCurrent).replace('{max}', formattedTarget);
 
-                                <AchievementCard 
-                                    icon={<Crown size={20}/>} 
-                                    title="Retail Warlord" 
-                                    desc={`Sold ${formatFullRp(stats.achievements.ecerItemsSold)} units to Ecer.`} 
-                                    progress={stats.achievements.ecerItemsSold} 
-                                    target={1000} 
-                                    colorHex="#ec4899" 
-                                    shadowClass="shadow-[0_0_15px_rgba(236,72,153,0.15)]"
-                                />
-
-                                <AchievementCard 
-                                    icon={<Target size={20}/>} 
-                                    title="The Vanguard" 
-                                    desc={`Secured ${stats.achievements.stores} unique stores.`} 
-                                    progress={stats.achievements.stores} 
-                                    target={50} 
-                                    colorHex="#8b5cf6" 
-                                    shadowClass="shadow-[0_0_15px_rgba(139,92,246,0.15)]"
-                                />
-
-                                <AchievementCard 
-                                    icon={<Zap size={20}/>} 
-                                    title="Debt Collector" 
-                                    desc={`Collected Rp ${formatRp(stats.achievements.titipCollected)}.`} 
-                                    progress={stats.achievements.titipCollected} 
-                                    target={50000000} 
-                                    colorHex="#f97316" 
-                                    shadowClass="shadow-[0_0_15px_rgba(249,115,22,0.15)]"
-                                />
-                                
+                                    return (
+                                        <AchievementCard 
+                                            key={badge.id}
+                                            icon={<BadgeIcon size={20}/>} 
+                                            title={badge.title} 
+                                            desc={filledDesc} 
+                                            progress={currentProgress} 
+                                            target={badge.target} 
+                                            colorHex={badge.hex} 
+                                            shadowClass={`shadow-[0_0_15px_${badge.hex}40]`}
+                                        />
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
