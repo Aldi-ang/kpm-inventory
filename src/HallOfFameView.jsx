@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Trophy, Medal, Star, Flame, Zap, Target, Crown, ShieldCheck, ChevronRight, TrendingUp } from 'lucide-react';
+import { Trophy, Medal, Star, Flame, Zap, Target, Crown, ShieldCheck, ChevronRight, TrendingUp, User } from 'lucide-react';
 import { calculateAgentLevel, checkUnlockedBadges } from './config/achievements';
 
 // Map icon strings to actual Lucide components
