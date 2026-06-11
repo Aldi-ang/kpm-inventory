@@ -1003,45 +1003,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 </div>
                             </div>
 
-                            {/* 🚀 NEW: EXP & BADGES GRID */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 relative z-10">
-                                {/* EXP & LEVEL CARD */}
-                                <div className="bg-black/40 p-4 rounded-xl border border-amber-500/30 backdrop-blur-sm flex flex-col justify-center relative overflow-hidden group hover:border-amber-500/60 transition-colors">
-                                    <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity"><Trophy size={48} className="text-amber-500"/></div>
-                                    <div className="flex justify-between items-end mb-2 relative z-10">
-                                        <div>
-                                            <p className="text-[8px] text-amber-500/70 font-black uppercase tracking-widest mb-1 flex items-center gap-1"><Star size={10}/> Operator Level</p>
-                                            <p className="text-lg font-black text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]">LVL {level}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Next Rank</p>
-                                            <p className="text-[10px] text-slate-300 font-mono">Rp {(nextLevelOmset / 1000000).toFixed(1)}M</p>
-                                        </div>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 relative z-10">
-                                        <div className="h-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)] transition-all duration-1000" style={{ width: `${Math.min(progress, 100)}%` }}></div>
-                                    </div>
-                                </div>
 
-                                {/* BADGES SHOWCASE */}
-                                <div className="md:col-span-2 bg-black/40 p-4 rounded-xl border border-slate-800/50 backdrop-blur-sm flex flex-col justify-center">
-                                    <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><Medal size={10} className="text-blue-400"/> Achievement Badges</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {unlockedBadges.length > 0 ? (
-                                            unlockedBadges.map(badge => {
-                                                const BadgeIcon = BadgeIconMap[badge.icon] || Star;
-                                                return (
-                                                    <div key={badge.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border shadow-md transition-transform hover:scale-105 ${badge.bg} ${badge.color} ${badge.border}`} title={badge.description}>
-                                                        <BadgeIcon size={14}/> {badge.title}
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <p className="text-[10px] text-slate-600 font-mono italic">No achievements unlocked yet. Close sales to earn badges.</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col group hover:border-slate-700 transition-colors">
