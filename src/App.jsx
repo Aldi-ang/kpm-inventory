@@ -182,7 +182,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
 
-  // 🚀 NEW: MATRIX BOOTLOADER 🚀
+ // 🚀 NEW: MATRIX BOOTLOADER 🚀
+  const [matrixTick, setMatrixTick] = useState(0); // 🚀 NEW: The UI Pulse State
+
   // Downloads the custom permissions from Firebase when the app starts
   useEffect(() => {
       if (!db || !appId) return;
@@ -190,8 +192,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           try {
               const permSnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'permission_matrix'));
               if (permSnap.exists() && permSnap.data().matrix) {
-                  // 🚀 PASS BOTH THE MATRIX AND THE CUSTOM TIERS
                   injectDynamicPermissions(permSnap.data().matrix, permSnap.data().tiers);
+                  setMatrixTick(prev => prev + 1); // 🚀 FIRE THE PULSE! Forces Sidebar to Redraw.
               }
           } catch (e) {
               console.warn("Failed to boot custom permission matrix", e);
@@ -2630,7 +2632,8 @@ const handleGitHubMirror = async () => {
             notifications={combinedNotifications}                   
             onNotificationClick={handleNotificationClick}
             appVersion={APP_VERSION} 
-        >
+             matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
+            >
           
     
 
