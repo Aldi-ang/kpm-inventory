@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Menu, Lock, LogOut, LogIn, ArrowRight } from 'lucide-react';
+import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
@@ -93,6 +93,19 @@ export default function BiohazardTheme({
                                 {item.label}
                             </button>
                         ))}
+
+                        {/* 🚀 HALL OF FAME BUTTON (SPECIAL GLOWING UI) */}
+                        <button
+                            onClick={() => { setActiveTab('hall_of_fame'); setIsMobileMenuOpen(false); }}
+                            className={`mt-4 w-full text-left py-2 px-3 text-xs font-black transition-all duration-200 uppercase tracking-widest flex items-center gap-2 ${
+                                activeTab === 'hall_of_fame' 
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)] border-l-4 border-white pl-6' 
+                                : 'text-amber-500 hover:text-amber-400 hover:pl-4 hover:bg-amber-500/10'
+                            }`}
+                        >
+                            <Trophy size={14} className={activeTab === 'hall_of_fame' ? 'animate-bounce' : ''} />
+                            Hall of Fame
+                        </button>
                     </nav>
                 ) : (
                     <div className="flex-1 flex flex-col items-start pt-10 opacity-50">
