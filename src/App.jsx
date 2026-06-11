@@ -2823,8 +2823,8 @@ const handleGitHubMirror = async () => {
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
-        {activeTab === 'dashboard' && userRole === 'ADMIN' && (
-            !isAdmin ? (
+        {activeTab === 'dashboard' && (
+            userRole === 'ADMIN' && !isAdmin ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
                     <div className="relative mb-8">
                         <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
@@ -2866,8 +2866,8 @@ const handleGitHubMirror = async () => {
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
           {activeTab === 'journey' && <JourneyView customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} />}
           
-          {/* 🚀 UPGRADED FLEET ROUTER: Now open to both Tier 2 (Master) and Tier 3 (Branch) */}
-          {activeTab === 'fleet' && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN') && (
+          {/* 🚀 UPGRADED FLEET ROUTER: Now fully controlled by the Matrix */}
+          {activeTab === 'fleet' && (
             <FleetCanvasManager 
                 db={db} 
                 appId={appId} 
@@ -2897,7 +2897,7 @@ const handleGitHubMirror = async () => {
           )}
 
           
-          {activeTab === 'inventory' && userRole === 'ADMIN' && (
+          {activeTab === 'inventory' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
               
               <ResidentEvilInventory 

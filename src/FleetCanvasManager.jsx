@@ -8,7 +8,7 @@ import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot }
 import { DYNAMIC_TIERS } from './config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
-    const isAreaAdmin = userRole === 'AREA_ADMIN';
+    const isAreaAdmin = userRole === 'AREA_ADMIN' || userRole === 'FLEET_CAPTAIN';
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
@@ -638,7 +638,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 
-                                {newAgent.userRole === 'AREA_ADMIN' && isAdmin && !isReadOnlyMode && (
+                                {(newAgent.userRole === 'AREA_ADMIN' || newAgent.userRole === 'FLEET_CAPTAIN') && isAdmin && !isReadOnlyMode && (
                                     <div className="mb-4">
                                         <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Branch Privileges</label>
                                         <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${newAgent.canEditRoster ? 'bg-purple-900/30 border-purple-500 text-purple-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
