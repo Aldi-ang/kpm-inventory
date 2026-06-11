@@ -8,7 +8,13 @@ import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot }
 import { DYNAMIC_TIERS } from './config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
-    const isAreaAdmin = userRole === 'AREA_ADMIN' || userRole === 'FLEET_CAPTAIN';
+    
+    // 🚀 DYNAMIC SCOPE ENGINE 🚀
+    // The Matrix controls the UI door, but this engine controls the Data.
+    // Tiers 1/2 are Global. Anyone else given access by the Matrix is strictly Regional.
+    const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
+    const isAreaAdmin = !isGlobalAdmin; // Automatically applies Regional security to Tiers 3, 4, 5, and 6
+    
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
 
