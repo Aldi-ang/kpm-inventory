@@ -271,7 +271,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
-        // 🚀 THE POS INTERCEPTOR (LAYER 2 DEFENSE)
+        // 🚀 THE POS INTERCEPTOR (LAYER 2A: DOUBLE-TAP DEFENSE)
         // en-CA forces the output to YYYY-MM-DD in your local timezone (WIB)
         const localToday = new Date().toLocaleDateString('en-CA'); 
         
@@ -282,6 +282,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 setCustomerName(""); // Reset field, abort selection
                 setShowCustomerDropdown(false);
                 return; 
+            }
+        }
+
+        // 🚀 THE POS INTERCEPTOR (LAYER 2B: TERRITORY TRESPASS DEFENSE)
+        const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+        const assignedAgent = cust.assignedAgent;
+        
+        if (assignedAgent && assignedAgent !== 'Unassigned') {
+            // Check if the current user's name matches the assigned agent's name
+            const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || 
+                                   assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
+            
+            if (!isAssignedToMe) {
+                const proceedTrespass = window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()} in the Journey Plan.\n\nAre you sure you want to intercept their target?`);
+                if (!proceedTrespass) {
+                    setCustomerName(""); // Reset field, abort selection
+                    setShowCustomerDropdown(false);
+                    return;
+                }
             }
         }
 
