@@ -2125,11 +2125,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             displayLng += Math.sin(angle) * offsetRadius;
                         }
 
-                        // 3. Draw the Snail Footprint Trail
-                        const pathCoords = (agent.pathHistory || []).map(p => [p.lat, p.lng]);
-                        pathCoords.push([agent.currentLocation.lat, agent.currentLocation.lng]); // Connect to TRUE location
-
-                        // 4. Create the pulsing Agent Avatar
+                        // 3. Create the pulsing Agent Avatar
                         const agentIcon = L.divIcon({
                             className: 'agent-live-icon',
                             html: `<div style="position:relative; z-index: 20000;">
@@ -2142,14 +2138,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                         return (
                             <React.Fragment key={`tracker-${agent.id}`}>
-                                {/* Main Snail Trail */}
-                                {pathCoords.length > 1 && (
-                                    <Polyline positions={pathCoords} pathOptions={{ color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '6, 8', lineCap: 'round' }} />
-                                )}
-                                {/* Connect the end of the line to the offset bubble if they are grouped */}
-                                {totalInGroup > 1 && (
-                                    <Polyline positions={[[agent.currentLocation.lat, agent.currentLocation.lng], [displayLat, displayLng]]} pathOptions={{ color: '#3b82f6', weight: 2, opacity: 0.5, dashArray: '2, 4' }} />
-                                )}
                                 <Marker position={[displayLat, displayLng]} icon={agentIcon} zIndexOffset={20000} />
                             </React.Fragment>
                         );
