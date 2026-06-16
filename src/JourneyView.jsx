@@ -974,11 +974,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     }
                                 }}
                             >
-                                {/* 🚀 FIXED: Tooltip hides when Popup or Editing is open */}
+                                {/* 🚀 UPGRADED: Global Clearance Tooltip */}
                                 {activePopupId !== store.id && !isEditing && (
                                     <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
-                                        <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                                            <span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}
+                                        <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-emerald-900/95 border-emerald-500 text-white' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
+                                            {isVisited ? (
+                                                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-400"/> SECURED BY {String(store.lastVisitedBy || store.lastVisitTag || 'FLEET').toUpperCase()}</span>
+                                            ) : (
+                                                <><span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}</>
+                                            )}
                                         </div>
                                     </LeafletTooltip>
                                 )}
@@ -1121,9 +1125,12 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                             <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                                 
                                                 {isVisited && (
-                                                    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
-                                                        <div className="bg-emerald-900/80 text-emerald-400 border-4 border-emerald-500 px-6 py-2 rounded-xl font-black text-xl uppercase tracking-[0.3em] transform -rotate-12 shadow-[0_0_50px_rgba(16,185,129,0.4)] backdrop-blur-sm">
-                                                            CLAIMED
+                                                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden bg-emerald-900/20 backdrop-blur-[2px]">
+                                                        <div className="bg-emerald-900/95 text-emerald-400 border-4 border-emerald-500 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 shadow-[0_0_50px_rgba(16,185,129,0.6)] backdrop-blur-md">
+                                                            <div className="text-2xl uppercase tracking-[0.3em] leading-none mb-1">CLAIMED</div>
+                                                            <div className="text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border border-emerald-500/30 shadow-inner">
+                                                                BY {String(customer.lastVisitedBy || customer.lastVisitTag || 'FLEET').toUpperCase()}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}

@@ -271,6 +271,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
+        // 🚀 THE POS INTERCEPTOR (LAYER 2 DEFENSE)
+        const todayDate = new Date().toISOString().split('T')[0]; 
+        
+        if (cust.lastVisit === todayDate) {
+            const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
+            const proceed = window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`);
+            if (!proceed) {
+                setCustomerName(""); // Reset field, abort selection
+                setShowCustomerDropdown(false);
+                return; 
+            }
+        }
+
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
         triggerMerchantSpeak('add');
@@ -832,9 +845,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                     
                     if (targetDocRef) {
+                        // 🚀 LAYER 1 & 2 SYNC: Cement the agent's footprint into the database!
+                        const storeUpdates = {
+                            lastVisit: new Date().toISOString().split('T')[0],
+                            lastVisitedBy: agentFallback,
+                            updatedAt: serverTimestamp()
+                        };
+
                         if (currentTier !== earnedTier) {
-                            await updateDoc(targetDocRef, { tier: earnedTier });
-                            if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
+                            storeUpdates.tier = earnedTier;
+                        }
+
+                        await updateDoc(targetDocRef, storeUpdates);
+
+                        if (currentTier !== earnedTier && triggerCapy) {
+                            triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
                         }
                     }
                 }
