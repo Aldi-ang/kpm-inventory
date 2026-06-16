@@ -272,9 +272,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         // 🚀 THE POS INTERCEPTOR (LAYER 2 DEFENSE)
-        const todayDate = new Date().toISOString().split('T')[0]; 
+        // en-CA forces the output to YYYY-MM-DD in your local timezone (WIB)
+        const localToday = new Date().toLocaleDateString('en-CA'); 
         
-        if (cust.lastVisit === todayDate) {
+        if (cust.lastVisit === localToday) {
             const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
             const proceed = window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`);
             if (!proceed) {
@@ -845,9 +846,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                     
                     if (targetDocRef) {
+                        const localToday = new Date().toLocaleDateString('en-CA');
+                        
                         // 🚀 LAYER 1 & 2 SYNC: Cement the agent's footprint into the database!
                         const storeUpdates = {
-                            lastVisit: new Date().toISOString().split('T')[0],
+                            lastVisit: localToday,
                             lastVisitedBy: agentFallback,
                             updatedAt: serverTimestamp()
                         };
@@ -857,6 +860,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
 
                         await updateDoc(targetDocRef, storeUpdates);
+
+                        // 🚀 MEMORY OVERRIDE: Force local state update so the terminal knows instantly without a page refresh!
+                        const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
+                        if (localCust) {
+                            localCust.lastVisit = localToday;
+                            localCust.lastVisitedBy = agentFallback;
+                        }
 
                         if (currentTier !== earnedTier && triggerCapy) {
                             triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
