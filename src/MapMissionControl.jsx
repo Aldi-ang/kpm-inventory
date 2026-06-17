@@ -1533,6 +1533,26 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
+    // 🚀 THE MAP CATCHER: Intercepts targets sent from Journey Plan
+    useEffect(() => {
+        const targetId = sessionStorage.getItem('targetMapStore');
+        if (targetId && mapPoints && mapPoints.length > 0) {
+            const target = mapPoints.find(s => String(s.id) === String(targetId));
+            if (target) {
+                // 400ms delay ensures the Map container is fully rendered after switching tabs before flying
+                setTimeout(() => {
+                    setSelectedStore(target);
+                    setSelectedZone(null);
+                    setLiveScaleOverride(null);
+                    if (mapRef.current) {
+                        mapRef.current.flyTo([target.latitude, target.longitude], 17, { duration: 1.2 });
+                    }
+                }, 400);
+            }
+            sessionStorage.removeItem('targetMapStore'); // Clear stamp to prevent double-firing
+        }
+    }, [mapPoints]);
+
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
     const [pendingNewStore, setPendingNewStore] = useState(null);

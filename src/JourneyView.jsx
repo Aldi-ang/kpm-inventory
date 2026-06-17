@@ -659,7 +659,10 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         sessionStorage.setItem('targetSalesCustomer', storeName);
         if (setActiveTab) setActiveTab('sales'); 
     };
-    const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
+    const jumpToMap = (storeId) => { 
+        sessionStorage.setItem('targetMapStore', storeId);
+        if (setActiveTab) setActiveTab('map_war_room'); 
+    };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
     const handleOpenLocation = (customer) => {
