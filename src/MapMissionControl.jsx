@@ -774,6 +774,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     useEffect(() => {
         if (!store) return;
+        // 🚀 AUTO-OPENER: Ensure the sheet transitions up smoothly when the store is selected via Radar
         if (window.innerWidth < 1024 && sheetRef.current) {
             const winH = window.innerHeight;
             const sheetH = winH * 0.85; 
@@ -781,8 +782,13 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             const initialTranslate = sheetH - targetVisible; 
             
             translateVal.current = initialTranslate;
-            sheetRef.current.style.transform = `translateY(${initialTranslate}px)`;
-            sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+            // Delay slightly to allow the map fly-to animation to finish
+            setTimeout(() => {
+                if (sheetRef.current) {
+                    sheetRef.current.style.transform = `translateY(${initialTranslate}px)`;
+                    sheetRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                }
+            }, 800);
         }
     }, [store?.id]);
 
@@ -1761,6 +1767,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     setSelectedStore(target);
                     setSelectedZone(null);
                     setLiveScaleOverride(null);
+                    // 🚀 AUTO-OPENER: Force the sheet to animate open for the agent
+                    if (window.innerWidth < 1024) {
+                        const sheet = document.querySelector('.fixed.bottom-0');
+                        if (sheet) sheet.style.transform = 'translateY(15%)'; // Snaps to middle view
+                    }
                     if (mapRef.current) {
                         mapRef.current.flyTo([target.latitude, target.longitude], 17, { duration: 1.2 });
                     }
