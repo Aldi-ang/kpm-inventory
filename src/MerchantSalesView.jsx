@@ -220,6 +220,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     }, [selectedCustomerInfo, customerName, customers.length, manualOverride]);
 
+    // 🚀 THE JOURNEY CATCHER: Intercepts targets sent from Journey Plan
+    useEffect(() => {
+        const targetName = sessionStorage.getItem('targetSalesCustomer');
+        if (targetName && customers.length > 0) {
+            const targetCust = customers.find(c => (c.name || '').toLowerCase() === targetName.toLowerCase());
+            if (targetCust) {
+                setTimeout(() => {
+                    handleCustomerSelect(targetCust);
+                }, 600); // 0.6s delay lets the merchant doors open first for visual effect
+            }
+            sessionStorage.removeItem('targetSalesCustomer'); // Clear the stamp so it doesn't fire twice
+        }
+    }, [customers.length]);
+
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
         const handleClickOutside = (e) => {

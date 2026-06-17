@@ -654,7 +654,11 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         }, {});
     }, [sortedRoute]);
 
-    const jumpToTerminal = (storeName) => { if (setActiveTab) setActiveTab('sales'); };
+    // 🚀 THE DATA BRIDGE: Stamps the target into session memory before switching tabs
+    const jumpToTerminal = (storeName) => { 
+        sessionStorage.setItem('targetSalesCustomer', storeName);
+        if (setActiveTab) setActiveTab('sales'); 
+    };
     const jumpToMap = (storeId) => { if (setActiveTab) setActiveTab('map_war_room'); };
     const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
