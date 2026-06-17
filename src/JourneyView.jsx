@@ -927,7 +927,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                         }
                         
                         const isVisited = store.lastVisit === todayDate;
-                        const iconHtml = isVisited ? '✅' : '📍';
+                        let iconHtml = '📍';
+                        if (isVisited) {
+                            if (store.lastVisitTag?.includes('📦')) iconHtml = '📦';
+                            else if (store.lastVisitTag?.includes('🛑')) iconHtml = '🛑';
+                            else if (store.lastVisitTag?.includes('⚠️')) iconHtml = '⚠️';
+                            else if (store.lastVisitTag?.includes('📝')) iconHtml = '📝';
+                            else if (store.lastVisitTag?.includes('🔒')) iconHtml = '🔒';
+                            else iconHtml = '✅';
+                        }
                         const metric = storeMetrics[store.id];
                         const stopNum = metric.stopNumber;
                         const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
@@ -1012,9 +1020,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                 </span>
                                             </div>
                                             
-                                            <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
-                                                {statusBadge.text}
-                                            </div>
+                                            {isVisited ? (
+                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
+                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {store.lastVisitTag || 'SECURED TODAY'}</span>
+                                                    {store.lastVisitNote && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
+                                                </div>
+                                            ) : (
+                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                    {statusBadge.text}
+                                                </div>
+                                            )}
                                             
                                             <div className="space-y-3">
                                                 {/* 🚀 FIXED: Replaced Global Position with Real Info & Actions */}
@@ -1131,16 +1146,29 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                         return (
                                             <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                                 
-                                                {isVisited && (
-                                                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden bg-emerald-900/20 backdrop-blur-[2px]">
-                                                        <div className="bg-emerald-900/95 text-emerald-400 border-4 border-emerald-500 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 shadow-[0_0_50px_rgba(16,185,129,0.6)] backdrop-blur-md">
-                                                            <div className="text-2xl uppercase tracking-[0.3em] leading-none mb-1">CLAIMED</div>
-                                                            <div className="text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border border-emerald-500/30 shadow-inner">
-                                                                BY {String(customer.lastVisitedBy || customer.lastVisitTag || 'FLEET').toUpperCase()}
+                                                {isVisited && (() => {
+                                                    const tag = customer.lastVisitTag || '';
+                                                    let stampText = 'CLAIMED';
+                                                    let bgOverlay = 'bg-emerald-900/20';
+                                                    let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
+                                                    let badgeBorder = 'border-emerald-500/30';
+                                                    
+                                                    if (tag.includes('🔒')) { stampText = 'CLOSED'; bgOverlay = 'bg-red-900/20'; boxBg = 'bg-red-900/95 text-red-400 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.6)]'; badgeBorder = 'border-red-500/30'; }
+                                                    else if (tag.includes('🛑')) { stampText = 'FULL'; bgOverlay = 'bg-orange-900/20'; boxBg = 'bg-orange-900/95 text-orange-400 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.6)]'; badgeBorder = 'border-orange-500/30'; }
+                                                    else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
+                                                    else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
+                                                    
+                                                    return (
+                                                        <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
+                                                            <div className={`border-4 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 backdrop-blur-md ${boxBg}`}>
+                                                                <div className="text-2xl uppercase tracking-[0.2em] leading-none mb-1">{stampText}</div>
+                                                                <div className={`text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border shadow-inner max-w-[200px] truncate ${badgeBorder}`}>
+                                                                    BY {String(customer.lastVisitedBy || 'FLEET').toUpperCase()}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )
+                                                })()}
 
                                                 <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
                                                     <div className="flex gap-1 relative z-20">
@@ -1193,9 +1221,16 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                         {customer.name}
                                                     </h3>
                                                     
-                                                    <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
-                                                        {statusBadge.text}
-                                                    </div>
+                                                    {isVisited ? (
+                                                        <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
+                                                            <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {customer.lastVisitTag || 'SECURED TODAY'}</span>
+                                                            {customer.lastVisitNote && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                            {statusBadge.text}
+                                                        </div>
+                                                    )}
                                                     
                                                     <div className="space-y-2 mb-4 flex-1">
                                                         <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
