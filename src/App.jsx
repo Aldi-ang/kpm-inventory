@@ -1553,10 +1553,7 @@ const handleGitHubMirror = async () => {
                             freshEmailData.agentId = null; 
                         }
                         
-                        // Merge fresh Fleet Roster data into the active session
                         activeData = { ...activeData, ...freshEmailData };
-                        
-                        // Silently update their permanent UID file WITHOUT deleting the Admin's Email Doc
                         setDoc(uidRef, { ...activeData, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
                     }
                 }
@@ -1580,39 +1577,66 @@ const handleGitHubMirror = async () => {
                     } 
                     else {
                         // 🛡️ HARD BLOCK: Absolute Ghost Killer
+                        let trueBossUid = activeData.bossUid || activeData.adminUid || activeData.masterUid;
                         let trueAgentId = activeData.agentId;
+                        let finalName = activeData.name || activeData.agentName;
+                        let finalUserRole = activeData.userRole || activeData.role || 'AGENT';
                         
-                        // A Tier 3/4 Agent CANNOT be the Boss Vehicle.
                         if (trueAgentId === 'ADMIN' || trueAgentId === 'ADMIN_VEHICLE') {
                             console.warn("Corruption blocked: Stripping Admin Vehicle from Tier 4 account.");
-                            trueAgentId = null; // Force empty state until Boss assigns a real vehicle
-                            
-                            // Heal the database locally
-                            if (uidSnap.exists()) {
-                                updateDoc(uidRef, { agentId: null }).catch(e => console.error(e));
-                            }
+                            trueAgentId = null; 
+                            if (uidSnap.exists()) updateDoc(uidRef, { agentId: null }).catch(e => console.error(e));
                         }
 
-                        // Field Agents (Tier 3 / Tier 4)
-                        setBossUid(activeData.bossUid);
-                        setUserRole(activeData.userRole || 'AGENT'); 
+                        // 🚀 THE MASTER VAULT FETCH: Live Profile Sync 🚀
+                        // Always pull the freshest role, name, and status directly from the Boss's LIVE Database!
+                        if (trueBossUid && trueAgentId) {
+                            try {
+                                const liveProfileRef = doc(db, `artifacts/${appId}/users/${trueBossUid}/motorists`, trueAgentId);
+                                const liveProfileSnap = await getDoc(liveProfileRef);
+                                
+                                if (liveProfileSnap.exists()) {
+                                    const liveData = liveProfileSnap.data();
+                                    finalName = liveData.name || liveData.agentName || finalName;
+                                    finalUserRole = liveData.userRole || liveData.role || finalUserRole; 
+                                    activeData.location = liveData.location || activeData.location;
+                                    
+                                    // 🚨 Second Kill Switch: If suspended in the live profile
+                                    if (liveData.status === 'SUSPENDED') {
+                                        alert("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
+                                        signOut(auth);
+                                        setUser(null);
+                                        return;
+                                    }
+                                }
+                            } catch (error) { console.warn("Live profile sync skipped."); }
+                        }
+
+                        setBossUid(trueBossUid);
+                        setUserRole(finalUserRole); 
                         setAgentProfileId(trueAgentId);
 
                         const hijackedUser = {
-                            uid: activeData.bossUid,            
+                            uid: trueBossUid || currentUser.uid, // 🚨 CRITICAL: Forces connection to the Master Vault
                             email: currentUser.email,
-                            displayName: activeData.name || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
+                            displayName: finalName || currentUser.displayName || currentUser.email?.split('@')[0] || "Field Agent",
                             photoURL: currentUser.photoURL,
                             realUid: currentUser.uid,     
                             role: activeData.role,             
-                            userRole: activeData.userRole || 'AGENT', 
+                            userRole: finalUserRole, // 🚀 Now uses the LIVE upgraded Tier!
                             agentId: trueAgentId,
                             location: activeData.location || "" 
                         };
                         
                         setUser(hijackedUser);
                         setIsAdmin(false); 
-                        setActiveTab('journey'); 
+                        
+                        // 🚀 DYNAMIC ROUTING: If upgraded to Tier 2 (ADMIN), send them to Dashboard!
+                        if (finalUserRole === 'ADMIN' || finalUserRole === 'AREA_ADMIN') {
+                            setActiveTab('dashboard');
+                        } else {
+                            setActiveTab('journey'); 
+                        }
                     }
                 } else {
                     // 🚨 UNKNOWN LOGINS ARE LOCKED OUT 🚨
