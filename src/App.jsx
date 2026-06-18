@@ -1588,28 +1588,42 @@ const handleGitHubMirror = async () => {
                             if (uidSnap.exists()) updateDoc(uidRef, { agentId: null }).catch(e => console.error(e));
                         }
 
-                        // 🚀 THE MASTER VAULT FETCH: Live Profile Sync 🚀
-                        // Always pull the freshest role, name, and status directly from the Boss's LIVE Database!
-                        if (trueBossUid && trueAgentId) {
+                        // 🚀 THE MASTER VAULT FETCH: Live Profile Sync & Ghost Killer 🚀
+                        if (trueBossUid) {
                             try {
-                                const liveProfileRef = doc(db, `artifacts/${appId}/users/${trueBossUid}/motorists`, trueAgentId);
-                                const liveProfileSnap = await getDoc(liveProfileRef);
+                                let isValidEmployee = false;
                                 
-                                if (liveProfileSnap.exists()) {
-                                    const liveData = liveProfileSnap.data();
-                                    finalName = liveData.name || liveData.agentName || finalName;
-                                    finalUserRole = liveData.userRole || liveData.role || finalUserRole; 
-                                    activeData.location = liveData.location || activeData.location;
+                                if (trueAgentId) {
+                                    const liveProfileRef = doc(db, `artifacts/${appId}/users/${trueBossUid}/motorists`, trueAgentId);
+                                    const liveProfileSnap = await getDoc(liveProfileRef);
                                     
-                                    // 🚨 Second Kill Switch: If suspended in the live profile
-                                    if (liveData.status === 'SUSPENDED') {
-                                        alert("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
-                                        signOut(auth);
-                                        setUser(null);
-                                        return;
+                                    if (liveProfileSnap.exists()) {
+                                        isValidEmployee = true;
+                                        const liveData = liveProfileSnap.data();
+                                        finalName = liveData.name || liveData.agentName || finalName;
+                                        finalUserRole = liveData.userRole || liveData.role || finalUserRole; 
+                                        activeData.location = liveData.location || activeData.location;
+                                        
+                                        if (liveData.status === 'SUSPENDED') {
+                                            alert("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
+                                            signOut(auth);
+                                            setUser(null);
+                                            return;
+                                        }
                                     }
                                 }
-                            } catch (error) { console.warn("Live profile sync skipped."); }
+
+                                if (!isValidEmployee) {
+                                    // 🚨 THE GHOST KILLER: Admin deleted the profile, but Auth ticket remains.
+                                    console.warn("Ghost Account Detected! Eradicating global auth tickets...");
+                                    await deleteDoc(uidRef);
+                                    await deleteDoc(emailRef);
+                                    alert("AUTHORIZATION REVOKED: Your KPM profile was deleted by the Administrator.");
+                                    signOut(auth);
+                                    setUser(null);
+                                    return;
+                                }
+                            } catch (error) { console.warn("Live profile sync failed."); }
                         }
 
                         setBossUid(trueBossUid);
@@ -2852,10 +2866,24 @@ const handleGitHubMirror = async () => {
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
-        {activeTab === 'dashboard' && (
-            userRole === 'ADMIN' && !isAdmin ? (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
-                    <div className="relative mb-8">
+        {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
+        {userRole === 'UNAUTHORIZED' ? (
+            <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
+                <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
+                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Access Denied</h2>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                    The email <span className="text-red-500">[{user.email}]</span> is not registered in the KPM Employee Directory. Contact your System Administrator for clearance.
+                </p>
+                <button onClick={handleLogout} className="px-10 py-4 border-2 border-red-600/50 text-red-500 font-black uppercase text-xs hover:bg-red-900/30 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
+                    Disconnect Session
+                </button>
+            </div>
+        ) : (
+            <>
+            {activeTab === 'dashboard' && (
+                userRole === 'ADMIN' && !isAdmin ? (
+                    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
+                        <div className="relative mb-8">
                         <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
                         <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
                             <Lock size={40} className="animate-bounce-slow" />
@@ -3279,6 +3307,8 @@ const handleGitHubMirror = async () => {
                   triggerDiscoParty={triggerDiscoParty} isDiscoMode={isDiscoMode}
               />
           )}
+            </>
+        )}
         </>
       )}
 

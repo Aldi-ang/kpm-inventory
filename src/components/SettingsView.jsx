@@ -683,7 +683,8 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
-    const [tiers, setTiers] = React.useState(DYNAMIC_TIERS);
+    // 🚀 EXCLUDE GOD TIERS FROM UI (T1/T2 are isolated)
+    const [tiers, setTiers] = React.useState(DYNAMIC_TIERS.filter(t => !['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id)));
     const [isSaving, setIsSaving] = React.useState(false);
 
     // 🚀 CRITICAL FIX: Fetch the actual saved matrix from the Master Vault on mount
@@ -697,7 +698,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                 if (snap.exists()) {
                     const data = snap.data();
                     if (data.matrix && Object.keys(data.matrix).length > 0) setMatrix(data.matrix);
-                    if (data.tiers && data.tiers.length > 0) setTiers(data.tiers);
+                    if (data.tiers && data.tiers.length > 0) {
+                        // 🚀 Filter out God Tiers from the fetched data so they don't clutter the UI
+                        setTiers(data.tiers.filter(t => !['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id)));
+                    }
                 }
             } catch (error) { console.error("Failed to load Master Permission Matrix:", error); }
         };
@@ -769,7 +773,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const recalculateTierRanks = (tierArray) => {
         const renumbered = tierArray.map((t, idx) => {
             const cleanName = t.label.replace(/^T\d+:\s*/, '');
-            return { ...t, label: `T${idx + 2}: ${cleanName}` };
+            return { ...t, label: `T${idx + 3}: ${cleanName}` };
         });
         setTiers(renumbered);
     };
@@ -779,7 +783,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         const name = prompt("Enter new Rank Name (e.g., WAREHOUSE):");
         if (!name || name.trim() === '') return;
         const newId = `CUSTOM_TIER_${Date.now()}`;
-        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
+        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 3}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
         setTiers(newTiers);
         setMatrix({ ...matrix, [newId]: [] });
         setActiveMobileTierId(newId);
@@ -788,9 +792,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const handleRenameTier = (id) => {
         const idx = tiers.findIndex(t => t.id === id);
         const cleanName = tiers[idx].label.replace(/^T\d+:\s*/, '');
-        const newName = prompt(`Rename Rank T${idx + 2}:`, cleanName);
+        const newName = prompt(`Rename Rank T${idx + 3}:`, cleanName);
         if (newName && newName.trim() !== '') {
-            setTiers(tiers.map((t, i) => t.id === id ? { ...t, label: `T${i + 2}: ${newName.toUpperCase().trim()}` } : t));
+            setTiers(tiers.map((t, i) => t.id === id ? { ...t, label: `T${i + 3}: ${newName.toUpperCase().trim()}` } : t));
         }
     };
 
@@ -809,12 +813,16 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const saveMatrixToFirebase = async () => {
         setIsSaving(true);
         try {
+            // 🚀 PROTECT THE GOD TIERS: Merge the hidden T1/T2 tiers back into the payload before saving
+            const godTiers = DYNAMIC_TIERS.filter(t => ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id));
+            const fullTiers = [...godTiers, ...tiers];
+
             // 🚀 CRITICAL FIX: Save to BOTH settings paths to ensure App.jsx reads it correctly
-            const payload = { matrix, tiers, updatedAt: new Date().toISOString() };
+            const payload = { matrix, tiers: fullTiers, updatedAt: new Date().toISOString() };
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
             
-            injectDynamicPermissions(matrix, tiers); 
+            injectDynamicPermissions(matrix, fullTiers); 
             alert("✅ Matrix & Hierarchy Deployed to Global Server!");
         } catch (e) { 
             console.error(e);
@@ -914,7 +922,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         title="Drag to adjust Rank Hierarchy"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
+                                            <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 3} RANK</span>
                                             <div className="flex items-center gap-1">
                                                 <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
                                                     {cleanName} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>

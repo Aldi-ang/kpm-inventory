@@ -591,12 +591,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 {isAdmin && !isReadOnlyMode && (
                                     <select 
                                         className="bg-slate-900 border border-slate-600 rounded p-2.5 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer outline-none text-white focus:border-blue-500"
-                                        value={newAgent.userRole || 'FIELD_OPERATIVE'} 
+                                        value={newAgent.userRole || 'AGENT'} 
                                         onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
                                         style={{ colorScheme: 'dark' }}
                                         title="Assign Corporate Matrix Tier"
                                     >
-                                        {DYNAMIC_TIERS.map(t => (
+                                        {/* 🚀 ISOLATION FILTER: Prevents assigning God Tiers to field employees */}
+                                        {DYNAMIC_TIERS.filter(t => !['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id)).map(t => (
                                             <option key={t.id} value={t.id} className="bg-slate-900 text-white">
                                                 {t.label}
                                             </option>
