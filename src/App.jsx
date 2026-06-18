@@ -1546,7 +1546,11 @@ const handleGitHubMirror = async () => {
                     const freshEmailData = emailSnap.data();
                     
                     if (freshEmailData.role === 'COMPANY_OWNER') {
-                        if (!activeData) setPendingMigration({ oldId: email, newId: currentUser.uid, data: freshEmailData });
+                        if (!activeData) {
+                            setPendingMigration({ oldId: email, newId: currentUser.uid, data: freshEmailData });
+                            // 🚀 FIX: Pass them the data locally so the router doesn't drop them into the UNAUTHORIZED bucket
+                            activeData = freshEmailData; 
+                        }
                     } else {
                         // 🛡️ STRIP CORRUPTION: Ensure Fleet Roster didn't accidentally save the Boss's vehicle
                         if (freshEmailData.agentId === 'ADMIN' || freshEmailData.agentId === 'ADMIN_VEHICLE') {

@@ -207,14 +207,9 @@ export default function LandlordDashboard({ db, appId, user }) {
                         required 
                     />
                     
-                    <select
-                        value={newTier}
-                        onChange={(e) => setNewTier(e.target.value)}
-                        className="bg-black border border-white/20 text-white p-3 text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 cursor-not-allowed opacity-80"
-                        disabled
-                    >
-                        <option value="2">TIER 2 (OWNER)</option>
-                    </select>
+                    <div className="bg-white/5 border border-white/10 text-white/50 p-3 text-[10px] font-mono uppercase tracking-wider flex items-center justify-center cursor-not-allowed select-none">
+                        TIER 2 (OWNER)
+                    </div>
 
                     <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                         <UserPlus size={16}/> Provision
@@ -235,14 +230,9 @@ export default function LandlordDashboard({ db, appId, user }) {
                                             className="flex-1 bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400" 
                                             placeholder="Update Name"
                                         />
-                                        <select 
-                                            value={editTier} 
-                                            onChange={e=>setEditTier(e.target.value)} 
-                                            className="bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400 cursor-not-allowed opacity-80"
-                                            disabled
-                                        >
-                                            <option value="2">TIER 2</option>
-                                        </select>
+                                        <div className="bg-white/5 border border-blue-500/30 p-2 px-4 text-white/50 text-[10px] font-mono uppercase flex items-center justify-center cursor-not-allowed select-none">
+                                            TIER 2
+                                        </div>
                                     </div>
                                     <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
                                         <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-emerald-900/30 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
