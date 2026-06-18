@@ -42,7 +42,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                     batch.update(d.ref, {
                         name: newName,
                         role: 'COMPANY_OWNER',
-                        tier: Number(newTier),
+                        tier: 2, // 🚀 SECURED: Hardcoded to Tier 2 (Owner)
                         status: 'Active',
                         subscriptionStatus: 'ACTIVE'
                     });
@@ -210,10 +210,10 @@ export default function LandlordDashboard({ db, appId, user }) {
                     <select
                         value={newTier}
                         onChange={(e) => setNewTier(e.target.value)}
-                        className="bg-black border border-white/20 text-white p-3 text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 cursor-pointer"
+                        className="bg-black border border-white/20 text-white p-3 text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 cursor-not-allowed opacity-80"
+                        disabled
                     >
-                        <option value="1">TIER 1 (OVERSEER)</option>
-                        <option value="2">TIER 2 (MANAGER)</option>
+                        <option value="2">TIER 2 (OWNER)</option>
                     </select>
 
                     <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
@@ -238,9 +238,9 @@ export default function LandlordDashboard({ db, appId, user }) {
                                         <select 
                                             value={editTier} 
                                             onChange={e=>setEditTier(e.target.value)} 
-                                            className="bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400 cursor-pointer"
+                                            className="bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400 cursor-not-allowed opacity-80"
+                                            disabled
                                         >
-                                            <option value="1">TIER 1</option>
                                             <option value="2">TIER 2</option>
                                         </select>
                                     </div>
