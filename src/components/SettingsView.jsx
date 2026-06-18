@@ -685,6 +685,24 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS);
     const [isSaving, setIsSaving] = React.useState(false);
+
+    // 🚀 CRITICAL FIX: Fetch the actual saved matrix from the Master Vault on mount
+    React.useEffect(() => {
+        if (!db || !appId || !userId) return;
+        const fetchMatrix = async () => {
+            try {
+                let snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'));
+                if (!snap.exists()) snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'));
+                
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.matrix && Object.keys(data.matrix).length > 0) setMatrix(data.matrix);
+                    if (data.tiers && data.tiers.length > 0) setTiers(data.tiers);
+                }
+            } catch (error) { console.error("Failed to load Master Permission Matrix:", error); }
+        };
+        fetchMatrix();
+    }, [db, appId, userId]);
     
     // Mobile View State
     const [activeMobileTierId, setActiveMobileTierId] = React.useState(tiers[0]?.id);
@@ -791,10 +809,17 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const saveMatrixToFirebase = async () => {
         setIsSaving(true);
         try {
-            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), { matrix, tiers });
+            // 🚀 CRITICAL FIX: Save to BOTH settings paths to ensure App.jsx reads it correctly
+            const payload = { matrix, tiers, updatedAt: new Date().toISOString() };
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
+            
             injectDynamicPermissions(matrix, tiers); 
-            alert("Matrix & Hierarchy Deployed to Global Server.");
-        } catch (e) { alert("Matrix Deployment Failed."); }
+            alert("✅ Matrix & Hierarchy Deployed to Global Server!");
+        } catch (e) { 
+            console.error(e);
+            alert("Matrix Deployment Failed."); 
+        }
         setIsSaving(false);
     };
 
