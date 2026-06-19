@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt } from 'lucide-react';
+import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 // --- FINANCIAL HELPERS ---
@@ -12,7 +12,8 @@ const formatRupiah = (number) => {
 };
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], user, motorists = [] }) => {
+// 🚀 ACCEPT 'samplings' PROP HERE
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [] }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
@@ -77,12 +78,21 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // --- FINANCIAL MATH ENGINE ---
     const todayDate = getCurrentDate();
     
-   // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY (Upgraded to catch Retur)
+    // 1. FILTER TODAY'S SALES FOR THIS AGENT EXACTLY (Upgraded to catch Retur)
     const todayTransactions = transactions.filter(t =>
         t.agentId === trueAgentId &&
         t.date === todayDate &&
         (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETUR')
     );
+
+    // 1.5 FILTER TODAY'S SAMPLES FOR THIS AGENT
+    const todaySamplings = samplings.filter(s => {
+        if (s.sourceId !== trueAgentId) return false;
+        const sDate = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : new Date(s.date);
+        return sDate.toDateString() === new Date().toDateString();
+    });
+    
+    const totalCukaiOwed = todaySamplings.reduce((sum, s) => sum + Math.ceil(s.qty), 0);
 
     // 2. SUM TOTAL REVENUE & CALCULATE RETUR
     const totalRetur = todayTransactions.filter(t => t.type === 'RETUR').reduce((sum, t) => sum + Math.abs(t.total || 0), 0);
@@ -137,8 +147,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 {/* RIGHT: THE FINANCIAL METRICS (MOBILE OPTIMIZED BLOCK LAYOUT) */}
                 <div className="flex flex-col gap-3 w-full xl:w-[65%] mt-2 xl:mt-0">
                     
-                    {/* TOP ROW: 3 Core Metrics */}
-                    <div className="grid grid-cols-3 gap-2 md:gap-3">
+                    {/* TOP ROW: Core Metrics */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
                         <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
                             <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
                             <span className="text-base md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[9px] font-bold text-slate-600">Bks</span></span>
@@ -158,6 +168,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                     - {formatRupiah(totalRetur)} Retur
                                 </span>
                             )}
+                        </div>
+
+                        {/* 🚀 NEW CUKAI DEBT DISPLAY */}
+                        <div className="bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                            <span className="text-[9px] md:text-xs text-indigo-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Tag size={12}/> Cukai Debt</span>
+                            <span className="text-sm md:text-xl font-black text-indigo-400">{totalCukaiOwed} <span className="text-[9px] font-bold text-indigo-500/50">Pcs</span></span>
                         </div>
                     </div>
 
@@ -252,12 +268,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
 
                 {todayTransactions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
+                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-6">
                         <Coins size={32} className="mb-3 text-slate-600"/>
                         <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No sales recorded today</p>
                     </div>
                 ) : (
-                    <div className="space-y-3 pb-20">
+                    <div className="space-y-3 mb-6">
                         {todayTransactions.map((tx, idx) => (
                             <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
                                 <div>
@@ -277,6 +293,44 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* 3. TODAY'S SAMPLING LEDGER */}
+                <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                    <Package size={16} className="text-indigo-500" />
+                    <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Marketing Samples Deployed</h3>
+                </div>
+
+                {todaySamplings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
+                        <Package size={32} className="mb-3 text-slate-600"/>
+                        <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No samples deployed today</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3 pb-20">
+                        {todaySamplings.map((sample, idx) => {
+                            const cukaiOwed = Math.ceil(sample.qty);
+                            return (
+                                <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
+                                    <div>
+                                        <h4 className="font-bold text-indigo-300 text-sm uppercase tracking-wide">{sample.reason || 'Unknown Target'}</h4>
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                            <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                                {sample.productName}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                                {sample.timestamp?.seconds ? new Date(sample.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{sample.qty.toFixed(2)} Bks</p>
+                                        <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

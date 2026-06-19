@@ -2690,6 +2690,7 @@ const handleGitHubMirror = async () => {
                agentProfileId={agentProfileId} 
                inventory={inventory}
                transactions={transactions}
+               samplings={samplings}   // 🚀 INJECTED: Pass the global sampling ledger
                user={user}             // 🚀 FIX: Pass the user profile to prevent 'blank' names
                motorists={motorists}   // 🚀 FIX: Pass motorists list
            />
