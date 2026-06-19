@@ -1155,20 +1155,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
 
                 <div>
-                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
 
-                    {showCustomerDropdown && (
-                        <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
-                            {suggestedCustomers.map(c => (
-                                <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
-                                    <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
 
-                <div>
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
@@ -1449,11 +1437,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <div className="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
-                                    <input type="number" min="0" value={sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Batang</label>
-                                    <input type="number" min="0" value={sampleForm.qtyBatang} onChange={e=>setSampleForm({...sampleForm, qtyBatang: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBatang === 0 ? '' : sampleForm.qtyBatang} onChange={e=>setSampleForm({...sampleForm, qtyBatang: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" />
                                 </div>
                             </div>
                             
