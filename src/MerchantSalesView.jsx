@@ -1428,9 +1428,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Product</label>
                                 <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-slate-800 border border-slate-600 focus:border-indigo-500 outline-none text-white p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
-                                    {inventory.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name} (Avail: {p.stock} Bks)</option>
-                                    ))}
+                                    {inventory.map(p => {
+                                        const sp = p.sticksPerPack || 16;
+                                        const bks = Math.floor(p.stock || 0);
+                                        const btg = Math.round(((p.stock || 0) - bks) * sp);
+                                        const stockLabel = `${bks} Bks${btg > 0 ? ` ${btg} Btg` : ''}`;
+                                        
+                                        return (
+                                            <option key={p.id} value={p.id}>{p.name} (Avail: {stockLabel})</option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
@@ -1440,8 +1447,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Batang</label>
-                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBatang === 0 ? '' : sampleForm.qtyBatang} onChange={e=>setSampleForm({...sampleForm, qtyBatang: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">
+                                        Batang {sampleForm.productId && `(Max: ${(inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1})`}
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        min="0" 
+                                        placeholder="0" 
+                                        max={sampleForm.productId ? (inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1 : ""}
+                                        value={sampleForm.qtyBatang === 0 ? '' : sampleForm.qtyBatang} 
+                                        onChange={e => {
+                                            let val = parseInt(e.target.value) || 0;
+                                            const maxBtg = (inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1;
+                                            if (val > maxBtg) val = maxBtg; // Auto-correct if they type too high
+                                            setSampleForm({...sampleForm, qtyBatang: val});
+                                        }} 
+                                        className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" 
+                                    />
                                 </div>
                             </div>
                             
