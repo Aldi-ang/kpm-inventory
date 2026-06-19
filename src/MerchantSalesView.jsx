@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock } from 'lucide-react';
-import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'; 
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package } from 'lucide-react';
+import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 
 // 🚀 FIXED: Added isAdmin, logAudit, and triggerCapy to props!
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  
@@ -105,6 +105,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     
     // THE NOO MODAL STATE
     const [showNooModal, setShowNooModal] = useState(false);
+
+    // 🚀 SAMPLING MODAL STATE
+    const [showSampleModal, setShowSampleModal] = useState(false);
+    const [sampleForm, setSampleForm] = useState({ productId: '', qtyBks: 0, qtyBatang: 0 });
     
     // 🚀 FIXED: NOO now defaults to the lowest tier (last in the array) instead of highest
     const defaultNooTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
@@ -654,6 +658,87 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     };
 
+    // 🚀 QUICK SAMPLE ENGINE: Direct POS-to-Wallet Marketing Deploy
+    const handleDeploySample = async () => {
+        const qtyBks = parseInt(sampleForm.qtyBks) || 0;
+        const qtyBatang = parseInt(sampleForm.qtyBatang) || 0;
+        if (qtyBks === 0 && qtyBatang === 0) return alert("Enter a valid quantity to sample.");
+        if (!sampleForm.productId) return alert("Please select a product.");
+
+        const product = inventory.find(p => p.id === sampleForm.productId);
+        const sp = product?.sticksPerPack || 16;
+        const totalQtyDecimal = qtyBks + (qtyBatang / sp);
+
+        if ((product.stock || 0) < totalQtyDecimal) {
+            return alert(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
+        }
+
+        setIsProcessingSale(true);
+        try {
+            const masterUid = user?.uid || user?.id || 'default';
+            const agentId = user?.agentId;
+            const sourceId = agentId || 'VAULT';
+
+            await runTransaction(db, async (t) => {
+                // 1. Deduct from Vehicle or Vault
+                if (sourceId !== 'VAULT') {
+                    const agentRef = doc(db, `artifacts/${appId}/users/${masterUid}/motorists`, sourceId);
+                    const agentDoc = await t.get(agentRef);
+                    if (agentDoc.exists()) {
+                        let updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+                        const canvasIdx = updatedCanvas.findIndex(c => c.productId === product.id);
+                        if (canvasIdx === -1) throw "Product not found in your vehicle!";
+                        
+                        let cItem = updatedCanvas[canvasIdx];
+                        let mCanvas = cItem.unit === 'Slop' ? (product.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : cItem.unit === 'Karton' ? ((product.balsPerCarton || 4) * (product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : 1;
+                        
+                        const currentCanvasBks = cItem.qty * mCanvas;
+                        const newCanvasBks = currentCanvasBks - totalQtyDecimal;
+                        
+                        if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
+                        updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
+                        
+                        t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
+                    }
+                } else {
+                    const prodRef = doc(db, `artifacts/${appId}/users/${masterUid}/products`, product.id);
+                    const prodDoc = await t.get(prodRef);
+                    if (prodDoc.exists()) {
+                        const newStock = (prodDoc.data().stock || 0) - totalQtyDecimal;
+                        if (newStock < 0) throw "Not enough stock in Vault!";
+                        t.update(prodRef, { stock: newStock });
+                    }
+                }
+
+                // 2. Log the Sample Record permanently
+                const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${masterUid}/samplings`));
+                t.set(newSampleRef, {
+                    date: new Date().toISOString().split('T')[0],
+                    productId: product.id,
+                    productName: product.name,
+                    qty: totalQtyDecimal,
+                    unit: 'Bks',
+                    sticksPerPack: sp,
+                    reason: customerName.trim(), // Automatically inherits Customer Name!
+                    note: 'POS Quick Sample',
+                    sourceId: sourceId,
+                    timestamp: serverTimestamp()
+                });
+            });
+
+            if (logAudit) logAudit("SAMPLE_DEPLOYED", `Gave ${totalQtyDecimal.toFixed(2)} Bks of ${product.name} to ${customerName}`);
+            if (triggerCapy) triggerCapy(`Sample deployed to ${customerName}! Pita Cukai recorded. 🎁`);
+            
+            setShowSampleModal(false);
+            setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
+        } catch (err) {
+            console.error(err);
+            alert("Failed to deploy sample: " + err);
+        } finally {
+            setIsProcessingSale(false);
+        }
+    };
+
     const handleFinalDeal = async () => {
         // 🚀 Reject rapid fire clicks if it's already processing
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
@@ -959,97 +1044,118 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 )}
 
                 {debtInfo && debtInfo.status === 'RED' && (
-                    <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="text-red-500 shrink-0" size={16}/>
-                            <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
+                        <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <AlertCircle className="text-red-500 shrink-0" size={16}/>
+                                <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
+                            </div>
+                            <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
+                                {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
+                            </p>
+                            <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
                         </div>
-                        <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
-                            {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
-                        </p>
-                        <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
-                    </div>
-                )}
+                    )}
 
-                <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
-                    <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
-                    <div className="relative">
-                        <input 
-                            value={customerName} 
-                            onFocus={() => setShowCustomerDropdown(true)}
-                            onChange={handleManualCustomerType} 
-                            placeholder="TYPE OR SELECT..." 
-                            className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
-                        />
-                        {customerName.length > 0 && (
-                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
-                        )}
-                    </div>
-                    
-                    <div className="mt-2 min-h-[20px]">
-                        {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
-                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
-                                {gpsStatus === 'checking' && (
-                                    <div className="flex items-center justify-between w-full">
-                                        <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                        <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
-                                    </div>
-                                )}
-                                
-                                {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
-                                
-                                {gpsStatus === 'manual_override' && (
-                                    <div className="flex flex-col gap-1 w-full">
-                                        <div className="flex items-center gap-2 w-full">
-                                            {canOverrideGps ? (
-                                                <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
-                                                    <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
-                                                </span>
-                                            ) : (
-                                                <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
-                                                    <Lock size={12}/> Locked: Out of Range ({distanceToStore}m)
-                                                </span>
-                                            )}
-                                        </div>
-                                        
-                                        {!canOverrideGps && distanceToStore <= 100 && (
-                                            <div className="mt-1">
-                                                {bypassState.status === 'idle' || bypassState.status === 'rejected' ? (
-                                                    <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[9px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
-                                                        <Camera size={10}/> Request 100m HQ Bypass
-                                                    </button>
-                                                ) : bypassState.status === 'uploading' ? (
-                                                    <span className="text-[9px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
-                                                ) : bypassState.status === 'pending' ? (
-                                                    <span className="text-[9px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
-                                                ) : null}
-                                                <input type="file" accept="image/*" capture="environment" id="bypassPhotoCapture" className="hidden" onChange={handleBypassPhotoCapture} />
+                    <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
+                        <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
+                        <div className="relative">
+                            <input 
+                                value={customerName} 
+                                onFocus={() => setShowCustomerDropdown(true)}
+                                onChange={handleManualCustomerType} 
+                                placeholder="TYPE OR SELECT..." 
+                                className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
+                            />
+                            {customerName.length > 0 && (
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
+                            )}
+                        </div>
+                        
+                        <div className="mt-2 min-h-[20px]">
+                            {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
+                                        {gpsStatus === 'checking' && (
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+                                                <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
-                                        {!canOverrideGps && distanceToStore > 100 && (
-                                            <span className="text-[8px] text-slate-500 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                        
+                                        {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
+                                        
+                                        {gpsStatus === 'manual_override' && (
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <div className="flex items-center gap-2 w-full">
+                                                    {canOverrideGps ? (
+                                                        <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
+                                                            <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
+                                                            <Lock size={12}/> Locked: Out of Range ({distanceToStore}m)
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                
+                                                {!canOverrideGps && distanceToStore <= 100 && (
+                                                    <div className="mt-1">
+                                                        {bypassState.status === 'idle' || bypassState.status === 'rejected' ? (
+                                                            <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[9px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                                                                <Camera size={10}/> Request 100m HQ Bypass
+                                                            </button>
+                                                        ) : bypassState.status === 'uploading' ? (
+                                                            <span className="text-[9px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                        ) : bypassState.status === 'pending' ? (
+                                                            <span className="text-[9px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
+                                                        ) : null}
+                                                        <input type="file" accept="image/*" capture="environment" id="bypassPhotoCapture" className="hidden" onChange={handleBypassPhotoCapture} />
+                                                    </div>
+                                                )}
+                                                {!canOverrideGps && distanceToStore > 100 && (
+                                                    <span className="text-[8px] text-slate-500 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                                )}
+                                            </div>
                                         )}
+                                        
+                                        {gpsStatus === 'bypass' && <span className="text-orange-400 flex items-center gap-1"><MapPin size={12}/> Unmapped Store (Bypass Allowed)</span>}
+                                        {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                                     </div>
-                                )}
-                                
-                                {gpsStatus === 'bypass' && <span className="text-orange-400 flex items-center gap-1"><MapPin size={12}/> Unmapped Store (Bypass Allowed)</span>}
-                                {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
-                            </div>
-                        ) : selectedCustomerInfo?.isNooRegistration ? (
-                            <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-purple-600 bg-purple-100 p-1 rounded border border-purple-300">
-                                <Store size={12}/> NOO Verified ({lockedTier} Unlocked)
-                            </div>
-                        ) : customerName.length > 0 ? (
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-600">
-                                    <AlertCircle size={12}/> Walk-in (Locked to Ecer)
+                                    
+                                    {/* 🚀 QUICK SAMPLE BUTTON */}
+                                    <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[#1a1815] border border-[#ff9d00]/50 hover:bg-[#ff9d00] text-[#ff9d00] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
+                                        <Package size={12}/> Deploy Free Sample
+                                    </button>
                                 </div>
-                                <button onClick={() => setShowNooModal(true)} className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
-                                    <Store size={12}/> Register Outlet to Unlock Tiers
-                                </button>
+                            ) : selectedCustomerInfo?.isNooRegistration ? (
+                                <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-purple-600 bg-purple-100 p-1 rounded border border-purple-300">
+                                    <Store size={12}/> NOO Verified ({lockedTier} Unlocked)
+                                </div>
+                            ) : customerName.length > 0 ? (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-600">
+                                        <AlertCircle size={12}/> Walk-in (Locked to Ecer)
+                                    </div>
+                                    <button onClick={() => setShowNooModal(true)} className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
+                                        <Store size={12}/> Register Outlet to Unlock Tiers
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {showCustomerDropdown && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
+                                {suggestedCustomers.map(c => (
+                                    <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
+                                        <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
+                                    </div>
+                                ))}
                             </div>
-                        ) : null}
+                        )}
                     </div>
+
+                <div>
+                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
 
                     {showCustomerDropdown && (
                         <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
@@ -1317,6 +1423,55 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
             )}
             
+            {/* --- SAMPLING DEPLOYMENT MODAL --- */}
+            {showSampleModal && (
+                <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
+                    <div className="bg-slate-900 w-full max-w-md border-2 border-indigo-500/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
+                        <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-indigo-500"/> Deploy Marketing Sample</h2>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Target: {customerName}</p>
+                            </div>
+                            <button onClick={() => setShowSampleModal(false)} className="text-slate-500 hover:text-white"><X size={24}/></button>
+                        </div>
+                        
+                        <div className="p-6 space-y-5">
+                            <div>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Product</label>
+                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-slate-800 border border-slate-600 focus:border-indigo-500 outline-none text-white p-3 rounded font-bold">
+                                    <option value="">-- Choose Product --</option>
+                                    {inventory.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} (Avail: {p.stock} Bks)</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
+                                    <input type="number" min="0" value={sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Batang</label>
+                                    <input type="number" min="0" value={sampleForm.qtyBatang} onChange={e=>setSampleForm({...sampleForm, qtyBatang: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                </div>
+                            </div>
+                            
+                            <div className="bg-indigo-900/20 p-3 rounded border border-indigo-500/30 text-indigo-400 text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
+                                <AlertCircle size={14} className="shrink-0 mt-0.5"/>
+                                <p>Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.</p>
+                            </div>
+                        </div>
+
+                        <div className="p-5 border-t border-slate-700 bg-black/40">
+                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                                {isProcessingSale ? 'Deploying...' : 'Confirm & Deploy Sample'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- RECEIPT MODAL --- */}
             {receiptData && (() => {
                 const activeTier = receiptData.items?.[0]?.priceTier || 'Retail';

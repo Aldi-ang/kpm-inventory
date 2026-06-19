@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle } from 'lucide-react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
-const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProfileId, eodReports, user, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
+// 🚀 ACCEPT 'samplings' PROP HERE
+const EODReconciliationView = ({ samplings = [], transactions, inventory, agentCanvas, agentProfileId, eodReports, user, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
@@ -14,7 +15,19 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
+        let expectedCukai = 0;
         
+        // 🚀 CUKAI ENGINE: Look up samples given by this agent today
+        const todaysSamplings = samplings.filter(s => {
+            if (s.sourceId !== agentProfileId) return false;
+            const sDate = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : new Date(s.date);
+            return sDate.toDateString() === today.toDateString();
+        });
+
+        todaysSamplings.forEach(s => {
+            expectedCukai += Math.ceil(s.qty); // Every fraction of a pack opened costs 1 Cukai
+        });
+
         // 1. Find all transactions done by this specific agent TODAY using their exact ID
         const todaysTrans = transactions.filter(t => {
             if (t.agentId !== agentProfileId) return false;
@@ -42,9 +55,9 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
 
         const pendingReport = eodReports.find(r => r.agentId === agentProfileId && r.status === 'PENDING');
 
-        // 4. Return the Live Agent Canvas
-        return { expectedCash, expectedTransfer, activeStock: agentCanvas || [], hasSubmittedToday, pendingReport };
-    }, [transactions, agentProfileId, agentCanvas, eodReports, isAdmin]);
+        // 4. Return the Live Agent Canvas + Cukai
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], hasSubmittedToday, pendingReport };
+    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin]);
 
 
     // --- ADMIN LOGIC: View Pending Reports ---
@@ -100,16 +113,21 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                         <div className="bg-black/20 border border-white/10 rounded-2xl p-6 shadow-xl">
                             <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-white/10 pb-4 mb-6 flex items-center gap-2"><Wallet className="text-emerald-500"/> Today's Expected Setoran</h3>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                 <div className="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-xl relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full"></div>
-                                    <p className="text-[10px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash to Hand Over</p>
+                                    <p className="text-[10px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
                                     <p className="text-3xl font-black text-emerald-500">{formatRupiah(agentData.expectedCash)}</p>
                                 </div>
                                 <div className="bg-blue-950/20 border border-blue-500/30 p-4 rounded-xl relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full"></div>
-                                    <p className="text-[10px] text-blue-400 uppercase tracking-widest mb-1">Total Digital Transfers</p>
+                                    <p className="text-[10px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
                                     <p className="text-3xl font-black text-blue-500">{formatRupiah(agentData.expectedTransfer)}</p>
+                                </div>
+                                <div className="bg-orange-950/20 border border-orange-500/30 p-4 rounded-xl relative overflow-hidden shadow-inner">
+                                    <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-bl-full"></div>
+                                    <p className="text-[10px] text-orange-400 uppercase tracking-widest mb-1">Pita Cukai (Tax Stamps)</p>
+                                    <p className="text-3xl font-black text-orange-500">{agentData.expectedCukai} <span className="text-sm font-bold text-orange-400/50">Pcs</span></p>
                                 </div>
                             </div>
 
@@ -135,7 +153,7 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                             </div>
 
                             <button 
-                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, remainingStock: agentData.activeStock })}
+                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: agentData.expectedCukai, remainingStock: agentData.activeStock })}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                             >
                                 <Upload size={20}/> Submit EOD Report
@@ -176,6 +194,10 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                                         <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
                                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Wallet size={14}/> Digital Transfer</span>
                                             <span className="text-xl font-black text-blue-500">{formatRupiah(report.transfer)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center bg-orange-950/20 p-3 rounded-lg border border-orange-500/30">
+                                            <span className="text-xs font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Pita Cukai Owed</span>
+                                            <span className="text-xl font-black text-orange-500">{report.cukai || 0} Pcs</span>
                                         </div>
                                         
                                         <div className="pt-2">
@@ -227,7 +249,7 @@ const EODReconciliationView = ({ transactions, inventory, agentCanvas, agentProf
                                     </div>
                                     <div className="text-right flex flex-col items-end">
                                         <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
-                                        <p className="text-[9px] text-orange-400 mb-2">Stock Cleared</p>
+                                        <p className="text-[9px] text-orange-400 mb-2">Stock & {report.cukai || 0} Cukai Cleared</p>
                                         
                                         {/* 🚀 NEW FORCE RESET BUTTON FOR OLD REPORTS */}
                                         <button 

@@ -3190,6 +3190,7 @@ const handleGitHubMirror = async () => {
           {/* 🚀 NEW EOD ROUTER 🚀 */}
           {activeTab === 'eod' && (
               <EODReconciliationView 
+                  samplings={samplings} // <--- ADD THIS LINE HERE
                   transactions={transactions} 
                   inventory={inventory} 
                   agentCanvas={agentCanvas}

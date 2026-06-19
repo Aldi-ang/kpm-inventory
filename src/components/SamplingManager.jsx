@@ -106,8 +106,12 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
 
         const topLocation = Object.entries(locationBreakdown).sort((a,b) => b[1].val - a[1].val)[0];
 
+        // 🚀 CUKAI ENGINE: Calculates how many physical packs were torn open
+        const totalPitaCukai = Object.values(productBreakdown).reduce((sum, p) => sum + Math.ceil(p.qty), 0);
+
         return { 
             totalQtyBks, totalQtyBatang, totalValueDistributor, totalValueRetail, totalValueGrosir, totalValueEcer,
+            totalPitaCukai, // 🚀 ADDED TO RETURN
             filtered, topLocation: topLocation ? { name: topLocation[0], val: topLocation[1].val } : null, chartData 
         };
     }, [samplings, rangeType, targetDate, inventory]);
@@ -142,10 +146,13 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
                         {stats.totalQtyBks === 0 && stats.totalQtyBatang === 0 && <h3 className="text-3xl font-bold dark:text-slate-600">0</h3>}
                     </div>
                 </div>
-                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Top Location (By Spend)</p>
-                    <h3 className="text-lg font-bold dark:text-white truncate">{stats.topLocation?.name || '-'}</h3>
-                    <p className="text-sm font-bold text-orange-500">{stats.topLocation ? formatRp(stats.topLocation.val) : '-'}</p>
+                <div className="p-6 bg-gradient-to-br from-slate-900 to-black rounded-2xl border border-slate-700 shadow-xl flex flex-col justify-center relative overflow-hidden">
+                    <div className="absolute -right-4 -top-4 opacity-10"><ClipboardList size={100}/></div>
+                    <div className="relative z-10">
+                        <p className="text-orange-400 text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-1.5"><Lock size={12}/> Physical Proof Required</p>
+                        <h3 className="text-4xl font-black text-white leading-none tracking-tighter my-1">{stats.totalPitaCukai} <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Pita Cukai</span></h3>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Must be collected during EOD Setoran</p>
+                    </div>
                 </div>
             </div>
 
