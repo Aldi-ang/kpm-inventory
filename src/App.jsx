@@ -3150,7 +3150,8 @@ const handleGitHubMirror = async () => {
                           user={user} 
                           appSettings={appSettings}
                           customers={customers} 
-                          agentProfileId={agentProfileId}
+                          // 🚀 BUG FIX: Wire the exact Boss Car or Vault ID to the Sales Terminal
+                          agentProfileId={userRole === 'ADMIN' ? (adminSalesMode === 'VEHICLE' ? 'ADMIN_VEHICLE' : 'VAULT') : agentProfileId}
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}

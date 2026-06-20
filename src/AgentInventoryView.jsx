@@ -224,11 +224,16 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
                         {canvasItems.map((item, idx) => {
-                            const itemBks = calculateBks(item.qty, item.unit);
+                            const itemBksDecimal = calculateBks(item.qty, item.unit);
                             
                             // CHECK FOR MISSING DISTRIBUTOR PRICE
                             const productInfo = inventory.find(p => p.id === item.productId) || {};
                             const isMissingCost = !productInfo.priceDistributor || productInfo.priceDistributor <= 0;
+                            
+                            // 🚀 DECIMAL-TO-PHYSICAL CONVERTER
+                            const sp = productInfo.sticksPerPack || 16;
+                            const physicalBks = Math.floor(itemBksDecimal);
+                            const physicalBtg = Math.round((itemBksDecimal - physicalBks) * sp);
 
                             return (
                                 <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-slate-600 transition-colors shadow-sm group">
@@ -250,13 +255,28 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         </div>
                                     </div>
                                     
-                                    <div className="text-right flex flex-col items-end gap-1.5 shrink-0 ml-4">
-                                        <div className="flex items-baseline gap-1.5">
-                                            <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">{new Intl.NumberFormat('id-ID').format(itemBks)}</p>
-                                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
-                                        </div>
-                                        <div className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider shadow-inner">
-                                            [{item.qty} {item.unit}]
+                                    <div className="text-right flex flex-col items-end shrink-0 ml-4">
+                                        {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
+                                        {physicalBks > 0 && (
+                                            <div className="flex items-baseline gap-1.5">
+                                                <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">{new Intl.NumberFormat('id-ID').format(physicalBks)}</p>
+                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                            </div>
+                                        )}
+                                        {physicalBtg > 0 && (
+                                            <div className={`flex items-baseline gap-1.5 ${physicalBks > 0 ? 'mt-1' : ''}`}>
+                                                <p className="text-sm md:text-base font-black text-emerald-300 leading-none">{physicalBtg}</p>
+                                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Btg</p>
+                                            </div>
+                                        )}
+                                        {(physicalBks === 0 && physicalBtg === 0) && (
+                                            <div className="flex items-baseline gap-1.5">
+                                                <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">0</p>
+                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                            </div>
+                                        )}
+                                        <div className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider shadow-inner mt-1.5">
+                                            [{Number(item.qty).toFixed(2).replace(/\.00$/, '')} {item.unit}]
                                         </div>
                                     </div>
                                 </div>
