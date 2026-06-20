@@ -311,6 +311,16 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     <div className="space-y-3 pb-20">
                         {todaySamplings.map((sample, idx) => {
                             const cukaiOwed = Math.ceil(sample.qty);
+                            
+                            // 🚀 DECIMAL-TO-PHYSICAL CONVERTER
+                            const sp = sample.sticksPerPack || 16;
+                            const bks = Math.floor(sample.qty || 0);
+                            const btg = Math.round(((sample.qty || 0) - bks) * sp);
+                            let displayQty = '';
+                            if (bks > 0) displayQty += `${bks} Bks `;
+                            if (btg > 0) displayQty += `${btg} Btg`;
+                            if (displayQty === '') displayQty = '0 Bks';
+
                             return (
                                 <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
                                     <div>
@@ -325,7 +335,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{sample.qty.toFixed(2)} Bks</p>
+                                        <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{displayQty.trim()}</p>
                                         <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
                                     </div>
                                 </div>

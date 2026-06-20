@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 
-// 🚀 FIXED: Added isAdmin, logAudit, and triggerCapy to props!
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId }) => {  
+// 🚀 FIXED: Added isAdmin, logAudit, triggerCapy, and agentProfileId to props!
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId }) => {  
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -676,8 +676,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setIsProcessingSale(true);
         try {
             const masterUid = user?.uid || user?.id || 'default';
-            const agentId = user?.agentId;
-            const sourceId = agentId || 'VAULT';
+            // 🚀 BUG FIX: Prioritize the actively selected vehicle (Boss Car) over the fallback Vault!
+            const sourceId = agentProfileId || user?.agentId || 'VAULT';
 
             await runTransaction(db, async (t) => {
                 // 1. Deduct from Vehicle or Vault

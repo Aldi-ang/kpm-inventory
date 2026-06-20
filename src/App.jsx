@@ -3150,6 +3150,7 @@ const handleGitHubMirror = async () => {
                           user={user} 
                           appSettings={appSettings}
                           customers={customers} 
+                          agentProfileId={agentProfileId}
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
