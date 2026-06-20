@@ -85,11 +85,15 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         (t.type === 'SALE' || t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETUR')
     );
 
-    // 1.5 FILTER TODAY'S SAMPLES FOR THIS AGENT
+    // 1.5 FILTER TODAY'S SAMPLES FOR THIS AGENT & FIX GHOST BUG
+    const isMainVault = trueAgentId === userId; // Identifies if Tier 1 is looking at their own dashboard
     const todaySamplings = samplings.filter(s => {
-        if (s.sourceId !== trueAgentId) return false;
-        const sDate = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : new Date(s.date);
-        return sDate.toDateString() === new Date().toDateString();
+        // 🚀 THE GHOST FIX: Tell the engine that 'VAULT' belongs to Tier 1
+        const matchesAgent = isMainVault ? (s.sourceId === trueAgentId || s.sourceId === 'VAULT' || !s.sourceId) : (s.sourceId === trueAgentId);
+        if (!matchesAgent) return false;
+        
+        // 🚀 TIMEZONE FIX: Compare the raw YYYY-MM-DD string to prevent Midnight drift
+        return s.date === todayDate;
     });
     
     const totalCukaiOwed = todaySamplings.reduce((sum, s) => sum + Math.ceil(s.qty), 0);
@@ -312,14 +316,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         {todaySamplings.map((sample, idx) => {
                             const cukaiOwed = Math.ceil(sample.qty);
                             
-                            // 🚀 DECIMAL-TO-PHYSICAL CONVERTER
+                            // 🚀 PRECISE DECIMAL-TO-PHYSICAL CONVERTER
                             const sp = sample.sticksPerPack || 16;
                             const bks = Math.floor(sample.qty || 0);
                             const btg = Math.round(((sample.qty || 0) - bks) * sp);
-                            let displayQty = '';
-                            if (bks > 0) displayQty += `${bks} Bks `;
-                            if (btg > 0) displayQty += `${btg} Btg`;
-                            if (displayQty === '') displayQty = '0 Bks';
 
                             return (
                                 <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
@@ -334,8 +334,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{displayQty.trim()}</p>
+                                    <div className="text-right flex flex-col items-end">
+                                        {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
+                                        {bks > 0 && <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{bks} Bks</p>}
+                                        {btg > 0 && <p className={`text-xs font-black text-indigo-300 drop-shadow-sm ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
+                                        
                                         <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
                                     </div>
                                 </div>
