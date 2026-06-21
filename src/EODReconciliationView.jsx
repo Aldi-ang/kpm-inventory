@@ -55,8 +55,8 @@ const EODReconciliationView = ({ samplings = [], transactions, inventory, agentC
 
         const pendingReport = eodReports.find(r => r.agentId === agentProfileId && r.status === 'PENDING');
 
-        // 4. Return the Live Agent Canvas + Cukai
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], hasSubmittedToday, pendingReport };
+        // 4. Return the Live Agent Canvas + Cukai + Samplings Breakdown
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, hasSubmittedToday, pendingReport };
     }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin]);
 
 
@@ -174,8 +174,23 @@ const EODReconciliationView = ({ samplings = [], transactions, inventory, agentC
                                 )}
                             </div>
 
+                            {/* 🚀 NEW: PITA CUKAI HANDOVER BREAKDOWN */}
+                            {agentData.expectedCukai > 0 && (
+                                <div className="bg-orange-950/20 border border-orange-500/30 rounded-xl p-4 mb-8">
+                                    <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Tag size={14}/> Pita Cukai Details to Hand Over</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {agentData.todaysSamplings.map((sample, idx) => (
+                                            <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
+                                                {sample.productName}: <strong className="text-white">{Math.ceil(sample.qty)} Pcs</strong>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <button 
-                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: agentData.expectedCukai, remainingStock: agentData.activeStock })}
+                                // 🚀 FIXED: Payload now includes deployedSamples for the Admin
+                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: agentData.expectedCukai, remainingStock: agentData.activeStock, deployedSamples: agentData.todaysSamplings })}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                             >
                                 <Upload size={20}/> Submit EOD Report
@@ -254,6 +269,20 @@ const EODReconciliationView = ({ samplings = [], transactions, inventory, agentC
                                                 }) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
                                             </div>
                                         </div>
+
+                                        {/* 🚀 NEW: ADMIN PITA CUKAI VERIFICATION BREAKDOWN */}
+                                        {report.deployedSamples && report.deployedSamples.length > 0 && (
+                                            <div className="pt-2 border-t border-white/10 mt-3">
+                                                <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Tag size={12}/> Pita Cukai Breakdown</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {report.deployedSamples.map((sample, idx) => (
+                                                        <span key={`cukai-${idx}`} className="text-[10px] bg-orange-950/30 text-orange-200 px-2 py-1 rounded border border-orange-500/30">
+                                                            {sample.productName}: <strong className="text-orange-400">{Math.ceil(sample.qty)} Pcs</strong>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="flex gap-2 mt-4">
                                             <button 
