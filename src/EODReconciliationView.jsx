@@ -141,12 +141,34 @@ const EODReconciliationView = ({ samplings = [], transactions, inventory, agentC
                                             <tr><th className="p-3">Product</th><th className="p-3 text-right">Qty to Return</th></tr>
                                         </thead>
                                         <tbody>
-                                            {agentData.activeStock.map((item, idx) => (
-                                                <tr key={idx} className="border-t border-white/5">
-                                                    <td className="p-3 font-bold text-white">{item.name}</td>
-                                                    <td className="p-3 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
-                                                </tr>
-                                            ))}
+                                            {agentData.activeStock.map((item, idx) => {
+                                                const productInfo = inventory?.find(p => p.id === item.productId) || {};
+                                                
+                                                // Convert base units to decimal Bks first
+                                                let mult = 1;
+                                                if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
+                                                if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                
+                                                const totalBksDecimal = item.qty * mult;
+                                                
+                                                // Convert decimal Bks to physical Bks/Btg
+                                                const sp = productInfo.sticksPerPack || 16;
+                                                const physicalBks = Math.floor(totalBksDecimal);
+                                                const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
+                                                
+                                                let displayQty = '';
+                                                if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+                                                if (displayQty === '') displayQty = '0 Bks';
+
+                                                return (
+                                                    <tr key={idx} className="border-t border-white/5">
+                                                        <td className="p-3 font-bold text-white">{item.name}</td>
+                                                        <td className="p-3 text-right font-black text-orange-400">{displayQty.trim()}</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 )}
@@ -203,11 +225,33 @@ const EODReconciliationView = ({ samplings = [], transactions, inventory, agentC
                                         <div className="pt-2">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
                                             <div className="flex flex-wrap gap-2">
-                                                {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => (
-                                                    <span key={idx} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-white/10">
-                                                        {item.name}: <strong className="text-orange-400">{item.qty} {item.unit}</strong>
-                                                    </span>
-                                                )) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
+                                                {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => {
+                                                    const productInfo = inventory?.find(p => p.id === item.productId) || {};
+                                                    
+                                                    // Convert base units to decimal Bks first
+                                                    let mult = 1;
+                                                    if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
+                                                    if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                    if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                    
+                                                    const totalBksDecimal = item.qty * mult;
+                                                    
+                                                    // Convert decimal Bks to physical Bks/Btg
+                                                    const sp = productInfo.sticksPerPack || 16;
+                                                    const physicalBks = Math.floor(totalBksDecimal);
+                                                    const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
+                                                    
+                                                    let displayQty = '';
+                                                    if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                    if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+                                                    if (displayQty === '') displayQty = '0 Bks';
+
+                                                    return (
+                                                        <span key={idx} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-white/10">
+                                                            {item.name}: <strong className="text-orange-400">{displayQty.trim()}</strong>
+                                                        </span>
+                                                    );
+                                                }) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
                                             </div>
                                         </div>
 
