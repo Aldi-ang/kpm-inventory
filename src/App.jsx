@@ -1474,7 +1474,9 @@ const handleGitHubMirror = async () => {
                   if (agentDoc.exists()) {
                       const currentDebt = agentDoc.data().cukaiDebt || 0;
                       const paidCukai = report.cukai || 0;
-                      newCukaiDebt = Math.max(0, currentDebt - paidCukai); // Prevent negative numbers
+                      // 🚀 CUKAI CREDIT FIX: Allow the wallet to go negative! 
+                      // If debt is 0.5 and they pay 1 stamp, new debt is -0.5 (Prepaid Credit)
+                      newCukaiDebt = currentDebt - paidCukai; 
                   }
                   
                   t.update(agentRef, { activeCanvas: [], cukaiDebt: newCukaiDebt });

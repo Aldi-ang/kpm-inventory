@@ -699,8 +699,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        // 🚀 NEW: INCREMENT PERMANENT CUKAI DEBT WALLET
-                        const cukaiToAdd = Math.ceil(totalQtyDecimal);
+                        // 🚀 NEW: EXACT DECIMAL CUKAI TRACKING
+                        // We log the exact decimal (e.g., +0.5). If they hand in 1 Cukai at EOD, 
+                        // their debt becomes -0.5 (Credit). Tomorrow when they deploy 0.5, debt is 0.
+                        const cukaiToAdd = totalQtyDecimal; 
                         const currentCukaiDebt = agentData.cukaiDebt || 0;
 
                         t.update(agentRef, { 

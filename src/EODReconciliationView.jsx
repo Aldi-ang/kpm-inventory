@@ -23,7 +23,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
         let expectedCukai = 0;
         if (!isBossCar && agentProfileId) {
-            expectedCukai = motorists.find(m => m.id === agentProfileId)?.cukaiDebt || 0;
+            const rawDebt = motorists.find(m => m.id === agentProfileId)?.cukaiDebt || 0;
+            expectedCukai = Math.max(0, Math.ceil(rawDebt));
         }
 
         // 🚀 CUKAI ENGINE: Look up samples given by this agent today (Used only for UI breakdown)
@@ -210,11 +211,20 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 <div className="bg-orange-950/20 border border-orange-500/30 rounded-xl p-4 mb-8">
                                     <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Tag size={14}/> Pita Cukai Details to Hand Over</h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {agentData.todaysSamplings.map((sample, idx) => (
-                                            <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
-                                                {sample.productName}: <strong className="text-white">{Math.ceil(sample.qty)} Pcs</strong>
-                                            </span>
-                                        ))}
+                                        {agentData.todaysSamplings.map((sample, idx) => {
+                                            const sp = sample.sticksPerPack || 16;
+                                            const physicalBks = Math.floor(sample.qty || 0);
+                                            const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
+                                            let displayQty = '';
+                                            if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                            if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+
+                                            return (
+                                                <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
+                                                    {sample.productName}: <strong className="text-white">{displayQty.trim() || '0 Bks'}</strong>
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -305,11 +315,20 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <div className="pt-2 border-t border-white/10 mt-3">
                                                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Tag size={12}/> Pita Cukai Breakdown</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {report.deployedSamples.map((sample, idx) => (
-                                                        <span key={`cukai-${idx}`} className="text-[10px] bg-orange-950/30 text-orange-200 px-2 py-1 rounded border border-orange-500/30">
-                                                            {sample.productName}: <strong className="text-orange-400">{Math.ceil(sample.qty)} Pcs</strong>
-                                                        </span>
-                                                    ))}
+                                                    {report.deployedSamples.map((sample, idx) => {
+                                                        const sp = sample.sticksPerPack || 16;
+                                                        const physicalBks = Math.floor(sample.qty || 0);
+                                                        const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
+                                                        let displayQty = '';
+                                                        if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                        if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+
+                                                        return (
+                                                            <span key={`cukai-${idx}`} className="text-[10px] bg-orange-950/30 text-orange-200 px-2 py-1 rounded border border-orange-500/30">
+                                                                {sample.productName}: <strong className="text-orange-400">{displayQty.trim() || '0 Bks'}</strong>
+                                                            </span>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         )}
