@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
+import { hasClearance } from './config/permissions'; // 🚀 INJECTED THE MATRIX ENGINE 
 
 // 🚀 FIXED: Added isAdmin, logAudit, triggerCapy, and agentProfileId to props!
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId }) => {  
@@ -1132,10 +1133,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                                     </div>
                                     
-                                    {/* 🚀 QUICK SAMPLE BUTTON */}
-                                    <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[#1a1815] border border-[#ff9d00]/50 hover:bg-[#ff9d00] text-[#ff9d00] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
-                                        <Package size={12}/> Deploy Free Sample
-                                    </button>
+                                    {/* 🚀 QUICK SAMPLE BUTTON WITH MATRIX GEO-LOCK */}
+                                    {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
+                                        <button disabled className="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-500 text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
+                                            <Lock size={12}/> Sample Locked (Requires GPS)
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[#1a1815] border border-[#ff9d00]/50 hover:bg-[#ff9d00] text-[#ff9d00] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
+                                            <Package size={12}/> Deploy Free Sample
+                                        </button>
+                                    )}
                                 </div>
                             ) : selectedCustomerInfo?.isNooRegistration ? (
                                 <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-purple-600 bg-purple-100 p-1 rounded border border-purple-300">
