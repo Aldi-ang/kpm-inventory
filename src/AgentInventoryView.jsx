@@ -96,7 +96,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         return s.date === todayDate;
     });
     
-    const totalCukaiOwed = todaySamplings.reduce((sum, s) => sum + Math.ceil(s.qty), 0);
+    // 🚀 NEW: READ PERMANENT CUKAI DEBT DIRECTLY FROM PROFILE WALLET
+    const totalCukaiOwed = liveProfileData?.cukaiDebt || 0;
 
     // 2. SUM TOTAL REVENUE & CALCULATE RETUR
     const totalRetur = todayTransactions.filter(t => t.type === 'RETUR').reduce((sum, t) => sum + Math.abs(t.total || 0), 0);

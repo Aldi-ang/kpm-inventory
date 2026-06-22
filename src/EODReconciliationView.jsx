@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag } from 'lucide-react';
 
 const formatRupiah = (number) => {
@@ -6,8 +6,11 @@ const formatRupiah = (number) => {
 };
 
 // 🚀 ACCEPT 'samplings' PROP HERE
-const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, eodReports = [], user, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
+const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
+    // 🚀 NEW STATE: Editable Cukai Handover Input
+    const [cukaiInput, setCukaiInput] = useState("");
+
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
         if (isAdmin) return null;
@@ -15,9 +18,15 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
-        let expectedCukai = 0;
         
-        // 🚀 CUKAI ENGINE: Look up samples given by this agent today
+        // 🚀 NEW: READ PERMANENT CUKAI DEBT FROM PROFILE
+        const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
+        let expectedCukai = 0;
+        if (!isBossCar && agentProfileId) {
+            expectedCukai = motorists.find(m => m.id === agentProfileId)?.cukaiDebt || 0;
+        }
+
+        // 🚀 CUKAI ENGINE: Look up samples given by this agent today (Used only for UI breakdown)
         const todaysSamplings = samplings.filter(s => {
             // Boss Car Ghost Bug Fix
             const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
@@ -66,6 +75,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, hasSubmittedToday, pendingReport };
     }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin]);
 
+    useEffect(() => {
+        if (agentData && cukaiInput === "") {
+            setCukaiInput(agentData.expectedCukai);
+        }
+    }, [agentData, cukaiInput]);
 
     // --- ADMIN LOGIC: View Pending Reports ---
     const pendingReports = useMemo(() => {
@@ -133,8 +147,18 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 </div>
                                 <div className="bg-orange-950/20 border border-orange-500/30 p-4 rounded-xl relative overflow-hidden shadow-inner">
                                     <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-bl-full"></div>
-                                    <p className="text-[10px] text-orange-400 uppercase tracking-widest mb-1">Pita Cukai (Tax Stamps)</p>
-                                    <p className="text-3xl font-black text-orange-500">{agentData.expectedCukai} <span className="text-sm font-bold text-orange-400/50">Pcs</span></p>
+                                    <p className="text-[10px] text-orange-400 uppercase tracking-widest mb-2">Pita Cukai (Tax Stamps)</p>
+                                    <div className="flex items-end gap-2 relative z-10">
+                                        <input 
+                                            type="number" 
+                                            min="0"
+                                            value={cukaiInput}
+                                            onChange={(e) => setCukaiInput(e.target.value)}
+                                            className="w-16 bg-black/50 border border-orange-500/50 text-orange-500 font-black text-3xl text-center rounded outline-none focus:border-orange-500 py-1"
+                                        />
+                                        <span className="text-sm font-bold text-orange-400/50 mb-1">Pcs</span>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-orange-400/60 mt-2 uppercase tracking-wider">Total Owed: {agentData.expectedCukai} Pcs</p>
                                 </div>
                             </div>
 
@@ -196,7 +220,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             )}
 
                             <button 
-                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: agentData.expectedCukai, remainingStock: agentData.activeStock, deployedSamples: agentData.todaysSamplings })}
+                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: parseInt(cukaiInput) || 0, remainingStock: agentData.activeStock, deployedSamples: agentData.todaysSamplings })}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                             >
                                 <Upload size={20}/> Submit EOD Report

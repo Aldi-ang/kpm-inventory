@@ -1467,7 +1467,17 @@ const handleGitHubMirror = async () => {
               }
               if (report.agentId && report.agentId !== 'ADMIN') {
                   const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
-                  t.update(agentRef, { activeCanvas: [] });
+                  
+                  // 🚀 NEW: FETCH PROFILE TO DEDUCT CUKAI DEBT SAFELY
+                  const agentDoc = await t.get(agentRef);
+                  let newCukaiDebt = 0;
+                  if (agentDoc.exists()) {
+                      const currentDebt = agentDoc.data().cukaiDebt || 0;
+                      const paidCukai = report.cukai || 0;
+                      newCukaiDebt = Math.max(0, currentDebt - paidCukai); // Prevent negative numbers
+                  }
+                  
+                  t.update(agentRef, { activeCanvas: [], cukaiDebt: newCukaiDebt });
               }
               const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
@@ -3193,11 +3203,12 @@ const handleGitHubMirror = async () => {
           {/* 🚀 NEW EOD ROUTER 🚀 */}
           {activeTab === 'eod' && (
               <EODReconciliationView 
-                  samplings={samplings} // <--- ADD THIS LINE HERE
+                  samplings={samplings} 
                   transactions={transactions} 
                   inventory={inventory} 
                   agentCanvas={agentCanvas}
                   agentProfileId={agentProfileId}
+                  motorists={motorists} // 🚀 INJECTED: Pass motorists to read permanent Cukai Debt
                   eodReports={eodReports}
                   user={user}
                   onSubmitEOD={handleSubmitEOD}
