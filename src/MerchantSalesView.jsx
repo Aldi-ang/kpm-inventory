@@ -685,7 +685,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     const agentRef = doc(db, `artifacts/${appId}/users/${masterUid}/motorists`, sourceId);
                     const agentDoc = await t.get(agentRef);
                     if (agentDoc.exists()) {
-                        let updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+                        const agentData = agentDoc.data();
+                        let updatedCanvas = [...(agentData.activeCanvas || [])];
                         const canvasIdx = updatedCanvas.findIndex(c => c.productId === product.id);
                         if (canvasIdx === -1) throw "Product not found in your vehicle!";
                         
@@ -698,7 +699,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
+                        // 🚀 NEW: INCREMENT PERMANENT CUKAI DEBT WALLET
+                        const cukaiToAdd = Math.ceil(totalQtyDecimal);
+                        const currentCukaiDebt = agentData.cukaiDebt || 0;
+
+                        t.update(agentRef, { 
+                            activeCanvas: updatedCanvas.filter(c => c.qty > 0),
+                            cukaiDebt: currentCukaiDebt + cukaiToAdd
+                        });
                     }
                 } else {
                     const prodRef = doc(db, `artifacts/${appId}/users/${masterUid}/products`, product.id);
