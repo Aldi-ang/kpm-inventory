@@ -33,11 +33,20 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         let expectedCash = 0;
         let expectedTransfer = 0;
         
+        // 🚀 CUKAI DEBT: Read permanent multi-product wallet from profile
         const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
         let expectedCukai = 0;
         if (!isBossCar && agentProfileId) {
-            const rawDebt = motorists.find(m => m.id === agentProfileId)?.cukaiDebt || 0;
-            expectedCukai = Math.max(0, Math.ceil(rawDebt));
+            const agentProfile = motorists.find(m => m.id === agentProfileId) || {};
+            const cDebts = agentProfile.cukaiDebts || {};
+            const legacyDebt = agentProfile.cukaiDebt || 0;
+            
+            let calcTotal = 0;
+            let globalCredit = cDebts['global_credit'] || 0;
+            for (let [pid, val] of Object.entries(cDebts)) {
+                if (pid !== 'global_credit' && val > 0) calcTotal += Math.ceil(val);
+            }
+            expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
         }
 
         const todaysSamplings = samplings.filter(s => {

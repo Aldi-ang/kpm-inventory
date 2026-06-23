@@ -700,15 +700,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        // 🚀 NEW: EXACT DECIMAL CUKAI TRACKING
-                        // We log the exact decimal (e.g., +0.5). If they hand in 1 Cukai at EOD, 
-                        // their debt becomes -0.5 (Credit). Tomorrow when they deploy 0.5, debt is 0.
+                        // 🚀 NEW: EXACT DECIMAL CUKAI TRACKING (PER PRODUCT)
                         const cukaiToAdd = totalQtyDecimal; 
-                        const currentCukaiDebt = agentData.cukaiDebt || 0;
+                        let currentDebts = agentData.cukaiDebts || {};
+                        currentDebts[product.id] = (currentDebts[product.id] || 0) + cukaiToAdd;
 
                         t.update(agentRef, { 
                             activeCanvas: updatedCanvas.filter(c => c.qty > 0),
-                            cukaiDebt: currentCukaiDebt + cukaiToAdd
+                            cukaiDebts: currentDebts
                         });
                     }
                 } else {

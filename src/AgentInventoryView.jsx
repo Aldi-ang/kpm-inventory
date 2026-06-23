@@ -96,9 +96,16 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         return s.date === todayDate;
     });
     
-    // 🚀 NEW: READ PERMANENT CUKAI DEBT (WITH CEILING & ZERO-FLOOR FOR UI)
-    // If debt is -0.5 (Prepaid), UI shows 0. If debt is 0.5, UI shows 1.
-    const totalCukaiOwed = Math.max(0, Math.ceil(liveProfileData?.cukaiDebt || 0));
+    // 🚀 NEW: CROSS-PRODUCT CUKAI DEBT CALCULATOR
+    const cukaiDebts = liveProfileData?.cukaiDebts || {};
+    const legacyDebt = liveProfileData?.cukaiDebt || 0; // Backward compatibility
+    
+    let calcTotal = 0;
+    let globalCredit = cukaiDebts['global_credit'] || 0;
+    for (let [pid, val] of Object.entries(cukaiDebts)) {
+        if (pid !== 'global_credit' && val > 0) calcTotal += Math.ceil(val);
+    }
+    const totalCukaiOwed = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
 
     // 2. SUM TOTAL REVENUE & CALCULATE RETUR
     const totalRetur = todayTransactions.filter(t => t.type === 'RETUR').reduce((sum, t) => sum + Math.abs(t.total || 0), 0);

@@ -1491,14 +1491,35 @@ const handleGitHubMirror = async () => {
                   }
               });
 
-              // 2B. Update Agent Profile & Cukai Wallet
+              // 2B. Update Agent Profile & Distributed Cukai Wallet
               if (agentRef && agentDoc && agentDoc.exists()) {
-                  const currentDebt = agentDoc.data().cukaiDebt || 0;
-                  const paidCukai = report.cukai || 0;
-                  // Allow negative wallet for fractional pre-payments!
-                  const newCukaiDebt = currentDebt - paidCukai; 
+                  let currentDebts = agentDoc.data().cukaiDebts || {};
                   
-                  t.update(agentRef, { activeCanvas: [], cukaiDebt: newCukaiDebt });
+                  // Auto-migrate legacy debt to global credit to clean the database
+                  if (agentDoc.data().cukaiDebt !== undefined) {
+                      currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) + agentDoc.data().cukaiDebt;
+                  }
+
+                  let remainingPayment = report.cukai || 0;
+
+                  // Distribute Admin's physical stamp payment to the highest debts first
+                  for (let pid of Object.keys(currentDebts)) {
+                      if (remainingPayment <= 0) break;
+                      if (pid !== 'global_credit' && currentDebts[pid] > 0) {
+                          let stampDebt = Math.ceil(currentDebts[pid]);
+                          let applied = Math.min(stampDebt, remainingPayment);
+                          currentDebts[pid] -= applied; // e.g. 0.5 - 1 = -0.5 (Credit for tomorrow)
+                          remainingPayment -= applied;
+                      }
+                  }
+
+                  // If they overpaid, funnel the extra stamps into global credit
+                  if (remainingPayment > 0) {
+                      currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) - remainingPayment;
+                  }
+
+                  // Nullify the old cukaiDebt string so it stops calculating
+                  t.update(agentRef, { activeCanvas: [], cukaiDebts: currentDebts, cukaiDebt: 0 });
               }
 
               // 2C. Update the EOD Report Status
