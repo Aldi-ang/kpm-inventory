@@ -733,6 +733,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_audit_logs', label: 'Audit Logs' },
         { id: 'view_settings', label: 'Settings Panel' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
+        { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, // 🚀 NEW: Matrix UI Switch
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];
