@@ -232,6 +232,30 @@ export default function SettingsView({
                                           placeholder={"BCA 0301138379\nA/N ABEDNEGO YB"}
                                       />
                                   </div>
+
+                                  {/* 🚀 TIER 1 ONLY: PITA CUKAI FINE PRICING */}
+                                  {isSystemOwner && (
+                                      <div className="pt-4 border-t dark:border-slate-700">
+                                          <label className="text-xs font-bold text-red-500 uppercase flex items-center gap-1"><AlertCircle size={14}/> Lost Pita Cukai Fine (Rp)</label>
+                                          <div className="flex items-center gap-2 mt-1">
+                                              <span className="text-slate-500 font-black">Rp</span>
+                                              <input 
+                                                  type="number" 
+                                                  min="0"
+                                                  className="w-full p-2 border rounded dark:bg-slate-900 dark:border-red-800/50 dark:text-white focus:border-red-500 outline-none transition-colors font-mono" 
+                                                  value={appSettings.cukaiFinePrice || 5000} 
+                                                  onChange={(e) => {
+                                                      const val = parseInt(e.target.value) || 0;
+                                                      setAppSettings(prev => ({...prev, cukaiFinePrice: val}));
+                                                      if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiFinePrice: val }, {merge: true});
+                                                  }}
+                                                  placeholder="e.g. 5000"
+                                              />
+                                          </div>
+                                          <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-widest">Amount charged to salesmen per tax stamp lost.</p>
+                                      </div>
+                                  )}
+
                                   <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-4 shadow-md">Save Corporate Profile</button>
                               </div>
                           </div>

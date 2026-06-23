@@ -3227,18 +3227,19 @@ const handleGitHubMirror = async () => {
           {/* 🚀 NEW EOD ROUTER 🚀 */}
           {activeTab === 'eod' && (
               <EODReconciliationView 
+                  appSettings={appSettings}
                   samplings={samplings} 
                   transactions={transactions} 
                   inventory={inventory} 
                   agentCanvas={agentCanvas}
                   agentProfileId={agentProfileId}
-                  motorists={motorists} // 🚀 INJECTED: Pass motorists to read permanent Cukai Debt
+                  motorists={motorists} 
                   eodReports={eodReports}
                   user={user}
-                  onSubmitEOD={handleSubmitEOD}
+                  onSubmitEOD={handleProcessEOD}
                   onVerifyEOD={handleVerifyEOD}
-                  onResetEOD={handleResetEOD} // 🚀 THIS IS THE NEW LINE
-                  isAdmin={isAdmin}
+                  onResetEOD={handleResetEOD}
+                  isAdmin={userRole === 'ADMIN'}
               />
           )}
 
