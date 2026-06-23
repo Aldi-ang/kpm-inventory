@@ -3227,7 +3227,7 @@ const handleGitHubMirror = async () => {
           {/* 🚀 NEW EOD ROUTER 🚀 */}
           {activeTab === 'eod' && (
               <EODReconciliationView 
-                  appSettings={appSettings}
+                  appSettings={appSettings} 
                   samplings={samplings} 
                   transactions={transactions} 
                   inventory={inventory} 
@@ -3236,13 +3236,12 @@ const handleGitHubMirror = async () => {
                   motorists={motorists} 
                   eodReports={eodReports}
                   user={user}
-                  onSubmitEOD={handleProcessEOD}
+                  onSubmitEOD={handleSubmitEOD} 
                   onVerifyEOD={handleVerifyEOD}
                   onResetEOD={handleResetEOD}
-                  isAdmin={userRole === 'ADMIN'}
+                  isAdmin={isAdmin} 
               />
           )}
-
 
 
           {activeTab === 'customers' && (
