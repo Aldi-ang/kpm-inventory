@@ -92,13 +92,32 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         });
     }, [eodReports, isAdmin]);
 
-    const verifiedReports = useMemo(() => {
+    // 🚀 NEW: EOD HISTORY GROUPING ENGINE
+    const groupedVerifiedReports = useMemo(() => {
         if (!isAdmin) return [];
-        return eodReports.filter(r => r.status === 'VERIFIED').sort((a,b) => {
-            const timeA = a.verifiedAt?.seconds || 0;
-            const timeB = b.verifiedAt?.seconds || 0;
+        
+        // Sort all verified reports from newest to oldest
+        const verified = eodReports.filter(r => r.status === 'VERIFIED').sort((a,b) => {
+            const timeA = a.timestamp?.seconds || 0;
+            const timeB = b.timestamp?.seconds || 0;
             return timeB - timeA;
-        }).slice(0, 10);
+        });
+        
+        // Group them by clear Date strings (e.g., "23 June 2026")
+        const groupsMap = {};
+        verified.forEach(report => {
+            const dateObj = report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000) : new Date();
+            const dateKey = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            if (!groupsMap[dateKey]) groupsMap[dateKey] = [];
+            groupsMap[dateKey].push(report);
+        });
+        
+        // Convert map to array to preserve the newest-first sorting
+        return Object.keys(groupsMap).map(date => ({
+            date,
+            reports: groupsMap[date]
+        }));
     }, [eodReports, isAdmin]);
 
 
@@ -355,32 +374,47 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         </div>
                     </div>
 
-                    {/* RIGHT: RECENTLY VERIFIED */}
+                    {/* RIGHT: EOD HISTORY LOG */}
                     <div>
-                        <h3 className="font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> Recently Verified</h3>
-                        <div className="space-y-3">
-                            {verifiedReports.length === 0 ? (
-                                <div className="text-center p-6 text-slate-600 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No recent logs.</div>
-                            ) : verifiedReports.map(report => (
-                                <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70 hover:opacity-100 transition-opacity">
-                                    <div>
-                                        <h4 className="font-bold text-white">{report.agentName}</h4>
-                                        <p className="text-[9px] text-slate-500">
-                                            {report.verifiedAt?.seconds ? new Date(report.verifiedAt.seconds * 1000).toLocaleString() : ''}
-                                        </p>
+                        <h3 className="font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> EOD History Log</h3>
+                        
+                        <div className="space-y-6 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
+                            {groupedVerifiedReports.length === 0 ? (
+                                <div className="text-center p-6 text-slate-600 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No history logs found.</div>
+                            ) : groupedVerifiedReports.map((group, groupIdx) => (
+                                <div key={groupIdx} className="space-y-3 relative">
+                                    
+                                    {/* STICKY DATE HEADER */}
+                                    <div className="sticky top-0 bg-[#161412] z-10 py-2 border-b border-slate-800 shadow-sm">
+                                        <span className="bg-emerald-950/40 text-emerald-500 border border-emerald-900/50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                            {group.date}
+                                        </span>
                                     </div>
-                                    <div className="text-right flex flex-col items-end">
-                                        <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
-                                        <p className="text-[9px] text-orange-400 mb-2">Stock & {report.cukai || 0} Cukai Cleared</p>
-                                        
-                                        {/* 🚀 NEW FORCE RESET BUTTON FOR OLD REPORTS */}
-                                        <button 
-                                            onClick={() => onResetEOD(report)}
-                                            className="text-[10px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95"
-                                        >
-                                            <XCircle size={10}/> Force Reset
-                                        </button>
-                                    </div>
+
+                                    {/* REPORTS UNDER THIS DATE */}
+                                    {group.reports.map(report => (
+                                        <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70 hover:opacity-100 transition-opacity">
+                                            <div>
+                                                <h4 className="font-bold text-white">{report.agentName}</h4>
+                                                <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
+                                                    <Clock size={10}/> 
+                                                    {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
+                                                </p>
+                                            </div>
+                                            <div className="text-right flex flex-col items-end">
+                                                <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
+                                                <p className="text-[9px] text-orange-400 mb-2">Stock & {report.cukai || 0} Cukai Cleared</p>
+                                                
+                                                {/* 🚀 NEW FORCE RESET BUTTON FOR OLD REPORTS */}
+                                                <button 
+                                                    onClick={() => onResetEOD(report)}
+                                                    className="text-[10px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95"
+                                                >
+                                                    <XCircle size={10}/> Force Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             ))}
                         </div>
