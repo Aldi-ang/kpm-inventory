@@ -1450,40 +1450,62 @@ const handleGitHubMirror = async () => {
       if(!window.confirm(`Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`)) return;
       try {
           await runTransaction(db, async (t) => {
-              for (const item of (report.remainingStock || [])) {
-                  if (item.qty > 0) {
-                      const pRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId);
-                      const pSnap = await t.get(pRef);
-                      if (pSnap.exists()) {
-                          const pData = pSnap.data();
-                          let mult = 1;
-                          if (item.unit === 'Slop') mult = pData.packsPerSlop || 10;
-                          if (item.unit === 'Bal') mult = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                          if (item.unit === 'Karton') mult = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                          const bksToReturn = item.qty * mult;
-                          t.update(pRef, { stock: pData.stock + bksToReturn });
-                      }
-                  }
-              }
+              // ==========================================
+              // 📖 PHASE 1: EXECUTE ALL READS FIRST
+              // ==========================================
+              
+              // 1A. Fetch all products being returned
+              const validItems = (report.remainingStock || []).filter(item => item.qty > 0);
+              const productRefs = validItems.map(item => ({
+                  itemData: item,
+                  ref: doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
+              }));
+              
+              // Resolve all product fetches simultaneously
+              const productDocs = await Promise.all(productRefs.map(p => t.get(p.ref)));
+
+              // 1B. Fetch the Agent Profile (if applicable)
+              let agentRef = null;
+              let agentDoc = null;
               if (report.agentId && report.agentId !== 'ADMIN') {
-                  const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
-                  
-                  // 🚀 NEW: FETCH PROFILE TO DEDUCT CUKAI DEBT SAFELY
-                  const agentDoc = await t.get(agentRef);
-                  let newCukaiDebt = 0;
-                  if (agentDoc.exists()) {
-                      const currentDebt = agentDoc.data().cukaiDebt || 0;
-                      const paidCukai = report.cukai || 0;
-                      // 🚀 CUKAI CREDIT FIX: Allow the wallet to go negative! 
-                      // If debt is 0.5 and they pay 1 stamp, new debt is -0.5 (Prepaid Credit)
-                      newCukaiDebt = currentDebt - paidCukai; 
+                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
+                  agentDoc = await t.get(agentRef);
+              }
+
+              // ==========================================
+              // ✍️ PHASE 2: EXECUTE ALL WRITES LAST
+              // ==========================================
+
+              // 2A. Update Products
+              productDocs.forEach((pSnap, index) => {
+                  if (pSnap.exists()) {
+                      const pData = pSnap.data();
+                      const item = productRefs[index].itemData;
+                      let mult = 1;
+                      if (item.unit === 'Slop') mult = pData.packsPerSlop || 10;
+                      if (item.unit === 'Bal') mult = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                      if (item.unit === 'Karton') mult = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
+                      const bksToReturn = item.qty * mult;
+                      
+                      t.update(productRefs[index].ref, { stock: (pData.stock || 0) + bksToReturn });
                   }
+              });
+
+              // 2B. Update Agent Profile & Cukai Wallet
+              if (agentRef && agentDoc && agentDoc.exists()) {
+                  const currentDebt = agentDoc.data().cukaiDebt || 0;
+                  const paidCukai = report.cukai || 0;
+                  // Allow negative wallet for fractional pre-payments!
+                  const newCukaiDebt = currentDebt - paidCukai; 
                   
                   t.update(agentRef, { activeCanvas: [], cukaiDebt: newCukaiDebt });
               }
+
+              // 2C. Update the EOD Report Status
               const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
+          
           await logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}`);
           triggerCapy("EOD Verified & Stock Returned!");
       } catch(e) { console.error(e); alert("Verification failed: " + e.message); }
