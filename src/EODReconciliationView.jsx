@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag } from 'lucide-react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -10,6 +10,16 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     
     // 🚀 NEW STATE: Editable Cukai Handover Input
     const [cukaiInput, setCukaiInput] = useState("");
+
+    // 🚀 ACCORDION STATES FOR HISTORY LOG
+    const [openLocations, setOpenLocations] = useState([]);
+    const [openAgents, setOpenAgents] = useState([]);
+    const [openMonths, setOpenMonths] = useState([]);
+    const [openDates, setOpenDates] = useState([]);
+
+    const toggleAccordion = (setter, key) => {
+        setter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
 
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
@@ -92,33 +102,39 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         });
     }, [eodReports, isAdmin]);
 
-    // 🚀 NEW: EOD HISTORY GROUPING ENGINE
-    const groupedVerifiedReports = useMemo(() => {
-        if (!isAdmin) return [];
-        
-        // Sort all verified reports from newest to oldest
+    // 🚀 NEW: 4-LEVEL STRUCTURED HISTORY ENGINE (Location > Agent > Month > Date)
+    const structuredHistory = useMemo(() => {
+        if (!isAdmin) return {};
+
         const verified = eodReports.filter(r => r.status === 'VERIFIED').sort((a,b) => {
-            const timeA = a.timestamp?.seconds || 0;
-            const timeB = b.timestamp?.seconds || 0;
+            const timeA = a.verifiedAt?.seconds || a.timestamp?.seconds || 0;
+            const timeB = b.verifiedAt?.seconds || b.timestamp?.seconds || 0;
             return timeB - timeA;
         });
-        
-        // Group them by clear Date strings (e.g., "23 June 2026")
-        const groupsMap = {};
+
+        const tree = {};
+
         verified.forEach(report => {
-            const dateObj = report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000) : new Date();
-            const dateKey = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-            
-            if (!groupsMap[dateKey]) groupsMap[dateKey] = [];
-            groupsMap[dateKey].push(report);
+            // Find Location
+            const agent = motorists.find(m => m.id === report.agentId);
+            const location = agent?.location || 'HQ / UNASSIGNED';
+            const empName = report.agentName || 'Unknown Agent';
+
+            // Dates
+            const dateObj = report.verifiedAt?.seconds ? new Date(report.verifiedAt.seconds * 1000) : (report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000) : new Date());
+            const yearMonth = dateObj.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); // "June 2026"
+            const fullDate = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); // "23 June 2026"
+
+            if (!tree[location]) tree[location] = {};
+            if (!tree[location][empName]) tree[location][empName] = {};
+            if (!tree[location][empName][yearMonth]) tree[location][empName][yearMonth] = {};
+            if (!tree[location][empName][yearMonth][fullDate]) tree[location][empName][yearMonth][fullDate] = [];
+
+            tree[location][empName][yearMonth][fullDate].push(report);
         });
-        
-        // Convert map to array to preserve the newest-first sorting
-        return Object.keys(groupsMap).map(date => ({
-            date,
-            reports: groupsMap[date]
-        }));
-    }, [eodReports, isAdmin]);
+
+        return tree;
+    }, [eodReports, motorists, isAdmin]);
 
 
     return (
@@ -378,43 +394,120 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     <div>
                         <h3 className="font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> EOD History Log</h3>
                         
-                        <div className="space-y-6 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
-                            {groupedVerifiedReports.length === 0 ? (
+                        <div className="space-y-3 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
+                            {Object.keys(structuredHistory).length === 0 ? (
                                 <div className="text-center p-6 text-slate-600 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No history logs found.</div>
-                            ) : groupedVerifiedReports.map((group, groupIdx) => (
-                                <div key={groupIdx} className="space-y-3 relative">
+                            ) : Object.keys(structuredHistory).map(location => (
+                                <div key={location} className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
                                     
-                                    {/* STICKY DATE HEADER */}
-                                    <div className="sticky top-0 bg-[#161412] z-10 py-2 border-b border-slate-800 shadow-sm">
-                                        <span className="bg-emerald-950/40 text-emerald-500 border border-emerald-900/50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                            {group.date}
-                                        </span>
-                                    </div>
-
-                                    {/* REPORTS UNDER THIS DATE */}
-                                    {group.reports.map(report => (
-                                        <div key={report.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex justify-between items-center opacity-70 hover:opacity-100 transition-opacity">
-                                            <div>
-                                                <h4 className="font-bold text-white">{report.agentName}</h4>
-                                                <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
-                                                    <Clock size={10}/> 
-                                                    {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
-                                                </p>
-                                            </div>
-                                            <div className="text-right flex flex-col items-end">
-                                                <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
-                                                <p className="text-[9px] text-orange-400 mb-2">Stock & {report.cukai || 0} Cukai Cleared</p>
-                                                
-                                                {/* 🚀 NEW FORCE RESET BUTTON FOR OLD REPORTS */}
-                                                <button 
-                                                    onClick={() => onResetEOD(report)}
-                                                    className="text-[10px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95"
-                                                >
-                                                    <XCircle size={10}/> Force Reset
-                                                </button>
-                                            </div>
+                                    {/* 📍 LEVEL 1: LOCATION */}
+                                    <button 
+                                        onClick={() => toggleAccordion(setOpenLocations, location)}
+                                        className="w-full p-4 flex justify-between items-center hover:bg-slate-800 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-emerald-950/50 rounded-lg border border-emerald-900/50"><MapPin className="text-emerald-500" size={16}/></div>
+                                            <span className="font-black text-white uppercase tracking-widest text-sm">{location}</span>
                                         </div>
-                                    ))}
+                                        <div className="text-slate-500">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
+                                    </button>
+
+                                    {openLocations.includes(location) && (
+                                        <div className="border-t border-slate-800 bg-black/40">
+                                            {Object.keys(structuredHistory[location]).map(empName => {
+                                                const empKey = `${location}-${empName}`;
+                                                return (
+                                                <div key={empKey} className="border-b border-slate-800/50 last:border-0">
+                                                    
+                                                    {/* 👤 LEVEL 2: EMPLOYEE */}
+                                                    <button 
+                                                        onClick={() => toggleAccordion(setOpenAgents, empKey)}
+                                                        className="w-full p-3 pl-6 flex justify-between items-center hover:bg-slate-800/50 transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="text-blue-400" size={14}/>
+                                                            <span className="font-bold text-slate-200 text-xs uppercase tracking-wider">{empName}</span>
+                                                        </div>
+                                                        <div className="text-slate-600">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
+                                                    </button>
+
+                                                    {openAgents.includes(empKey) && (
+                                                        <div className="border-t border-slate-800/50 bg-slate-950/50">
+                                                            {Object.keys(structuredHistory[location][empName]).map(yearMonth => {
+                                                                const monthKey = `${empKey}-${yearMonth}`;
+                                                                return (
+                                                                <div key={monthKey}>
+                                                                    
+                                                                    {/* 📅 LEVEL 3: YEAR & MONTH */}
+                                                                    <button 
+                                                                        onClick={() => toggleAccordion(setOpenMonths, monthKey)}
+                                                                        className="w-full p-2 pl-10 flex justify-between items-center hover:bg-slate-800/30 transition-colors border-b border-slate-800/30"
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Calendar className="text-orange-400" size={12}/>
+                                                                            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">{yearMonth}</span>
+                                                                        </div>
+                                                                        <div className="text-slate-600">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                    </button>
+
+                                                                    {openMonths.includes(monthKey) && (
+                                                                        <div className="bg-black/20">
+                                                                            {Object.keys(structuredHistory[location][empName][yearMonth]).map(fullDate => {
+                                                                                const dateKey = `${monthKey}-${fullDate}`;
+                                                                                return (
+                                                                                <div key={dateKey}>
+                                                                                    
+                                                                                    {/* 📂 LEVEL 4: SPECIFIC DATE */}
+                                                                                    <button 
+                                                                                        onClick={() => toggleAccordion(setOpenDates, dateKey)}
+                                                                                        className="w-full p-2 pl-14 flex justify-between items-center hover:bg-slate-800/20 transition-colors border-b border-slate-800/20"
+                                                                                    >
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <Folder className="text-indigo-400" size={12}/>
+                                                                                            <span className="font-bold text-slate-300 text-[10px] uppercase tracking-widest">{fullDate}</span>
+                                                                                        </div>
+                                                                                        <div className="text-slate-600">{openDates.includes(dateKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                                    </button>
+
+                                                                                    {openDates.includes(dateKey) && (
+                                                                                        <div className="p-3 pl-16 space-y-3 bg-black/40 shadow-inner">
+                                                                                            {/* 📄 THE ACTUAL REPORTS */}
+                                                                                            {structuredHistory[location][empName][yearMonth][fullDate].map(report => (
+                                                                                                <div key={report.id} className="bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl flex justify-between items-center hover:border-slate-500 transition-colors shadow-sm">
+                                                                                                    <div>
+                                                                                                        <h4 className="font-bold text-white text-xs truncate max-w-[150px]">{report.agentName}</h4>
+                                                                                                        <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
+                                                                                                            <Clock size={10}/> 
+                                                                                                            {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
+                                                                                                        </p>
+                                                                                                    </div>
+                                                                                                    <div className="text-right flex flex-col items-end">
+                                                                                                        <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>
+                                                                                                        <p className="text-[8px] text-orange-400 mb-2 uppercase tracking-widest font-bold mt-0.5">Stock & {report.cukai || 0} Cukai Cleared</p>
+                                                                                                        
+                                                                                                        <button 
+                                                                                                            onClick={() => onResetEOD(report)}
+                                                                                                            className="text-[9px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95 uppercase font-bold"
+                                                                                                        >
+                                                                                                            <XCircle size={10}/> Force Reset
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            )})}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )})}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )})}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
