@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
 
 // 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
 const isPointInPolygon = (point, polygon) => {
@@ -95,8 +95,18 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                             <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center gap-3"><Phone size={18} className="text-slate-400"/><span className="font-bold dark:text-white">{customer.phone || "-"}</span></div>
                             <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-start gap-3">
                                 <MapPin size={18} className="text-slate-400 mt-1"/>
-                                <div><span className="text-sm dark:text-slate-300 block">{customer.address || "No Address"}</span>{customer.latitude && <span className="text-[10px] text-emerald-500 font-mono mt-1 block">GPS: {customer.latitude}, {customer.longitude}</span>}</div>
+                                <div>
+                                    <span className="text-sm dark:text-slate-300 block">{customer.address || "No Address"}</span>
+                                    {customer.latitude && <span className="text-[10px] text-emerald-500 font-mono mt-1 block">GPS: {customer.latitude}, {customer.longitude}</span>}
+                                    {customer.mapFolder && <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold inline-block mt-1 uppercase tracking-widest"><Folder size={10} className="inline mr-1"/> {customer.mapFolder}</span>}
+                                </div>
                             </div>
+                            {customer.description && (
+                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                    <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mb-1">Store Notes / Map Marker Data</p>
+                                    <p className="text-xs dark:text-slate-300 whitespace-pre-line">{customer.description}</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* MAP CONTAINER */}
@@ -191,7 +201,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         gmapsUrl: '', embedHtml: '', 
         latitude: '', longitude: '', storeImage: '', 
         tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0],
-        picName: '' 
+        picName: '', description: '', mapFolder: '' 
     });
     const [editingId, setEditingId] = useState(null);
     const [isLocating, setIsLocating] = useState(false);
@@ -399,6 +409,94 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         e.target.value = null; 
     };
 
+    // 🚀 NEW: MAP MARKER KML IMPORT ENGINE
+    const handleImportKML = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !isAdmin) return;
+        if (!window.confirm("Import Map Marker KML? This will automatically create customer profiles from the map pins.")) return;
+
+        if (triggerCapy) triggerCapy("Parsing KML Data... 🗺️");
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target.result;
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, "text/xml");
+                
+                const placemarks = xmlDoc.querySelectorAll("Placemark");
+                const batchWrites = [];
+                let importCount = 0;
+
+                Array.from(placemarks).forEach(pm => {
+                    const name = pm.querySelector("name")?.textContent || "Unnamed Store";
+                    const description = pm.querySelector("description")?.textContent || "";
+                    const point = pm.querySelector("Point > coordinates")?.textContent;
+                    
+                    let lat = null, lng = null;
+                    if (point) {
+                        const coords = point.trim().split(',');
+                        if (coords.length >= 2) {
+                            lng = parseFloat(coords[0]);
+                            lat = parseFloat(coords[1]);
+                        }
+                    }
+
+                    // Extract Folder Name by traversing XML parents
+                    let mapFolder = "Uncategorized";
+                    let parent = pm.parentNode;
+                    while (parent && parent.nodeName !== "kml") {
+                        if (parent.nodeName === "Folder") {
+                            mapFolder = parent.querySelector("name")?.textContent || "Imported Folder";
+                            break;
+                        }
+                        parent = parent.parentNode;
+                    }
+
+                    if (lat && lng) {
+                        const newRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'));
+                        batchWrites.push({
+                            ref: newRef,
+                            data: {
+                                name: name.toUpperCase().trim(),
+                                description: description,
+                                mapFolder: mapFolder,
+                                latitude: lat,
+                                longitude: lng,
+                                status: 'APPROVED', 
+                                tier: 'Unranked',
+                                priceTier: 'Retail',
+                                storeType: 'Retailer',
+                                createdAt: serverTimestamp(),
+                                assignedAgent: 'Unassigned' // Drops to manual pool
+                            }
+                        });
+                        importCount++;
+                    }
+                });
+
+                if (importCount === 0) throw new Error("No valid GPS pins found in file.");
+
+                // Firestore batch limits us to 500 writes. We chunk it into 450s.
+                const chunkedBatches = [];
+                for (let i = 0; i < batchWrites.length; i += 450) {
+                    const batch = writeBatch(db);
+                    batchWrites.slice(i, i + 450).forEach(w => batch.set(w.ref, w.data));
+                    chunkedBatches.push(batch.commit());
+                }
+
+                await Promise.all(chunkedBatches);
+                if (logAudit) logAudit("KML_IMPORT", `Imported ${importCount} map pins from Map Marker.`);
+                if (triggerCapy) triggerCapy(`Successfully imported ${importCount} map markers! 📍`);
+                
+            } catch (err) {
+                console.error("KML Import Error:", err);
+                alert(`Failed to import KML: ${err.message || "Invalid file format."}`);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = null;
+    };
+
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
         if (!formData.name.trim()) return; 
@@ -449,7 +547,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     triggerCapy("Customer added and approved!"); 
                 }
             } 
-            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '' }); 
+            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '', description: '', mapFolder: '' }); 
             setCoordInput("");
         } catch (err) { console.error(err); } 
     };
@@ -460,7 +558,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '',
             storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
-            tier: c.tier || 'Silver', priceTier: c.priceTier || 'Retail', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0]
+            tier: c.tier || 'Silver', priceTier: c.priceTier || 'Retail', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0],
+            description: c.description || '', mapFolder: c.mapFolder || ''
         }); 
         setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
         setEditingId(c.id); 
@@ -489,11 +588,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
+                {isAdmin && (
+                    <label className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
+                        <Folder size={14}/> Import Map Marker (KML)
+                        <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
+                    </label>
+                )}
+            </div>
             
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
@@ -600,6 +707,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
 
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
+                        
+                        <textarea 
+                            value={formData.description} 
+                            onChange={e=>setFormData({...formData, description: e.target.value})} 
+                            className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white resize-none" 
+                            placeholder="Store Description or Internal Notes (e.g. Imported Map Marker data)..." 
+                            rows="2"
+                        />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
