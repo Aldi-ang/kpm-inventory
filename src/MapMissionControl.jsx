@@ -436,12 +436,14 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
     );
 };
 
-// 🚀 UPGRADED BORDER IMPORTER & SECTOR SETTINGS
+// 🚀 UPGRADED BORDER IMPORTER & SECTOR SETTINGS (Hierarchical Accordion)
 const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus, motorists = [] }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
-    const [openGroups, setOpenGroups] = useState({ Provinsi: true, Kabupaten: true, Kecamatan: true, Desa: true });
+    
+    // Tracks which nodes in the hierarchical tree are expanded
+    const [expandedNodes, setExpandedNodes] = useState({});
     
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({ name: "", color: "#3b82f6", targetRev: "", assignedAgent: "none" });
@@ -452,13 +454,320 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const CACHE_KEY = `cello_map_bnd_${appId}`;
 
     const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
-    const groupedBoundaries = { Provinsi: [], Kabupaten: [], Kecamatan: [], Desa: [] };
-    
-    safeBoundaries.forEach(b => {
-        const lvl = b.level || 'Kecamatan';
-        if (groupedBoundaries[lvl]) groupedBoundaries[lvl].push(b);
-        else groupedBoundaries.Kecamatan.push(b);
-    });
+
+    // 🚀 NEW HIERARCHICAL GROUPING ENGINE
+    const hierarchicalTree = useMemo(() => {
+        const tree = { name: "Root", children: {}, boundaries: [] };
+        
+        safeBoundaries.forEach(b => {
+            const props = b.feature?.properties || {};
+            
+            // Extract the geographical hierarchy explicitly from the shapefile properties
+            let prov = props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi || "Unmapped Provinsi";
+            let kab = props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || "Unmapped Kabupaten";
+            let kec = props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan || "Unmapped Kecamatan";
+            
+            // Normalize names to prevent case-sensitive duplication
+            prov = prov.toUpperCase();
+            kab = kab.toUpperCase();
+            kec = kec.toUpperCase();
+
+            // Build the nested tree
+            if (!tree.children[prov]) tree.children[prov] = { name: prov, level: 'Provinsi', children: {}, boundaries: [] };
+            if (!tree.children[prov].children[kab]) tree.children[prov].children[kab] = { name: kab, level: 'Kabupaten', children: {}, boundaries: [] };
+            if (!tree.children[prov].children[kab].children[kec]) tree.children[prov].children[kab].children[kec] = { name: kec, level: 'Kecamatan', children: {}, boundaries: [] };
+
+            // Place the boundary in its exact node
+            if (b.level === 'Provinsi') tree.children[prov].boundaries.push(b);
+            else if (b.level === 'Kabupaten') tree.children[prov].children[kab].boundaries.push(b);
+            else if (b.level === 'Kecamatan') tree.children[prov].children[kab].children[kec].boundaries.push(b);
+            else tree.children[prov].children[kab].children[kec].boundaries.push(b); // Desas go inside the Kecamatan
+        });
+        
+        return tree;
+    }, [safeBoundaries]);
+
+    const toggleNode = (nodeId) => {
+        setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
+    };
+
+    const saveBoundaryToFirebase = async (boundary) => {
+        if (db && appId && userId) {
+            try { 
+                const { geometry, feature, ...boundaryToSave } = boundary;
+                boundaryToSave.geometryString = JSON.stringify(geometry); 
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave); 
+            } catch(e) {}
+        }
+    };
+
+    const deleteBoundaryFromFirebase = async (id) => {
+        if (db && appId && userId) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`)); } catch(e) {} }
+    };
+
+    const handleWipeAll = async () => {
+        if(window.confirm("WARNING: This will completely delete ALL active borders from your map. Continue?")) {
+            for (let b of safeBoundaries) { await deleteBoundaryFromFirebase(b.id); }
+            setBoundaries([]);
+            localStorage.removeItem(CACHE_KEY);
+        }
+    };
+
+    const handleDeleteBorder = async (idToRemove) => {
+        if(window.confirm("Remove this specific border?")) {
+            const updated = safeBoundaries.filter(b => b.id !== idToRemove);
+            setBoundaries(updated); 
+            localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+            await deleteBoundaryFromFirebase(idToRemove);
+        }
+    };
+
+    const handleSaveBoundary = async (id) => {
+        const targetBoundary = safeBoundaries.find(b => b.id === id);
+        if (targetBoundary) {
+            const updatedBoundary = { 
+                ...targetBoundary, 
+                name: editForm.name.trim() || targetBoundary.name,
+                color: editForm.color || targetBoundary.color,
+                targetRev: editForm.targetRev ? Number(editForm.targetRev) : null,
+                assignedAgent: editForm.assignedAgent !== 'none' ? editForm.assignedAgent : null
+            };
+            const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
+            setBoundaries(updatedList);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+            await saveBoundaryToFirebase(updatedBoundary);
+        }
+        setEditingId(null);
+    };
+
+    const toggleVisibility = async (id, currentHidden) => {
+        const updatedList = safeBoundaries.map(b => b.id === id ? { ...b, isHidden: !currentHidden } : b);
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        const target = updatedList.find(b => b.id === id);
+        if (target) await saveBoundaryToFirebase(target);
+    };
+
+    // Helper to recursively toggle visibility for an entire node branch
+    const toggleBranchVisibility = async (node, hide) => {
+        let idsToUpdate = new Set();
+        const gatherIds = (n) => {
+            n.boundaries.forEach(b => idsToUpdate.add(b.id));
+            Object.values(n.children).forEach(child => gatherIds(child));
+        };
+        gatherIds(node);
+
+        const updatedList = safeBoundaries.map(b => idsToUpdate.has(b.id) ? { ...b, isHidden: hide } : b);
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        
+        safeBoundaries.forEach(b => {
+            if (idsToUpdate.has(b.id) && !!b.isHidden !== hide) {
+                const target = updatedList.find(u => u.id === b.id);
+                if (target) saveBoundaryToFirebase(target);
+            }
+        });
+    };
+
+    const extractNameAndLevel = (props, index) => {
+        let name = `Imported Region ${index}`;
+        let level = "Kecamatan"; 
+        if (props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa) { name = `${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa}`; level = "Desa"; } 
+        else if (props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan) { name = `${props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan}`; level = "Kecamatan"; } 
+        else if (props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten) { name = `${props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten}`; level = "Kabupaten"; } 
+        else if (props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi) { name = `${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi}`; level = "Provinsi"; } 
+        else if (props.name) { name = props.name; } 
+        else { const fallback = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val)); if (fallback) name = fallback; }
+        return { name, level };
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        setProgress("Parsing..."); setIsLoading(true); setError(null);
+        reader.onload = async (event) => {
+            try {
+                const geojson = JSON.parse(event.target.result);
+                let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
+                let newBoundaries = [...safeBoundaries];
+                let firstCoord = null;
+                for (let idx = 0; idx < features.length; idx++) {
+                    let feature = features[idx];
+                    if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+                        feature.geometry.coordinates = compressCoords(feature.geometry.coordinates);
+                        const { name, level } = extractNameAndLevel(feature.properties || {}, idx + 1);
+                        let color = palette[Math.floor(Math.random() * palette.length)];
+                        if (level === 'Kabupaten') color = '#ef4444';
+                        if (level === 'Provinsi') color = '#10b981';
+                        if (!firstCoord) {
+                            try {
+                                if (feature.geometry.type === 'Polygon') firstCoord = [feature.geometry.coordinates[0][0][1], feature.geometry.coordinates[0][0][0]];
+                                else if (feature.geometry.type === 'MultiPolygon') firstCoord = [feature.geometry.coordinates[0][0][0][1], feature.geometry.coordinates[0][0][0][0]];
+                            } catch(err) {}
+                        }
+                        if (!newBoundaries.find(b => b.name === name && b.level === level)) {
+                            // Important: We must keep the feature properties attached so the hierarchical tree can read them later!
+                            const newBoundary = { id: `BND_CUSTOM_${Date.now()}_${idx}`, name: name, fullName: `File: ${file.name}`, geometry: feature.geometry, feature: feature, color: color, level: level, isHidden: false };
+                            newBoundaries.push(newBoundary);
+                            await saveBoundaryToFirebase(newBoundary);
+                        }
+                    }
+                }
+                setBoundaries(newBoundaries); localStorage.setItem(CACHE_KEY, JSON.stringify(newBoundaries)); setShowBorders(true); 
+                if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
+                setProgress("Success!"); setTimeout(() => setProgress(""), 3000);
+            } catch (err) { setError("Upload failed."); } 
+            finally { setIsLoading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+        };
+        reader.readAsText(file);
+    };
+
+    // 🚀 RECURSIVE RENDERER FOR THE HIERARCHICAL TREE
+    const renderNode = (node, pathId, indentLevel = 0) => {
+        const hasChildren = Object.keys(node.children).length > 0;
+        const hasBoundaries = node.boundaries.length > 0;
+        if (!hasChildren && !hasBoundaries) return null;
+
+        const isExpanded = expandedNodes[pathId];
+        const paddingLeft = indentLevel * 12;
+
+        return (
+            <div key={pathId} className="flex flex-col">
+                
+                {/* Only render a folder header if it's not the Root */}
+                {node.name !== "Root" && (
+                    <div className="flex justify-between items-center bg-slate-800 p-2 rounded mb-1 border border-slate-700 hover:bg-slate-700/80 transition-colors" style={{ marginLeft: `${paddingLeft}px` }}>
+                        <div className="flex items-center gap-2 cursor-pointer flex-1 min-w-0" onClick={() => toggleNode(pathId)}>
+                            {hasChildren ? (
+                                <ChevronRight size={14} className={`text-slate-400 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
+                            ) : <div className="w-[14px] shrink-0"></div>}
+                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest truncate" title={node.name}>
+                                {node.name} <span className="text-[8px] text-slate-500 normal-case ml-1">({node.level})</span>
+                            </span>
+                        </div>
+                        <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => toggleBranchVisibility(node, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All under this node">VIS</button>
+                            <button onClick={() => toggleBranchVisibility(node, true)} className="text-[8px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All under this node">HID</button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Render the contents if it's Root OR if the folder is expanded */}
+                {(isExpanded || node.name === "Root") && (
+                    <div className="flex flex-col">
+                        
+                        {/* 1. Render immediate child folders */}
+                        {Object.values(node.children).map(childNode => renderNode(childNode, `${pathId}-${childNode.name}`, indentLevel + 1))}
+                        
+                        {/* 2. Render actual boundary items belonging to this node */}
+                        {node.boundaries.map(b => (
+                            <div key={b.id} className={`flex flex-col bg-slate-900 p-2.5 rounded border mb-1 group hover:border-slate-500 transition-colors ${b.isHidden ? 'border-red-900/30 opacity-60' : 'border-slate-700'}`} style={{ marginLeft: `${paddingLeft + 16}px` }}>
+                                {/* 🚀 EXPANDED SECTOR SETTINGS PANEL */}
+                                {editingId === b.id ? (
+                                    <div className="flex flex-col gap-3 w-full p-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1"><Settings size={12}/> Sector Configuration</span>
+                                            <button onClick={() => setEditingId(null)} className="text-slate-500 hover:text-white"><X size={14}/></button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Sector Name</label>
+                                                <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <div className="flex-[0.5]">
+                                                    <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Theme</label>
+                                                    <div className="flex items-center justify-center bg-slate-800 border border-slate-600 rounded p-1 h-[32px]">
+                                                        <input type="color" value={editForm.color} onChange={e => setEditForm({...editForm, color: e.target.value})} className="w-full h-full rounded cursor-pointer bg-transparent border-none p-0"/>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-[1.5]">
+                                                    <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Target Rev (Rp) <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                    <input type="number" placeholder="e.g. 5000000" value={editForm.targetRev} onChange={e => setEditForm({...editForm, targetRev: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 h-[32px] rounded outline-none focus:border-emerald-500"/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Assigned Agent <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                <select value={editForm.assignedAgent} onChange={e => setEditForm({...editForm, assignedAgent: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-purple-500 cursor-pointer">
+                                                    <option value="none">-- Unassigned Territory --</option>
+                                                    {(motorists || []).map(m => (
+                                                        <option key={m.id} value={m.id}>{m.name || m.email?.split('@')[0]} ({m.location || 'Field'})</option>
+                                                    ))}
+                                                    {(!motorists || motorists.length === 0) && <option value="manual_entry_placeholder" disabled>No Agents Found</option>}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => handleSaveBoundary(b.id)} className="w-full bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-bold uppercase tracking-widest mt-2 transition-colors flex items-center justify-center gap-2">
+                                            <Save size={12}/> Save Sector Configuration
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
+                                            <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none', opacity: b.isHidden ? 0.2 : 1 }}></div>
+                                            <div className="flex flex-col truncate">
+                                                <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-500 line-through' : 'text-white'}`} title={b.name}>
+                                                    {b.name} {b.assignedAgent && <span className="text-purple-400 ml-1 text-[10px]" title="Agent Assigned">👤</span>}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1 shrink-0 opacity-100 lg:opacity-30 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
+                                            <button onClick={() => { 
+                                                setEditingId(b.id); 
+                                                setEditForm({
+                                                    name: b.name || "",
+                                                    color: b.color || "#38bdf8",
+                                                    targetRev: b.targetRev || "",
+                                                    assignedAgent: b.assignedAgent || "none"
+                                                }); 
+                                            }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Settings size={12}/></button>
+                                            <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="absolute top-24 right-4 w-[400px] min-w-[320px] max-w-[600px] bg-slate-900 border-2 border-blue-500 shadow-2xl rounded-xl p-5 z-[2000] animate-slide-in-left min-h-[50vh] max-h-[90vh] flex flex-col resize-y overflow-hidden">
+            <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
+            <h3 className="text-white font-bold mb-1 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
+            
+            <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 my-3 transition-all hover:bg-slate-800/80 shrink-0">
+                <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                    <Upload size={14}/> {isLoading ? "Processing..." : "Select Shapefile"}
+                </button>
+            </div>
+
+            <div className="mt-2 flex-1 flex flex-col overflow-hidden">
+                <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({safeBoundaries.length})</h4>
+                    <button onClick={handleWipeAll} className="text-[9px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
+                </div>
+                
+                {safeBoundaries.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center opacity-50">
+                        <Globe size={32} className="mb-2 text-slate-500" />
+                        <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1 pb-2">
+                        {renderNode(hierarchicalTree, "root-node", 0)}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
     const toggleGroup = (lvl) => setOpenGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
@@ -706,7 +1015,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             </div>
         </div>
     );
-};
+
 
 const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     if (!zone) return null;
