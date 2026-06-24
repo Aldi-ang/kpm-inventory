@@ -447,6 +447,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [editForm, setEditForm] = useState({ name: "", color: "#3b82f6", targetRev: "", assignedAgent: "none", folderName: "" });
 
     const [uploadFolder, setUploadFolder] = useState("New Folder"); 
+    const [customFolders, setCustomFolders] = useState([]); // 🚀 NEW: Tracks empty folders
 
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
@@ -463,10 +464,45 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             if (!groups[f]) groups[f] = [];
             groups[f].push(b);
         });
+        // Ensure custom empty folders appear
+        customFolders.forEach(f => { if (!groups[f]) groups[f] = []; });
         return groups;
-    }, [safeBoundaries]);
+    }, [safeBoundaries, customFolders]);
 
     const existingFolders = Object.keys(groupedFolders).sort();
+
+    // 🚀 FAST UI CONTROLS
+    const handleCreateFolder = () => {
+        const name = window.prompt("Enter new folder name:");
+        if (name && name.trim()) {
+            setCustomFolders(prev => Array.from(new Set([...prev, name.trim()])));
+            setExpandedNodes(prev => ({ ...prev, [name.trim()]: true }));
+        }
+    };
+
+    const triggerFolderUpload = (folderName) => {
+        setUploadFolder(folderName);
+        if (fileInputRef.current) fileInputRef.current.click();
+    };
+
+    const handleFastMove = async (id, newFolder) => {
+        if (newFolder === "CREATE_NEW") {
+            const name = window.prompt("Enter new folder name:");
+            if (!name || !name.trim()) return;
+            newFolder = name.trim();
+            setCustomFolders(prev => Array.from(new Set([...prev, newFolder])));
+            setExpandedNodes(prev => ({ ...prev, [newFolder]: true }));
+        }
+        
+        const targetBoundary = safeBoundaries.find(b => b.id === id);
+        if (targetBoundary) {
+            const updatedBoundary = { ...targetBoundary, folderName: newFolder };
+            const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
+            setBoundaries(updatedList);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+            await saveBoundaryToFirebase(updatedBoundary);
+        }
+    };
 
     const toggleNode = (nodeId) => {
         setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
@@ -713,10 +749,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({safeBoundaries.length})</h4>
-                    <button onClick={handleWipeAll} className="text-[9px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
+                    <div className="flex gap-2">
+                        <button onClick={handleCreateFolder} className="text-[9px] px-2 py-1 rounded bg-blue-900/50 text-blue-400 hover:bg-blue-500 hover:text-white font-bold uppercase transition-colors shadow-md">+ Folder</button>
+                        <button onClick={handleWipeAll} className="text-[9px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
+                    </div>
                 </div>
                 
-                {safeBoundaries.length === 0 ? (
+                {safeBoundaries.length === 0 && customFolders.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
                         <Globe size={32} className="mb-2 text-slate-500" />
                         <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
@@ -738,6 +777,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                         </div>
                                         <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                                             {/* 🚀 FOLDER MANAGEMENT BUTTONS */}
+                                            <button onClick={() => triggerFolderUpload(folderName)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Upload directly to this folder">+ FILE</button>
                                             <button onClick={() => handleDeleteFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-red-900/40 text-red-400 hover:bg-red-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Delete Folder">DEL</button>
                                             <button onClick={() => handleRenameFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
@@ -802,6 +842,17 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                     </div>
 
                                                     <div className="flex items-center gap-1 shrink-0 opacity-100 lg:opacity-30 group-hover:opacity-100 transition-opacity">
+                                                        <select 
+                                                            value={b.folderName || b.level || 'Uncategorized'}
+                                                            onChange={(e) => handleFastMove(b.id, e.target.value)}
+                                                            className="text-[8px] font-bold uppercase tracking-widest bg-slate-800 text-slate-300 border border-slate-600 rounded px-1 py-1 max-w-[80px] outline-none cursor-pointer hover:bg-slate-700"
+                                                            title="Move to another folder"
+                                                        >
+                                                            <optgroup label="Move to...">
+                                                                {existingFolders.map(f => <option key={f} value={f}>{f}</option>)}
+                                                                <option value="CREATE_NEW">+ New Folder</option>
+                                                            </optgroup>
+                                                        </select>
                                                         <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
                                                         <button onClick={() => { 
                                                             setEditingId(b.id); 
