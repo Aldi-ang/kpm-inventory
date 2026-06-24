@@ -446,7 +446,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({ name: "", color: "#3b82f6", targetRev: "", assignedAgent: "none", folderName: "" });
 
-    const [uploadFolder, setUploadFolder] = useState("New Folder"); // 🚀 The manual folder target
+    const [uploadFolder, setUploadFolder] = useState("New Folder"); 
 
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
@@ -548,6 +548,36 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         });
     };
 
+    // 🚀 NEW: BULK FOLDER RENAME ENGINE
+    const handleRenameFolder = async (oldName) => {
+        const newName = window.prompt(`BATCH RENAME / MOVE\n\nEnter a new folder name. All items currently inside "${oldName}" will be moved to this new folder:`, oldName);
+        if (!newName || newName.trim() === "" || newName === oldName) return;
+        
+        setIsLoading(true);
+        const targetName = newName.trim();
+        
+        const updatedList = safeBoundaries.map(b => {
+            const f = b.folderName || b.level || 'Uncategorized';
+            return f === oldName ? { ...b, folderName: targetName } : b;
+        });
+
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+
+        // Save batch to Firebase silently
+        for (let b of safeBoundaries) {
+            const f = b.folderName || b.level || 'Uncategorized';
+            if (f === oldName) {
+                const target = updatedList.find(u => u.id === b.id);
+                if (target) await saveBoundaryToFirebase(target);
+            }
+        }
+        
+        setIsLoading(false);
+        // Ensure new folder is open
+        setExpandedNodes(prev => ({ ...prev, [oldName]: false, [targetName]: true }));
+    };
+
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
         let level = "Kecamatan"; 
@@ -597,7 +627,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 feature: feature, 
                                 color: color, 
                                 level: level, 
-                                folderName: targetFolder, // 🚀 Assign to the manual folder
+                                folderName: targetFolder, 
                                 isHidden: false 
                             };
                             newBoundaries.push(newBoundary);
@@ -608,7 +638,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 setBoundaries(newBoundaries); localStorage.setItem(CACHE_KEY, JSON.stringify(newBoundaries)); setShowBorders(true); 
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
                 setProgress("Success!"); setTimeout(() => setProgress(""), 3000);
-                // Ensure the new folder is expanded
                 setExpandedNodes(prev => ({ ...prev, [targetFolder]: true }));
             } catch (err) { setError("Upload failed."); } 
             finally { setIsLoading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
@@ -621,7 +650,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={16}/></button>
             <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
             
-            {/* 🚀 NEW UPLOAD UI WITH FOLDER SELECTION */}
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 shrink-0">
                 <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2">1. Name your Target Folder</label>
                 <input 
@@ -665,6 +693,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                             </span>
                                         </div>
                                         <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                                            {/* 🚀 NEW BULK EDIT BUTTON */}
+                                            <button onClick={() => handleRenameFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, true)} className="text-[8px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All">HID</button>
                                         </div>
@@ -753,7 +783,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         </div>
     );
 };
-
    
 
 
