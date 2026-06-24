@@ -599,12 +599,34 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
         let level = "Kecamatan"; 
-        if (props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa) { name = `${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa}`; level = "Desa"; } 
-        else if (props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan) { name = `${props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan}`; level = "Kecamatan"; } 
-        else if (props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten) { name = `${props.KABUPATEN || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten}`; level = "Kabupaten"; } 
-        else if (props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi) { name = `${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi}`; level = "Provinsi"; } 
+        
+        // Checking for Desa/Kelurahan
+        if (props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa || props.nama_desa || props.nama_kelurahan) { 
+            name = `${props.DESA || props.KELURAHAN || props.NAME_4 || props.nm_desa || props.WADMKD || props.NAMOBJ || props.desa || props.nama_desa || props.nama_kelurahan}`; 
+            level = "Desa"; 
+        } 
+        // Checking for Kecamatan
+        else if (props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan || props.nama_kecamatan) { 
+            name = `${props.KECAMATAN || props.NAME_3 || props.nm_kecamatan || props.nm_kec || props.WADMKC || props.kecamatan || props.nama_kecamatan}`; 
+            level = "Kecamatan"; 
+        } 
+        // Checking for Kabupaten/Kota
+        else if (props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota) { 
+            name = `${props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota}`; 
+            level = "Kabupaten"; 
+        } 
+        // Checking for Provinsi
+        else if (props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi || props.nama_provinsi) { 
+            name = `${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi || props.nama_provinsi}`; 
+            level = "Provinsi"; 
+        } 
+        // Fallbacks
         else if (props.name) { name = props.name; } 
-        else { const fallback = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val)); if (fallback) name = fallback; }
+        else if (props.nama_wilayah) { name = props.nama_wilayah; }
+        else { 
+            const fallback = Object.values(props).find(val => typeof val === 'string' && val.length > 2 && isNaN(val)); 
+            if (fallback) name = fallback; 
+        }
         return { name, level };
     };
 
