@@ -578,6 +578,24 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setExpandedNodes(prev => ({ ...prev, [oldName]: false, [targetName]: true }));
     };
 
+    // 🚀 NEW: BULK FOLDER DELETE ENGINE
+    const handleDeleteFolder = async (folderName) => {
+        const bordersInside = safeBoundaries.filter(b => (b.folderName || b.level || 'Uncategorized') === folderName);
+        if (!window.confirm(`⚠️ DANGER: Are you sure you want to PERMANENTLY DELETE the folder "${folderName}" and all ${bordersInside.length} map borders inside it?`)) return;
+        
+        setIsLoading(true);
+        
+        const updatedList = safeBoundaries.filter(b => (b.folderName || b.level || 'Uncategorized') !== folderName);
+        setBoundaries(updatedList);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+
+        for (let b of bordersInside) {
+            await deleteBoundaryFromFirebase(b.id);
+        }
+        
+        setIsLoading(false);
+    };
+
     const extractNameAndLevel = (props, index) => {
         let name = `Imported Region ${index}`;
         let level = "Kecamatan"; 
@@ -651,14 +669,18 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Territory Manager</h3>
             
             <div className="bg-slate-800 p-4 rounded-lg border border-dashed border-emerald-500/50 mb-3 shrink-0">
-                <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2">1. Name your Target Folder</label>
+                <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2">1. Select or Name Target Folder</label>
                 <input 
                     type="text" 
+                    list="folder-options"
                     value={uploadFolder} 
                     onChange={(e) => setUploadFolder(e.target.value)} 
-                    placeholder="e.g. Kabupaten Magelang"
+                    placeholder="Select existing or type new..."
                     className="w-full bg-slate-900 border border-slate-600 text-white p-2 rounded text-xs font-bold mb-3 focus:border-emerald-500 outline-none"
                 />
+                <datalist id="folder-options">
+                    {existingFolders.map(f => <option key={f} value={f} />)}
+                </datalist>
                 
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading || !uploadFolder.trim()} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
@@ -693,7 +715,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                             </span>
                                         </div>
                                         <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                                            {/* 🚀 NEW BULK EDIT BUTTON */}
+                                            {/* 🚀 FOLDER MANAGEMENT BUTTONS */}
+                                            <button onClick={() => handleDeleteFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-red-900/40 text-red-400 hover:bg-red-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Delete Folder">DEL</button>
                                             <button onClick={() => handleRenameFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, true)} className="text-[8px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All">HID</button>
@@ -716,7 +739,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         </div>
                                                         <div>
                                                             <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Folder Group</label>
-                                                            <input type="text" value={editForm.folderName} onChange={e => setEditForm({...editForm, folderName: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
+                                                            <input type="text" list="folder-options" value={editForm.folderName} onChange={e => setEditForm({...editForm, folderName: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
                                                         </div>
                                                         <div className="flex gap-3">
                                                             <div className="flex-[0.5]">
