@@ -26,7 +26,7 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     } catch(e) { }
     return false;
 };
-import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus } from 'lucide-react';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
@@ -196,6 +196,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const [selectedRegion, setSelectedRegion] = useState(null); // KABUPATEN
     const [selectedCity, setSelectedCity] = useState(null); // KECAMATAN
 
+    // 🚀 NEW: Custom Empty Folder Tracking
+    const [customProv, setCustomProv] = useState([]);
+    const [customKab, setCustomKab] = useState({}); 
+    const [customKec, setCustomKec] = useState({}); 
+
     const [formData, setFormData] = useState({ 
         name: '', phone: '', province: '', region: '', city: '', address: '', 
         gmapsUrl: '', embedHtml: '', 
@@ -295,14 +300,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             let kab = String(c.region || '').trim();
             let kec = String(c.city || '').trim();
 
-            // 📍 1. GEOSPATIAL AUTO-DETECTION: Check Map Borders!
-            if ((!prov || !kab || !kec) && c.latitude && c.longitude && sortedBorders.length > 0) {
+            const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('uncategorized');
+
+            // 📍 1. GEOSPATIAL AUTO-DETECTION: Checks Map Borders even if text says "Unknown"!
+            if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && c.latitude && c.longitude && sortedBorders.length > 0) {
                 for (const border of sortedBorders) {
                     const geo = border.feature || border.geometry;
                     if (checkPointInGeoJSON(c.longitude, c.latitude, geo)) {
-                        if (border.level === 'Provinsi' && !prov) prov = border.name;
-                        if (border.level === 'Kabupaten' && !kab) kab = border.name;
-                        if (border.level === 'Kecamatan' && !kec) kec = border.name;
+                        if (border.level === 'Provinsi' && isUnknown(prov)) prov = border.name;
+                        if (border.level === 'Kabupaten' && isUnknown(kab)) kab = border.name;
+                        if (border.level === 'Kecamatan' && isUnknown(kec)) kec = border.name;
                     }
                 }
             }
@@ -334,8 +341,22 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             
             structure[prov].regions[kab].cities[kec].stores.push(c);
         });
+
+        // 🚀 INJECT CUSTOM EMPTY FOLDERS
+        customProv.forEach(p => { if (!structure[p]) structure[p] = { count: 0, pending: 0, regions: {} }; });
+        Object.entries(customKab).forEach(([p, kabs]) => {
+            if (structure[p]) kabs.forEach(k => { if (!structure[p].regions[k]) structure[p].regions[k] = { count: 0, pending: 0, cities: {} }; });
+        });
+        Object.entries(customKec).forEach(([k, kecs]) => {
+            Object.values(structure).forEach(provData => {
+                if (provData.regions[k]) {
+                    kecs.forEach(c => { if (!provData.regions[k].cities[c]) provData.regions[k].cities[c] = { count: 0, pending: 0, stores: [] }; });
+                }
+            });
+        });
+
         return structure;
-    }, [searchedCustomers, sortedBorders]);
+    }, [searchedCustomers, sortedBorders, customProv, customKab, customKec]);
 
     // 🛡️ CRASH PREVENTION: Strict evaluation blocks "null" key lookups
     const activeProv = selectedProvince ? folderStructure[selectedProvince] : null;
@@ -406,6 +427,67 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             console.error(err);
             alert("Failed to rename folder.");
         }
+    };
+
+    // 🚀 NEW: FOLDER CREATION ENGINE
+    const handleAddFolder = (level, parentName) => {
+        const name = window.prompt(`Enter new ${level} folder name:`);
+        if (!name || !name.trim()) return;
+        const clean = name.trim();
+        if (level === 'Provinsi') setCustomProv(prev => [...prev, clean]);
+        if (level === 'Kabupaten') setCustomKab(prev => ({ ...prev, [parentName]: [...(prev[parentName]||[]), clean] }));
+        if (level === 'Kecamatan') setCustomKec(prev => ({ ...prev, [parentName]: [...(prev[parentName]||[]), clean] }));
+    };
+
+    // 🚀 NEW: FOLDER DELETION ENGINE
+    const handleDeleteFolder = async (e, level, folderName, storesToUpdate) => {
+        e.stopPropagation();
+        if (!window.confirm(`⚠️ DANGER: Delete "${folderName}" and reset its ${storesToUpdate.length} stores to Unknown?`)) return;
+        
+        try {
+            const batches = [];
+            let currentBatch = writeBatch(db);
+            let count = 0;
+
+            storesToUpdate.forEach(store => {
+                const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id);
+                const updateData = {};
+                if (level === 'Provinsi') updateData.province = 'Unknown Provinsi';
+                if (level === 'Kabupaten') updateData.region = 'Unknown Kabupaten';
+                if (level === 'Kecamatan') updateData.city = 'Unknown Kecamatan';
+                
+                currentBatch.update(ref, updateData);
+                count++;
+                if (count === 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); count = 0; }
+            });
+
+            if (count > 0) batches.push(currentBatch.commit());
+            await Promise.all(batches);
+            
+            // Remove from custom state if it's empty
+            if (level === 'Provinsi') setCustomProv(prev => prev.filter(p => p !== folderName));
+            if (level === 'Kabupaten') setCustomKab(prev => { const n = {...prev}; Object.keys(n).forEach(k => n[k] = n[k].filter(x => x !== folderName)); return n; });
+            if (level === 'Kecamatan') setCustomKec(prev => { const n = {...prev}; Object.keys(n).forEach(k => n[k] = n[k].filter(x => x !== folderName)); return n; });
+
+            if (triggerCapy) triggerCapy(`Folder ${folderName} deleted! 🗑️`);
+        } catch (err) { alert("Failed to delete folder."); }
+    };
+
+    // 🚀 NEW: FAST STORE MOVE ENGINE
+    const handleFastStoreMove = async (storeId, newCity, parentKab) => {
+        let targetCity = newCity;
+        if (newCity === "CREATE_NEW") {
+            const name = window.prompt("Enter new Kecamatan name:");
+            if (!name || !name.trim()) return;
+            targetCity = name.trim();
+            setCustomKec(prev => ({ ...prev, [parentKab]: [...(prev[parentKab]||[]), targetCity] }));
+        }
+        
+        try {
+            const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', storeId);
+            await updateDoc(ref, { city: targetCity });
+            if (triggerCapy) triggerCapy(`Store moved to ${targetCity}! 🚀`);
+        } catch(err) { alert("Failed to move store"); }
     };
 
     const handleAutoGeocode = async () => {
@@ -834,83 +916,114 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 )}
 
-                {/* LEVEL 0: PROVINSI */}
+               {/* LEVEL 0: PROVINSI */}
                 {!selectedProvince && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(folderStructure).map(([prov, data]) => (
-                            <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-red-100 dark:bg-slate-700 rounded-lg text-red-600 group-hover:bg-red-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
-                                        {isAdmin && (
-                                            <button onClick={(e) => {
-                                                let stores = [];
-                                                Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
-                                                handleBulkRename(e, 'Provinsi', prov, stores);
-                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
-                                                <Pencil size={10}/> EDIT
-                                            </button>
-                                        )}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Indonesia (Provinsi Level)</h4>
+                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.entries(folderStructure).map(([prov, data]) => (
+                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="p-3 bg-red-100 dark:bg-slate-700 rounded-lg text-red-600 group-hover:bg-red-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {isAdmin && (
+                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                    <button onClick={(e) => {
+                                                        let stores = [];
+                                                        Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
+                                                        handleDeleteFolder(e, 'Provinsi', prov, stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    <button onClick={(e) => {
+                                                        let stores = [];
+                                                        Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
+                                                        handleBulkRename(e, 'Provinsi', prov, stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
-                            </div>
-                        ))}
-                        {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
+                            ))}
+                            {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
+                        </div>
                     </div>
                 )}
 
                 {/* LEVEL 1: KABUPATEN */}
                 {selectedProvince && !selectedRegion && activeProv && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                            <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
-                                        {isAdmin && (
-                                            <button onClick={(e) => {
-                                                let stores = [];
-                                                Object.values(data.cities).forEach(c => stores.push(...c.stores));
-                                                handleBulkRename(e, 'Kabupaten', kab, stores);
-                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
-                                                <Pencil size={10}/> EDIT
-                                            </button>
-                                        )}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">{selectedProvince} (Kabupaten Level)</h4>
+                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
+                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {isAdmin && (
+                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                    <button onClick={(e) => {
+                                                        let stores = [];
+                                                        Object.values(data.cities).forEach(c => stores.push(...c.stores));
+                                                        handleDeleteFolder(e, 'Kabupaten', kab, stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    <button onClick={(e) => {
+                                                        let stores = [];
+                                                        Object.values(data.cities).forEach(c => stores.push(...c.stores));
+                                                        handleBulkRename(e, 'Kabupaten', kab, stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {/* LEVEL 2: KECAMATAN */}
                 {selectedProvince && selectedRegion && !selectedCity && activeKab && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                            <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
-                                        {isAdmin && (
-                                            <button onClick={(e) => {
-                                                handleBulkRename(e, 'Kecamatan', kec, data.stores);
-                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
-                                                <Pencil size={10}/> EDIT
-                                            </button>
-                                        )}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">{selectedRegion} (Kecamatan Level)</h4>
+                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
+                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {isAdmin && (
+                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                    <button onClick={(e) => {
+                                                        handleDeleteFolder(e, 'Kecamatan', kec, data.stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    <button onClick={(e) => {
+                                                        handleBulkRename(e, 'Kecamatan', kec, data.stores);
+                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
 
@@ -963,14 +1076,27 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                                    {/* BOTTOM: Admin Actions */}
                                    {isAdmin && (
-                                        <div className="flex gap-2 justify-end mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+                                        <div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap">
+                                            <select 
+                                                value={c.city || 'Unknown Kecamatan'}
+                                                onChange={(e) => handleFastStoreMove(c.id, e.target.value, selectedRegion)}
+                                                className="text-[9px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-blue-500 transition-colors shrink-0"
+                                                title="Move to another Kecamatan"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <optgroup label="Move to Kecamatan...">
+                                                    {Object.keys(activeKab?.cities || {}).map(city => <option key={city} value={city}>{city}</option>)}
+                                                    <option value="CREATE_NEW">+ New Folder</option>
+                                                </optgroup>
+                                            </select>
+                                            
                                             {c.status === 'PENDING' && (
                                                 <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-200 font-bold rounded-lg hover:bg-emerald-500 hover:text-white transition-all animate-pulse shadow-sm">
-                                                    Verify NOO
+                                                    Verify
                                                 </button>
                                             )}
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-4 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-4 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Delete</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Del</button>
                                         </div>
                                     )}
                                 </div>
