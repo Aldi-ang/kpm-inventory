@@ -723,15 +723,36 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // 🚀 THE DIRECTORY CATCHER: Intercepts edit targets sent from Map Mission Control
     useEffect(() => {
         const targetId = sessionStorage.getItem('targetEditStore');
-        if (targetId && customers && customers.length > 0) {
+        // Ensure folderStructure is fully built before attempting to scan it
+        if (targetId && customers && customers.length > 0 && Object.keys(folderStructure).length > 0) {
             const target = customers.find(s => String(s.id) === String(targetId));
             if (target) {
-                // 400ms delay ensures the UI has fully transitioned tabs before trying to open the Edit modal
+                // 1. 🔍 AUTO-EXPAND ENGINE: Scan the rendered structure to find exactly where this store was sorted
+                let foundProv = null, foundKab = null, foundKec = null;
+                for (const [pName, pData] of Object.entries(folderStructure)) {
+                    for (const [kName, kData] of Object.entries(pData.regions)) {
+                        for (const [cName, cData] of Object.entries(kData.cities)) {
+                            if (cData.stores.some(s => String(s.id) === String(targetId))) {
+                                foundProv = pName; foundKab = kName; foundKec = cName;
+                                break;
+                            }
+                        }
+                        if (foundProv) break;
+                    }
+                    if (foundProv) break;
+                }
+
+                // 2. 📂 FORCE OPEN FOLDERS: Drill down to the exact location
+                if (foundProv) setSelectedProvince(foundProv);
+                if (foundKab) setSelectedRegion(foundKab);
+                if (foundKec) setSelectedCity(foundKec);
+
+                // 3. 📝 OPEN EDITOR: 400ms delay ensures the UI has fully transitioned tabs
                 setTimeout(() => handleEdit(target), 400); 
             }
             sessionStorage.removeItem('targetEditStore'); 
         }
-    }, [customers]);
+    }, [customers, folderStructure]);
 
     if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} onNavigateToMap={onNavigateToMap} />;
 
