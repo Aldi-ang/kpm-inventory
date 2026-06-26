@@ -3275,6 +3275,7 @@ const handleGitHubMirror = async () => {
                   triggerCapy={triggerCapy} 
                   isAdmin={isAdmin} 
                   tierSettings={tierSettings}
+                  onNavigateToMap={() => setActiveTab('map_war_room')}
                   onRequestCrop={(file) => {
                       const reader = new FileReader();
                       reader.onload = () => {
