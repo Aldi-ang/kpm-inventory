@@ -936,7 +936,7 @@ const GameHUD = ({ conquestMode, mapPoints }) => {
     );
 };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates }) => {
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates, onNavigateToDirectory }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -1215,13 +1215,23 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     )}
 
                     {canOverrideGps && (
-                        <button onClick={() => {
-                            setDragPinCoords({ lat: store.latitude, lng: store.longitude });
-                            setEditingStoreId(store.id);
-                            setSelectedStore(null); 
-                        }} className="col-span-2 w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-orange-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-orange-400 transition-colors shadow-md">
-                            <MapPin size={14}/> Correct Pin Location
-                        </button>
+                        <>
+                            <button onClick={() => {
+                                setDragPinCoords({ lat: store.latitude, lng: store.longitude });
+                                setEditingStoreId(store.id);
+                                setSelectedStore(null); 
+                            }} className="w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-orange-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-orange-400 transition-colors shadow-md">
+                                <MapPin size={14}/> Correct Pin
+                            </button>
+
+                            <button onClick={() => {
+                                sessionStorage.setItem('targetEditStore', store.id);
+                                if (onNavigateToDirectory) onNavigateToDirectory();
+                                else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'customers' }));
+                            }} className="w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-blue-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-blue-400 transition-colors shadow-md">
+                                <Pencil size={14}/> Edit Profile
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -1660,7 +1670,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [] }) => {
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory }) => {
 
     const userId = user?.uid || user?.id || "default";
 
@@ -2358,6 +2368,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
                     setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
                     activeTiers={activeTiers} setLocalTierUpdates={setLocalTierUpdates}
+                    onNavigateToDirectory={onNavigateToDirectory}
                 />
             )}
             

@@ -720,6 +720,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         } catch(err) { console.error(err); alert("Failed to approve: " + err.message); }
     };
 
+    // 🚀 THE DIRECTORY CATCHER: Intercepts edit targets sent from Map Mission Control
+    useEffect(() => {
+        const targetId = sessionStorage.getItem('targetEditStore');
+        if (targetId && customers && customers.length > 0) {
+            const target = customers.find(s => String(s.id) === String(targetId));
+            if (target) {
+                // 400ms delay ensures the UI has fully transitioned tabs before trying to open the Edit modal
+                setTimeout(() => handleEdit(target), 400); 
+            }
+            sessionStorage.removeItem('targetEditStore'); 
+        }
+    }, [customers]);
+
     if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} onNavigateToMap={onNavigateToMap} />;
 
     return (
