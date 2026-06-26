@@ -26,10 +26,10 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     } catch(e) { }
     return false;
 };
-import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe } from 'lucide-react';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
-export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
+export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy, onNavigateToMap }) => {
     const [benchmarks, setBenchmarks] = useState([]);
     const [newBench, setNewBench] = useState({ brand: '', product: '', price: '', notes: '', volume: 'Medium' });
     const [mapMode, setMapMode] = useState('map'); 
@@ -125,6 +125,14 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                             <p className="text-[10px] text-emerald-500 mt-2 text-center font-bold">Using Custom Embed View</p> :
                             <p className="text-[10px] text-slate-400 mt-2 text-center">{customer.latitude ? "Exact GPS Location" : "Approximate Address Location"}</p>
                         }
+                        
+                        <button onClick={() => {
+                            sessionStorage.setItem('targetMapStore', customer.id);
+                            if (onNavigateToMap) onNavigateToMap();
+                            else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
+                        }} className="w-full mt-4 py-3 bg-slate-800 hover:bg-orange-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-md group">
+                            <Globe size={16} className="text-orange-400 group-hover:text-white" /> Open in Map Mission Control
+                        </button>
                     </div>
                 </div>
 
@@ -186,7 +194,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
-export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage }) => {
+export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     
@@ -712,7 +720,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         } catch(err) { console.error(err); alert("Failed to approve: " + err.message); }
     };
 
-    if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} />;
+    if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} onNavigateToMap={onNavigateToMap} />;
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -1095,6 +1103,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                     Verify
                                                 </button>
                                             )}
+                                            
+                                            <button onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                sessionStorage.setItem('targetMapStore', c.id);
+                                                if (onNavigateToMap) onNavigateToMap();
+                                                else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
+                                            }} className="px-3 py-1.5 text-xs font-bold bg-orange-50 border border-orange-200 dark:border-orange-500/30 dark:bg-orange-500/10 rounded-lg hover:bg-orange-500 hover:text-white text-orange-600 dark:text-orange-400 transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
+
                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
                                             <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Del</button>
                                         </div>
