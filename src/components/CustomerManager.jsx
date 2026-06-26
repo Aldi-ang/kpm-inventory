@@ -26,7 +26,7 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     } catch(e) { }
     return false;
 };
-import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil } from 'lucide-react';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy }) => {
@@ -361,6 +361,52 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             }
         }
     }, [formData.latitude, formData.longitude]);
+
+    // 🚀 NEW: BULK DIRECTORY RENAME ENGINE
+    const handleBulkRename = async (e, level, oldName, storesToUpdate) => {
+        e.stopPropagation(); // Prevents the folder from opening when you click Edit
+        const newName = window.prompt(`Rename "${oldName}" to:`, oldName);
+        if (!newName || newName.trim() === "" || newName === oldName) return;
+
+        if (!window.confirm(`Are you sure you want to move ${storesToUpdate.length} stores to "${newName}"?`)) return;
+
+        if (triggerCapy) triggerCapy(`Moving ${storesToUpdate.length} stores... 🚀`);
+
+        try {
+            const batches = [];
+            let currentBatch = writeBatch(db);
+            let count = 0;
+
+            storesToUpdate.forEach(store => {
+                const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id);
+                const updateData = {};
+                
+                // Route to the correct database field based on the folder level
+                if (level === 'Provinsi') updateData.province = newName;
+                if (level === 'Kabupaten') updateData.region = newName;
+                if (level === 'Kecamatan') updateData.city = newName;
+                
+                currentBatch.update(ref, updateData);
+                count++;
+
+                // Firebase batch limit is 500, we chunk at 450 to be safe
+                if (count === 450) {
+                    batches.push(currentBatch.commit());
+                    currentBatch = writeBatch(db);
+                    count = 0;
+                }
+            });
+
+            if (count > 0) batches.push(currentBatch.commit());
+            await Promise.all(batches);
+
+            if (triggerCapy) triggerCapy(`Successfully renamed to ${newName}! ✅`);
+            if (logAudit) logAudit("DIRECTORY_BULK_RENAME", `Renamed ${level} from ${oldName} to ${newName} for ${storesToUpdate.length} stores`);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to rename folder.");
+        }
+    };
 
     const handleAutoGeocode = async () => {
         if (!formData.address && !formData.city) { alert("Please enter City/Address first!"); return; }
@@ -795,7 +841,18 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-red-100 dark:bg-slate-700 rounded-lg text-red-600 group-hover:bg-red-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
-                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                    <div className="flex flex-col items-end gap-2">
+                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                        {isAdmin && (
+                                            <button onClick={(e) => {
+                                                let stores = [];
+                                                Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
+                                                handleBulkRename(e, 'Provinsi', prov, stores);
+                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
+                                                <Pencil size={10}/> EDIT
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
@@ -812,7 +869,18 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                    <div className="flex flex-col items-end gap-2">
+                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                        {isAdmin && (
+                                            <button onClick={(e) => {
+                                                let stores = [];
+                                                Object.values(data.cities).forEach(c => stores.push(...c.stores));
+                                                handleBulkRename(e, 'Kabupaten', kab, stores);
+                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
+                                                <Pencil size={10}/> EDIT
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
@@ -828,7 +896,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                    {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                    <div className="flex flex-col items-end gap-2">
+                                        {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                        {isAdmin && (
+                                            <button onClick={(e) => {
+                                                handleBulkRename(e, 'Kecamatan', kec, data.stores);
+                                            }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500">
+                                                <Pencil size={10}/> EDIT
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
