@@ -41,10 +41,30 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return null;
-        canvas.width = pixelCrop.width;
-        canvas.height = pixelCrop.height;
-        ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
-        return canvas.toDataURL('image/png', 1.0); 
+
+        // 🚀 THE AUTO-COMPRESSOR ENGINE
+        // 1. Cap the maximum size at 800px to prevent massive file sizes
+        let finalWidth = pixelCrop.width;
+        let finalHeight = pixelCrop.height;
+        
+        if (finalWidth > 800) {
+            const ratio = 800 / finalWidth;
+            finalWidth = 800;
+            finalHeight = finalHeight * ratio;
+        }
+
+        canvas.width = finalWidth;
+        canvas.height = finalHeight;
+
+        // 2. Draw the cropped image onto the perfectly sized canvas
+        ctx.drawImage(
+            image, 
+            pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 
+            0, 0, finalWidth, finalHeight
+        );
+        
+        // 3. Crush the output to 70% quality and convert to JPEG (Massive bandwidth savings!)
+        return canvas.toDataURL('image/jpeg', 0.7); 
     } catch (e) {
         console.error("Cropper Error:", e);
         return null;
