@@ -165,6 +165,11 @@ export default function useTransactionEngine({
             await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
             if (!manualData && setCart) setCart([]); 
             triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
+            
+            // 🚀 WAKE UP THE GPS SNIPER ENGINE! 
+            // Gets a high-accuracy location lock exactly where the sale took place, then goes to sleep.
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+            
             return finalAgentName; 
         } catch(err) { 
             console.error("TRANSACTION ERROR:", err);
@@ -274,6 +279,9 @@ export default function useTransactionEngine({
             }); 
 
             triggerCapy("Store Audit successfully recorded!"); 
+            
+            // 🚀 WAKE UP THE GPS SNIPER ENGINE! 
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             // Return the constructed object so the UI can auto-open the receipt!
             return {
