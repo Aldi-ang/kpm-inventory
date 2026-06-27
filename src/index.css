@@ -37,10 +37,11 @@ body {
    🚀 CELLO LITE MODE (POTATO ENGINE GOVERNOR)
    ========================================================= */
 
-/* 1. Kill all GPU-heavy animations and transitions */
+/* 1. Instantly complete animations so items don't get stuck invisible */
 html.lite-mode * {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important; /* Stops infinite pulsing */
+    transition-duration: 0.001s !important;
 }
 
 /* 2. Kill expensive Blur effects and fallback to solid colors */
