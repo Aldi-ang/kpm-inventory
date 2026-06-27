@@ -3005,14 +3005,13 @@ const handleGitHubMirror = async () => {
         {activeTab === 'agent_profile' && (
               <AgentProfileView 
                   motorists={motorists}
-                  transactions={transactions}
                   inventory={inventory}
                   userRole={userRole}
                   agentProfileId={agentProfileId}
                   db={db}              
                   appId={appId}        
                   userId={user?.uid}   
-                  transactions={transactions} // 🚀 ADD THIS EXACT LINE
+                  transactions={transactions} 
               />
           )}
 
