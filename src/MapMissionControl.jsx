@@ -1175,7 +1175,8 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     return (
         <div 
             ref={sheetRef}
-            className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[1000] flex flex-col lg:animate-slide-in-left lg:transform-none"
+            /* 🚀 FIX: Upgraded to z-[10000] to permanently block map text from bleeding through */
+            className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[10000] flex flex-col lg:animate-slide-in-left lg:transform-none"
             style={isMobile ? { height: '85vh', transform: 'translateY(100%)' } : {}}
             onClick={(e) => e.stopPropagation()} 
         >
@@ -2207,7 +2208,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
 
-            <MapContainer ref={mapRef} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
+            {/* 🚀 LITE MODE UPGRADE: preferCanvas={true} flattens vector borders to save RAM */}
+            <MapContainer ref={mapRef} preferCanvas={true} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
