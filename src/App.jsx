@@ -1178,55 +1178,45 @@ const handleGitHubMirror = async () => {
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
-  // 🚀 THE TELEMETRY ENGINE: Agent Background Tracker
+  // 🚀 THE TELEMETRY ENGINE: High-Accuracy Event-Driven Tracker
   useEffect(() => {
       // Only run this for Tier 3/4 Agents who have an assigned Agent ID
       if (!user || user.role === 'COMPANY_OWNER' || !user.agentId) return;
 
-      let lastPushedCoords = null;
-
-      const calculateDistance = (lat1, lon1, lat2, lon2) => {
-          const R = 6371e3; 
-          const φ1 = lat1 * Math.PI/180;
-          const φ2 = lat2 * Math.PI/180;
-          const Δφ = (lat2-lat1) * Math.PI/180;
-          const Δλ = (lon2-lon1) * Math.PI/180;
-          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      };
-
-      const watchId = navigator.geolocation.watchPosition(
-          async (pos) => {
-              const currentCoords = { 
-                  lat: pos.coords.latitude, 
-                  lng: pos.coords.longitude, 
-                  timestamp: new Date().toISOString() 
-              };
-              
-              // Cost-Saving Check: Only push to Firebase if agent moved more than 30 meters
-              const dist = lastPushedCoords ? calculateDistance(lastPushedCoords.lat, lastPushedCoords.lng, currentCoords.lat, currentCoords.lng) : 999;
-              
-              if (dist > 30) {
-                  lastPushedCoords = currentCoords;
-
+      const triggerLocationUpdate = async () => {
+          // getCurrentPosition turns the GPS on, gets the lock, and IMMEDIATELY shuts it off to save battery!
+          navigator.geolocation.getCurrentPosition(
+              async (pos) => {
+                  const currentCoords = { 
+                      lat: pos.coords.latitude, 
+                      lng: pos.coords.longitude, 
+                      timestamp: new Date().toISOString() 
+                  };
+                  
                   try {
-                      // The bossUid ensures we route the telemetry to the Master Admin's vault
                       const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, user.agentId);
-                      
                       await updateDoc(agentRef, {
                           currentLocation: currentCoords,
                           pathHistory: arrayUnion(currentCoords) // Permanently appends to the snail footprint
                       });
+                      console.log("📍 Action detected! High-accuracy location pinned and GPS shut down.");
                   } catch (e) {
                       console.error("Telemetry push failed:", e);
                   }
-              }
-          },
-          (err) => console.warn("GPS Signal Lost:", err),
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-      );
+              },
+              (err) => console.warn("GPS Signal Lost:", err),
+              // We can safely use High Accuracy because it only wakes up the antenna for a brief moment!
+              { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 } 
+          );
+      };
 
-      return () => navigator.geolocation.clearWatch(watchId);
+      // Global event listener so any file can request a snapshot
+      window.addEventListener('trigger-telemetry-ping', triggerLocationUpdate);
+      
+      // Fire one single initial ping when they boot up the app session
+      triggerLocationUpdate();
+
+      return () => window.removeEventListener('trigger-telemetry-ping', triggerLocationUpdate);
   }, [user, db, appId]);
 
  
