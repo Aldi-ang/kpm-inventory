@@ -32,3 +32,29 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #64748b; 
 }
+
+/* =========================================================
+   🚀 CELLO LITE MODE (POTATO ENGINE GOVERNOR)
+   ========================================================= */
+
+/* 1. Kill all GPU-heavy animations and transitions */
+html.lite-mode * {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* 2. Kill expensive Blur effects and fallback to solid colors */
+html.lite-mode .backdrop-blur-md,
+html.lite-mode .backdrop-blur-sm,
+html.lite-mode .backdrop-blur-lg,
+html.lite-mode .bg-black\/95,
+html.lite-mode [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: #0f172a !important; /* Solid Slate-900 fallback */
+}
+
+/* 3. Kill massive glowing box-shadows (Huge GPU overdraw culprit) */
+html.lite-mode [class*="shadow-"] {
+    box-shadow: none !important;
+}

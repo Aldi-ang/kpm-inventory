@@ -940,7 +940,8 @@ const handleGitHubMirror = async () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(true);
 
-
+  // 🚀 LITE MODE (POTATO ENGINE) STATE
+  const [isLiteMode, setIsLiteMode] = useState(() => localStorage.getItem('kpm_lite_mode') === 'true'); 
 
   const [cart, setCart] = useState([]);
   const [opnameData, setOpnameData] = useState({});
@@ -1754,6 +1755,17 @@ const handleGitHubMirror = async () => {
   useEffect(() => {
     if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('kpm_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('kpm_theme', 'light'); }
   }, [darkMode]);
+
+  // 🚀 LITE MODE GOVERNOR: Attaches the global restrictor to the HTML root
+  useEffect(() => {
+    if (isLiteMode) {
+        document.documentElement.classList.add('lite-mode');
+        localStorage.setItem('kpm_lite_mode', 'true');
+    } else {
+        document.documentElement.classList.remove('lite-mode');
+        localStorage.setItem('kpm_lite_mode', 'false');
+    }
+  }, [isLiteMode]);
 
  const handleLogin = async () => {
         setLoginError(null); 
@@ -3357,6 +3369,7 @@ const handleGitHubMirror = async () => {
               <SettingsView 
                   user={user} userId={userId} db={db} appId={appId}
                   isAdmin={isAdmin} isSystemOwner={isSystemOwner} userRole={userRole}
+                  isLiteMode={isLiteMode} setIsLiteMode={setIsLiteMode} /* 🚀 LITE MODE PROP */
                   showCrownTransfer={showCrownTransfer} setShowCrownTransfer={setShowCrownTransfer}
                   triggerCapy={triggerCapy} setShowAdminLogin={setShowAdminLogin}
                   sessionStatus={sessionStatus} setSessionStatus={setSessionStatus} auditLogs={auditLogs}

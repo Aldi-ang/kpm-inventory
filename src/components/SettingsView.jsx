@@ -21,7 +21,8 @@ export default function SettingsView({
     editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
-    triggerDiscoParty, isDiscoMode
+    triggerDiscoParty, isDiscoMode,
+    isLiteMode, setIsLiteMode /* 🚀 NEW: LITE MODE PROPS */
 }) {
 
     // --- TIER AUTOMATION LOGIC ---
@@ -189,6 +190,30 @@ export default function SettingsView({
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'general' && (
                       <div className="animate-fade-in space-y-6">
+                          
+                          {/* 🚀 LITE MODE (POTATO ENGINE) TOGGLE */}
+                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${isLiteMode ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                              <div className="flex items-center justify-between">
+                                  <div>
+                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${isLiteMode ? 'text-emerald-500' : 'dark:text-white'}`}>
+                                          ⚡ Cello Lite Mode
+                                      </h3>
+                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                          Disables blur, animations, and heavy GPU effects to save battery on low-end phones.
+                                      </p>
+                                  </div>
+                                  <button 
+                                      onClick={() => {
+                                          setIsLiteMode(!isLiteMode);
+                                          triggerCapy(!isLiteMode ? "Lite Mode Enabled! Battery saving active. ⚡" : "Lite Mode Disabled. Full graphics restored!");
+                                      }}
+                                      className={`transition-all duration-300 ${isLiteMode ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                  >
+                                      {isLiteMode ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                  </button>
+                              </div>
+                          </div>
+
                           {/* COMPANY IDENTITY */}
                           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
                               <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity & Invoice Data</h3>
