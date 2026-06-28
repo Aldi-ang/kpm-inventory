@@ -1183,8 +1183,6 @@ const handleGitHubMirror = async () => {
 
  // 🚀 THE TELEMETRY ENGINE: High-Accuracy Event-Driven Tracker
   useEffect(() => {
-      // 🔍 FIX: Removed the 'COMPANY_OWNER' block! 
-      // If you are testing as the Boss, it will now track you under 'master_owner' so you can see your own avatar.
       const activeTrackerId = user?.agentId || (user?.role === 'COMPANY_OWNER' || user?.role === 'ADMIN' || user?.tier === 1 ? 'master_owner' : null);
 
       if (!user || !activeTrackerId) return;
@@ -1200,10 +1198,15 @@ const handleGitHubMirror = async () => {
                   
                   try {
                       const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, activeTrackerId);
-                      await updateDoc(agentRef, {
+                      
+                      // 🚀 FIX: Changed updateDoc to setDoc + merge:true
+                      // This forces Firebase to create the Master Owner profile if it doesn't exist yet!
+                      await setDoc(agentRef, {
                           currentLocation: currentCoords,
-                          pathHistory: arrayUnion(currentCoords) 
-                      });
+                          pathHistory: arrayUnion(currentCoords),
+                          name: activeTrackerId === 'master_owner' ? 'Master HQ' : (user.displayName || 'Agent')
+                      }, { merge: true });
+                      
                       console.log("📍 Action detected! High-accuracy location pinned and GPS shut down.");
                   } catch (e) {
                       console.error("Telemetry push failed:", e);
