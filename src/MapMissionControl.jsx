@@ -25,9 +25,6 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
     
     const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
-    let content = tierDef.iconType === 'image' ? `<img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />` : `<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 16px;">${tierDef.value || '📍'}</div>`;
-    
-    const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-8px; right:-8px; background:gold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">👑</div>` : '';
     
     let glow = '';
     let transform = 'scale(1)';
@@ -42,13 +39,30 @@ const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
     }
 
     let border = `border: 3px solid ${store.storeType === 'Wholesaler' ? '#f59e0b' : (tierDef.color || '#94a3b8')};`;
+    const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-8px; right:-8px; background:gold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">👑</div>` : '';
 
+    // 🚀 THE FIX: Differentiate between Native Leaflet Image Icons and Div Emojis
+    if (tierDef.iconType === 'image' && tierDef.value && tierDef.value.startsWith('data:image')) {
+        return L.divIcon({
+            className: 'custom-icon',
+            html: `
+                <div style="position:relative; ${zIndex}">
+                    <div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} transform: ${transform}; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
+                        <img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover;" />
+                    </div>
+                    ${hubBadge}
+                </div>`,
+            iconSize: [34, 34], iconAnchor: [17, 17]
+        });
+    }
+
+    // Fallback to standard Emoji rendering
     return L.divIcon({
         className: 'custom-icon', 
         html: `
             <div style="position:relative; ${zIndex}">
-                <div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} transform: ${transform}; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; z-index: 10;">
-                    ${content}
+                <div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} transform: ${transform}; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                    ${tierDef.value || '📍'}
                 </div>
                 ${hubBadge}
             </div>`,
