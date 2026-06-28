@@ -347,7 +347,7 @@ export default function SettingsView({
                   {activeTab === 'tiers' && (
                       <div className="animate-fade-in space-y-6">
                           
-                          {/* TIER & MAP ICON MANAGER */}
+                         {/* TIER & MAP ICON MANAGER */}
                           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
                               <div className="flex justify-between items-center mb-4">
                                   <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
@@ -370,50 +370,106 @@ export default function SettingsView({
                               </div>
                               <div className="overflow-x-auto pb-2">
                                   <div className="space-y-3 min-w-[650px]">
-                                      {tierSettings.map((tier, idx) => (
-                                          <div key={tier.id || idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700 transition-colors hover:border-slate-400 dark:hover:border-slate-500">
-                                              <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
-                                              
-                                              <input 
-                                                  value={tier.label} 
-                                                  onChange={(e) => { 
-                                                      const newTiers = [...tierSettings]; 
-                                                      newTiers[idx].label = e.target.value; 
-                                                      if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
-                                                      setTierSettings(newTiers); 
-                                                  }} 
-                                                  onBlur={() => handleSaveTiers(tierSettings)} 
-                                                  className="w-28 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase tracking-wider" 
-                                              />
-                                              
-                                              <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
-                                              
-                                              <div className="flex-1">
-                                                  {tier.iconType === 'image' ? (
-                                                      <label className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}<label htmlFor={`tier-upload-${idx}`} className="flex items-center justify-center gap-2 w-full p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors"><Upload size={14}/> {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}<input id={`tier-upload-${idx}`} type="file" accept="image/*" onChange={(e) => handleTierIconSelect(e, idx)} className="hidden" /></label></label>
-                                                  ) : (
-                                                      <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji Here" />
-                                                  )}
-                                              </div>
-                                              
-                                              <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-inner" style={{ borderColor: tier.color }}>
-                                                  {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
-                                              </div>
-
-                                              <button onClick={() => {
-                                                  if(window.confirm(`Are you sure you want to delete the tier: ${tier.label}?`)) {
-                                                      const newTiers = tierSettings.filter((_, i) => i !== idx);
-                                                      setTierSettings(newTiers);
-                                                      handleSaveTiers(newTiers);
-                                                  }
-                                              }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-1" title="Delete Tier">
-                                                  <Trash2 size={16}/>
-                                              </button>
+                                  {tierSettings.map((tier, idx) => (
+                                      <div key={tier.id || idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700 transition-colors hover:border-slate-400 dark:hover:border-slate-500">
+                                          <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
+                                          
+                                          <input 
+                                              value={tier.label} 
+                                              onChange={(e) => { 
+                                                  const newTiers = [...tierSettings]; 
+                                                  newTiers[idx].label = e.target.value; 
+                                                  if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
+                                                  setTierSettings(newTiers); 
+                                              }} 
+                                              onBlur={() => handleSaveTiers(tierSettings)} 
+                                              className="w-28 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase tracking-wider" 
+                                          />
+                                          
+                                          <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
+                                          
+                                          <div className="flex-1">
+                                              {tier.iconType === 'image' ? (
+                                                  <div className="flex gap-2">
+                                                      <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
+                                                          <Upload size={14}/> 
+                                                          {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
+                                                          <input 
+                                                              id={`tier-upload-${idx}`} 
+                                                              type="file" 
+                                                              accept="image/*" 
+                                                              className="hidden" 
+                                                              onChange={(e) => {
+                                                                  const file = e.target.files[0];
+                                                                  if (!file) return;
+                                                                  const reader = new FileReader();
+                                                                  reader.onload = (event) => {
+                                                                      const img = new Image();
+                                                                      img.onload = () => {
+                                                                          const canvas = document.createElement('canvas');
+                                                                          const SIZE = 128; // 🚀 Crushes image size instantly
+                                                                          canvas.width = SIZE; canvas.height = SIZE;
+                                                                          const ctx = canvas.getContext('2d');
+                                                                          const scale = Math.min(SIZE / img.width, SIZE / img.height);
+                                                                          const w = img.width * scale; const h = img.height * scale;
+                                                                          const x = (SIZE - w) / 2; const y = (SIZE - h) / 2;
+                                                                          ctx.drawImage(img, x, y, w, h);
+                                                                          
+                                                                          // Convert to JPEG format at 70% quality (Bulletproof for Firebase)
+                                                                          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                                                                          const newTiers = [...tierSettings];
+                                                                          newTiers[idx].value = compressedBase64;
+                                                                          setTierSettings(newTiers);
+                                                                          handleSaveTiers(newTiers);
+                                                                      };
+                                                                      img.src = event.target.result;
+                                                                  };
+                                                                  reader.readAsDataURL(file);
+                                                              }} 
+                                                          />
+                                                      </label>
+                                                      
+                                                      {/* 🚀 THE GHOSTBUSTER BUTTON: Clears stuck heavy images */}
+                                                      {tier.value?.startsWith('data:') && (
+                                                          <button 
+                                                              onClick={() => {
+                                                                  const newTiers = [...tierSettings];
+                                                                  newTiers[idx].value = '';
+                                                                  setTierSettings(newTiers);
+                                                                  handleSaveTiers(newTiers);
+                                                              }} 
+                                                              className="px-3 bg-red-100 dark:bg-red-900/40 text-red-500 rounded hover:bg-red-200 dark:hover:bg-red-500 dark:hover:text-white transition-colors flex items-center justify-center border border-red-500/30"
+                                                              title="Clear Image"
+                                                          >
+                                                              <X size={14}/>
+                                                          </button>
+                                                      )}
+                                                  </div>
+                                              ) : (
+                                                  <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji Here" />
+                                              )}
                                           </div>
-                                      ))}
+                                          
+                                          <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-inner" style={{ borderColor: tier.color }}>
+                                              {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
+                                          </div>
+
+                                          <button onClick={() => {
+                                              if(window.confirm(`Are you sure you want to delete the tier: ${tier.label}?`)) {
+                                                  const newTiers = tierSettings.filter((_, i) => i !== idx);
+                                                  setTierSettings(newTiers);
+                                                  handleSaveTiers(newTiers);
+                                              }
+                                          }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-1" title="Delete Tier">
+                                              <Trash2 size={16}/>
+                                          </button>
+                                      </div>
+                                  ))}
                                   </div>
                               </div>
                           </div>
+                          
+                      
 
                           {/* AUTOMATED PERFORMANCE TIERS (TIER 1 OVERSEER ONLY) */}
                           {isSystemOwner && (
