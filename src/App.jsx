@@ -1178,13 +1178,18 @@ const handleGitHubMirror = async () => {
       }
   }, [userRole, agentProfileId, db, appId, userId]);
 
-  // 🚀 THE TELEMETRY ENGINE: High-Accuracy Event-Driven Tracker
+
+
+
+ // 🚀 THE TELEMETRY ENGINE: High-Accuracy Event-Driven Tracker
   useEffect(() => {
-      // Only run this for Tier 3/4 Agents who have an assigned Agent ID
-      if (!user || user.role === 'COMPANY_OWNER' || !user.agentId) return;
+      // 🔍 FIX: Removed the 'COMPANY_OWNER' block! 
+      // If you are testing as the Boss, it will now track you under 'master_owner' so you can see your own avatar.
+      const activeTrackerId = user?.agentId || (user?.role === 'COMPANY_OWNER' || user?.role === 'ADMIN' || user?.tier === 1 ? 'master_owner' : null);
+
+      if (!user || !activeTrackerId) return;
 
       const triggerLocationUpdate = async () => {
-          // getCurrentPosition turns the GPS on, gets the lock, and IMMEDIATELY shuts it off to save battery!
           navigator.geolocation.getCurrentPosition(
               async (pos) => {
                   const currentCoords = { 
@@ -1194,10 +1199,10 @@ const handleGitHubMirror = async () => {
                   };
                   
                   try {
-                      const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, user.agentId);
+                      const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, activeTrackerId);
                       await updateDoc(agentRef, {
                           currentLocation: currentCoords,
-                          pathHistory: arrayUnion(currentCoords) // Permanently appends to the snail footprint
+                          pathHistory: arrayUnion(currentCoords) 
                       });
                       console.log("📍 Action detected! High-accuracy location pinned and GPS shut down.");
                   } catch (e) {
@@ -1205,21 +1210,19 @@ const handleGitHubMirror = async () => {
                   }
               },
               (err) => console.warn("GPS Signal Lost:", err),
-              // We can safely use High Accuracy because it only wakes up the antenna for a brief moment!
               { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 } 
           );
       };
 
-      // Global event listener so any file can request a snapshot
       window.addEventListener('trigger-telemetry-ping', triggerLocationUpdate);
-      
-      // Fire one single initial ping when they boot up the app session
       triggerLocationUpdate();
 
       return () => window.removeEventListener('trigger-telemetry-ping', triggerLocationUpdate);
   }, [user, db, appId]);
 
  
+
+
 
   // 🚀 NOTIFICATION CLICK HANDLER 🚀
   const handleNotificationClick = async (notification) => {

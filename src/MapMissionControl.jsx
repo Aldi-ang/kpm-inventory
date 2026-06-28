@@ -2335,7 +2335,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         let displayLat = agent.currentLocation.lat;
                         let displayLng = agent.currentLocation.lng;
 
-                        if (totalInGroup > 1) {
+                        // 🚀 NEW: THE SIDECAR ENGINE
+                        // Check if the agent is standing right on top of a store (within ~15 meters)
+                        const isStandingOnStore = mapPoints.some(store => {
+                            if (!store.latitude || !store.longitude) return false;
+                            const dLat = Math.abs(store.latitude - agent.currentLocation.lat);
+                            const dLng = Math.abs(store.longitude - agent.currentLocation.lng);
+                            return dLat < 0.00015 && dLng < 0.00015;
+                        });
+
+                        if (isStandingOnStore) {
+                            // Push the agent slightly Top-Right so they become a "badge" on the store icon
+                            displayLat += 0.00012; 
+                            displayLng += 0.00012;
+                        } else if (totalInGroup > 1) {
                             const offsetRadius = 0.00015; // Pushes them out ~15 meters on the map
                             const angle = (indexInGroup / totalInGroup) * (Math.PI * 2);
                             displayLat += Math.cos(angle) * offsetRadius;
