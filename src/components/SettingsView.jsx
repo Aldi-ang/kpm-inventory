@@ -394,38 +394,14 @@ export default function SettingsView({
                                                       <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
                                                           <Upload size={14}/> 
                                                           {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
+                                                          
+                                                          {/* 🚀 RESTORED CROPPER HOOK: Calls handleTierIconSelect again */}
                                                           <input 
                                                               id={`tier-upload-${idx}`} 
                                                               type="file" 
                                                               accept="image/*" 
                                                               className="hidden" 
-                                                              onChange={(e) => {
-                                                                  const file = e.target.files[0];
-                                                                  if (!file) return;
-                                                                  const reader = new FileReader();
-                                                                  reader.onload = (event) => {
-                                                                      const img = new Image();
-                                                                      img.onload = () => {
-                                                                          const canvas = document.createElement('canvas');
-                                                                          const SIZE = 128; // 🚀 Crushes image size instantly
-                                                                          canvas.width = SIZE; canvas.height = SIZE;
-                                                                          const ctx = canvas.getContext('2d');
-                                                                          const scale = Math.min(SIZE / img.width, SIZE / img.height);
-                                                                          const w = img.width * scale; const h = img.height * scale;
-                                                                          const x = (SIZE - w) / 2; const y = (SIZE - h) / 2;
-                                                                          ctx.drawImage(img, x, y, w, h);
-                                                                          
-                                                                          // Convert to JPEG format at 70% quality (Bulletproof for Firebase)
-                                                                          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                                                                          const newTiers = [...tierSettings];
-                                                                          newTiers[idx].value = compressedBase64;
-                                                                          setTierSettings(newTiers);
-                                                                          handleSaveTiers(newTiers);
-                                                                      };
-                                                                      img.src = event.target.result;
-                                                                  };
-                                                                  reader.readAsDataURL(file);
-                                                              }} 
+                                                              onChange={(e) => handleTierIconSelect(e, idx)} 
                                                           />
                                                       </label>
                                                       
