@@ -203,22 +203,25 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-// 🚀 INJECTED: Added transactions = [] to the props
-const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
+// 🚀 INJECTED: Shadows the raw props to intercept and sanitize them
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
+    
+    // 🛡️ THE SUPREME SANITIZER: Unfreezes cached Firebase data and deletes corrupted ghosts!
+    const customers = useMemo(() => (rawCustomers || []).filter(c => c && typeof c === 'object' && c.id).map(c => ({...c})), [rawCustomers]);
+    const transactions = useMemo(() => (rawTransactions || []).filter(t => t && typeof t === 'object'), [rawTransactions]);
+
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
-    // 🚀 THE INTELLIGENCE SCANNER: Finds out who ACTUALLY visited the store today
+   // 🚀 THE INTELLIGENCE SCANNER
     const todaysVisits = useMemo(() => {
         const visitData = {};
-        // Scan all transactions from TODAY
-        const todaysTx = transactions.filter(t => t.date === todayDate);
+        const todaysTx = transactions.filter(t => t?.date === todayDate);
         todaysTx.forEach(tx => {
-            if (tx.customerName) {
-                // 🚀 CRASH FIX 1: Coerce to string to prevent TypeError on corrupted data
+            if (tx && tx.customerName) {
+                // 🚀 CRASH FIX: Coerce to string to prevent TypeError on corrupted names
                 const storeName = String(tx.customerName || '').trim().toLowerCase();
-                // We prefer the agentName from an actual sale over everything else
-                visitData[storeName] = tx.agentName || 'Unknown Agent';
+                visitData[storeName] = String(tx.agentName || 'Unknown Agent');
             }
         });
         return visitData;
@@ -557,10 +560,11 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         const counters = {};
         const metrics = {};
         
-        orderedRoute.forEach(store => {
-            let agent = assignments[store.id] || 'Unassigned';
+        (orderedRoute || []).forEach(store => {
+            if (!store || !store.id) return; // 🚀 CRASH FIX: Ignore missing ghost files
             
-            if (agent !== 'Unassigned' && !globalAgentList.includes(agent)) {
+            let agent = assignments[store.id] || 'Unassigned';
+            if (agent !== 'Unassigned' && !(globalAgentList || []).includes(agent)) {
                 agent = 'Unassigned';
             }
 
@@ -569,7 +573,7 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
             
             let color = '#64748b'; 
             if (agent !== 'Unassigned') {
-                color = agentColors[agent] || getHashColor(agent);
+                color = agentColors?.[agent] || getHashColor(agent);
             }
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
@@ -577,25 +581,30 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
     }, [orderedRoute, assignments, globalAgentList, agentColors]);
 
     const getBountyStatus = (customer) => {
-        const freq = customer.visitFreq || 7;
+        if (!customer) return { text: "UNKNOWN TARGET", color: "bg-slate-600", border: "border-slate-500", flashing: false };
+        const freq = parseInt(customer.visitFreq) || 7;
         if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         
-        const parseDate = (dStr) => {
-            const [y, m, d] = String(dStr || '').split('-');
-            return new Date(y, m-1, d);
-        };
-        
-        // 🚀 CRASH FIX 3: Safely parse lastVisit in case Firebase returns a boolean or object
-        const lastDate = parseDate(String(customer.lastVisit || '').split('T')[0]);
-        const now = parseDate(todayDate);
-        
-        const diffTime = now - lastDate; 
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        const daysLeft = freq - diffDays;
+        try {
+            const parseDate = (dStr) => {
+                const parts = String(dStr || '').split('T')[0].split('-');
+                if (parts.length < 3) return new Date(); // Failsafe
+                return new Date(parts[0], parts[1]-1, parts[2]);
+            };
+            
+            const lastDate = parseDate(customer.lastVisit);
+            const now = parseDate(todayDate);
+            
+            const diffTime = now - lastDate; 
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const daysLeft = freq - diffDays;
 
-        if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
-        if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
-        return { text: `⚠️ CRITICAL: OVERDUE BY ${Math.abs(daysLeft)} DAYS`, color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+            if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
+            if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
+            return { text: `⚠️ CRITICAL: OVERDUE BY ${Math.abs(daysLeft)} DAYS`, color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+        } catch(e) {
+            return { text: "DATA CORRUPT", color: "bg-red-600 text-white", border: "border-red-500", flashing: false };
+        }
     };
 
     useEffect(() => {
