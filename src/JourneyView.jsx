@@ -1247,7 +1247,8 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                                 const tierLabel = customer.tier || 'Retail';
                                                 const priceLabel = customer.priceTier || 'Retail';
                                                 
-                                                const metric = storeMetrics[customer.id];
+                                                // 🚀 CRASH FIX 1: Prevent crash if storeMetrics hasn't loaded this customer yet
+                                                const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                                                 const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
                                                 const statusBadge = getBountyStatus(customer);
 
@@ -1266,7 +1267,8 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                                             else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
                                                             else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
                                                             
-                                                            const trueVisitorName = safeVisits[customer.name.trim().toLowerCase()] || customer.lastVisitedBy || 'FLEET';
+                                                            // 🚀 CRASH FIX 2: Added (customer?.name || '') to stop Fatal TypeErrors on broken ghost files
+                                                            const trueVisitorName = safeVisits[(customer?.name || '').trim().toLowerCase()] || customer?.lastVisitedBy || 'FLEET';
 
                                                             return (
                                                                 <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
