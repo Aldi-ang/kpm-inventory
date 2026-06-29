@@ -215,7 +215,8 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         const todaysTx = transactions.filter(t => t.date === todayDate);
         todaysTx.forEach(tx => {
             if (tx.customerName) {
-                const storeName = tx.customerName.trim().toLowerCase();
+                // 🚀 CRASH FIX 1: Coerce to string to prevent TypeError on corrupted data
+                const storeName = String(tx.customerName || '').trim().toLowerCase();
                 // We prefer the agentName from an actual sale over everything else
                 visitData[storeName] = tx.agentName || 'Unknown Agent';
             }
@@ -504,6 +505,7 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         const kecs = new Set();
         
         (customers || []).forEach(c => {
+            if (!c || !c.id) return; // 🚀 CRASH FIX 2: Ignore null ghost entries in Firebase
             const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, boundaries);
             c._hierarchy = h; 
             provs.add(h.Provinsi);
@@ -579,11 +581,12 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         
         const parseDate = (dStr) => {
-            const [y, m, d] = dStr.split('-');
+            const [y, m, d] = String(dStr || '').split('-');
             return new Date(y, m-1, d);
         };
         
-        const lastDate = parseDate(customer.lastVisit.split('T')[0]);
+        // 🚀 CRASH FIX 3: Safely parse lastVisit in case Firebase returns a boolean or object
+        const lastDate = parseDate(String(customer.lastVisit || '').split('T')[0]);
         const now = parseDate(todayDate);
         
         const diffTime = now - lastDate; 
@@ -995,10 +998,14 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                             else if (activeTag.includes('🔒')) iconHtml = '🔒';
                             else iconHtml = '✅';
                         }
-                        const metric = storeMetrics[store.id];
+                        
+                        // 🚀 FATAL CRASH FIX 4: Protect the Map Renderer from undefined metrics on corrupted stores!
+                        const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                         const stopNum = metric.stopNumber;
-                        const globalIdx = orderedRoute.findIndex(s => s.id === store.id);
-                        const statusBadge = getBountyStatus(store);
+                        const globalIdx = orderedRoute.findIndex(s => s?.id === store.id);
+                        
+                        let statusBadge = { text: "UNKNOWN", color: "bg-slate-600 text-white", border: "border-slate-500", flashing: false };
+                        try { statusBadge = getBountyStatus(store); } catch(e) {}
                         
                         const isEditing = editingStoreId === store.id;
 
