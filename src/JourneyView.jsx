@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -124,9 +124,12 @@ const MapEditController = ({ isEditing, onMapClick }) => {
     return null;
 };
 
+// 🚀 PROTECTED: Harden Polygon Math to ignore corrupted arrays
 const isPointInPolygon = (point, polygon) => {
+    if (!polygon || !Array.isArray(polygon) || polygon.length === 0) return false;
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        if (!polygon[i] || !polygon[j]) continue;
         let xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
         let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
@@ -134,15 +137,18 @@ const isPointInPolygon = (point, polygon) => {
     return inside;
 };
 
+// 🚀 PROTECTED: Safely unpack GeoJSON arrays
 const checkPointInGeoJSON = (lng, lat, geometry) => {
-    if (!geometry || !geometry.coordinates) return false;
+    if (!geometry || !geometry.coordinates || !Array.isArray(geometry.coordinates)) return false;
     const point = [lng, lat];
     try {
         if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
         if (geometry.type === 'MultiPolygon') {
             for (let poly of geometry.coordinates) { 
-                const ring = Array.isArray(poly[0][0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
-                if (isPointInPolygon(point, ring)) return true; 
+                const ring = Array.isArray(poly[0]?.[0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
+                if (Array.isArray(ring)) {
+                    if (isPointInPolygon(point, ring)) return true; 
+                }
             }
         }
     } catch(e) { console.warn("Geofence parse error", e); }
@@ -164,10 +170,10 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
         for (let b of sortedBnd) {
             const geo = b.feature || b.geometry;
             if (geo && checkPointInGeoJSON(fLng, fLat, geo)) {
-                if (b.level === 'Provinsi') h.Provinsi = b.name.toUpperCase();
-                else if (b.level === 'Kabupaten') h.Kabupaten = b.name.toUpperCase();
+                if (b.level === 'Provinsi') h.Provinsi = String(b.name || '').toUpperCase();
+                else if (b.level === 'Kabupaten') h.Kabupaten = String(b.name || '').toUpperCase();
                 else {
-                    h.Kecamatan = b.name.toUpperCase(); 
+                    h.Kecamatan = String(b.name || '').toUpperCase(); 
                     foundGeofence = true;
                     break; 
                 }
@@ -200,26 +206,30 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-// 🚀 INJECTED: Shadows the raw props to intercept and sanitize them
 const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     
-    // 🛡️ THE MASTER SANITIZER
-    // Automatically cleans every piece of Firebase data to strictly be valid Strings/Numbers. 
-    // This permanently stops "Cannot read properties" TypeErrors anywhere else in the code.
+    // 🛡️ THE MASTER DATA SANITIZER V2
+    // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
     const customers = useMemo(() => {
         return (rawCustomers || []).filter(c => c && typeof c === 'object' && c.id).map(c => ({
             ...c,
             name: String(c.name || 'UNKNOWN STORE'),
+            address: String(c.address || 'Address classification unknown'),
+            phone: c.phone ? String(c.phone) : '',
+            storeImage: c.storeImage ? String(c.storeImage) : '',
             city: String(c.city || 'UNMAPPED'),
             region: String(c.region || 'UNMAPPED'),
             assignedAgent: c.assignedAgent ? String(c.assignedAgent) : 'Unassigned',
+            lastVisit: c.lastVisit ? String(c.lastVisit) : '',
             lastVisitTag: c.lastVisitTag ? String(c.lastVisitTag) : '',
+            lastVisitNote: c.lastVisitNote ? String(c.lastVisitNote) : '',
             lastVisitedBy: c.lastVisitedBy ? String(c.lastVisitedBy) : '',
             tier: String(c.tier || 'Retail'),
             priceTier: String(c.priceTier || 'Retail'),
             visitFreq: parseInt(c.visitFreq) || 7,
             latitude: parseFloat(c.latitude) || -7.5845,
-            longitude: parseFloat(c.longitude) || 110.2895
+            longitude: parseFloat(c.longitude) || 110.2895,
+            gmapsUrl: c.gmapsUrl ? String(c.gmapsUrl) : ''
         }));
     }, [rawCustomers]);
 
@@ -240,7 +250,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const todaysTx = transactions.filter(t => t?.date === todayDate);
         todaysTx.forEach(tx => {
             if (tx && tx.customerName) {
-                // Since data is sanitized, .trim().toLowerCase() is perfectly safe
                 const storeName = tx.customerName.trim().toLowerCase();
                 visitData[storeName] = tx.agentName || 'Unknown Agent';
             }
@@ -340,7 +349,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     setAgentColors(dbColors);
                     localStorage.setItem(`cello_colors_${appId}`, JSON.stringify(dbColors)); 
                 }
-            } catch(e) { console.error("Failed to load custom colors", e); }
+            } catch(e) {}
         };
         loadColors();
     }, [db, appId, user]);
@@ -358,7 +367,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             const userId = user?.uid || user?.id;
             const docRef = doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, 'agentColors');
             await setDoc(docRef, { [agentName]: newColor }, { merge: true });
-        } catch(e) { console.error("Failed to sync color to DB", e); }
+        } catch(e) {}
     };
 
     useEffect(() => {
@@ -366,7 +375,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             const CACHE_KEY = `cello_map_bnd_${appId}`;
             const cachedData = localStorage.getItem(CACHE_KEY);
             if (cachedData) {
-                try { setBoundaries(JSON.parse(cachedData).filter(b => !b.isHidden)); } catch(e) {}
+                try { setBoundaries(JSON.parse(cachedData).filter(b => b && !b.isHidden)); } catch(e) {}
             }
 
             const userId = user?.uid || user?.id || 'default';
@@ -380,13 +389,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         if (data && data.geometryString) {
                             try {
                                 data.geometry = JSON.parse(data.geometryString);
+                                data.name = String(data.name || 'Unnamed Region');
                                 loaded.push(data);
                             } catch(e) {}
                         }
                     }
                 });
                 if (loaded.length > 0) {
-                    const activeBorders = loaded.filter(b => !b.isHidden);
+                    const activeBorders = loaded.filter(b => b && !b.isHidden);
                     setBoundaries(activeBorders);
                     localStorage.setItem(CACHE_KEY, JSON.stringify(loaded));
                 }
@@ -447,7 +457,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 updatedAt: serverTimestamp()
             });
             if (logAudit) logAudit("AGENT_ASSIGNED", `Assigned ${agentName} to store.`);
-        } catch (error) { console.error("Failed to save assignment to Firebase:", error); }
+        } catch (error) {}
     };
 
     useEffect(() => {
@@ -463,7 +473,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 const loadedCanvas = canvasSnap.docs.map(doc => String(doc.data().name || '')).filter(Boolean);
                 const allAgents = [...loadedMotorists, ...loadedCanvas].sort();
                 setAgentsList(allAgents);
-            } catch (error) { console.error("Failed to load Fleet Personnel:", error); }
+            } catch (error) {}
         };
         fetchAgents();
     }, [db, appId, user]);
@@ -492,7 +502,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id);
                 updateDoc(ref, {
                     assignedAgent: newAgent === 'Unassigned' ? deleteField() : newAgent
-                }).catch(console.error);
+                }).catch(() => {});
             }
         });
 
@@ -555,45 +565,34 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         setOrderedRoute(newRoute);
     };
 
-    const jumpToSequence = (oldIndex, newIndex) => {
-        if (oldIndex === newIndex) return;
-        const newRoute = [...orderedRoute];
-        const [movedStore] = newRoute.splice(oldIndex, 1);
-        newRoute.splice(newIndex, 0, movedStore);
-        setOrderedRoute(newRoute);
-    };
-
     const storeMetrics = useMemo(() => {
         const counters = {};
         const metrics = {};
         
         orderedRoute.forEach(store => {
             let agent = assignments[store.id] || 'Unassigned';
-            if (agent !== 'Unassigned' && !globalAgentList.includes(agent)) {
-                agent = 'Unassigned';
-            }
+            if (agent !== 'Unassigned' && !globalAgentList.includes(agent)) agent = 'Unassigned';
 
             if (!counters[agent]) counters[agent] = 0;
             counters[agent]++; 
             
             let color = '#64748b'; 
-            if (agent !== 'Unassigned') {
-                color = agentColors?.[agent] || getHashColor(agent);
-            }
+            if (agent !== 'Unassigned') color = agentColors?.[agent] || getHashColor(agent);
+            
             metrics[store.id] = { stopNumber: counters[agent], color, agentName: agent };
         });
         return metrics;
     }, [orderedRoute, assignments, globalAgentList, agentColors]);
 
     const getBountyStatus = (customer) => {
-        const freq = customer.visitFreq || 7;
+        if (!customer) return { text: "UNKNOWN TARGET", color: "bg-slate-600", border: "border-slate-500", flashing: false };
+        const freq = parseInt(customer.visitFreq) || 7;
         if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         
-        // 🚀 TITANIUM DATE PARSER
         try {
             const parseDate = (dStr) => {
                 const parts = String(dStr || '').split('T')[0].split('-');
-                if (parts.length < 3) return new Date(); // Failsafe
+                if (parts.length < 3) return new Date(); 
                 return new Date(parts[0], parts[1]-1, parts[2]);
             };
             
@@ -627,7 +626,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
                     setStreetRoute(flippedCoords);
                 }
-            } catch (error) { console.error("OSRM Routing failed:", error); }
+            } catch (error) {}
         };
         fetchRoute();
     }, [orderedRoute]); 
@@ -648,7 +647,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             if (logAudit) await logAudit("VISIT_UNDO", `Undid visit for ${customer.name}`);
             if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
-        } catch (error) { console.error("Undo Error:", error); alert("Failed to undo: " + error.message); }
+        } catch (error) { alert("Failed to undo: " + error.message); }
     };
 
     const confirmCheckIn = async (e) => {
@@ -671,7 +670,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             
             setCheckInCustomer(null);
             setIsSubmitting(false);
-        } catch (error) { console.error("Check-in Error:", error); alert("Failed to save report: " + error.message); setIsSubmitting(false); }
+        } catch (error) { alert("Failed to save report: " + error.message); setIsSubmitting(false); }
     };
 
     const QUICK_TAGS = ["Repeat Order 📦", "Stock Full (No Order) 🛑", "Competitor Issue ⚠️", "New Request 📝", "Store Closed 🔒"];
@@ -687,7 +686,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         });
     }, [orderedRoute, todayDate]);
 
-    // 🚀 THE HIERARCHICAL FOLDER ENGINE
     const groupedTree = useMemo(() => {
         const tree = {};
         sortedRoute.forEach(customer => {
@@ -711,8 +709,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         if (provs.length === 0) return null;
         
         const firstProv = provs[0];
-        const firstKab = Object.keys(groupedTree[firstProv] || {}).sort()[0];
-        const firstKec = Object.keys(groupedTree[firstProv]?.[firstKab] || {}).sort()[0];
+        const kabs = Object.keys(groupedTree[firstProv] || {}).sort();
+        const firstKab = kabs.length > 0 ? kabs[0] : 'Unknown';
+        const kecs = Object.keys(groupedTree[firstProv]?.[firstKab] || {}).sort();
+        const firstKec = kecs.length > 0 ? kecs[0] : 'Unknown';
         const defaultPath = `${firstProv}|${firstKab}|${firstKec}`;
 
         if (!userSelectedPath || !userSelectedPath.includes('|')) return defaultPath;
@@ -731,7 +731,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         sessionStorage.setItem('targetMapStore', storeId);
         if (setActiveTab) setActiveTab('map_war_room'); 
     };
-    const toggleSectorCollapse = (sectorName) => setCollapsedSectors(prev => ({ ...prev, [sectorName]: !prev[sectorName] }));
 
     const handleOpenLocation = (customer) => {
         if (customer.gmapsUrl) { 
@@ -739,7 +738,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            window.open(`https://maps.google.com/?q=${customer.latitude},${customer.longitude}`, '_blank');
+            // 🚀 URL PARSING FIX
+            window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -817,13 +817,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </div>
             </div>
 
-            {/* 🚀 JOURNEY MAP RADAR */}
             <div 
                 className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-[400px] lg:h-[500px] rounded-2xl'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
-                
-                {/* 🚀 COLLAPSIBLE UNIVERSAL UI (Paintbrush/Legend) */}
                 <div className="absolute bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-none">
                     <button 
                         onClick={() => setIsPanelOpen(!isPanelOpen)} 
@@ -887,7 +884,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     )}
                 </div>
 
-                {/* 🚀 DRAG PIN EDITING OVERLAY (COMPACT) */}
                 {editingStoreId && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
                         <div className="flex flex-col text-center">
@@ -901,12 +897,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </div>
                 )}
 
-                {/* 🚀 TOP RIGHT MAP CONTROLS */}
                 <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
                     <button 
                         onClick={() => {
                             setIsFullScreen(!isFullScreen);
-                            setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+                            setTimeout(() => window.dispatchEvent(new Event('resize')), 200); 
                         }}
                         className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-blue-400 transition-all active:scale-95 group flex items-center gap-2"
                         title="Toggle Fullscreen Map"
@@ -955,10 +950,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     )}
 
                     {showBorders && boundaries.map((boundary) => {
-                        const geoData = boundary.feature || boundary.geometry;
+                        const geoData = boundary?.feature || boundary?.geometry;
                         if (!geoData || !geoData.type) return null;
                         
-                        const isSelected = selectedKecamatan === boundary.name.toUpperCase();
+                        const boundName = String(boundary?.name || '').toUpperCase();
+                        const isSelected = selectedKecamatan === boundName;
                         const fillColor = isSelected ? '#f97316' : boundary.color || '#38bdf8';
                         
                         return (
@@ -967,7 +963,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 data={geoData}
                                 style={{ color: boundary.color || '#38bdf8', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
                                 onEachFeature={(f, layer) => {
-                                    const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; opacity: 0.8; white-space: nowrap;">${boundary.name}</div>`;
+                                    const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, -1px 1px 0 #000; opacity: 0.8; white-space: nowrap;">${String(boundary?.name || 'UNNAMED')}</div>`;
                                     layer.bindTooltip(ttContent, { permanent: true, direction: "center", className: "region-watermark-label" });
                                 }}
                             />
@@ -981,7 +977,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     {orderedRoute.map((store) => {
                         const hasLiveTxToday = !!todaysVisits[store.name.trim().toLowerCase()];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
-                        const activeTag = hasLiveTxToday ? '' : (store.lastVisitTag || '');
+                        const activeTag = String(hasLiveTxToday ? '' : (store.lastVisitTag || ''));
 
                         let iconHtml = '📍';
                         if (isVisited) {
@@ -995,15 +991,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         
                         const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                         const stopNum = metric.stopNumber;
-                        const globalIdx = orderedRoute.findIndex(s => s?.id === store.id);
                         const statusBadge = getBountyStatus(store);
                         const isEditing = editingStoreId === store.id;
 
-                        let ringColor;
-                        if (isVisited) ringColor = '#10b981'; 
-                        else if (metric.agentName === 'Unassigned') ringColor = '#94a3b8'; 
-                        else ringColor = metric.color; 
-                        
+                        let ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
@@ -1036,8 +1027,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     },
                                     dragend: (e) => {
                                         if (isEditing) {
-                                            const marker = e.target;
-                                            const pos = marker.getLatLng();
+                                            const pos = e.target.getLatLng();
                                             setTempPinLocation({ lat: pos.lat, lng: pos.lng });
                                         }
                                     }
@@ -1078,7 +1068,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             
                                             {isVisited ? (
                                                 <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
-                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (store.lastVisitTag || 'SECURED TODAY')}</span>
+                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : store.lastVisitTag}</span>
                                                     {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
                                                 </div>
                                             ) : (
@@ -1091,14 +1081,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 <div className="flex gap-2">
                                                     <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center gap-0.5">
                                                         <span className="block text-[8px] text-slate-500 uppercase font-black">Performance Rank</span>
-                                                        <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier || 'RETAIL'}</span>
-                                                        {store.priceTier && store.priceTier !== store.tier && (
+                                                        <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier}</span>
+                                                        {store.priceTier !== store.tier && (
                                                             <span className="text-[8px] text-blue-400 font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
                                                         )}
                                                     </div>
                                                     {store.phone ? (
                                                         <a 
-                                                            href={`https://wa.me/${store.phone.replace(/\D/g, '')}`} 
+                                                            href={`https://wa.me/${String(store.phone).replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noreferrer"
                                                             className="flex-1 bg-[#25D366]/10 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-[#25D366] p-2 rounded flex flex-col items-center justify-center transition-colors shadow-inner"
@@ -1154,7 +1144,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </MapContainer>
             </div>
 
-            {/* 🚀 THE HIERARCHICAL COMMAND MATRIX */}
             <div className="pt-6 space-y-8">
                 {(() => {
                     const safeVisits = typeof todaysVisits !== 'undefined' ? todaysVisits : {};
@@ -1174,10 +1163,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
                                                 {Object.keys(kecs).sort().map(kec => {
                                                     const sectorStores = kecs[kec];
-                                                    const completedInSector = sectorStores.filter(c => {
-                                                        const safeName = c.name.trim().toLowerCase();
-                                                        return c.lastVisit === todayDate || !!safeVisits[safeName];
-                                                    }).length;
+                                                    const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
                                                     const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
                                                     const currentPath = `${prov}|${kab}|${kec}`;
                                                     const isActive = activeSectorPath === currentPath;
@@ -1238,9 +1224,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
                                                 
                                                 const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
-                                                const tierLabel = customer.tier || 'Retail';
-                                                const priceLabel = customer.priceTier || 'Retail';
-                                                
                                                 const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                                                 const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
                                                 const statusBadge = getBountyStatus(customer);
@@ -1249,7 +1232,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                                         
                                                         {isVisited && (() => {
-                                                            const tag = hasLiveTxToday ? '' : (customer.lastVisitTag || '');
+                                                            const tag = String(hasLiveTxToday ? '' : (customer.lastVisitTag || ''));
                                                             let stampText = 'CLAIMED';
                                                             let bgOverlay = 'bg-emerald-900/20';
                                                             let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
@@ -1309,11 +1292,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 </div>
                                                                 <div className="flex gap-1 flex-wrap">
                                                                     <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
-                                                                        RANK: {tierLabel}
+                                                                        RANK: {customer.tier}
                                                                     </div>
-                                                                    {priceLabel !== tierLabel && (
+                                                                    {customer.priceTier !== customer.tier && (
                                                                         <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
-                                                                            PRICE: {priceLabel}
+                                                                            PRICE: {customer.priceTier}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -1327,7 +1310,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             
                                                             {isVisited ? (
                                                                 <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
-                                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (customer.lastVisitTag || 'SECURED TODAY')}</span>
+                                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : customer.lastVisitTag}</span>
                                                                     {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                                 </div>
                                                             ) : (
@@ -1340,7 +1323,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
                                                                     <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
                                                                     <div>
-                                                                        <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address || "Address classification unknown"}</p>
+                                                                        <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1479,7 +1462,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 .leaflet-tooltip.custom-leaflet-tooltip::before, .leaflet-tooltip.custom-leaflet-tooltip::after { display: none !important; }
                 .region-watermark-label { background: transparent !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; }
                 .region-watermark-label::before, .region-watermark-label::after { display: none !important; }
-                /* 🚀 FIXED: Bumps the Zoom Control down so it doesn't overlap the Hamburger Menu */
                 .leaflet-top.leaflet-left { margin-top: 70px !important; }
             `}</style>
         </div>
