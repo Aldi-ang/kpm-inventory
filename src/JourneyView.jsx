@@ -664,25 +664,52 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         return aVis - bVis; 
     });
 
-    const groupedRoute = useMemo(() => {
-        return sortedRoute.reduce((acc, customer) => {
-            const sector = customer._hierarchy?.Kecamatan || 'Unassigned Sector';
-            if (!acc[sector]) acc[sector] = [];
-            acc[sector].push(customer);
-            return acc;
-        }, {});
+    // 🚀 THE HIERARCHICAL FOLDER ENGINE: Builds a 3D tree (Provinsi > Kabupaten > Kecamatan)
+    const groupedTree = useMemo(() => {
+        const tree = {};
+        sortedRoute.forEach(customer => {
+            const prov = customer._hierarchy?.Provinsi || 'Unmapped Provinsi';
+            const kab = customer._hierarchy?.Kabupaten || 'Unmapped Kabupaten';
+            const kec = customer._hierarchy?.Kecamatan || 'Unmapped Kecamatan';
+            
+            if (!tree[prov]) tree[prov] = {};
+            if (!tree[prov][kab]) tree[prov][kab] = {};
+            if (!tree[prov][kab][kec]) tree[prov][kab][kec] = [];
+            
+            tree[prov][kab][kec].push(customer);
+        });
+        return tree;
     }, [sortedRoute]);
 
-    // 🚀 THE FOLDER NAVIGATION STATE: Tracks which Sector Tab is currently active
-    const [activeSectorTab, setActiveSectorTab] = useState(null);
+    // 🚀 THE NAVIGATION STATE: Tracks the exact coordinate path (Prov|Kab|Kec)
+    const [activeSectorPath, setActiveSectorPath] = useState(null);
 
     useEffect(() => {
-        const sectors = Object.keys(groupedRoute).sort();
-        // Auto-open the first folder if none is selected, or if the selected one disappears from filters
-        if (sectors.length > 0 && !sectors.includes(activeSectorTab)) {
-            setActiveSectorTab(sectors[0]);
+        const provs = Object.keys(groupedTree).sort();
+        if (provs.length > 0) {
+            const firstProv = provs[0];
+            const kabs = Object.keys(groupedTree[firstProv]).sort();
+            if (kabs.length > 0) {
+                const firstKab = kabs[0];
+                const kecs = Object.keys(groupedTree[firstProv][firstKab]).sort();
+                if (kecs.length > 0) {
+                    const firstPath = `${firstProv}|${firstKab}|${kecs[0]}`;
+                    
+                    // Auto-open if none selected OR if current filters wiped out the active tab
+                    if (!activeSectorPath) {
+                        setActiveSectorPath(firstPath);
+                    } else {
+                        const [currProv, currKab, currKec] = activeSectorPath.split('|');
+                        if (!groupedTree[currProv]?.[currKab]?.[currKec]) {
+                            setActiveSectorPath(firstPath);
+                        }
+                    }
+                }
+            }
+        } else {
+            setActiveSectorPath(null);
         }
-    }, [groupedRoute, activeSectorTab]);
+    }, [groupedTree, activeSectorPath]);
 
     // 🚀 THE DATA BRIDGE: Stamps the target into session memory before switching tabs
     const jumpToTerminal = (storeName) => { 
@@ -1134,225 +1161,246 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                 </MapContainer>
             </div>
 
-            {/* 🚀 THE HORIZONTAL COMMAND TABS */}
-            <div className="pt-6 space-y-6">
+            {/* 🚀 THE HIERARCHICAL COMMAND MATRIX */}
+            <div className="pt-6 space-y-8">
                 
-                {/* 1. The Scrollable Tab Bar */}
-                {Object.keys(groupedRoute).length > 0 && (
-                    <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
-                        {Object.keys(groupedRoute).sort().map(sectorName => {
-                            const sectorStores = groupedRoute[sectorName];
-                            const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate).length;
-                            const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
-                            const isActive = activeSectorTab === sectorName;
+                {/* 1. The Hierarchical Tab Rows */}
+                {Object.keys(groupedTree).sort().map(prov => {
+                    return Object.keys(groupedTree[prov]).sort().map(kab => {
+                        const kecs = groupedTree[prov][kab];
+                        
+                        return (
+                            <div key={`${prov}-${kab}`} className="mb-4">
+                                {/* Sleek Breadcrumb Header */}
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <MapPin size={12} className="text-slate-600"/> {prov} <ChevronRight size={10} className="text-slate-700"/> <span className="text-slate-400">{kab}</span>
+                                </h3>
+                                
+                                {/* Horizontal Folder Row for this specific Kabupaten */}
+                                <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
+                                    {Object.keys(kecs).sort().map(kec => {
+                                        const sectorStores = kecs[kec];
+                                        const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!todaysVisits[(c.name || '').trim().toLowerCase()]).length;
+                                        const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
+                                        const currentPath = `${prov}|${kab}|${kec}`;
+                                        const isActive = activeSectorPath === currentPath;
 
-                            return (
-                                <button 
-                                    key={sectorName}
-                                    onClick={() => setActiveSectorTab(sectorName)}
-                                    className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
-                                >
-                                    <div className="flex justify-between items-center w-full mb-2">
-                                        <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-500'} />
-                                        {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
-                                    </div>
-                                    <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
-                                        {sectorName}
-                                    </span>
-                                    <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-500')}`}>
-                                        {completedInSector} / {sectorStores.length} Secured
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
+                                        return (
+                                            <button 
+                                                key={currentPath}
+                                                onClick={() => setActiveSectorPath(currentPath)}
+                                                className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
+                                            >
+                                                <div className="flex justify-between items-center w-full mb-2">
+                                                    <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-500'} />
+                                                    {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
+                                                </div>
+                                                <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                                                    {kec}
+                                                </span>
+                                                <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-500')}`}>
+                                                    {completedInSector} / {sectorStores.length} Secured
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    });
+                })}
 
                 {/* 2. The Active Folder Grid */}
-                {activeSectorTab && groupedRoute[activeSectorTab] && (
-                    <div className="animate-fade-in bg-black/20 p-5 rounded-3xl border border-white/5">
-                        <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
-                            <div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
-                                    <div className="bg-orange-500/20 p-2 rounded-lg border border-orange-500/30">
-                                        <Layers size={18} className="text-orange-500"/>
-                                    </div>
-                                    {activeSectorTab}
-                                </h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
-                                    Target Grid Activated
-                                </p>
-                            </div>
-                        </div>
+                {activeSectorPath && (() => {
+                    const [actProv, actKab, actKec] = activeSectorPath.split('|');
+                    const activeStores = groupedTree[actProv]?.[actKab]?.[actKec];
+                    if (!activeStores) return null;
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                            {groupedRoute[activeSectorTab].map((customer) => {
-                                // 🚀 THE GHOST TAG OVERRIDE: Prevent old manual tags from overriding live sales
-                                const hasLiveTxToday = !!todaysVisits[(customer.name || '').trim().toLowerCase()];
-                                const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
-                                
-                                const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
-                                const tierLabel = customer.tier || 'Retail';
-                                const priceLabel = customer.priceTier || 'Retail';
-                                
-                                const metric = storeMetrics[customer.id];
-                                const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
-                                const statusBadge = getBountyStatus(customer);
-
-                                return (
-                                    <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
-                                        
-                                        {isVisited && (() => {
-                                            const tag = hasLiveTxToday ? '' : (customer.lastVisitTag || '');
-                                            let stampText = 'CLAIMED';
-                                            let bgOverlay = 'bg-emerald-900/20';
-                                            let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
-                                            let badgeBorder = 'border-emerald-500/30';
-                                            
-                                            if (tag.includes('🔒')) { stampText = 'CLOSED'; bgOverlay = 'bg-red-900/20'; boxBg = 'bg-red-900/95 text-red-400 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.6)]'; badgeBorder = 'border-red-500/30'; }
-                                            else if (tag.includes('🛑')) { stampText = 'FULL'; bgOverlay = 'bg-orange-900/20'; boxBg = 'bg-orange-900/95 text-orange-400 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.6)]'; badgeBorder = 'border-orange-500/30'; }
-                                            else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
-                                            else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
-                                            
-                                            const trueVisitorName = todaysVisits[customer.name.trim().toLowerCase()] || customer.lastVisitedBy || 'FLEET';
-
-                                            return (
-                                                <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
-                                                    <div className={`border-4 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 backdrop-blur-md ${boxBg}`}>
-                                                        <div className="text-2xl uppercase tracking-[0.2em] leading-none mb-1">{stampText}</div>
-                                                        <div className={`text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border shadow-inner max-w-[200px] truncate ${badgeBorder}`}>
-                                                            BY {String(trueVisitorName).toUpperCase().split(' ')[0]}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })()}
-
-                                        <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
-                                            <div className="flex gap-1 relative z-20">
-                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
-                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
-                                            </div>
-                                            <select 
-                                                className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${canAssignFleet && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
-                                                value={assignments[customer.id] || 'Unassigned'}
-                                                onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
-                                                style={{ colorScheme: 'dark' }}
-                                                disabled={!canAssignFleet || isVisited}
-                                            >
-                                                <option value="Unassigned">UNASSIGNED</option>
-                                                {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
-                                            </select>
+                    return (
+                        <div className="animate-fade-in bg-black/20 p-5 rounded-3xl border border-white/5 mt-6">
+                            <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
+                                        <div className="bg-orange-500/20 p-2 rounded-lg border border-orange-500/30">
+                                            <Layers size={18} className="text-orange-500"/>
                                         </div>
+                                        {actKec}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                                        <MapPin size={10} className="text-slate-500"/> {actProv} <ChevronRight size={10}/> {actKab}
+                                    </p>
+                                </div>
+                            </div>
 
-                                        <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
-                                            {customer.storeImage ? (
-                                                <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-                                                    <Store size={24} className="mb-1 opacity-50"/>
-                                                    <span className="text-[8px] font-black tracking-widest uppercase">No Intel</span>
-                                                </div>
-                                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                {activeStores.map((customer) => {
+                                    // 🚀 THE GHOST TAG OVERRIDE
+                                    const hasLiveTxToday = !!todaysVisits[(customer.name || '').trim().toLowerCase()];
+                                    const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
+                                    
+                                    const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
+                                    const tierLabel = customer.tier || 'Retail';
+                                    const priceLabel = customer.priceTier || 'Retail';
+                                    
+                                    const metric = storeMetrics[customer.id];
+                                    const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
+                                    const statusBadge = getBountyStatus(customer);
+
+                                    return (
+                                        <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                             
-                                            <div className="absolute top-2 left-2 flex flex-col gap-1.5">
-                                                <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
-                                                    <span style={{ color: ringColor }}>●</span>
-                                                    {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
-                                                    <span className="opacity-50">|</span> #{metric.stopNumber}
-                                                </div>
-                                                <div className="flex gap-1 flex-wrap">
-                                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
-                                                        RANK: {tierLabel}
-                                                    </div>
-                                                    {priceLabel !== tierLabel && (
-                                                        <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
-                                                            PRICE: {priceLabel}
+                                            {isVisited && (() => {
+                                                const tag = hasLiveTxToday ? '' : (customer.lastVisitTag || '');
+                                                let stampText = 'CLAIMED';
+                                                let bgOverlay = 'bg-emerald-900/20';
+                                                let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
+                                                let badgeBorder = 'border-emerald-500/30';
+                                                
+                                                if (tag.includes('🔒')) { stampText = 'CLOSED'; bgOverlay = 'bg-red-900/20'; boxBg = 'bg-red-900/95 text-red-400 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.6)]'; badgeBorder = 'border-red-500/30'; }
+                                                else if (tag.includes('🛑')) { stampText = 'FULL'; bgOverlay = 'bg-orange-900/20'; boxBg = 'bg-orange-900/95 text-orange-400 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.6)]'; badgeBorder = 'border-orange-500/30'; }
+                                                else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
+                                                else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
+                                                
+                                                const trueVisitorName = todaysVisits[customer.name.trim().toLowerCase()] || customer.lastVisitedBy || 'FLEET';
+
+                                                return (
+                                                    <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
+                                                        <div className={`border-4 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 backdrop-blur-md ${boxBg}`}>
+                                                            <div className="text-2xl uppercase tracking-[0.2em] leading-none mb-1">{stampText}</div>
+                                                            <div className={`text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border shadow-inner max-w-[200px] truncate ${badgeBorder}`}>
+                                                                BY {String(trueVisitorName).toUpperCase().split(' ')[0]}
+                                                            </div>
                                                         </div>
+                                                    </div>
+                                                )
+                                            })()}
+
+                                            <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
+                                                <div className="flex gap-1 relative z-20">
+                                                    <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
+                                                </div>
+                                                <select 
+                                                    className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${canAssignFleet && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                    value={assignments[customer.id] || 'Unassigned'}
+                                                    onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
+                                                    style={{ colorScheme: 'dark' }}
+                                                    disabled={!canAssignFleet || isVisited}
+                                                >
+                                                    <option value="Unassigned">UNASSIGNED</option>
+                                                    {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
+                                                </select>
+                                            </div>
+
+                                            <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
+                                                {customer.storeImage ? (
+                                                    <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                                                        <Store size={24} className="mb-1 opacity-50"/>
+                                                        <span className="text-[8px] font-black tracking-widest uppercase">No Intel</span>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                                                    <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
+                                                        <span style={{ color: ringColor }}>●</span>
+                                                        {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
+                                                        <span className="opacity-50">|</span> #{metric.stopNumber}
+                                                    </div>
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                            RANK: {tierLabel}
+                                                        </div>
+                                                        {priceLabel !== tierLabel && (
+                                                            <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                PRICE: {priceLabel}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
+                                                <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
+                                                    {customer.name}
+                                                </h3>
+                                                
+                                                {isVisited ? (
+                                                    <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
+                                                        <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (customer.lastVisitTag || 'SECURED TODAY')}</span>
+                                                        {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
+                                                    </div>
+                                                ) : (
+                                                    <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                        {statusBadge.text}
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="space-y-2 mb-4 flex-1">
+                                                    <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
+                                                        <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
+                                                        <div>
+                                                            <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address || "Address classification unknown"}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 mt-auto relative z-20">
+                                                    {!isVisited ? (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => jumpToTerminal(customer.name)}
+                                                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                            >
+                                                                <Crosshair size={14}/> Engage Target
+                                                            </button>
+                                                            
+                                                            <div className="flex gap-2">
+                                                                <button 
+                                                                    onClick={() => jumpToMap(customer.id)}
+                                                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
+                                                                >
+                                                                    <Globe size={12}/> Radar
+                                                                </button>
+                                                                
+                                                                <button 
+                                                                    onClick={() => handleOpenLocation(customer)}
+                                                                    className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
+                                                                    title="Navigate via Google Maps"
+                                                                >
+                                                                    <Navigation size={12}/> Navigate
+                                                                </button>
+
+                                                                <button 
+                                                                    onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
+                                                                    className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
+                                                                >
+                                                                    <AlertTriangle size={12}/> Log
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
+                                                                    handleUndoCheckIn(customer);
+                                                                }
+                                                            }}
+                                                            className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-3 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                                        >
+                                                            <RotateCcw size={14}/> Reverse Clearance
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
-                                                {customer.name}
-                                            </h3>
-                                            
-                                            {isVisited ? (
-                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
-                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (customer.lastVisitTag || 'SECURED TODAY')}</span>
-                                                    {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
-                                                </div>
-                                            ) : (
-                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
-                                                    {statusBadge.text}
-                                                </div>
-                                            )}
-                                            
-                                            <div className="space-y-2 mb-4 flex-1">
-                                                <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
-                                                    <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address || "Address classification unknown"}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col gap-2 mt-auto relative z-20">
-                                                {!isVisited ? (
-                                                    <>
-                                                        <button 
-                                                            onClick={() => jumpToTerminal(customer.name)}
-                                                            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
-                                                        >
-                                                            <Crosshair size={14}/> Engage Target
-                                                        </button>
-                                                        
-                                                        <div className="flex gap-2">
-                                                            <button 
-                                                                onClick={() => jumpToMap(customer.id)}
-                                                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
-                                                            >
-                                                                <Globe size={12}/> Radar
-                                                            </button>
-                                                            
-                                                            <button 
-                                                                onClick={() => handleOpenLocation(customer)}
-                                                                className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
-                                                                title="Navigate via Google Maps"
-                                                            >
-                                                                <Navigation size={12}/> Navigate
-                                                            </button>
-
-                                                            <button 
-                                                                onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
-                                                                className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
-                                                            >
-                                                                <AlertTriangle size={12}/> Log
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <button 
-                                                        onClick={() => {
-                                                            if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
-                                                                handleUndoCheckIn(customer);
-                                                            }
-                                                        }}
-                                                        className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-3 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
-                                                    >
-                                                        <RotateCcw size={14}/> Reverse Clearance
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
 
             {checkInCustomer && (
