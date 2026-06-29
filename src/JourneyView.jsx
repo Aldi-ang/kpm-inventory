@@ -945,14 +945,18 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                             lng = 110.2895;
                         }
                         
-                        const isVisited = store.lastVisit === todayDate;
+                        // 🚀 THE GHOST TAG OVERRIDE: Prioritize live sales over stale manual tags!
+                        const hasLiveTxToday = !!todaysVisits[(store.name || '').trim().toLowerCase()];
+                        const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
+                        const activeTag = hasLiveTxToday ? '' : (store.lastVisitTag || '');
+
                         let iconHtml = '📍';
                         if (isVisited) {
-                            if (store.lastVisitTag?.includes('📦')) iconHtml = '📦';
-                            else if (store.lastVisitTag?.includes('🛑')) iconHtml = '🛑';
-                            else if (store.lastVisitTag?.includes('⚠️')) iconHtml = '⚠️';
-                            else if (store.lastVisitTag?.includes('📝')) iconHtml = '📝';
-                            else if (store.lastVisitTag?.includes('🔒')) iconHtml = '🔒';
+                            if (activeTag.includes('📦')) iconHtml = '📦';
+                            else if (activeTag.includes('🛑')) iconHtml = '🛑';
+                            else if (activeTag.includes('⚠️')) iconHtml = '⚠️';
+                            else if (activeTag.includes('📝')) iconHtml = '📝';
+                            else if (activeTag.includes('🔒')) iconHtml = '🔒';
                             else iconHtml = '✅';
                         }
                         const metric = storeMetrics[store.id];
@@ -1041,8 +1045,8 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                             
                                             {isVisited ? (
                                                 <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
-                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {store.lastVisitTag || 'SECURED TODAY'}</span>
-                                                    {store.lastVisitNote && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
+                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (store.lastVisitTag || 'SECURED TODAY')}</span>
+                                                    {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
                                                 </div>
                                             ) : (
                                                 <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
@@ -1152,7 +1156,10 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
 
                                    {sectorStores.map((customer) => {
-                                        const isVisited = customer.lastVisit === todayDate;
+                                        // 🚀 THE GHOST TAG OVERRIDE: Prevent old manual tags from overriding live sales
+                                        const hasLiveTxToday = !!todaysVisits[(customer.name || '').trim().toLowerCase()];
+                                        const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
+                                        
                                         const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
                                         // 🚀 FIXED: Split the labels so Price Tier doesn't permanently hide the Performance Rank!
                                         const tierLabel = customer.tier || 'Retail';
@@ -1166,7 +1173,7 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                             <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
                                                 
                                                 {isVisited && (() => {
-                                                    const tag = customer.lastVisitTag || '';
+                                                    const tag = hasLiveTxToday ? '' : (customer.lastVisitTag || '');
                                                     let stampText = 'CLAIMED';
                                                     let bgOverlay = 'bg-emerald-900/20';
                                                     let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
@@ -1245,8 +1252,8 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                                     
                                                     {isVisited ? (
                                                         <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
-                                                            <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {customer.lastVisitTag || 'SECURED TODAY'}</span>
-                                                            {customer.lastVisitNote && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
+                                                            <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : (customer.lastVisitTag || 'SECURED TODAY')}</span>
+                                                            {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                         </div>
                                                     ) : (
                                                         <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
