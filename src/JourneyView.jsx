@@ -402,7 +402,12 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                 initialAssignments[c.id] = localCache[c.id];
             }
         });
-        setAssignments(initialAssignments);
+        
+        // 🚀 CRASH FIX 1: Check deep equality before setting state to prevent infinite render loops!
+        setAssignments(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(initialAssignments)) return initialAssignments;
+            return prev;
+        });
     }, [customers]);
 
     const handleAssignAgent = async (customerId, agentName) => {
@@ -658,7 +663,6 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
     const conqueredCount = orderedRoute.filter(c => c.lastVisit === todayDate).length;
     const progressPercent = orderedRoute.length > 0 ? Math.round((conqueredCount / orderedRoute.length) * 100) : 0;
 
-    // 🚀 CRASH FIX 1: Memoize sortedRoute to permanently stop the infinite re-render loop
     const sortedRoute = useMemo(() => {
         return [...(orderedRoute || [])].sort((a, b) => {
             const aVis = a?.lastVisit === todayDate ? 1 : 0;
@@ -685,36 +689,25 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
         return tree;
     }, [sortedRoute]);
 
-    const [activeSectorPath, setActiveSectorPath] = useState(null);
+    // 🚀 CRASH FIX 2: DERIVED STATE (No more useEffect loops!)
+    const [userSelectedPath, setUserSelectedPath] = useState(null);
 
-    // 🚀 CRASH FIX 2: Bulletproof Path Selector
-    useEffect(() => {
-        try {
-            const provs = Object.keys(groupedTree).sort();
-            if (provs.length === 0) {
-                if (activeSectorPath !== null) setActiveSectorPath(null);
-                return;
-            }
+    const activeSectorPath = useMemo(() => {
+        const provs = Object.keys(groupedTree).sort();
+        if (provs.length === 0) return null;
+        
+        const firstProv = provs[0];
+        const firstKab = Object.keys(groupedTree[firstProv] || {}).sort()[0];
+        const firstKec = Object.keys(groupedTree[firstProv]?.[firstKab] || {}).sort()[0];
+        const defaultPath = `${firstProv}|${firstKab}|${firstKec}`;
 
-            const firstProv = provs[0];
-            const kabs = Object.keys(groupedTree[firstProv]).sort();
-            const firstKab = kabs[0];
-            const kecs = Object.keys(groupedTree[firstProv][firstKab]).sort();
-            const firstKec = kecs[0];
-            const firstPath = `${firstProv}|${firstKab}|${firstKec}`;
+        if (!userSelectedPath || !userSelectedPath.includes('|')) return defaultPath;
 
-            if (!activeSectorPath || typeof activeSectorPath !== 'string' || !activeSectorPath.includes('|')) {
-                setActiveSectorPath(firstPath);
-            } else {
-                const [currProv, currKab, currKec] = activeSectorPath.split('|');
-                if (!groupedTree[currProv]?.[currKab]?.[currKec]) {
-                    setActiveSectorPath(firstPath);
-                }
-            }
-        } catch (e) {
-            console.error("Matrix Engine Error:", e);
-        }
-    }, [groupedTree, activeSectorPath]);
+        const [p, kb, kc] = userSelectedPath.split('|');
+        if (!groupedTree[p]?.[kb]?.[kc]) return defaultPath;
+
+        return userSelectedPath;
+    }, [groupedTree, userSelectedPath]);
 
     // 🚀 THE DATA BRIDGE: Stamps the target into session memory before switching tabs
     const jumpToTerminal = (storeName) => { 
@@ -1198,7 +1191,7 @@ const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, 
                                                     return (
                                                         <button 
                                                             key={currentPath}
-                                                            onClick={() => setActiveSectorPath(currentPath)}
+                                                            onClick={() => setUserSelectedPath(currentPath)}
                                                             className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
                                                         >
                                                             <div className="flex justify-between items-center w-full mb-2">
