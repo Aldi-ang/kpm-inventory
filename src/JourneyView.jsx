@@ -182,11 +182,12 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
         let fallbackKec = fallbackCity || 'UNMAPPED';
         let fallbackKab = fallbackRegion || 'MAGELANG';
         
-        if (fallbackKec.toLowerCase().includes('pemuda')) fallbackKec = 'MUNTILAN';
-        if (fallbackKab.toLowerCase().includes('pemuda')) fallbackKab = 'MAGELANG';
+        // 🚀 FATAL CRASH FIX 1: Force String conversion to prevent TypeErrors
+        if (String(fallbackKec).toLowerCase().includes('pemuda')) fallbackKec = 'MUNTILAN';
+        if (String(fallbackKab).toLowerCase().includes('pemuda')) fallbackKab = 'MAGELANG';
         
-        h.Kecamatan = fallbackKec.toUpperCase();
-        h.Kabupaten = fallbackKab.toUpperCase();
+        h.Kecamatan = String(fallbackKec).toUpperCase();
+        h.Kabupaten = String(fallbackKab).toUpperCase();
     }
     return h;
 };
@@ -469,9 +470,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         customers.forEach(c => {
             const currentAgent = c.assignedAgent;
             if (currentAgent && currentAgent !== 'Unassigned' && !agentsList.includes(currentAgent)) {
+                // 🚀 FATAL CRASH FIX 2: Prevent crash if assignedAgent is a corrupted object
+                const safeAgentStr = String(currentAgent).toLowerCase();
                 const match = agentsList.find(a => 
-                    currentAgent.toLowerCase().includes(a.toLowerCase()) || 
-                    a.toLowerCase().includes(currentAgent.toLowerCase())
+                    safeAgentStr.includes(String(a).toLowerCase()) || 
+                    String(a).toLowerCase().includes(safeAgentStr)
                 );
                 
                 const newAgent = match || 'Unassigned';
@@ -1069,9 +1072,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                         <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-emerald-900/95 border-emerald-500 text-white' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
                                             {isVisited ? (
-                                                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-400"/> SECURED BY {String(todaysVisits[store.name.trim().toLowerCase()] || store.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}</span>
+                                                <span className="flex items-center gap-1">
+                                                    <CheckCircle size={12} className="text-emerald-400"/> 
+                                                    {/* 🚀 CRASH FIX 3: Added String coercion to stop Fatal TypeErrors on ghost files */}
+                                                    SECURED BY {String(todaysVisits[String(store?.name || '').trim().toLowerCase()] || store?.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}
+                                                </span>
                                             ) : (
-                                                <><span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}</>
+                                                <><span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store?.name || 'UNKNOWN'}</>
                                             )}
                                         </div>
                                     </LeafletTooltip>
@@ -1199,7 +1206,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
                                                 {Object.keys(kecs).sort().map(kec => {
                                                     const sectorStores = kecs[kec];
-                                                    const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[(c.name || '').trim().toLowerCase()]).length;
+                                                    const completedInSector = sectorStores.filter(c => {
+                                                        const safeName = String(c?.name || '').trim().toLowerCase();
+                                                        return c.lastVisit === todayDate || !!safeVisits[safeName];
+                                                    }).length;
                                                     const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
                                                     const currentPath = `${prov}|${kab}|${kec}`;
                                                     const isActive = activeSectorPath === currentPath;
@@ -1256,14 +1266,15 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                                             {activeStores.map((customer) => {
-                                                const hasLiveTxToday = !!safeVisits[(customer.name || '').trim().toLowerCase()];
+                                                // 🚀 FATAL CRASH FIX: Coerce customer.name to String to permanently stop TypeErrors
+                                                const safeCustomerName = String(customer?.name || '').trim().toLowerCase();
+                                                const hasLiveTxToday = !!safeVisits[safeCustomerName];
                                                 const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
                                                 
                                                 const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
                                                 const tierLabel = customer.tier || 'Retail';
                                                 const priceLabel = customer.priceTier || 'Retail';
                                                 
-                                                // 🚀 CRASH FIX 1: Prevent crash if storeMetrics hasn't loaded this customer yet
                                                 const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                                                 const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
                                                 const statusBadge = getBountyStatus(customer);
@@ -1283,8 +1294,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
                                                             else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
                                                             
-                                                            // 🚀 CRASH FIX 2: Added (customer?.name || '') to stop Fatal TypeErrors on broken ghost files
-                                                            const trueVisitorName = safeVisits[(customer?.name || '').trim().toLowerCase()] || customer?.lastVisitedBy || 'FLEET';
+                                                            const trueVisitorName = safeVisits[safeCustomerName] || customer?.lastVisitedBy || 'FLEET';
 
                                                             return (
                                                                 <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
