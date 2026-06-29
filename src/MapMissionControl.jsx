@@ -176,6 +176,9 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
     }, [isEditing]);
 
     const handleLocateClick = () => {
+        // 🚀 THE FLARE GUN: Broadcasts the agent's live location to the global map 
+        window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
         if (userLocation) {
             map.flyTo(userLocation, 16, { duration: 1.2 });
         } else if ("geolocation" in navigator) {

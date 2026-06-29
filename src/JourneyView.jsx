@@ -203,9 +203,25 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
+// 🚀 INJECTED: Added transactions = [] to the props
+const JourneyView = ({ customers, transactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
     const todayDate = new Date().toISOString().split('T')[0];
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+    
+    // 🚀 THE INTELLIGENCE SCANNER: Finds out who ACTUALLY visited the store today
+    const todaysVisits = useMemo(() => {
+        const visitData = {};
+        // Scan all transactions from TODAY
+        const todaysTx = transactions.filter(t => t.date === todayDate);
+        todaysTx.forEach(tx => {
+            if (tx.customerName) {
+                const storeName = tx.customerName.trim().toLowerCase();
+                // We prefer the agentName from an actual sale over everything else
+                visitData[storeName] = tx.agentName || 'Unknown Agent';
+            }
+        });
+        return visitData;
+    }, [transactions, todayDate]);
     
     // 🚀 THE FAILSAFE PERMISSION ENGINE (Inverted Method)
     const [devUnlock, setDevUnlock] = useState(false);
@@ -618,11 +634,14 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
         if (!user || !checkInCustomer) return;
         setIsSubmitting(true);
         try {
+            // 🚀 ACCOUNTABILITY FIX: Grab the exact name of whoever pushed the log button
+            const trueAgentName = user.displayName || user.email.split('@')[0];
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, checkInCustomer.id);
             await updateDoc(customerRef, {
                 lastVisit: todayDate,
                 lastVisitNote: `[${visitTag}] ${visitNote}`,
                 lastVisitTag: visitTag,
+                lastVisitedBy: trueAgentName, // 🚀 RECORD THE ACTUAL AGENT!
                 updatedAt: serverTimestamp()
             });
 
@@ -994,7 +1013,7 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                     <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
                                         <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-emerald-900/95 border-emerald-500 text-white' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
                                             {isVisited ? (
-                                                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-400"/> SECURED BY {String(store.lastVisitedBy || store.lastVisitTag || 'FLEET').toUpperCase()}</span>
+                                                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-400"/> SECURED BY {String(todaysVisits[store.name.trim().toLowerCase()] || store.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}</span>
                                             ) : (
                                                 <><span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}</>
                                             )}
@@ -1158,12 +1177,15 @@ const JourneyView = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmi
                                                     else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
                                                     else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
                                                     
+                                                    // 🚀 THE ACCOUNTABILITY RESOLVER: Priorities Live Sales Data over manual logs!
+                                                    const trueVisitorName = todaysVisits[customer.name.trim().toLowerCase()] || customer.lastVisitedBy || 'FLEET';
+
                                                     return (
                                                         <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
                                                             <div className={`border-4 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 backdrop-blur-md ${boxBg}`}>
                                                                 <div className="text-2xl uppercase tracking-[0.2em] leading-none mb-1">{stampText}</div>
                                                                 <div className={`text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border shadow-inner max-w-[200px] truncate ${badgeBorder}`}>
-                                                                    BY {String(customer.lastVisitedBy || 'FLEET').toUpperCase()}
+                                                                    BY {String(trueVisitorName).toUpperCase().split(' ')[0]}
                                                                 </div>
                                                             </div>
                                                         </div>
