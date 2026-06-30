@@ -817,8 +817,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            // 🚀 CRASH FIX: Fixed malformed Google Maps URL syntax
-            window.open(`https://maps.google.com/?q=${customer.latitude},${customer.longitude}`, '_blank');
+            // 🚀 ACTUAL FIX: The real Google Maps Universal Search API
+            window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -1177,7 +1177,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         <div className="flex flex-col gap-1 relative group">
                                                             <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
                                                             <div className="text-[9px] text-slate-300 font-bold leading-tight pr-8">
-                                                                {store._hierarchy?.Provinsi} <span className="text-slate-600">&gt;</span> {store._hierarchy?.Kabupaten} <span className="text-slate-600">&gt;</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
+                                                                {store._hierarchy?.Provinsi} <span className="text-slate-600">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-slate-600">{' > '}</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
                                                             </div>
                                                             {canAssignFleet && (
                                                                 <button 
@@ -1265,80 +1265,138 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </MapContainer>
             </div>
 
-            <div className="pt-6 space-y-8">
+            <div className="pt-6 space-y-4 animate-fade-in">
                 {(() => {
                     const safeVisits = typeof todaysVisits !== 'undefined' ? todaysVisits : {};
+                    const provList = Object.keys(groupedTree).sort();
                     
                     return (
                         <>
-                            {Object.keys(groupedTree).sort().map(prov => {
-                                return Object.keys(groupedTree[prov]).sort().map(kab => {
-                                    const kecs = groupedTree[prov][kab];
-                                    
-                                    return (
-                                        <div key={`${prov}-${kab}`} className="mb-4">
-                                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                                <MapPin size={12} className="text-slate-600"/> {prov} <ChevronRight size={10} className="text-slate-700"/> <span className="text-slate-400">{kab}</span>
-                                            </h3>
-                                            
-                                            <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 lg:mx-0 lg:px-0">
-                                                {Object.keys(kecs).sort().map(kec => {
-                                                    const sectorStores = kecs[kec];
-                                                    const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
-                                                    const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
-                                                    const currentPath = `${prov}|${kab}|${kec}`;
-                                                    const isActive = activeSectorPath === currentPath;
-
-                                                    return (
-                                                        <button 
-                                                            key={currentPath}
-                                                            onClick={() => setUserSelectedPath(currentPath)}
-                                                            className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
-                                                        >
-                                                            <div className="flex justify-between items-center w-full mb-2">
-                                                                <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-500'} />
-                                                                {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
-                                                            </div>
-                                                            <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
-                                                                {kec}
-                                                            </span>
-                                                            <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-500')}`}>
-                                                                {completedInSector} / {sectorStores.length} Secured
-                                                            </div>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                });
-                            })}
-
-                            {activeSectorPath && (() => {
-                                const parts = activeSectorPath.split('|');
-                                if (parts.length !== 3) return null;
-                                const [actProv, actKab, actKec] = parts;
+                            {/* 🚀 TACTICAL BREADCRUMB NAVIGATION */}
+                            <div className="flex flex-wrap items-center gap-2 mb-2 bg-slate-900/80 backdrop-blur p-3 rounded-xl border border-slate-700 w-max shadow-lg">
+                                <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                                    <Layers size={14}/> Radar Hub
+                                </button>
                                 
-                                const activeStores = groupedTree[actProv]?.[actKab]?.[actKec];
-                                if (!activeStores) return null;
+                                {selectedProvinsi !== 'All' && (
+                                    <>
+                                        <ChevronRight size={14} className="text-slate-600"/>
+                                        <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                                            {selectedProvinsi}
+                                        </button>
+                                    </>
+                                )}
 
+                                {selectedProvinsi !== 'All' && selectedKabupaten !== 'All' && (
+                                    <>
+                                        <ChevronRight size={14} className="text-slate-600"/>
+                                        <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{selectedKabupaten}</span>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* 🚀 LEVEL 1: PROVINSI FOLDERS */}
+                            {selectedProvinsi === 'All' && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                                    {provList.map(prov => {
+                                        const kabCount = Object.keys(groupedTree[prov] || {}).length;
+                                        let storeCount = 0;
+                                        Object.values(groupedTree[prov] || {}).forEach(k => Object.values(k).forEach(c => storeCount += c.length));
+                                        
+                                        return (
+                                            <button key={prov} onClick={() => setSelectedProvinsi(prov)} className="bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-orange-500 p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:-translate-y-1 text-left">
+                                                <div className="p-3 bg-slate-800 group-hover:bg-orange-500/20 rounded-xl text-slate-400 group-hover:text-orange-500 transition-colors">
+                                                    <MapPin size={24} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* 🚀 LEVEL 2: KABUPATEN FOLDERS */}
+                            {selectedProvinsi !== 'All' && selectedKabupaten === 'All' && groupedTree[selectedProvinsi] && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 animate-fade-in-up">
+                                    {Object.keys(groupedTree[selectedProvinsi]).sort().map(kab => {
+                                        const kecCount = Object.keys(groupedTree[selectedProvinsi][kab] || {}).length;
+                                        let storeCount = 0;
+                                        Object.values(groupedTree[selectedProvinsi][kab] || {}).forEach(c => storeCount += c.length);
+
+                                        return (
+                                            <button key={kab} onClick={() => setSelectedKabupaten(kab)} className="bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-500 p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-1 text-left">
+                                                <div className="p-3 bg-slate-800 group-hover:bg-blue-500/20 rounded-xl text-slate-400 group-hover:text-blue-500 transition-colors">
+                                                    <Layers size={24} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* 🚀 LEVEL 3: KECAMATAN SECTORS & STORE GRID */}
+                            {selectedProvinsi !== 'All' && selectedKabupaten !== 'All' && groupedTree[selectedProvinsi]?.[selectedKabupaten] && (() => {
+                                const kecs = groupedTree[selectedProvinsi][selectedKabupaten];
+                                
                                 return (
-                                    <div className="animate-fade-in bg-black/20 p-5 rounded-3xl border border-white/5 mt-6">
-                                        <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
-                                            <div>
-                                                <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
-                                                    <div className="bg-orange-500/20 p-2 rounded-lg border border-orange-500/30">
-                                                        <Layers size={18} className="text-orange-500"/>
-                                                    </div>
-                                                    {actKec}
-                                                </h3>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                                                    <MapPin size={10} className="text-slate-500"/> {actProv} <ChevronRight size={10}/> {actKab}
-                                                </p>
-                                            </div>
+                                    <div className="animate-fade-in mt-4">
+                                        <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0">
+                                            {Object.keys(kecs).sort().map(kec => {
+                                                const sectorStores = kecs[kec];
+                                                const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
+                                                const isCleared = completedInSector === sectorStores.length && sectorStores.length > 0;
+                                                const currentPath = `${selectedProvinsi}|${selectedKabupaten}|${kec}`;
+                                                const isActive = activeSectorPath === currentPath;
+
+                                                return (
+                                                    <button 
+                                                        key={currentPath}
+                                                        onClick={() => setUserSelectedPath(currentPath)}
+                                                        className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                    >
+                                                        <div className="flex justify-between items-center w-full mb-2">
+                                                            <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-500'} />
+                                                            {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
+                                                        </div>
+                                                        <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                                                            {kec}
+                                                        </span>
+                                                        <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-500')}`}>
+                                                            {completedInSector} / {sectorStores.length} Secured
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                        {activeSectorPath && activeSectorPath.startsWith(`${selectedProvinsi}|${selectedKabupaten}`) && (() => {
+                                            const parts = activeSectorPath.split('|');
+                                            if (parts.length !== 3) return null;
+                                            const actKec = parts[2];
+                                            const activeStores = groupedTree[selectedProvinsi][selectedKabupaten][actKec];
+                                            if (!activeStores) return null;
+
+                                            return (
+                                                <div className="animate-fade-in bg-black/20 p-5 rounded-3xl border border-white/5 mt-2">
+                                                    <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
+                                                                <div className="bg-orange-500/20 p-2 rounded-lg border border-orange-500/30">
+                                                                    <Layers size={18} className="text-orange-500"/>
+                                                                </div>
+                                                                {actKec}
+                                                            </h3>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                                             {activeStores.map((customer) => {
                                                 const safeCustomerName = customer.name.trim().toLowerCase();
                                                 const hasLiveTxToday = !!safeVisits[safeCustomerName];
@@ -1504,6 +1562,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     </div>
                                 );
                             })()}
+                        </div> 
+                                ); 
+                            })()} {/* 🚀 CRASH FIX: Properly closed the Level 3 React Function (IIFE)! */}
                         </>
                     );
                 })()}
