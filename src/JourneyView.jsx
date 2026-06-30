@@ -568,15 +568,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         return Array.from(agents).sort();
     }, [agentsList, customers, assignments]);
 
+    // 🚀 THE FIX: Single Source of Truth for reactive hierarchy mapping.
+    // This prevents React from caching stale "UNMAPPED" data before geofences fully load.
+    const mappedCustomers = useMemo(() => {
+        return customers.map(c => ({
+            ...c,
+            _hierarchy: getStoreHierarchy(c, boundaries)
+        }));
+    }, [customers, boundaries]);
+
     const hierarchyData = useMemo(() => {
         const provs = new Set();
         const kabs = new Set();
         const kecs = new Set();
         
-        customers.forEach(c => {
-            // 🚀 PERFECT SYNC: Pass the sanitized customer object AND boundaries
-            const h = getStoreHierarchy(c, boundaries);
-            c._hierarchy = h; 
+        mappedCustomers.forEach(c => {
+            const h = c._hierarchy; 
             provs.add(h.Provinsi);
             
             if (selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) kabs.add(h.Kabupaten);
@@ -587,10 +594,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         });
         
         return { provs: Array.from(provs).sort(), kabs: Array.from(kabs).sort(), kecs: Array.from(kecs).sort() };
-    }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
+    }, [mappedCustomers, selectedProvinsi, selectedKabupaten]);
 
     useEffect(() => {
-        let baseRoute = customers.filter(c => {
+        let baseRoute = mappedCustomers.filter(c => {
             return c.visitFreq === 7 || c.visitDay === selectedDay;
         });
         
@@ -600,7 +607,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         if (selectedKecamatan !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kecamatan === selectedKecamatan);
         
         setOrderedRoute(baseRoute);
-    }, [customers, selectedDay, selectedAgent, selectedProvinsi, selectedKabupaten, selectedKecamatan, assignments]);
+    }, [mappedCustomers, selectedDay, selectedAgent, selectedProvinsi, selectedKabupaten, selectedKecamatan, assignments]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
