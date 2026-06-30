@@ -155,46 +155,46 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 
-// 🧠 SMART DICTIONARY (DEEP SCAN)
+// 🧠 EXACT 1:1 CLONE: CUSTOMER MANAGER SMART DICTIONARY
 const guessKecamatan = (text) => {
     const str = String(text || '').toLowerCase();
-    if (str.includes('muntilan') || str.includes('pemuda')) return 'MUNTILAN';
-    if (str.includes('mertoyudan')) return 'MERTOYUDAN';
-    if (str.includes('salaman')) return 'SALAMAN';
-    if (str.includes('secang')) return 'SECANG';
-    if (str.includes('borobudur')) return 'BOROBUDUR';
-    if (str.includes('mlati')) return 'MLATI';
-    if (str.includes('depok')) return 'DEPOK';
-    return 'UNMAPPED';
+    if (str.includes('muntilan') || str.includes('pemuda')) return 'Muntilan';
+    if (str.includes('mertoyudan')) return 'Mertoyudan';
+    if (str.includes('salaman')) return 'Salaman';
+    if (str.includes('secang')) return 'Secang';
+    if (str.includes('borobudur')) return 'Borobudur';
+    if (str.includes('mlati')) return 'Mlati';
+    if (str.includes('depok')) return 'Depok';
+    return '';
 };
 
 const guessKabupaten = (text) => {
     const str = String(text || '').toLowerCase();
-    if (str.includes('magelang') || str.includes('muntilan') || str.includes('mertoyudan') || str.includes('salaman') || str.includes('secang') || str.includes('borobudur')) return 'MAGELANG';
-    if (str.includes('boyolali')) return 'BOYOLALI';
-    if (str.includes('sleman') || str.includes('mlati') || str.includes('depok')) return 'SLEMAN';
-    if (str.includes('solo') || str.includes('surakarta')) return 'SURAKARTA';
-    if (str.includes('bantul')) return 'BANTUL';
-    if (str.includes('klaten')) return 'KLATEN';
-    return 'UNMAPPED';
+    if (str.includes('magelang') || str.includes('muntilan') || str.includes('mertoyudan') || str.includes('salaman') || str.includes('secang') || str.includes('borobudur')) return 'Magelang';
+    if (str.includes('boyolali')) return 'Boyolali';
+    if (str.includes('sleman') || str.includes('mlati') || str.includes('depok')) return 'Sleman';
+    if (str.includes('solo') || str.includes('surakarta')) return 'Surakarta';
+    if (str.includes('bantul')) return 'Bantul';
+    if (str.includes('klaten')) return 'Klaten';
+    return '';
 };
 
 const guessProvince = (text) => {
     const str = String(text || '').toLowerCase();
-    if (str.includes('magelang') || str.includes('muntilan') || str.includes('boyolali') || str.includes('solo') || str.includes('surakarta') || str.includes('klaten') || str.includes('semarang')) return 'JAWA TENGAH';
-    if (str.includes('yogya') || str.includes('sleman') || str.includes('bantul') || str.includes('gunungkidul') || str.includes('kulon')) return 'DI YOGYAKARTA';
-    return 'UNMAPPED';
+    if (str.includes('magelang') || str.includes('muntilan') || str.includes('boyolali') || str.includes('solo') || str.includes('surakarta') || str.includes('klaten') || str.includes('semarang')) return 'Jawa Tengah';
+    if (str.includes('yogya') || str.includes('sleman') || str.includes('bantul') || str.includes('gunungkidul') || str.includes('kulon')) return 'DI Yogyakarta';
+    return '';
 };
 
-// 🚀 UPGRADED: 1:1 CRM Hierarchy Engine (Dictionary + Geospatial + DB)
+// 🚀 UPGRADED: 1:1 CRM Hierarchy Engine
 const getStoreHierarchy = (customer, boundaries) => {
-    let prov = String(customer.province || customer.provinsi || '').trim();
+    let prov = String(customer.province || '').trim();
     let kab = String(customer.region || '').trim();
     let kec = String(customer.city || '').trim();
     
     const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
 
-    // 📍 1. GEOSPATIAL AUTO-DETECTION (Identical to CRM)
+    // 📍 1. GEOSPATIAL AUTO-DETECTION
     const fLng = parseFloat(customer.longitude);
     const fLat = parseFloat(customer.latitude);
     if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && !isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
@@ -212,26 +212,30 @@ const getStoreHierarchy = (customer, boundaries) => {
         }
     }
 
-    // 🧠 2. SMART TEXT DICTIONARY (Identical to CRM)
+    // 🧠 2. SMART TEXT DICTIONARY (Only runs if field is empty, exactly like CRM)
     const searchText = `${customer.address || ''} ${customer.name || ''} ${kab} ${kec}`.toLowerCase();
-    if (isUnknown(kec) || !kec) {
+    if (!kec || isUnknown(kec)) {
         const guessed = guessKecamatan(searchText);
         if (guessed) kec = guessed;
     }
-    if (isUnknown(kab) || !kab) {
+    if (!kab || isUnknown(kab)) {
         const guessed = guessKabupaten(searchText);
         if (guessed) kab = guessed;
     }
-    if (isUnknown(prov) || !prov) {
+    if (!prov || isUnknown(prov)) {
         const guessed = guessProvince(searchText);
         if (guessed) prov = guessed;
     }
 
     // 🛡️ 3. ABSOLUTE FALLBACK
+    if (!prov || isUnknown(prov)) prov = 'UNMAPPED';
+    if (!kab || isUnknown(kab)) kab = 'UNMAPPED';
+    if (!kec || isUnknown(kec)) kec = 'UNMAPPED';
+
     return {
-        Provinsi: (prov || 'UNKNOWN PROVINSI').toUpperCase(),
-        Kabupaten: (kab || 'UNKNOWN KABUPATEN').toUpperCase(),
-        Kecamatan: (kec || 'UNKNOWN KECAMATAN').toUpperCase()
+        Provinsi: prov.toUpperCase(),
+        Kabupaten: kab.toUpperCase(),
+        Kecamatan: kec.toUpperCase()
     };
 };
 
@@ -258,9 +262,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             address: String(c.address || 'Address classification unknown'),
             phone: c.phone ? String(c.phone) : '',
             storeImage: c.storeImage ? String(c.storeImage) : '',
-            city: String(c.city || 'UNMAPPED'),
-            region: String(c.region || 'UNMAPPED'),
-            province: String(c.province || c.provinsi || 'UNMAPPED'),
+            city: c.city ? String(c.city) : '',
+            region: c.region ? String(c.region) : '',
+            province: (c.province || c.provinsi) ? String(c.province || c.provinsi) : '',
             assignedAgent: c.assignedAgent ? String(c.assignedAgent) : 'Unassigned',
             lastVisit: c.lastVisit ? String(c.lastVisit) : '',
             lastVisitTag: c.lastVisitTag ? String(c.lastVisitTag) : '',
