@@ -155,11 +155,42 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 
-// 🚀 UPGRADED: Dynamic Hierarchy Engine (Reads 3-level depth from DB)
-const getStoreHierarchy = (lng, lat, fallbackKec, fallbackKab, fallbackProv, boundaries) => {
+// 🧠 SMART DICTIONARY (DEEP SCAN)
+const guessKecamatan = (text) => {
+    const str = String(text || '').toLowerCase();
+    if (str.includes('muntilan') || str.includes('pemuda')) return 'MUNTILAN';
+    if (str.includes('mertoyudan')) return 'MERTOYUDAN';
+    if (str.includes('salaman')) return 'SALAMAN';
+    if (str.includes('secang')) return 'SECANG';
+    if (str.includes('borobudur')) return 'BOROBUDUR';
+    if (str.includes('mlati')) return 'MLATI';
+    if (str.includes('depok')) return 'DEPOK';
+    return 'UNMAPPED';
+};
+
+const guessKabupaten = (text) => {
+    const str = String(text || '').toLowerCase();
+    if (str.includes('magelang') || str.includes('muntilan') || str.includes('mertoyudan') || str.includes('salaman') || str.includes('secang') || str.includes('borobudur')) return 'MAGELANG';
+    if (str.includes('boyolali')) return 'BOYOLALI';
+    if (str.includes('sleman') || str.includes('mlati') || str.includes('depok')) return 'SLEMAN';
+    if (str.includes('solo') || str.includes('surakarta')) return 'SURAKARTA';
+    if (str.includes('bantul')) return 'BANTUL';
+    if (str.includes('klaten')) return 'KLATEN';
+    return 'UNMAPPED';
+};
+
+const guessProvince = (text) => {
+    const str = String(text || '').toLowerCase();
+    if (str.includes('magelang') || str.includes('muntilan') || str.includes('boyolali') || str.includes('solo') || str.includes('surakarta') || str.includes('klaten') || str.includes('semarang')) return 'JAWA TENGAH';
+    if (str.includes('yogya') || str.includes('sleman') || str.includes('bantul') || str.includes('gunungkidul') || str.includes('kulon')) return 'DI YOGYAKARTA';
+    return 'UNMAPPED';
+};
+
+// 🚀 UPGRADED: Dynamic Hierarchy Engine (Synced with CustomerManager Smart Dictionary)
+const getStoreHierarchy = (customer, boundaries) => {
     let h = { Provinsi: 'UNMAPPED', Kabupaten: 'UNMAPPED', Kecamatan: 'UNMAPPED' }; 
-    const fLng = parseFloat(lng);
-    const fLat = parseFloat(lat);
+    const fLng = parseFloat(customer.longitude);
+    const fLat = parseFloat(customer.latitude);
     let foundGeofence = false;
 
     if (!isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
@@ -182,16 +213,31 @@ const getStoreHierarchy = (lng, lat, fallbackKec, fallbackKab, fallbackProv, bou
         }
     }
     
-    // 🚀 DYNAMIC FALLBACK: Fills missing data directly from the Database instead of hardcoding Jawa Tengah!
+    // 🚀 DYNAMIC FALLBACK: Smart Text Dictionary Scan
     if (!foundGeofence || h.Provinsi === 'UNMAPPED' || h.Kabupaten === 'UNMAPPED') {
-        let safeKec = String(fallbackKec || 'UNMAPPED').toUpperCase();
-        let safeKab = String(fallbackKab || 'UNMAPPED').toUpperCase();
-        let safeProv = String(fallbackProv || 'UNMAPPED').toUpperCase();
+        let safeKec = String(customer.city || 'UNMAPPED').toUpperCase();
+        let safeKab = String(customer.region || 'UNMAPPED').toUpperCase();
+        let safeProv = String(customer.province || customer.provinsi || 'UNMAPPED').toUpperCase();
         
-        if (safeKec.includes('PEMUDA')) safeKec = 'MUNTILAN';
-        if (safeKab.includes('PEMUDA')) safeKab = 'MAGELANG';
-        if (safeProv === 'UNMAPPED' && safeKab === 'MAGELANG') safeProv = 'JAWA TENGAH';
+        const isUnknown = (str) => !str || str === 'UNMAPPED' || str === 'UNKNOWN KECAMATAN' || str === 'UNKNOWN KABUPATEN' || str === 'UNKNOWN PROVINSI';
+
+        const searchText = `${customer.address || ''} ${customer.name || ''} ${safeKab} ${safeKec}`.toLowerCase();
         
+        if (isUnknown(safeKec)) {
+            const guessedKec = guessKecamatan(searchText);
+            if (guessedKec !== 'UNMAPPED') safeKec = guessedKec;
+        }
+        
+        if (isUnknown(safeKab)) {
+            const guessedKab = guessKabupaten(searchText);
+            if (guessedKab !== 'UNMAPPED') safeKab = guessedKab;
+        }
+        
+        if (isUnknown(safeProv)) {
+            const guessedProv = guessProvince(searchText);
+            if (guessedProv !== 'UNMAPPED') safeProv = guessedProv;
+        }
+
         if (!foundGeofence) h.Kecamatan = safeKec;
         if (h.Kabupaten === 'UNMAPPED') h.Kabupaten = safeKab;
         if (h.Provinsi === 'UNMAPPED') h.Provinsi = safeProv;
@@ -533,8 +579,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const kecs = new Set();
         
         customers.forEach(c => {
-            // 🚀 UPGRADED: Pass province natively from the database object
-            const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, c.province || c.provinsi, boundaries);
+            // 🚀 UPGRADED: Pass full customer object for Smart Dictionary scan
+            const h = getStoreHierarchy(c, boundaries);
             c._hierarchy = h; 
             provs.add(h.Provinsi);
             
