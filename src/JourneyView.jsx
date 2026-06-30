@@ -186,63 +186,21 @@ const guessProvince = (text) => {
     return 'UNMAPPED';
 };
 
-// 🚀 UPGRADED: Dynamic Hierarchy Engine (Synced with CustomerManager Smart Dictionary)
-const getStoreHierarchy = (customer, boundaries) => {
-    let h = { Provinsi: 'UNMAPPED', Kabupaten: 'UNMAPPED', Kecamatan: 'UNMAPPED' }; 
-    const fLng = parseFloat(customer.longitude);
-    const fLat = parseFloat(customer.latitude);
-    let foundGeofence = false;
+// 🚀 STRICT DB-DRIVEN HIERARCHY (Mirrors CustomerManager Exactly)
+const getStoreHierarchy = (customer) => {
+    // By disabling geofence/dictionary guesses here, JourneyView perfectly
+    // mirrors whatever folder structure you explicitly set in CustomerManager.
+    let rawProv = String(customer.province || customer.provinsi || '').trim().toUpperCase();
+    let rawKab = String(customer.region || '').trim().toUpperCase();
+    let rawKec = String(customer.city || '').trim().toUpperCase();
 
-    if (!isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
-        const sortedBnd = [...boundaries].sort((a,b) => {
-            const w = { 'Desa': 4, 'Kecamatan': 3, 'Kabupaten': 2, 'Provinsi': 1 };
-            return (w[b.level] || 0) - (w[a.level] || 0);
-        });
+    const isUnknown = (str) => !str || str === 'UNMAPPED' || str.includes('UNKNOWN');
 
-        for (let b of sortedBnd) {
-            const geo = b.feature || b.geometry;
-            if (geo && checkPointInGeoJSON(fLng, fLat, geo)) {
-                if (b.level === 'Provinsi') h.Provinsi = String(b.name || '').toUpperCase();
-                else if (b.level === 'Kabupaten') h.Kabupaten = String(b.name || '').toUpperCase();
-                else {
-                    h.Kecamatan = String(b.name || '').toUpperCase(); 
-                    foundGeofence = true;
-                    break; 
-                }
-            }
-        }
-    }
-    
-    // 🚀 DYNAMIC FALLBACK: Smart Text Dictionary Scan
-    if (!foundGeofence || h.Provinsi === 'UNMAPPED' || h.Kabupaten === 'UNMAPPED') {
-        let safeKec = String(customer.city || 'UNMAPPED').toUpperCase();
-        let safeKab = String(customer.region || 'UNMAPPED').toUpperCase();
-        let safeProv = String(customer.province || customer.provinsi || 'UNMAPPED').toUpperCase();
-        
-        const isUnknown = (str) => !str || str === 'UNMAPPED' || str === 'UNKNOWN KECAMATAN' || str === 'UNKNOWN KABUPATEN' || str === 'UNKNOWN PROVINSI';
-
-        const searchText = `${customer.address || ''} ${customer.name || ''} ${safeKab} ${safeKec}`.toLowerCase();
-        
-        if (isUnknown(safeKec)) {
-            const guessedKec = guessKecamatan(searchText);
-            if (guessedKec !== 'UNMAPPED') safeKec = guessedKec;
-        }
-        
-        if (isUnknown(safeKab)) {
-            const guessedKab = guessKabupaten(searchText);
-            if (guessedKab !== 'UNMAPPED') safeKab = guessedKab;
-        }
-        
-        if (isUnknown(safeProv)) {
-            const guessedProv = guessProvince(searchText);
-            if (guessedProv !== 'UNMAPPED') safeProv = guessedProv;
-        }
-
-        if (!foundGeofence) h.Kecamatan = safeKec;
-        if (h.Kabupaten === 'UNMAPPED') h.Kabupaten = safeKab;
-        if (h.Provinsi === 'UNMAPPED') h.Provinsi = safeProv;
-    }
-    return h;
+    return {
+        Provinsi: isUnknown(rawProv) ? 'UNMAPPED' : rawProv,
+        Kabupaten: isUnknown(rawKab) ? 'UNMAPPED' : rawKab,
+        Kecamatan: isUnknown(rawKec) ? 'UNMAPPED' : rawKec
+    };
 };
 
 const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
@@ -270,6 +228,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             storeImage: c.storeImage ? String(c.storeImage) : '',
             city: String(c.city || 'UNMAPPED'),
             region: String(c.region || 'UNMAPPED'),
+            province: String(c.province || c.provinsi || 'UNMAPPED'),
             assignedAgent: c.assignedAgent ? String(c.assignedAgent) : 'Unassigned',
             lastVisit: c.lastVisit ? String(c.lastVisit) : '',
             lastVisitTag: c.lastVisitTag ? String(c.lastVisitTag) : '',
@@ -579,8 +538,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const kecs = new Set();
         
         customers.forEach(c => {
-            // 🚀 UPGRADED: Pass full customer object for Smart Dictionary scan
-            const h = getStoreHierarchy(c, boundaries);
+            // 🚀 PERFECT SYNC: Pass the sanitized customer object directly
+            const h = getStoreHierarchy(c);
             c._hierarchy = h; 
             provs.add(h.Provinsi);
             
@@ -592,7 +551,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         });
         
         return { provs: Array.from(provs).sort(), kabs: Array.from(kabs).sort(), kecs: Array.from(kecs).sort() };
-    }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
+    }, [customers, selectedProvinsi, selectedKabupaten]);
 
     useEffect(() => {
         let baseRoute = customers.filter(c => {
