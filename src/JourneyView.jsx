@@ -186,20 +186,52 @@ const guessProvince = (text) => {
     return 'UNMAPPED';
 };
 
-// 🚀 STRICT DB-DRIVEN HIERARCHY (Mirrors CustomerManager Exactly)
-const getStoreHierarchy = (customer) => {
-    // By disabling geofence/dictionary guesses here, JourneyView perfectly
-    // mirrors whatever folder structure you explicitly set in CustomerManager.
-    let rawProv = String(customer.province || customer.provinsi || '').trim().toUpperCase();
-    let rawKab = String(customer.region || '').trim().toUpperCase();
-    let rawKec = String(customer.city || '').trim().toUpperCase();
+// 🚀 UPGRADED: 1:1 CRM Hierarchy Engine (Dictionary + Geospatial + DB)
+const getStoreHierarchy = (customer, boundaries) => {
+    let prov = String(customer.province || customer.provinsi || '').trim();
+    let kab = String(customer.region || '').trim();
+    let kec = String(customer.city || '').trim();
+    
+    const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
 
-    const isUnknown = (str) => !str || str === 'UNMAPPED' || str.includes('UNKNOWN');
+    // 📍 1. GEOSPATIAL AUTO-DETECTION (Identical to CRM)
+    const fLng = parseFloat(customer.longitude);
+    const fLat = parseFloat(customer.latitude);
+    if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && !isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
+        const sortedBnd = [...boundaries].sort((a,b) => {
+            const w = { 'Desa': 1, 'Kecamatan': 2, 'Kabupaten': 3, 'Provinsi': 4 };
+            return (w[a.level] || 0) - (w[b.level] || 0);
+        });
+        for (let b of sortedBnd) {
+            const geo = b.feature || b.geometry;
+            if (geo && checkPointInGeoJSON(fLng, fLat, geo)) {
+                if (b.level === 'Provinsi' && isUnknown(prov)) prov = b.name;
+                if (b.level === 'Kabupaten' && isUnknown(kab)) kab = b.name;
+                if (b.level === 'Kecamatan' && isUnknown(kec)) kec = b.name;
+            }
+        }
+    }
 
+    // 🧠 2. SMART TEXT DICTIONARY (Identical to CRM)
+    const searchText = `${customer.address || ''} ${customer.name || ''} ${kab} ${kec}`.toLowerCase();
+    if (isUnknown(kec) || !kec) {
+        const guessed = guessKecamatan(searchText);
+        if (guessed) kec = guessed;
+    }
+    if (isUnknown(kab) || !kab) {
+        const guessed = guessKabupaten(searchText);
+        if (guessed) kab = guessed;
+    }
+    if (isUnknown(prov) || !prov) {
+        const guessed = guessProvince(searchText);
+        if (guessed) prov = guessed;
+    }
+
+    // 🛡️ 3. ABSOLUTE FALLBACK
     return {
-        Provinsi: isUnknown(rawProv) ? 'UNMAPPED' : rawProv,
-        Kabupaten: isUnknown(rawKab) ? 'UNMAPPED' : rawKab,
-        Kecamatan: isUnknown(rawKec) ? 'UNMAPPED' : rawKec
+        Provinsi: (prov || 'UNKNOWN PROVINSI').toUpperCase(),
+        Kabupaten: (kab || 'UNKNOWN KABUPATEN').toUpperCase(),
+        Kecamatan: (kec || 'UNKNOWN KECAMATAN').toUpperCase()
     };
 };
 
@@ -538,8 +570,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const kecs = new Set();
         
         customers.forEach(c => {
-            // 🚀 PERFECT SYNC: Pass the sanitized customer object directly
-            const h = getStoreHierarchy(c);
+            // 🚀 PERFECT SYNC: Pass the sanitized customer object AND boundaries
+            const h = getStoreHierarchy(c, boundaries);
             c._hierarchy = h; 
             provs.add(h.Provinsi);
             
@@ -551,7 +583,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         });
         
         return { provs: Array.from(provs).sort(), kabs: Array.from(kabs).sort(), kecs: Array.from(kecs).sort() };
-    }, [customers, selectedProvinsi, selectedKabupaten]);
+    }, [customers, boundaries, selectedProvinsi, selectedKabupaten]);
 
     useEffect(() => {
         let baseRoute = customers.filter(c => {
