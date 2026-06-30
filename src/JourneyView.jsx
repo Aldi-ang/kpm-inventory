@@ -155,8 +155,9 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 
-const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) => {
-    let h = { Provinsi: 'JAWA TENGAH', Kabupaten: 'MAGELANG', Kecamatan: '' }; 
+// 🚀 UPGRADED: Dynamic Hierarchy Engine (Reads 3-level depth from DB)
+const getStoreHierarchy = (lng, lat, fallbackKec, fallbackKab, fallbackProv, boundaries) => {
+    let h = { Provinsi: 'UNMAPPED', Kabupaten: 'UNMAPPED', Kecamatan: 'UNMAPPED' }; 
     const fLng = parseFloat(lng);
     const fLat = parseFloat(lat);
     let foundGeofence = false;
@@ -181,15 +182,19 @@ const getStoreHierarchy = (lng, lat, fallbackCity, fallbackRegion, boundaries) =
         }
     }
     
-    if (!foundGeofence) {
-        let fallbackKec = String(fallbackCity || 'UNMAPPED');
-        let fallbackKab = String(fallbackRegion || 'MAGELANG');
+    // 🚀 DYNAMIC FALLBACK: Fills missing data directly from the Database instead of hardcoding Jawa Tengah!
+    if (!foundGeofence || h.Provinsi === 'UNMAPPED' || h.Kabupaten === 'UNMAPPED') {
+        let safeKec = String(fallbackKec || 'UNMAPPED').toUpperCase();
+        let safeKab = String(fallbackKab || 'UNMAPPED').toUpperCase();
+        let safeProv = String(fallbackProv || 'UNMAPPED').toUpperCase();
         
-        if (fallbackKec.toLowerCase().includes('pemuda')) fallbackKec = 'MUNTILAN';
-        if (fallbackKab.toLowerCase().includes('pemuda')) fallbackKab = 'MAGELANG';
+        if (safeKec.includes('PEMUDA')) safeKec = 'MUNTILAN';
+        if (safeKab.includes('PEMUDA')) safeKab = 'MAGELANG';
+        if (safeProv === 'UNMAPPED' && safeKab === 'MAGELANG') safeProv = 'JAWA TENGAH';
         
-        h.Kecamatan = fallbackKec.toUpperCase();
-        h.Kabupaten = fallbackKab.toUpperCase();
+        if (!foundGeofence) h.Kecamatan = safeKec;
+        if (h.Kabupaten === 'UNMAPPED') h.Kabupaten = safeKab;
+        if (h.Provinsi === 'UNMAPPED') h.Provinsi = safeProv;
     }
     return h;
 };
@@ -528,7 +533,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const kecs = new Set();
         
         customers.forEach(c => {
-            const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, boundaries);
+            // 🚀 UPGRADED: Pass province natively from the database object
+            const h = getStoreHierarchy(c.longitude, c.latitude, c.city, c.region, c.province || c.provinsi, boundaries);
             c._hierarchy = h; 
             provs.add(h.Provinsi);
             
@@ -732,14 +738,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         if (setActiveTab) setActiveTab('map_war_room'); 
     };
 
-    const handleOpenLocation = (customer) => {
+   const handleOpenLocation = (customer) => {
         if (customer.gmapsUrl) { 
             window.open(customer.gmapsUrl, '_blank'); 
             return; 
         }
         if (customer.latitude && customer.longitude) {
-            // 🚀 URL PARSING FIX
-            window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
+            // 🚀 CRASH FIX: Fixed malformed Google Maps URL syntax
+            window.open(`https://maps.google.com/?q=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
             alert("No GPS Coordinates found for this target.");
         }
@@ -1088,6 +1094,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     </div>
                                                     {store.phone ? (
                                                         <a 
+                                                            // 🚀 CRASH FIX: Safely convert phone to string before stripping characters
                                                             href={`https://wa.me/${String(store.phone).replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noreferrer"
