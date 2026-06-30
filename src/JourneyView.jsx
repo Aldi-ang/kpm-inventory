@@ -332,6 +332,31 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const [editingStoreId, setEditingStoreId] = useState(null);
     const [tempPinLocation, setTempPinLocation] = useState(null);
 
+    // 🚀 NEW: Manual Folder Override State
+    const [editingFolderId, setEditingFolderId] = useState(null);
+    const [folderEdits, setFolderEdits] = useState({ prov: '', kab: '', kec: '' });
+
+    const saveFolderEdit = async (storeId) => {
+        try {
+            const userId = user?.uid || user?.id || 'default';
+            const customerRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
+            
+            await updateDoc(customerRef, {
+                province: folderEdits.prov.trim().toUpperCase(),
+                region: folderEdits.kab.trim().toUpperCase(),
+                city: folderEdits.kec.trim().toUpperCase(),
+                updatedAt: serverTimestamp()
+            });
+            
+            if (logAudit) logAudit("MANUAL_FOLDER_MOVE", `Manually routed store ${storeId} to ${folderEdits.kec}`);
+            if (triggerCapy) triggerCapy("Target routing permanently updated! 🚀");
+            setEditingFolderId(null);
+        } catch (error) {
+            console.error("Failed to update folder:", error);
+            alert("Database error: Could not save folder routing.");
+        }
+    };
+
     const handleStartEditPin = (store) => {
         if (!canAssignFleet) return;
         setEditingStoreId(store.id);
@@ -1132,6 +1157,47 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             )}
                                             
                                             <div className="space-y-3">
+                                                {/* 🚀 MANUAL FOLDER OVERRIDE UI */}
+                                                <div className="bg-black/50 p-2 rounded-lg border border-slate-700 shadow-inner">
+                                                    {editingFolderId === store.id ? (
+                                                        <div className="flex flex-col gap-1.5 animate-fade-in">
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <span className="text-[9px] text-orange-400 font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
+                                                            </div>
+                                                            <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.kec} onChange={e=>setFolderEdits({...folderEdits, kec: e.target.value})} placeholder="Kecamatan" className="bg-slate-900 text-orange-100 text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-orange-500/50 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            
+                                                            <div className="flex gap-2 mt-1">
+                                                                <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[9px] font-black p-1.5 rounded uppercase border border-slate-700 transition-colors">Abort</button>
+                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-orange-600 hover:bg-orange-500 text-white text-[9px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(249,115,22,0.4)] transition-colors"><Save size={10}/> Enforce</button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-1 relative group">
+                                                            <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
+                                                            <div className="text-[9px] text-slate-300 font-bold leading-tight pr-8">
+                                                                {store._hierarchy?.Provinsi} <span className="text-slate-600">&gt;</span> {store._hierarchy?.Kabupaten} <span className="text-slate-600">&gt;</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
+                                                            </div>
+                                                            {canAssignFleet && (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setEditingFolderId(store.id);
+                                                                        setFolderEdits({
+                                                                            prov: store.province || store._hierarchy?.Provinsi || '',
+                                                                            kab: store.region || store._hierarchy?.Kabupaten || '',
+                                                                            kec: store.city || store._hierarchy?.Kecamatan || ''
+                                                                        });
+                                                                    }} 
+                                                                    className="absolute top-1/2 -translate-y-1/2 right-0 bg-slate-800 hover:bg-orange-600 text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-600 hover:border-orange-500 transition-all text-[8px] font-black uppercase shadow-lg"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 <div className="flex gap-2">
                                                     <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center gap-0.5">
                                                         <span className="block text-[8px] text-slate-500 uppercase font-black">Performance Rank</span>
