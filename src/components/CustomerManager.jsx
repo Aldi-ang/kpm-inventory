@@ -633,6 +633,88 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         e.target.value = null;
     };
 
+    // 🚀 ONE-TIME ENTERPRISE DATA SCRUB (MIGRATION ENGINE)
+    const handleEnterpriseDataScrub = async () => {
+        if (!window.confirm("⚠️ INITIATE ENTERPRISE DATA SCRUB?\n\nThis will scan all customers and permanently hard-write their exact Matrix Location (Provinsi, Kabupaten, Kecamatan) into the Firebase database to establish a Single Source of Truth.")) return;
+
+        if (triggerCapy) triggerCapy("Initiating Great Scrub... Please wait. ⚙️");
+
+        try {
+            const batchWrites = [];
+            let scrubCount = 0;
+
+            customers.forEach(c => {
+                let prov = String(c.province || '').trim();
+                let kab = String(c.region || '').trim();
+                let kec = String(c.city || '').trim();
+
+                const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
+
+                let needsUpdate = false;
+
+                // 📍 1. GEOSPATIAL OVERRIDE
+                if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && c.latitude && c.longitude && sortedBorders.length > 0) {
+                    for (const border of sortedBorders) {
+                        const geo = border.feature || border.geometry;
+                        if (checkPointInGeoJSON(c.longitude, c.latitude, geo)) {
+                            if (border.level === 'Provinsi' && isUnknown(prov)) { prov = border.name; needsUpdate = true; }
+                            if (border.level === 'Kabupaten' && isUnknown(kab)) { kab = border.name; needsUpdate = true; }
+                            if (border.level === 'Kecamatan' && isUnknown(kec)) { kec = border.name; needsUpdate = true; }
+                        }
+                    }
+                }
+
+                // 🧠 2. SMART DICTIONARY OVERRIDE
+                const searchText = `${c.address || ''} ${c.name || ''} ${kab} ${kec}`.toLowerCase();
+                if (isUnknown(kec)) { const g = guessKecamatan(searchText); if (g) { kec = g; needsUpdate = true; } }
+                if (isUnknown(kab)) { const g = guessKabupaten(searchText); if (g) { kab = g; needsUpdate = true; } }
+                if (isUnknown(prov)) { const g = guessProvince(searchText); if (g) { prov = g; needsUpdate = true; } }
+
+                // 🛡️ 3. FINAL FALLBACK & FORMATTING
+                if (isUnknown(prov)) prov = 'UNMAPPED PROVINSI';
+                if (isUnknown(kab)) kab = 'UNMAPPED KABUPATEN';
+                if (isUnknown(kec)) kec = 'UNMAPPED KECAMATAN';
+
+                // If the scrubbed data differs from what is in the database, schedule a write!
+                if (needsUpdate || c.province !== prov.toUpperCase() || c.region !== kab.toUpperCase() || c.city !== kec.toUpperCase()) {
+                    const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id);
+                    batchWrites.push({
+                        ref,
+                        data: {
+                            province: prov.toUpperCase(),
+                            region: kab.toUpperCase(),
+                            city: kec.toUpperCase(),
+                            updatedAt: serverTimestamp()
+                        }
+                    });
+                    scrubCount++;
+                }
+            });
+
+            if (scrubCount === 0) {
+                if (triggerCapy) triggerCapy("Database is already perfectly clean! ✅");
+                return;
+            }
+
+            // Firebase batch limit is 500. We chunk at 450 to be safe.
+            const chunkedBatches = [];
+            for (let i = 0; i < batchWrites.length; i += 450) {
+                const batch = writeBatch(db);
+                batchWrites.slice(i, i + 450).forEach(w => batch.update(w.ref, w.data));
+                chunkedBatches.push(batch.commit());
+            }
+
+            await Promise.all(chunkedBatches);
+
+            if (logAudit) logAudit("ENTERPRISE_DATA_SCRUB", `Permanently hard-mapped ${scrubCount} unmapped stores.`);
+            if (triggerCapy) triggerCapy(`Great Scrub Complete! ${scrubCount} targets permanently mapped. 🚀`);
+
+        } catch (error) {
+            console.error("Scrub Error:", error);
+            alert("Data Scrub Failed: " + error.message);
+        }
+    };
+
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
         if (!formData.name.trim()) return; 
@@ -761,10 +843,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
                 {isAdmin && (
-                    <label className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
-                        <Folder size={14}/> Import Map Marker (KML)
-                        <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
-                    </label>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={handleEnterpriseDataScrub}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
+                            title="Hard-map all UNMAPPED stores into the Database permanently"
+                        >
+                            <ShieldAlert size={14}/> Data Scrub
+                        </button>
+                        <label className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
+                            <Folder size={14}/> Import Map Marker (KML)
+                            <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
+                        </label>
+                    </div>
                 )}
             </div>
             
