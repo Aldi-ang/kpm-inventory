@@ -454,7 +454,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
 };
 
 // 🚀 UPGRADED BORDER IMPORTER & SECTOR SETTINGS (Manual Folder System)
-const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus, motorists = [] }) => {
+const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen, setShowBorders, setUploadedFocus, motorists = [], triggerCapy }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [progress, setProgress] = useState("");
@@ -588,9 +588,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             setBoundaries(updatedList);
             localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
             
+            // 🚀 INSTANT UX RESPONSE: Close panel and fire notification immediately
+            setEditingId(null);
+            if (triggerCapy) triggerCapy("Sector Configuration Saved! 🚀");
+            
             await saveBoundaryToFirebase(updatedBoundary);
+        } else {
+            setEditingId(null);
         }
-        setEditingId(null);
     };
 
     const toggleVisibility = async (id, currentHidden) => {
@@ -2228,6 +2233,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     setIsOpen={setShowImporter} setShowBorders={setShowBorders} 
                     setUploadedFocus={setUploadedFocus} 
                     motorists={motorists || []} 
+                    triggerCapy={triggerCapy}
                 />
             )}
 
