@@ -717,11 +717,31 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     const handleSubmit = async (e) => { 
         e.preventDefault(); 
-        if (!formData.name.trim()) return; 
+        
+        // 🚀 PHASE 3: SECURE THE GATES (SSOT VALIDATION)
+        // Coerce raw inputs into strict, clean strings before Firebase evaluation
+        const safeProv = String(formData.province || '').trim().toUpperCase();
+        const safeKab = String(formData.region || '').trim().toUpperCase();
+        const safeKec = String(formData.city || '').trim().toUpperCase();
+        const safeName = String(formData.name || '').trim();
+
+        if (!safeName) {
+            alert("⚠️ Mission Control: Store Name is required to establish a target.");
+            return;
+        }
+
+        // 🛑 Hard Block: Prevent any new UNMAPPED edge cases from entering the database
+        if (!safeProv || !safeKab || !safeKec) {
+            alert("⚠️ SSOT Violation: You must specify the complete Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.");
+            return;
+        }
         
         const cleanData = {
             ...formData,
-            name: formData.name.trim(),
+            name: safeName,
+            province: safeProv,
+            region: safeKab,
+            city: safeKec,
             latitude: formData.latitude ? parseFloat(formData.latitude) : null,
             longitude: formData.longitude ? parseFloat(formData.longitude) : null,
             updatedAt: serverTimestamp(),
@@ -730,7 +750,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             nooAgentId: user.uid
         };
         
-        try { 
+        try {
             if (editingId) { 
                 await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), cleanData); 
                 await logAudit("CUSTOMER_UPDATE", `Updated: ${formData.name}`); 
