@@ -155,87 +155,19 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 
-// 🧠 EXACT 1:1 CLONE: CUSTOMER MANAGER SMART DICTIONARY
-const guessKecamatan = (text) => {
-    const str = String(text || '').toLowerCase();
-    if (str.includes('muntilan') || str.includes('pemuda')) return 'Muntilan';
-    if (str.includes('mertoyudan')) return 'Mertoyudan';
-    if (str.includes('salaman')) return 'Salaman';
-    if (str.includes('secang')) return 'Secang';
-    if (str.includes('borobudur')) return 'Borobudur';
-    if (str.includes('mlati')) return 'Mlati';
-    if (str.includes('depok')) return 'Depok';
-    return '';
-};
-
-const guessKabupaten = (text) => {
-    const str = String(text || '').toLowerCase();
-    if (str.includes('magelang') || str.includes('muntilan') || str.includes('mertoyudan') || str.includes('salaman') || str.includes('secang') || str.includes('borobudur')) return 'Magelang';
-    if (str.includes('boyolali')) return 'Boyolali';
-    if (str.includes('sleman') || str.includes('mlati') || str.includes('depok')) return 'Sleman';
-    if (str.includes('solo') || str.includes('surakarta')) return 'Surakarta';
-    if (str.includes('bantul')) return 'Bantul';
-    if (str.includes('klaten')) return 'Klaten';
-    return '';
-};
-
-const guessProvince = (text) => {
-    const str = String(text || '').toLowerCase();
-    if (str.includes('magelang') || str.includes('muntilan') || str.includes('boyolali') || str.includes('solo') || str.includes('surakarta') || str.includes('klaten') || str.includes('semarang')) return 'Jawa Tengah';
-    if (str.includes('yogya') || str.includes('sleman') || str.includes('bantul') || str.includes('gunungkidul') || str.includes('kulon')) return 'DI Yogyakarta';
-    return '';
-};
-
-// 🚀 UPGRADED: 1:1 CRM Hierarchy Engine
-const getStoreHierarchy = (customer, boundaries) => {
-    let prov = String(customer.province || '').trim();
-    let kab = String(customer.region || '').trim();
-    let kec = String(customer.city || '').trim();
-    
-    const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
-
-    // 📍 1. GEOSPATIAL AUTO-DETECTION
-    const fLng = parseFloat(customer.longitude);
-    const fLat = parseFloat(customer.latitude);
-    if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && !isNaN(fLng) && !isNaN(fLat) && boundaries && boundaries.length > 0) {
-        const sortedBnd = [...boundaries].sort((a,b) => {
-            const w = { 'Desa': 1, 'Kecamatan': 2, 'Kabupaten': 3, 'Provinsi': 4 };
-            return (w[a.level] || 0) - (w[b.level] || 0);
-        });
-        for (let b of sortedBnd) {
-            const geo = b.feature || b.geometry;
-            if (geo && checkPointInGeoJSON(fLng, fLat, geo)) {
-                if (b.level === 'Provinsi' && isUnknown(prov)) prov = b.name;
-                if (b.level === 'Kabupaten' && isUnknown(kab)) kab = b.name;
-                if (b.level === 'Kecamatan' && isUnknown(kec)) kec = b.name;
-            }
-        }
-    }
-
-    // 🧠 2. SMART TEXT DICTIONARY (Only runs if field is empty, exactly like CRM)
-    const searchText = `${customer.address || ''} ${customer.name || ''} ${kab} ${kec}`.toLowerCase();
-    if (!kec || isUnknown(kec)) {
-        const guessed = guessKecamatan(searchText);
-        if (guessed) kec = guessed;
-    }
-    if (!kab || isUnknown(kab)) {
-        const guessed = guessKabupaten(searchText);
-        if (guessed) kab = guessed;
-    }
-    if (!prov || isUnknown(prov)) {
-        const guessed = guessProvince(searchText);
-        if (guessed) prov = guessed;
-    }
-
-    // 🛡️ 3. ABSOLUTE FALLBACK
-    if (!prov || isUnknown(prov)) prov = 'UNMAPPED';
-    if (!kab || isUnknown(kab)) kab = 'UNMAPPED';
-    if (!kec || isUnknown(kec)) kec = 'UNMAPPED';
+// 🚀 ENTERPRISE SSOT HIERARCHY ENGINE
+// Phase 2: The UI is now lightning fast. It no longer guesses. 
+// It strictly reads the scrubbed database fields as absolute truth.
+const getStoreHierarchy = (customer) => {
+    const safeRead = (val, fallback) => {
+        const str = String(val || '').trim();
+        return (str && !str.toLowerCase().includes('unknown') && !str.toLowerCase().includes('unmapped')) ? str.toUpperCase() : fallback;
+    };
 
     return {
-        Provinsi: prov.toUpperCase(),
-        Kabupaten: kab.toUpperCase(),
-        Kecamatan: kec.toUpperCase()
+        Provinsi: safeRead(customer.province, 'UNMAPPED PROVINSI'),
+        Kabupaten: safeRead(customer.region, 'UNMAPPED KABUPATEN'),
+        Kecamatan: safeRead(customer.city, 'UNMAPPED KECAMATAN')
     };
 };
 
@@ -593,14 +525,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         return Array.from(agents).sort();
     }, [agentsList, customers, assignments]);
 
-    // 🚀 THE FIX: Single Source of Truth for reactive hierarchy mapping.
-    // This prevents React from caching stale "UNMAPPED" data before geofences fully load.
+    // 🚀 THE FIX: Lightning-Fast Reactive Hierarchy Mapping
+    // Geofences are no longer required here. We read straight from the clean database.
     const mappedCustomers = useMemo(() => {
         return customers.map(c => ({
             ...c,
-            _hierarchy: getStoreHierarchy(c, boundaries)
+            _hierarchy: getStoreHierarchy(c)
         }));
-    }, [customers, boundaries]);
+    }, [customers]);
 
     const hierarchyData = useMemo(() => {
         const provs = new Set();
