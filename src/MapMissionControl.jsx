@@ -589,7 +589,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 
                 // 🚀 CRASH FIX: Protect against undefined CACHE_KEY ReferenceErrors
                 const safeCacheKey = typeof CACHE_KEY !== 'undefined' ? CACHE_KEY : `cello_map_bnd_${appId}`;
-                localStorage.setItem(safeCacheKey, JSON.stringify(updatedList));
+                
+                // 🛡️ THE SHOCK ABSORBER: Catch QuotaExceededError so it doesn't kill the thread
+                try {
+                    localStorage.setItem(safeCacheKey, JSON.stringify(updatedList));
+                } catch (cacheError) {
+                    console.warn("ZACK WARNING: Browser LocalStorage is full. Bypassing local cache and routing directly to Firebase.", cacheError);
+                }
                 
                 // 🚀 INSTANT UX: Close inline editor AND the main Territory Manager panel
                 if (typeof setEditingId === 'function') setEditingId(null);
