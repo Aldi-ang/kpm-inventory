@@ -597,13 +597,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                     console.warn("ZACK WARNING: Browser LocalStorage is full. Bypassing local cache and routing directly to Firebase.", cacheError);
                 }
                 
-                // 🚀 INSTANT UX: Close inline editor AND the main Territory Manager panel
-                if (typeof setEditingId === 'function') setEditingId(null);
-                if (typeof setIsOpen === 'function') setIsOpen(false); // Shuts the whole modal down
-                
+                // 🚀 INSTANT UX FIX: Fire the Capybara Flare FIRST before nuking the component!
                 if (typeof triggerCapy === 'function') {
                     triggerCapy("Sector Configuration Saved! 🚀");
                 }
+
+                if (typeof setEditingId === 'function') setEditingId(null);
+                if (typeof setIsOpen === 'function') setIsOpen(false); // Shuts the modal down safely
 
                 // Push to Firebase safely in the background
                 await saveBoundaryToFirebase(updatedBoundary);
