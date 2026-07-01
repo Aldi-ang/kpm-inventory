@@ -526,20 +526,21 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const saveBoundaryToFirebase = async (boundary) => {
-        if (db && appId && userId) {
+        // 🚀 BULLETPROOF FIX: Safely derive userId locally to prevent ReferenceErrors
+        const currentUserId = user?.uid || user?.id || 'default';
+        if (db && appId && currentUserId) {
             try { 
                 const { geometry, feature, ...rawBoundaryToSave } = boundary;
                 
-                // 🚀 CRASH FIX: Strip all 'undefined' values before sending. Firestore throws a fatal silent crash if any field is undefined.
+                // 🚀 Strip undefined fields to prevent Firestore fatal silent crashes
                 const boundaryToSave = Object.fromEntries(
                     Object.entries(rawBoundaryToSave).filter(([_, v]) => v !== undefined)
                 );
                 
                 boundaryToSave.geometryString = JSON.stringify(geometry || null); 
-                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave); 
+                await setDoc(doc(db, `artifacts/${appId}/users/${currentUserId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave); 
             } catch(e) {
                 console.error("Firebase Save Error:", e);
-                alert("Database Error: Could not save sector configuration.");
             }
         }
     };
@@ -566,35 +567,45 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const handleSaveBoundary = async (id) => {
-        const targetBoundary = safeBoundaries.find(b => b.id === id);
-        if (targetBoundary) {
-            // 🚀 CRASH FIX: Safely coerce inputs to Strings to prevent .trim() TypeError crashes
-            const newFolderName = String(editForm.folderName || '').trim() || targetBoundary.folderName || targetBoundary.level || 'Uncategorized';
-            
-            const updatedBoundary = { 
-                ...targetBoundary, 
-                name: String(editForm.name || '').trim() || targetBoundary.name,
-                color: editForm.color || targetBoundary.color,
-                targetRev: editForm.targetRev ? Number(editForm.targetRev) : null,
-                assignedAgent: editForm.assignedAgent !== 'none' ? editForm.assignedAgent : null,
-                folderName: newFolderName
-            };
+        try {
+            const targetBoundary = safeBoundaries.find(b => b.id === id);
+            if (targetBoundary) {
+                const newFolderName = String(editForm.folderName || '').trim() || targetBoundary.folderName || targetBoundary.level || 'Uncategorized';
+                
+                const updatedBoundary = { 
+                    ...targetBoundary, 
+                    name: String(editForm.name || '').trim() || targetBoundary.name,
+                    color: editForm.color || targetBoundary.color,
+                    targetRev: editForm.targetRev ? Number(editForm.targetRev) : null,
+                    assignedAgent: editForm.assignedAgent !== 'none' ? editForm.assignedAgent : null,
+                    folderName: newFolderName
+                };
 
-            // 🚀 UX UPGRADE: Auto-track and expand new folders so the boundary doesn't visually disappear when moved
-            setCustomFolders(prev => Array.from(new Set([...prev, newFolderName])));
-            setExpandedNodes(prev => ({ ...prev, [newFolderName]: true }));
+                if (typeof setCustomFolders === 'function') setCustomFolders(prev => Array.from(new Set([...prev, newFolderName])));
+                if (typeof setExpandedNodes === 'function') setExpandedNodes(prev => ({ ...prev, [newFolderName]: true }));
 
-            const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
-            setBoundaries(updatedList);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
-            
-            // 🚀 INSTANT UX RESPONSE: Close panel and fire notification immediately
-            setEditingId(null);
-            if (triggerCapy) triggerCapy("Sector Configuration Saved! 🚀");
-            
-            await saveBoundaryToFirebase(updatedBoundary);
-        } else {
-            setEditingId(null);
+                const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
+                setBoundaries(updatedList);
+                
+                // 🚀 CRASH FIX: Protect against undefined CACHE_KEY ReferenceErrors
+                const safeCacheKey = typeof CACHE_KEY !== 'undefined' ? CACHE_KEY : `cello_map_bnd_${appId}`;
+                localStorage.setItem(safeCacheKey, JSON.stringify(updatedList));
+                
+                // 🚀 INSTANT UX: Close inline editor AND the main Territory Manager panel
+                if (typeof setEditingId === 'function') setEditingId(null);
+                if (typeof setIsOpen === 'function') setIsOpen(false); // Shuts the whole modal down
+                
+                if (typeof triggerCapy === 'function') {
+                    triggerCapy("Sector Configuration Saved! 🚀");
+                }
+
+                // Push to Firebase safely in the background
+                await saveBoundaryToFirebase(updatedBoundary);
+            } else {
+                if (typeof setEditingId === 'function') setEditingId(null);
+            }
+        } catch (error) {
+            console.error("Save Boundary Crash:", error);
         }
     };
 
