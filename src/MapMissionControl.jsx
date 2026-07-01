@@ -528,10 +528,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const saveBoundaryToFirebase = async (boundary) => {
         if (db && appId && userId) {
             try { 
-                const { geometry, feature, ...boundaryToSave } = boundary;
-                boundaryToSave.geometryString = JSON.stringify(geometry); 
+                const { geometry, feature, ...rawBoundaryToSave } = boundary;
+                
+                // 🚀 CRASH FIX: Strip all 'undefined' values before sending. Firestore throws a fatal silent crash if any field is undefined.
+                const boundaryToSave = Object.fromEntries(
+                    Object.entries(rawBoundaryToSave).filter(([_, v]) => v !== undefined)
+                );
+                
+                boundaryToSave.geometryString = JSON.stringify(geometry || null); 
                 await setDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave); 
-            } catch(e) {}
+            } catch(e) {
+                console.error("Firebase Save Error:", e);
+                alert("Database Error: Could not save sector configuration.");
+            }
         }
     };
 
@@ -559,17 +568,26 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const handleSaveBoundary = async (id) => {
         const targetBoundary = safeBoundaries.find(b => b.id === id);
         if (targetBoundary) {
+            // 🚀 CRASH FIX: Safely coerce inputs to Strings to prevent .trim() TypeError crashes
+            const newFolderName = String(editForm.folderName || '').trim() || targetBoundary.folderName || targetBoundary.level || 'Uncategorized';
+            
             const updatedBoundary = { 
                 ...targetBoundary, 
-                name: editForm.name.trim() || targetBoundary.name,
+                name: String(editForm.name || '').trim() || targetBoundary.name,
                 color: editForm.color || targetBoundary.color,
                 targetRev: editForm.targetRev ? Number(editForm.targetRev) : null,
                 assignedAgent: editForm.assignedAgent !== 'none' ? editForm.assignedAgent : null,
-                folderName: editForm.folderName.trim() || targetBoundary.folderName || targetBoundary.level || 'Uncategorized'
+                folderName: newFolderName
             };
+
+            // 🚀 UX UPGRADE: Auto-track and expand new folders so the boundary doesn't visually disappear when moved
+            setCustomFolders(prev => Array.from(new Set([...prev, newFolderName])));
+            setExpandedNodes(prev => ({ ...prev, [newFolderName]: true }));
+
             const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
             setBoundaries(updatedList);
             localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+            
             await saveBoundaryToFirebase(updatedBoundary);
         }
         setEditingId(null);
