@@ -2742,7 +2742,23 @@ const handleGitHubMirror = async () => {
              matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
             >
           
-    
+          {/* 🥔 POTATO ENGINE: RUTHLESS HARDWARE ACCELERATION BYPASS */}
+          {isLiteMode && (
+              <style>{`
+                  .lite-mode * {
+                      backdrop-filter: none !important;
+                      -webkit-backdrop-filter: none !important;
+                      box-shadow: none !important;
+                      text-shadow: none !important;
+                  }
+                  .lite-mode .backdrop-blur, .lite-mode .backdrop-blur-md, .lite-mode .backdrop-blur-sm, .lite-mode .backdrop-blur-\\[2px\\] {
+                      background-color: #0f172a !important; /* Fast solid fallback */
+                  }
+                  .lite-mode .animate-pulse, .lite-mode .animate-bounce, .lite-mode .animate-bounce-slow {
+                      animation: none !important; /* Stops CPU from constantly redrawing */
+                  }
+              `}</style>
+          )}
 
           {/* NEW ROUTER FOR EMPLOYEE VEHICLE INVENTORY */}
       {activeTab === 'agent_inventory' && (
@@ -2989,7 +3005,7 @@ const handleGitHubMirror = async () => {
           {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? customers : permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
-         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} />}
+         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} />}
           {/* 🚀 UPGRADED FLEET ROUTER: Now fully controlled by the Matrix */}
           {activeTab === 'fleet' && (
             <FleetCanvasManager 

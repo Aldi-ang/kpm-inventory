@@ -57,7 +57,7 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
-const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
+const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMode }) => {
     const map = useMap();
     const watchId = useRef(null);
     const isEditingRef = useRef(isEditing);
@@ -85,7 +85,8 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
             );
         }
 
-        if (!watchId.current && "geolocation" in navigator) {
+        // 🚀 POTATO ENGINE: Disable continuous GPS polling to save massive battery on cheap phones
+        if (!isLiteMode && !watchId.current && "geolocation" in navigator) {
             watchId.current = navigator.geolocation.watchPosition(
                 (pos) => {
                     if (!isEditingRef.current) {
@@ -183,7 +184,7 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings }) => {
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode }) => {
     
     // 🛡️ THE MASTER DATA SANITIZER V2
     // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
@@ -953,7 +954,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
-                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
+                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} isLiteMode={isLiteMode} />
                     <MapEditController isEditing={!!editingStoreId} onMapClick={(latlng) => setTempPinLocation({ lat: latlng.lat, lng: latlng.lng })} />
                     
                     {userLocation && (
