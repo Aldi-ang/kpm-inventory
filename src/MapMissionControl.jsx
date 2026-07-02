@@ -12,6 +12,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
 try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
@@ -124,6 +125,16 @@ const convertToBks = (qty, unit, product) => {
     if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
     return qty; 
+};
+
+// 🚀 CUSTOM CLUSTER STYLING: Matches the dark tactical UI and removes default Leaflet cluster colors
+const createCustomClusterIcon = (cluster) => {
+    return L.divIcon({
+        html: `<div style="background-color: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; color: #38bdf8; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); font-family: monospace; font-size: 14px; z-index: 10000;">${cluster.getChildCount()}</div>`,
+        className: 'custom-cluster-icon',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
 };
 
 const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus, selectedZone }) => {
@@ -2349,16 +2360,25 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     return <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>;
                 })}
 
-                {mapPoints.map(store => (
-                    <MarkerWithZoom 
-                        key={store.id} 
-                        store={store} 
-                        activeTiers={activeTiers} 
-                        conquestMode={conquestMode} 
-                        handlePinClick={handlePinClick} 
-                        isActive={activeStore && activeStore.id === store.id}
-                    />
-                ))}
+                {/* 🚀 THE LEAFLET SUPERCLUSTER ENGINE */}
+                <MarkerClusterGroup
+                    chunkedLoading={true}
+                    iconCreateFunction={createCustomClusterIcon}
+                    maxClusterRadius={40}
+                    spiderfyOnMaxZoom={true}
+                    disableClusteringAtZoom={16} /* Ensures individual pins appear when zoomed in close */
+                >
+                    {mapPoints.map(store => (
+                        <MarkerWithZoom 
+                            key={store.id} 
+                            store={store} 
+                            activeTiers={activeTiers} 
+                            conquestMode={conquestMode} 
+                            handlePinClick={handlePinClick} 
+                            isActive={activeStore && activeStore.id === store.id}
+                        />
+                    ))}
+                </MarkerClusterGroup>
 
                 {/* 🚀 LIVE AGENT SNAIL FOOTPRINT & RADAR (WITH SPIDERFY ENGINE) 🚀 */}
                 {(() => {
