@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -19,16 +19,13 @@ let analytics;
 try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// 🚀 OFFLINE ENGINE UPGRADE: Replaced deprecated getFirestore 
+// with the modern initializeFirestore engine. This supports true multi-tab offline caching!
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+});
+
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 export const appId = "cello-inventory-manager";
-
-// Enable Offline Mode
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.warn("Offline Mode: Multiple tabs open, persistence enabled in first tab only.");
-    } else if (err.code == 'unimplemented') {
-        console.warn("Offline Mode: Browser doesn't support local caching.");
-    }
-});
