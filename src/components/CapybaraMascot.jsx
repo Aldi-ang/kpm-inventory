@@ -45,6 +45,31 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
     const [internalMsg, setInternalMsg] = useState(""); 
     const msgIndexRef = useRef(0);
 
+    // 📻 THE RADIO RECEIVER: Listens for signals from anywhere in the app
+    useEffect(() => {
+        const handleRadioComms = (event) => {
+            const incomingMessage = event.detail;
+            if (incomingMessage) {
+                setInternalMsg(incomingMessage);
+                setIsPeeking(true);
+                setIsHiding(false);
+                
+                // Auto-dismiss after 8 seconds
+                setTimeout(() => {
+                    setIsHiding(true);
+                    setTimeout(() => {
+                        setIsPeeking(false);
+                        setIsHiding(false);
+                        setInternalMsg("");
+                    }, 1000); // Wait for the slide-out animation to finish
+                }, 8000);
+            }
+        };
+
+        window.addEventListener('CAPY_COMMS', handleRadioComms);
+        return () => window.removeEventListener('CAPY_COMMS', handleRadioComms);
+    }, []);
+
     useEffect(() => {
         let audio = null;
         if (isDiscoMode) {
@@ -135,7 +160,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
 
     return (
         <div 
-            className={`hide-on-print fixed bottom-0 right-0 z-[9999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
+            className={`hide-on-print fixed bottom-0 right-0 z-[99999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
             onClick={onMascotClick}
             style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
         >

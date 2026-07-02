@@ -594,21 +594,13 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 try {
                     localStorage.setItem(safeCacheKey, JSON.stringify(updatedList));
                 } catch (cacheError) {
-                    console.warn("ZACK WARNING: Browser LocalStorage is full. Bypassing local cache and routing directly to Firebase.", cacheError);
+                    console.warn("ZACK WARNING: Browser LocalStorage is full. Bypassing local cache.", cacheError);
                 }
                 
-                // 🚀 FIRE THE FLARE: Alert the agent of success immediately
-                if (typeof triggerCapy === 'function') {
-                    triggerCapy("Sector Configuration Saved! 🚀");
-                }
+                // 📻 RADIO DISPATCH: Broadcast the signal directly to Capy!
+                window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: "Sector Configuration Saved! 🚀" }));
 
-                // 🚀 INSTANT UX: Close ONLY the inline sector editor. 
-                // We REMOVED the setIsOpen(false) command so the main Territory Manager stays alive!
-                if (typeof setEditingId === 'function') setEditingId(null);
-
-                // Push to Firebase safely in the background
-                await saveBoundaryToFirebase(updatedBoundary);
-            } else {
+                // 🚀 INSTANT UX: Close ONLY the inline sector editor. Keep the Territory Manager open!
                 if (typeof setEditingId === 'function') setEditingId(null);
             }
         } catch (error) {
