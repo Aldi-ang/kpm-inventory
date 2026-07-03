@@ -3,7 +3,8 @@ import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, 
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 
-export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId }) {
+// 🚀 ADDED fetchHistoricalTransactions TO PROPS
+export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -16,12 +17,23 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [printFormat, setPrintFormat] = useState('thermal'); 
     const [printScale, setPrintScale] = useState(100); 
 
+    // 🚀 TIME MACHINE STATE
+    const [historicalData, setHistoricalData] = useState([]);
+    const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
+    // Merge live 7-day data with any fetched historical data
+    const allTransactions = useMemo(() => {
+        const combined = [...transactions, ...historicalData];
+        // Deduplicate using Map just in case the dates overlap
+        return Array.from(new Map(combined.map(t => [t.id, t])).values());
+    }, [transactions, historicalData]); 
+
     // 🚀 GLOBAL FILTER SEARCH ENGINE 🚀
     const searchedTransactions = useMemo(() => {
-        if (!searchTerm.trim()) return transactions;
+        if (!searchTerm.trim()) return allTransactions; // 🚀 REROUTED
         const term = searchTerm.toLowerCase();
         
-        return transactions.filter(t => {
+        return allTransactions.filter(t => {            // 🚀 REROUTED
             const dateMatch = (t.date || '').toLowerCase().includes(term);
             const customerMatch = (t.customerName || '').toLowerCase().includes(term);
             const agentMatch = (t.agentName || '').toLowerCase().includes(term);
@@ -739,6 +751,31 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
 
                                 <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border dark:bg-slate-800 dark:border-slate-700 dark:text-white font-bold shadow-sm"/>
+                                
+                                {/* 🚀 THE TIME MACHINE BUTTON */}
+                                {userRole === 'ADMIN' && (
+                                    <button 
+                                        onClick={async () => {
+                                            if (!fetchHistoricalTransactions) return;
+                                            setIsFetchingHistory(true);
+                                            const target = new Date(targetDate);
+                                            let start = new Date(target); let end = new Date(target);
+                                            if (rangeType === 'daily') { start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
+                                            else if (rangeType === 'weekly') { start.setDate(target.getDate() - target.getDay()); start.setHours(0,0,0,0); end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); }
+                                            else if (rangeType === 'monthly') { start = new Date(target.getFullYear(), target.getMonth(), 1); end = new Date(target.getFullYear(), target.getMonth() + 1, 0, 23, 59, 59); }
+                                            else if (rangeType === 'yearly') { start = new Date(target.getFullYear(), 0, 1); end = new Date(target.getFullYear(), 11, 31, 23, 59, 59); }
+                                            
+                                            const data = await fetchHistoricalTransactions(start, end);
+                                            setHistoricalData(data);
+                                            setIsFetchingHistory(false);
+                                        }} 
+                                        disabled={isFetchingHistory} 
+                                        className={`bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl shadow-sm flex items-center gap-2 font-bold text-[10px] tracking-widest uppercase transition-all ${isFetchingHistory ? 'opacity-50 cursor-wait' : ''}`}
+                                    >
+                                        <Database size={16}/> {isFetchingHistory ? 'FETCHING...' : 'PULL ARCHIVE'}
+                                    </button>
+                                )}
+
                                 <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white p-2.5 rounded-xl shadow-sm tooltip" title="Print PDF"><Printer size={20}/></button>
                             </div>
                         </div>

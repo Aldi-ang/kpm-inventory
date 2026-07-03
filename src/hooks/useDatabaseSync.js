@@ -88,7 +88,27 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         };
     }, [user, db, appId, userId, userRole, agentProfileId]);
 
+    // 🚀 THE TIME MACHINE: On-Demand Historical Fetcher
+    // Bypasses the 7-day firewall to pull specific date ranges for auditing
+    const fetchHistoricalTransactions = async (startDate, endDate) => {
+        if (!db || !appId || !userId || userId === 'default') return [];
+        try {
+            const q = query(
+                collection(db, `artifacts/${appId}/users/${userId}/transactions`),
+                where('timestamp', '>=', startDate),
+                where('timestamp', '<=', endDate),
+                orderBy('timestamp', 'desc')
+            );
+            const snap = await getDocs(q);
+            return snap.docs.map(d => ({id: d.id, ...d.data()}));
+        } catch (err) {
+            console.error("Time Machine Error:", err);
+            return [];
+        }
+    };
+
     return {
+        fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
         inventory, setInventory,
         customers, setCustomers,
         transactions, setTransactions,

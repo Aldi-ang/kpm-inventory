@@ -3393,7 +3393,7 @@ const handleGitHubMirror = async () => {
           )}
           
           {/* --- PINPOINT: Main App Render Block (Line 2618) --- */}
-          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} />}
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} />}
           
          {activeTab === 'audit' && (
              <AuditVaultView db={db} storage={storage} appId={appId} user={user} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />
