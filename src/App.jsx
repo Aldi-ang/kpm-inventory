@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 /* eslint-disable react-hooks/exhaustive-deps */
 import packageJson from '../package.json'; // 🚀 INJECT THE PACKAGE LINK HERE
 
@@ -20,36 +20,38 @@ import {
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
-import MapMissionControl from './MapMissionControl';
-import JourneyView from './JourneyView';
-import StockOpnameView from './StockOpnameView';
-import MerchantSalesView from './MerchantSalesView';
 import MusicPlayer from './MusicPlayer';
-import RestockVaultView from './RestockVaultView';
-import AgentInventoryView from './AgentInventoryView';
-import FleetCanvasManager from './FleetCanvasManager';
-import ConsignmentFinanceView from './ConsignmentFinanceView'; 
-import EODReconciliationView from './EODReconciliationView'; 
-import AgentProfileView from './AgentProfileView'; 
-import { injectDynamicPermissions } from './config/permissions'; // 🚀 NEW: THE BRAIN MATRIX
+import { injectDynamicPermissions } from './config/permissions';
 
-// --- REUSABLE UI COMPONENTS ---
+// --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
 import NotificationBell from './components/NotificationBell';
 import SafetyStatus from './components/SafetyStatus';
 import CapybaraMascot from './components/CapybaraMascot';
 import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
-import ResidentEvilInventory from './components/ResidentEvilInventory'; 
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
-import HistoryReportView from './components/HistoryReportView'; 
 import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; 
 import { CustomerManagement, CustomerDetailView } from './components/CustomerManager'; 
 import SettingsView from './components/SettingsView'; 
-import DashboardView from './components/DashboardView'; 
 import AuditVaultView from './components/AuditVaultView'; 
 import BiohazardTheme from './components/BiohazardTheme'; 
-import BranchWarehouseManager from './components/BranchWarehouseManager';
+
+// 🚀 ENTERPRISE CODE SPLITTING: Lazy-load all heavy map, chart, and rendering engines
+const MapMissionControl = lazy(() => import('./MapMissionControl'));
+const JourneyView = lazy(() => import('./JourneyView'));
+const StockOpnameView = lazy(() => import('./StockOpnameView'));
+const MerchantSalesView = lazy(() => import('./MerchantSalesView'));
+const RestockVaultView = lazy(() => import('./RestockVaultView'));
+const AgentInventoryView = lazy(() => import('./AgentInventoryView'));
+const FleetCanvasManager = lazy(() => import('./FleetCanvasManager'));
+const ConsignmentFinanceView = lazy(() => import('./ConsignmentFinanceView')); 
+const EODReconciliationView = lazy(() => import('./EODReconciliationView')); 
+const AgentProfileView = lazy(() => import('./AgentProfileView')); 
+const ResidentEvilInventory = lazy(() => import('./components/ResidentEvilInventory')); 
+const HistoryReportView = lazy(() => import('./components/HistoryReportView')); 
+const DashboardView = lazy(() => import('./components/DashboardView')); 
+const BranchWarehouseManager = lazy(() => import('./components/BranchWarehouseManager'));
 
 
 // --- FIREBASE IMPORTS ---
@@ -2981,6 +2983,14 @@ const handleGitHubMirror = async () => {
             </div>
         ) : (
             <>
+            {/* 🚀 SUSPENSE BOUNDARY: Master wrapper for all lazy-loaded tabs */}
+            <Suspense fallback={
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-emerald-500 font-mono space-y-4">
+                    <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                    <p className="animate-pulse text-xs tracking-[0.2em] uppercase mt-4">Downloading Tactical Modules...</p>
+                </div>
+            }>
+
             {activeTab === 'dashboard' && (
                 userRole === 'ADMIN' && !isAdmin ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
@@ -3412,6 +3422,7 @@ const handleGitHubMirror = async () => {
                   triggerDiscoParty={triggerDiscoParty} isDiscoMode={isDiscoMode}
               />
           )}
+            </Suspense> {/* 🚀 CLOSING SUSPENSE BOUNDARY */}
             </>
         )}
         </>
