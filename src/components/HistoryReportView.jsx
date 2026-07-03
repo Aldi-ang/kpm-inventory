@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare } from 'lucide-react';
+import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 

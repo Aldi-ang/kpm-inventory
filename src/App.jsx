@@ -179,6 +179,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
+      fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
       inventory, setInventory, customers, setCustomers, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
