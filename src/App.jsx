@@ -61,11 +61,14 @@ import {
   signOut, 
   signInWithPopup, 
   signInWithRedirect, 
-  getRedirectResult,     // <--- You already have this, perfect!
+  getRedirectResult,     
   GoogleAuthProvider,
   setPersistence,        
   browserLocalPersistence 
 } from 'firebase/auth';
+
+// 🚀 INJECTED STORAGE ENGINE
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 // --- PINPOINT: Firestore Imports (Around Line 41) ---
 import { 
@@ -1918,51 +1921,65 @@ const handleGitHubMirror = async () => {
   };
 
  
-// --- UPDATED: TARGETED MERCHANT SAVING & CUSTOMER PHOTOS ---
-  const handleCropConfirm = (base64) => { 
+// --- ENTERPRISE PIPELINE: STORAGE BUCKET REROUTE ---
+  const handleCropConfirm = async (base64) => { 
       if (!activeCropContext) return; 
       
       const collPath = `artifacts/${appId}/users/${user.uid}/settings/general`;
+      let finalImageUrl = base64; // Fallback just in case
 
+      // 🚀 THE STORAGE PIPELINE: Push to Cloud Bucket before saving to Database
+      if (user && base64.startsWith('data:image')) {
+          try {
+              triggerCapy("Uploading optimized asset to Cloud Storage... ⏳");
+              const storagePath = `artifacts/${appId}/users/${user.uid}/images/${activeCropContext.type}_${Date.now()}.png`;
+              const imageRef = ref(storage, storagePath);
+              
+              // Upload the compressed Base64 string to the bucket
+              await uploadString(imageRef, base64, 'data_url');
+              // Retrieve the tiny 60-character URL
+              finalImageUrl = await getDownloadURL(imageRef);
+          } catch (uploadErr) {
+              console.error("Storage Pipeline Error:", uploadErr);
+              triggerCapy("Upload failed, reverting to local cache.");
+          }
+      }
+
+      // Now we route the tiny finalImageUrl into your database instead of the massive Base64 string
       if (activeCropContext.type === 'mascot') { 
-          setAppSettings(prev => ({ ...prev, mascotImage: base64 }));
-          if(user) setDoc(doc(db, collPath), { mascotImage: base64 }, {merge: true});
-          triggerCapy("Profile picture updated!"); 
+          setAppSettings(prev => ({ ...prev, mascotImage: finalImageUrl }));
+          if(user) setDoc(doc(db, collPath), { mascotImage: finalImageUrl }, {merge: true});
+          triggerCapy("Profile picture updated & secured! 🛡️"); 
       
       } else if (activeCropContext.type === 'product') { 
-          setTempImages(prev => ({ ...prev, [activeCropContext.face]: base64 })); 
+          setTempImages(prev => ({ ...prev, [activeCropContext.face]: finalImageUrl })); 
       
       } else if (activeCropContext.type === 'tier') {
           const idx = activeCropContext.index;
           const newTiers = [...tierSettings];
-          newTiers[idx].value = base64; 
+          newTiers[idx].value = finalImageUrl; 
           setTierSettings(newTiers);
           handleSaveTiers(newTiers);
-          triggerCapy("Tier Icon Updated!");
+          triggerCapy("Tier Icon Updated to Cloud!");
 
       } else if (activeCropContext.type === 'inventory_bg') {
-          setAppSettings(prev => ({ ...prev, inventoryBg: base64 }));
-          if(user) setDoc(doc(db, collPath), { inventoryBg: base64 }, {merge: true});
-          triggerCapy("Inventory Backdrop Updated!");
+          setAppSettings(prev => ({ ...prev, inventoryBg: finalImageUrl }));
+          if(user) setDoc(doc(db, collPath), { inventoryBg: finalImageUrl }, {merge: true});
+          triggerCapy("Inventory Backdrop Uploaded!");
 
-      // --- FIXED: TARGETED MERCHANT SPRITE SAVING ---
       } else if (activeCropContext.type.startsWith('merchant_')) {
-          const moodKey = activeCropContext.type.split('_')[1]; // Extracts 'idle', 'talking', or 'deal'
+          const moodKey = activeCropContext.type.split('_')[1]; 
           const settingsKey = `merchant_${moodKey}`;
           
-          // 1. Update local state immediately
-          setAppSettings(prev => ({ ...prev, [settingsKey]: base64 }));
-          
-          // 2. Perform targeted update to Firestore (avoids overwriting other settings)
+          setAppSettings(prev => ({ ...prev, [settingsKey]: finalImageUrl }));
           if(user) {
-              setDoc(doc(db, collPath), { [settingsKey]: base64 }, {merge: true});
+              setDoc(doc(db, collPath), { [settingsKey]: finalImageUrl }, {merge: true});
               logAudit("SETTINGS_UPDATE", `Updated Merchant ${moodKey} visual`);
           }
-          triggerCapy(`Merchant ${moodKey} visual updated!`);
+          triggerCapy(`Merchant ${moodKey} visual secured in cloud!`);
           
-      // --- FIXED: CATCH AND APPLY CUSTOMER STORE PHOTO ---
       } else if (activeCropContext.type === 'customer_staging') {
-          setTempCustomerImage(base64);
+          setTempCustomerImage(finalImageUrl);
       }
       
       setCropImageSrc(null); 
