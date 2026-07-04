@@ -69,41 +69,71 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const reportData = useMemo(() => {
         const structure = {}; 
         
+        // 1. PRE-LOAD THE FLEET ROSTER (Ensures regions/teams show up even with 0 sales)
+        if (motorists && motorists.length > 0) {
+            motorists.forEach(m => {
+                // If they didn't set a location, put them in Unassigned
+                const loc = m.location || 'UNASSIGNED AREA';
+                const aName = m.name || m.agentName || 'Unknown Agent';
+                
+                if (!structure[loc]) structure[loc] = { name: loc, total: 0, count: 0, agents: {} };
+                if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, customers: {} };
+            });
+        }
+
+        // Ensure a fallback exists for completely orphaned system transactions
+        if (!structure['HEADQUARTERS']) structure['HEADQUARTERS'] = { name: 'HEADQUARTERS', total: 0, count: 0, agents: {} };
+
+        // 2. POUR TRANSACTIONS INTO THE FOLDERS
         searchedTransactions.forEach(t => {
             const agentId = t.agentId || 'ADMIN';
-            const agentName = t.agentName || 'Admin';
+            let agentName = t.agentName || 'Admin';
+            let regionName = 'UNASSIGNED AREA';
 
-            // Resolve Region from Motorists Database
-            let regionName = 'Unassigned/HQ';
-            if (agentId === 'ADMIN') regionName = 'HQ (Master Vault)';
-            else if (motorists && motorists.length > 0) {
+            // Find exactly where this salesman belongs in the Fleet
+            if (agentId === 'ADMIN') {
+                // Find the Boss in the roster to put their sales in their assigned region (e.g., HEADQUARTERS)
+                const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
+                if (boss && boss.location) {
+                    regionName = boss.location;
+                    agentName = boss.name || agentName;
+                } else {
+                    regionName = 'HEADQUARTERS';
+                }
+            } else if (motorists && motorists.length > 0) {
                 const motorist = motorists.find(m => m.id === agentId);
-                if (motorist && motorist.location) regionName = motorist.location;
+                if (motorist) {
+                    regionName = motorist.location || 'UNASSIGNED AREA';
+                    agentName = motorist.name || motorist.agentName || agentName;
+                }
             }
+
+            // Safety net: If a ghost transaction has a region that doesn't exist, build it
+            if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
+            if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, customers: {} };
 
             let cust = (t.customerName || 'Walk-in Customer').trim();
             const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
             const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
             if (isWalkIn || isEcer) cust = "Individuals (Ecer)";
 
-            // 1. Build Region
-            if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
-            structure[regionName].total += (t.total || t.amountPaid || 0);
+            // Tally the Money
+            const tValue = (t.total || t.amountPaid || 0);
+            
+            structure[regionName].total += tValue;
             structure[regionName].count += 1;
 
-            // 2. Build Agent
-            if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, customers: {} };
-            structure[regionName].agents[agentName].total += (t.total || t.amountPaid || 0);
+            structure[regionName].agents[agentName].total += tValue;
             structure[regionName].agents[agentName].count += 1;
 
-            // 3. Build Customer & Attach History
             if (!structure[regionName].agents[agentName].customers[cust]) {
                 structure[regionName].agents[agentName].customers[cust] = { name: cust, total: 0, count: 0, history: [] };
             }
-            structure[regionName].agents[agentName].customers[cust].total += (t.total || t.amountPaid || 0);
+            structure[regionName].agents[agentName].customers[cust].total += tValue;
             structure[regionName].agents[agentName].customers[cust].count += 1;
             structure[regionName].agents[agentName].customers[cust].history.push(t);
         });
+        
         return structure;
     }, [searchedTransactions, motorists]);
 
@@ -415,8 +445,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {/* --- LEVEL 2: CUSTOMER SELECTION --- */}
             {!reportView && selectedRegion && selectedAgent && !selectedCustomer && (
                 <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.customers || {}).sort((a,b) => b.total - a.total).map(c => {
+                    {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.customers || {}).length === 0 ? (
+                         <div className="text-center py-20 opacity-50">
+                             <Folder size={48} className="mx-auto mb-4 text-orange-500"/>
+                             <p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Customers Visited</p>
+                         </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.customers || {}).sort((a,b) => b.total - a.total).map(c => {
                             const isIndiv = c.name === "Individuals (Ecer)";
                             return (
                                 <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500' : 'dark:border-slate-700 hover:border-orange-500'}`}>
@@ -437,6 +473,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             );
                         })}
                     </div>
+                    )} {/* 🚀 I ADDED THE MISSING TERNARY CLOSER HERE */}
                 </div>
             )}
 
