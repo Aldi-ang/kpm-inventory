@@ -81,9 +81,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             });
         }
 
-        // Ensure a fallback exists for completely orphaned system transactions
-        if (!structure['HEADQUARTERS']) structure['HEADQUARTERS'] = { name: 'HEADQUARTERS', total: 0, count: 0, agents: {} };
-
         // 2. POUR TRANSACTIONS INTO THE FOLDERS
         searchedTransactions.forEach(t => {
             const agentId = t.agentId || 'ADMIN';
@@ -92,13 +89,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             // Find exactly where this salesman belongs in the Fleet
             if (agentId === 'ADMIN') {
-                // Find the Boss in the roster to put their sales in their assigned region (e.g., HEADQUARTERS)
+                // Find the Boss in the roster to put their sales in their assigned region
                 const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
                 if (boss && boss.location) {
                     regionName = boss.location;
                     agentName = boss.name || agentName;
                 } else {
-                    regionName = 'HEADQUARTERS';
+                    regionName = 'Headquarters'; // Matches your database Title Case format
                 }
             } else if (motorists && motorists.length > 0) {
                 const motorist = motorists.find(m => m.id === agentId);
