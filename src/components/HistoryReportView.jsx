@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe } from 'lucide-react';
+import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 
-export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists }) {
+export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [reportView, setReportView] = useState(false);
     
@@ -13,10 +13,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [historicalData, setHistoricalData] = useState([]);
     const [isFetchingHistory, setIsFetchingHistory] = useState(false);
 
-    // 🏢 HIERARCHY NAVIGATION STATE
-    const [selectedRegion, setSelectedRegion] = useState(null);
-    const [selectedAgent, setSelectedAgent] = useState(null);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    // 🏢 6-TIER HIERARCHY NAVIGATION STATE
+    const [selectedRegion, setSelectedRegion] = useState(null); // Level 1: Team
+    const [selectedAgent, setSelectedAgent] = useState(null);   // Level 2: Agent
+    const [selectedProv, setSelectedProv] = useState(null);     // Level 3: Provinsi
+    const [selectedKab, setSelectedKab] = useState(null);       // Level 4: Kabupaten
+    const [selectedKec, setSelectedKec] = useState(null);       // Level 5: Kecamatan
+    const [selectedCustomer, setSelectedCustomer] = useState(null); // Level 6: Store
 
     // MODAL STATES
     const [editingTrans, setEditingTrans] = useState(null);
@@ -25,8 +28,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [printFormat, setPrintFormat] = useState('thermal'); 
     const [printScale, setPrintScale] = useState(100); 
 
+    // ANALYTICS STATE
+    const [expandedAgent, setExpandedAgent] = useState(null); // Controls the agent accordion in analytics
+
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
-    // Merge live data with any Time Machine data, then strictly filter by the Command Center Date
     const allTransactions = useMemo(() => {
         const combined = [...transactions, ...historicalData];
         return Array.from(new Map(combined.map(t => [t.id, t])).values());
@@ -65,37 +70,35 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         });
     }, [dateFilteredTransactions, searchTerm]);
 
-    // --- ENGINE 3: THE ENTERPRISE HIERARCHY BUILDER (REGION -> AGENT -> CUSTOMER) ---
+    // --- ENGINE 3: THE 6-TIER ENTERPRISE HIERARCHY BUILDER ---
     const reportData = useMemo(() => {
         const structure = {}; 
         
-        // 1. PRE-LOAD THE FLEET ROSTER (Ensures regions/teams show up even with 0 sales)
+        // 1. PRE-LOAD THE FLEET ROSTER (Ensures regions/agents show up even with 0 sales)
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
-                // If they didn't set a location, put them in Unassigned
                 const loc = m.location || 'UNASSIGNED AREA';
                 const aName = m.name || m.agentName || 'Unknown Agent';
-                
                 if (!structure[loc]) structure[loc] = { name: loc, total: 0, count: 0, agents: {} };
-                if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, customers: {} };
+                if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, provinsi: {} };
             });
         }
+        if (!structure['Headquarters']) structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
 
-        // 2. POUR TRANSACTIONS INTO THE FOLDERS
+        // 2. POUR TRANSACTIONS INTO THE 6-TIER FOLDERS
         searchedTransactions.forEach(t => {
             const agentId = t.agentId || 'ADMIN';
             let agentName = t.agentName || 'Admin';
             let regionName = 'UNASSIGNED AREA';
 
-            // Find exactly where this salesman belongs in the Fleet
+            // Resolve Agent's Team
             if (agentId === 'ADMIN') {
-                // Find the Boss in the roster to put their sales in their assigned region
                 const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
                 if (boss && boss.location) {
                     regionName = boss.location;
                     agentName = boss.name || agentName;
                 } else {
-                    regionName = 'Headquarters'; // Matches your database Title Case format
+                    regionName = 'Headquarters';
                 }
             } else if (motorists && motorists.length > 0) {
                 const motorist = motorists.find(m => m.id === agentId);
@@ -105,14 +108,43 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 }
             }
 
-            // Safety net: If a ghost transaction has a region that doesn't exist, build it
-            if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
-            if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, customers: {} };
-
+            // 🚀 THE CROSS-REFERENCE ENGINE: Find Geography from Customer Directory
             let cust = (t.customerName || 'Walk-in Customer').trim();
             const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
             const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
             if (isWalkIn || isEcer) cust = "Individuals (Ecer)";
+
+            let prov = 'UNMAPPED PROVINSI';
+            let kab = 'UNMAPPED KABUPATEN';
+            let kec = 'UNMAPPED KECAMATAN';
+
+            // Find match in customer directory
+            if (customers && customers.length > 0 && !isWalkIn && !isEcer) {
+                const matchedCustomer = customers.find(c => c.name.trim().toLowerCase() === cust.toLowerCase());
+                if (matchedCustomer) {
+                    if (matchedCustomer.province && !matchedCustomer.province.toLowerCase().includes('unknown')) prov = matchedCustomer.province;
+                    if (matchedCustomer.region && !matchedCustomer.region.toLowerCase().includes('unknown')) kab = matchedCustomer.region;
+                    if (matchedCustomer.city && !matchedCustomer.city.toLowerCase().includes('unknown')) kec = matchedCustomer.city;
+                }
+            }
+
+            // Ensure hierarchy exists
+            if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
+            if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, provinsi: {} };
+            
+            const agentNode = structure[regionName].agents[agentName];
+            if (!agentNode.provinsi[prov]) agentNode.provinsi[prov] = { name: prov, total: 0, count: 0, kabupaten: {} };
+            
+            const provNode = agentNode.provinsi[prov];
+            if (!provNode.kabupaten[kab]) provNode.kabupaten[kab] = { name: kab, total: 0, count: 0, kecamatan: {} };
+            
+            const kabNode = provNode.kabupaten[kab];
+            if (!kabNode.kecamatan[kec]) kabNode.kecamatan[kec] = { name: kec, total: 0, count: 0, stores: {} };
+            
+            const kecNode = kabNode.kecamatan[kec];
+            if (!kecNode.stores[cust]) kecNode.stores[cust] = { name: cust, total: 0, count: 0, history: [] };
+
+            const storeNode = kecNode.stores[cust];
 
             // Tally the Money
             const tValue = (t.total || t.amountPaid || 0);
@@ -120,21 +152,27 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             structure[regionName].total += tValue;
             structure[regionName].count += 1;
 
-            structure[regionName].agents[agentName].total += tValue;
-            structure[regionName].agents[agentName].count += 1;
+            agentNode.total += tValue;
+            agentNode.count += 1;
 
-            if (!structure[regionName].agents[agentName].customers[cust]) {
-                structure[regionName].agents[agentName].customers[cust] = { name: cust, total: 0, count: 0, history: [] };
-            }
-            structure[regionName].agents[agentName].customers[cust].total += tValue;
-            structure[regionName].agents[agentName].customers[cust].count += 1;
-            structure[regionName].agents[agentName].customers[cust].history.push(t);
+            provNode.total += tValue;
+            provNode.count += 1;
+
+            kabNode.total += tValue;
+            kabNode.count += 1;
+
+            kecNode.total += tValue;
+            kecNode.count += 1;
+
+            storeNode.total += tValue;
+            storeNode.count += 1;
+            storeNode.history.push(t);
         });
         
         return structure;
-    }, [searchedTransactions, motorists]);
+    }, [searchedTransactions, motorists, customers]);
 
-    // AUTO-NAVIGATE FOR EMPLOYEES (Skips the Region screen since they only exist in one)
+    // AUTO-NAVIGATE FOR EMPLOYEES
     useEffect(() => {
         if (userRole !== 'ADMIN') {
             const regions = Object.keys(reportData);
@@ -146,7 +184,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         }
     }, [userRole, reportData, selectedRegion, selectedAgent]);
 
-    // --- TIME MACHINE FETCH PROTOCOL ---
     const handlePullArchive = async () => {
         if (!fetchHistoricalTransactions) return;
         setIsFetchingHistory(true);
@@ -162,23 +199,25 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         setIsFetchingHistory(false);
     };
 
-    // --- CONTEXTUAL ANALYTICS ENGINE (Changes based on what folder you are looking at) ---
+    // --- CONTEXTUAL ANALYTICS ENGINE ---
     const contextualTransactions = useMemo(() => {
         if (selectedAgent && selectedRegion) return searchedTransactions.filter(t => (t.agentName || 'Admin') === selectedAgent);
         if (selectedRegion) return searchedTransactions.filter(t => {
             const agentId = t.agentId || 'ADMIN';
-            if (agentId === 'ADMIN') return selectedRegion === 'HQ (Master Vault)';
+            if (agentId === 'ADMIN') return selectedRegion === 'Headquarters';
             return motorists?.find(m => m.id === agentId)?.location === selectedRegion;
         });
-        return searchedTransactions; // Global Master Context
+        return searchedTransactions; 
     }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);
 
+    // 🚀 NEW: MACRO TO MICRO ANALYTICS 🚀
     const stats = useMemo(() => {
         const totalRev = contextualTransactions.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
         const totalProfit = contextualTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0);
         const count = contextualTransactions.length;
         const items = {};
         const payments = { Cash: 0, QRIS: 0, Transfer: 0, Titip: 0 };
+        const agents = {}; // Build Agent Roster
 
         contextualTransactions.forEach(t => {
             const method = t.paymentType || 'Cash';
@@ -186,15 +225,36 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (t.type === 'RETUR') payments['Cash'] -= Math.abs(value);
             else payments[method] = (payments[method] || 0) + value;
 
+            const aName = t.agentName || 'Admin';
+            if (!agents[aName]) agents[aName] = { name: aName, agentId: t.agentId, total: 0, count: 0, items: {}, transactions: [] };
+            
+            agents[aName].total += t.type === 'RETUR' ? -Math.abs(value) : value;
+            agents[aName].count += 1;
+            agents[aName].transactions.push(t);
+
             if(t.items) t.items.forEach(i => {
                 const product = inventory.find(p => p.id === i.productId);
                 const bksQty = convertToBks(i.qty, i.unit, product || {});
+                
+                // Master Item List
                 if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
                 items[i.name].qty += bksQty;
                 items[i.name].val += (i.calculatedPrice * i.qty);
+
+                // Agent Specific Item List
+                if(!agents[aName].items[i.name]) agents[aName].items[i.name] = { qty: 0, val: 0 };
+                agents[aName].items[i.name].qty += bksQty;
+                agents[aName].items[i.name].val += (i.calculatedPrice * i.qty);
             });
         });
-        return { totalRev, totalProfit, count, items, payments };
+
+        // Sort agent transactions chronologically
+        Object.values(agents).forEach(a => a.transactions.sort((x, y) => (y.timestamp?.seconds||0) - (x.timestamp?.seconds||0)));
+
+        return { 
+            totalRev, totalProfit, count, items, payments, 
+            agentRoster: Object.values(agents).sort((a,b) => b.total - a.total) 
+        };
     }, [contextualTransactions, inventory]);
 
     // 🛡️ DYNAMIC INVENTORY PRICE INSPECTOR
@@ -299,10 +359,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {!reportView && (
                 <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
                     {userRole === 'ADMIN' && (
-                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
+                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
-                    {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedAgent(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-blue-500 flex items-center gap-1"><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-orange-500 text-emerald-500 flex items-center gap-1"><User size={14}/> {selectedAgent}</span> </>}
+                    {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-blue-500 flex items-center gap-1"><MapPin size={14}/> {selectedRegion}</span> </>}
+                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-emerald-500 flex items-center gap-1"><User size={14}/> {selectedAgent}</span> </>}
+                    {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
+                    {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
+                    {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-orange-500 text-red-500 flex items-center gap-1">{selectedKec}</span> </>}
                     {selectedCustomer && <> <ChevronRight size={14}/> <span className="text-slate-800 dark:text-white flex items-center gap-1"><Store size={14}/> {selectedCustomer}</span> </>}
                 </div>
             )}
@@ -324,7 +387,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* --- ANALYTICS DASHBOARD (Contextualized) --- */}
+            {/* --- 🚀 THE NEW MACRO-TO-MICRO ANALYTICS DASHBOARD --- */}
             {reportView && (
                 <div className="animate-fade-in relative z-10">
                      <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -342,6 +405,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                      <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
 
                      <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
+                         {/* MACRO VIEW: GLOBAL STATS */}
                          <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
@@ -356,18 +420,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
                              <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
-                         </div>
-
-                         <div className="mb-8 print:mb-4 p-6 print:p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border dark:border-slate-700 print:border-slate-200">
-                            <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Wallet size={20} className="print:w-4 print:h-4 text-emerald-500"/> Money Breakdown</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-4 print:grid-cols-4 gap-4 print:gap-2">
-                                {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                                    <div key={method} className="bg-white dark:bg-slate-800 p-3 print:p-2 rounded-xl border dark:border-slate-700 shadow-sm">
-                                        <p className="text-[10px] print:text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-1 print:mb-0">{method}</p>
-                                        <p className={`text-lg print:text-sm font-bold ${method === 'Titip' ? 'text-orange-500' : 'text-slate-800 dark:text-white dark:print:text-black'}`}>{formatRupiah(stats.payments[method])}</p>
-                                    </div>
-                                ))}
-                            </div>
                          </div>
 
                          <div className="mb-8 print:mb-0">
@@ -389,13 +441,109 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                  </table>
                              </div>
                          </div>
+
+                         {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}
+                         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
+                             <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest"><User size={24} className="text-blue-500"/> Agent Roster</h3>
+                             <div className="space-y-4">
+                                 {stats.agentRoster.map(agent => {
+                                     const isExpanded = expandedAgent === agent.name;
+                                     const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
+                                     
+                                     return (
+                                         <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-500 shadow-lg dark:bg-slate-800/80' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400'}`}>
+                                             {/* Accordion Header */}
+                                             <button 
+                                                onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
+                                                className="w-full p-4 flex items-center justify-between text-left focus:outline-none"
+                                             >
+                                                 <div className="flex items-center gap-4">
+                                                     {agentProfile.photoURL ? (
+                                                         <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shrink-0" alt={agent.name} />
+                                                     ) : (
+                                                         <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                                             <User size={24} className="text-blue-500" />
+                                                         </div>
+                                                     )}
+                                                     <div>
+                                                         <h4 className="font-bold text-lg dark:text-white leading-none mb-1">{agent.name}</h4>
+                                                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">{agent.count} Receipts</p>
+                                                     </div>
+                                                 </div>
+                                                 <div className="flex items-center gap-6">
+                                                     <div className="text-right">
+                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
+                                                         <p className={`font-black text-lg ${agent.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(agent.total)}</p>
+                                                     </div>
+                                                     <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-full text-slate-400">
+                                                         {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
+                                                     </div>
+                                                 </div>
+                                             </button>
+
+                                             {/* Accordion Body (Deep Dive) */}
+                                             {isExpanded && (
+                                                 <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
+                                                     
+                                                     {/* Agent's Product Breakdown */}
+                                                     <div className="mb-8">
+                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
+                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                             {Object.entries(agent.items).sort((a,b) => b[1].val - a[1].val).map(([pName, pData]) => (
+                                                                 <div key={pName} className="bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700 flex justify-between items-center shadow-sm">
+                                                                     <div>
+                                                                         <p className="text-xs font-bold dark:text-white uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
+                                                                         <p className="text-[10px] text-slate-500 font-mono">{pData.qty} Bks</p>
+                                                                     </div>
+                                                                     <p className="text-sm font-black text-emerald-500">{formatRupiah(pData.val)}</p>
+                                                                 </div>
+                                                             ))}
+                                                         </div>
+                                                     </div>
+
+                                                     {/* Agent's Transaction Timeline */}
+                                                     <div>
+                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
+                                                         <div className="space-y-2">
+                                                             {agent.transactions.map(t => (
+                                                                 <div key={t.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                                                                     <div className="flex items-center gap-4 w-full md:w-auto">
+                                                                         <div className="bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-center shrink-0">
+                                                                             <p className="text-[10px] text-slate-500 font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
+                                                                             <p className="text-xs font-mono font-black dark:text-white">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
+                                                                         </div>
+                                                                         <div className="min-w-0">
+                                                                             <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
+                                                                             <p className="text-[10px] text-slate-500 uppercase mt-0.5 truncate">
+                                                                                 {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : 'N/A'}
+                                                                             </p>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
+                                                                         <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>{t.paymentType || 'Cash'}</span>
+                                                                         <p className={`font-black text-base mt-1 ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</p>
+                                                                     </div>
+                                                                 </div>
+                                                             ))}
+                                                         </div>
+                                                     </div>
+
+                                                 </div>
+                                             )}
+                                         </div>
+                                     );
+                                 })}
+                                 {stats.agentRoster.length === 0 && <p className="text-center text-slate-500 py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
+                             </div>
+                         </div>
+
                      </div>
                 </div>
             )}
 
             <div className="hide-on-print w-full">
 
-            {/* --- LEVEL 0: REGION SELECTION (ADMIN ONLY) --- */}
+            {/* --- LEVEL 1: REGION SELECTION (TEAM) --- */}
             {!reportView && userRole === 'ADMIN' && !selectedRegion && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData).length === 0 ? (
@@ -419,7 +567,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* --- LEVEL 1: AGENT SELECTION --- */}
+            {/* --- LEVEL 2: AGENT SELECTION --- */}
             {!reportView && selectedRegion && !selectedAgent && (
                 <div className="animate-fade-in relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -439,30 +587,85 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* --- LEVEL 2: CUSTOMER SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && !selectedCustomer && (
+            {/* --- LEVEL 3: PROVINSI SELECTION --- */}
+            {!reportView && selectedRegion && selectedAgent && !selectedProv && (
                 <div className="animate-fade-in relative z-10">
-                    {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.customers || {}).length === 0 ? (
-                         <div className="text-center py-20 opacity-50">
-                             <Folder size={48} className="mx-auto mb-4 text-orange-500"/>
-                             <p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Customers Visited</p>
-                         </div>
+                    {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).length === 0 ? (
+                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-purple-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Provinces Visited</p></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.customers || {}).sort((a,b) => b.total - a.total).map(c => {
+                            {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).sort((a,b) => b.total - a.total).map(p => (
+                                <div key={p.name} onClick={() => setSelectedProv(p.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-purple-500 transition-all group">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="p-2.5 rounded-xl transition-colors bg-purple-100 dark:bg-slate-700 text-purple-600 group-hover:bg-purple-500 group-hover:text-white"><MapPin size={20}/></div>
+                                    </div>
+                                    <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{p.name}</h3>
+                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
+                                        <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-purple-500">{formatRupiah(p.total)}</p></div>
+                                        <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{p.count}</p></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* --- LEVEL 4: KABUPATEN SELECTION --- */}
+            {!reportView && selectedRegion && selectedAgent && selectedProv && !selectedKab && (
+                <div className="animate-fade-in relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten || {}).sort((a,b) => b.total - a.total).map(k => (
+                            <div key={k.name} onClick={() => setSelectedKab(k.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-pink-500 transition-all group">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl transition-colors bg-pink-100 dark:bg-slate-700 text-pink-600 group-hover:bg-pink-500 group-hover:text-white"><Folder size={20}/></div>
+                                </div>
+                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{k.name}</h3>
+                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
+                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
+                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{k.count}</p></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* --- LEVEL 5: KECAMATAN SELECTION --- */}
+            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && !selectedKec && (
+                <div className="animate-fade-in relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan || {}).sort((a,b) => b.total - a.total).map(c => (
+                            <div key={c.name} onClick={() => setSelectedKec(c.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-red-500 transition-all group">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl transition-colors bg-red-100 dark:bg-slate-700 text-red-600 group-hover:bg-red-500 group-hover:text-white"><Folder size={20}/></div>
+                                </div>
+                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{c.name}</h3>
+                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
+                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-red-500">{formatRupiah(c.total)}</p></div>
+                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* --- LEVEL 6: CUSTOMER SELECTION --- */}
+            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && !selectedCustomer && (
+                <div className="animate-fade-in relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores || {}).sort((a,b) => b.total - a.total).map(c => {
                             const isIndiv = c.name === "Individuals (Ecer)";
                             return (
                                 <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500' : 'dark:border-slate-700 hover:border-orange-500'}`}>
-                                    {isAdmin && (
-                                        <button onClick={(e) => { e.stopPropagation(); onDeleteFolder(c.name, selectedAgent); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors z-10"><Trash2 size={16} /></button>
-                                    )}
                                     <div className="flex items-start justify-between mb-3">
                                         <div className={`p-2.5 rounded-xl transition-colors ${isIndiv ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white' : 'bg-orange-100 dark:bg-slate-700 text-orange-600 group-hover:bg-orange-500 group-hover:text-white'}`}>
                                             {isIndiv ? <User size={20}/> : <Store size={20} />}
                                         </div>
                                     </div>
                                     <h3 className="font-black text-base dark:text-white mb-3 truncate">{c.name}</h3>
-                                    <div className="flex justify-between items-end">
+                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
                                         <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
                                         <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
                                     </div>
@@ -470,16 +673,15 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             );
                         })}
                     </div>
-                    )} {/* 🚀 I ADDED THE MISSING TERNARY CLOSER HERE */}
                 </div>
             )}
 
-            {/* --- LEVEL 3: RECEIPT ARCHIVE --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedCustomer && (
+            {/* --- LEVEL 7: RECEIPT ARCHIVE --- */}
+            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && selectedCustomer && (
                 <div className="animate-fade-in relative z-10">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
                         {(() => {
-                            const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.customers[selectedCustomer];
+                            const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores[selectedCustomer];
                             if (!cObj) return null;
                             
                             return (
