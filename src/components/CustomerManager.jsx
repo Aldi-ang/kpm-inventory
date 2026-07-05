@@ -982,9 +982,47 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-2">
-                            <input value={formData.province} onChange={e=>setFormData({...formData, province: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Provinsi" />
-                            <input value={formData.region} onChange={e=>setFormData({...formData, region: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Kabupaten" />
-                            <input value={formData.city} onChange={e=>setFormData({...formData, city: e.target.value})} className="w-full md:flex-1 p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Kecamatan" />
+                            {/* 🚀 SMART PROVINSI DROPDOWN */}
+                            <div className="w-full md:flex-1 relative">
+                                <input 
+                                    list="provinsi-list"
+                                    value={formData.province} 
+                                    onChange={e=>setFormData({...formData, province: e.target.value.toUpperCase()})} 
+                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    placeholder="PROVINSI" 
+                                />
+                                <datalist id="provinsi-list">
+                                    {[...new Set(customers.map(c => c.province).filter(Boolean))].sort().map(p => <option key={p} value={p} />)}
+                                </datalist>
+                            </div>
+                            
+                            {/* 🚀 SMART KABUPATEN DROPDOWN */}
+                            <div className="w-full md:flex-1 relative">
+                                <input 
+                                    list="kabupaten-list"
+                                    value={formData.region} 
+                                    onChange={e=>setFormData({...formData, region: e.target.value.toUpperCase()})} 
+                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    placeholder="KABUPATEN" 
+                                />
+                                <datalist id="kabupaten-list">
+                                    {[...new Set(customers.map(c => c.region).filter(Boolean))].sort().map(r => <option key={r} value={r} />)}
+                                </datalist>
+                            </div>
+
+                            {/* 🚀 SMART KECAMATAN DROPDOWN */}
+                            <div className="w-full md:flex-1 relative">
+                                <input 
+                                    list="kecamatan-list"
+                                    value={formData.city} 
+                                    onChange={e=>setFormData({...formData, city: e.target.value.toUpperCase()})} 
+                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    placeholder="KECAMATAN" 
+                                />
+                                <datalist id="kecamatan-list">
+                                    {[...new Set(customers.map(c => c.city).filter(Boolean))].sort().map(c => <option key={c} value={c} />)}
+                                </datalist>
+                            </div>
                         </div>
 
                         <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
