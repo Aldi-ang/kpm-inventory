@@ -14,12 +14,13 @@ import {
 
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, CellCloud, CloudOff, Activity
 } from 'recharts';
 
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
+import useOfflineEngine from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions } from './config/permissions';
 
@@ -142,6 +143,71 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
   // 🚀 THE ONBOARDING BRIDGE STATE
   const [pendingMigration, setPendingMigration] = useState(null);
+
+// 🚀 THE OFFLINE GHOST LEDGER & FLIGHT RECORDER
+  const { isOnline, syncLogs, pendingCount, getPendingData, clearProcessedItem, logSyncEvent, clearFlightRecorder } = useOfflineEngine();
+  const [showFlightRecorder, setShowFlightRecorder] = useState(false);
+
+  // 📡 THE LOUD AUTO-SYNC: Fires the exact millisecond the phone reconnects to 4G
+  useEffect(() => {
+      const flushOfflineData = async () => {
+          if (!isOnline || !user) return;
+          
+          const { transactions: offlineTx, nooProfiles: offlineNoo } = await getPendingData();
+          const totalItems = offlineTx.length + offlineNoo.length;
+
+          if (totalItems > 0) {
+              triggerCapy(`📡 SIGNAL ACQUIRED! Pushing ${totalItems} offline records to HQ...`);
+              logSyncEvent(`Initiating Auto-Sync for ${totalItems} items...`, 'INFO');
+
+              try {
+                  const batches = [];
+                  let currentBatch = writeBatch(db);
+                  let opCount = 0;
+
+                  // 1. Flush Blind-Drop NOO Profiles
+                  for (const noo of offlineNoo) {
+                      const localId = noo.localId;
+                      const payload = { ...noo };
+                      delete payload.localId; // Strip the local ID before sending to cloud
+                      
+                      const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+                      currentBatch.set(ref, { ...payload, status: 'PENDING_OFFLINE_SYNC', syncedAt: serverTimestamp() });
+                      opCount++;
+                      
+                      await clearProcessedItem('noo_profiles', localId);
+                      if (opCount > 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); opCount = 0; }
+                  }
+
+                  // 2. Flush Offline Sales Receipts
+                  for (const tx of offlineTx) {
+                      const localId = tx.localId;
+                      const payload = { ...tx };
+                      delete payload.localId; 
+                      
+                      const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
+                      currentBatch.set(ref, { ...payload, syncedAt: serverTimestamp() });
+                      opCount++;
+                      
+                      await clearProcessedItem('transactions', localId);
+                      if (opCount > 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); opCount = 0; }
+                  }
+
+                  if (opCount > 0) batches.push(currentBatch.commit());
+                  await Promise.all(batches);
+
+                  logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
+                  triggerCapy(`✅ Sync Complete! ${totalItems} items secured in Master Vault.`);
+              } catch (err) {
+                  console.error("Auto-Sync Failed:", err);
+                  logSyncEvent(`❌ Auto-Sync Failed: ${err.message}`, 'ERROR');
+                  triggerCapy(`❌ Sync Failed! Retrying later.`);
+              }
+          }
+      };
+
+      if (isOnline) flushOfflineData();
+  }, [isOnline, user]);
 
 // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
   const [userRole, setUserRole] = useState('ADMIN'); 
@@ -3427,6 +3493,55 @@ const handleGitHubMirror = async () => {
             </>
         )}
         </>
+      )}
+
+      {/* 🚀 THE OFFLINE FLIGHT RECORDER WIDGET */}
+      {user && (
+          <>
+              {/* The Floating Cloud Status Indicator */}
+              <div className="fixed top-4 right-16 md:right-24 z-[9990]">
+                  <button onClick={() => setShowFlightRecorder(true)} className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${isOnline ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 animate-pulse'}`}>
+                      {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
+                      <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
+                      {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
+                          <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
+                      )}
+                  </button>
+              </div>
+
+              {/* The Flight Recorder Terminal Modal */}
+              {showFlightRecorder && (
+                  <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                      <div className="bg-[#0a0a0a] border border-white/20 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                          <div className="bg-slate-900 p-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                              <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-blue-500"/> Flight Recorder</h3>
+                              <button onClick={() => setShowFlightRecorder(false)} className="text-slate-400 hover:text-red-500"><X size={20}/></button>
+                          </div>
+                          
+                          <div className="p-4 bg-slate-900/50 flex justify-between items-center border-b border-white/5 shrink-0">
+                              <div className="flex gap-4">
+                                  <div className="text-center"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-orange-500">{pendingCount.transactions}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-blue-500">{pendingCount.noo}</p></div>
+                              </div>
+                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[9px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-white transition-colors">Clear Logs</button>
+                          </div>
+
+                          <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-black font-mono">
+                              {syncLogs.length === 0 ? (
+                                  <p className="text-slate-600 text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
+                              ) : (
+                                  syncLogs.map((log) => (
+                                      <div key={log.id} className={`p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-slate-900/50 border-slate-800 text-slate-300'}`}>
+                                          <div className="text-[9px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
+                                          <div>{log.message}</div>
+                                      </div>
+                                  ))
+                              )}
+                          </div>
+                      </div>
+                  </div>
+              )}
+          </>
       )}
 
       {/* GLOBAL WIDGETS */}
