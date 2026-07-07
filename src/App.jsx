@@ -185,6 +185,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const payload = { ...tx };
                       delete payload.localId; 
                       
+                      // 🚀 THE FIX: Stamp the receipt with a True Server Time so it appears in Reports!
+                      payload.timestamp = serverTimestamp();
+                      
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
                       currentBatch.set(ref, { ...payload, syncedAt: serverTimestamp() });
                       opCount++;

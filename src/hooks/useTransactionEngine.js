@@ -30,7 +30,7 @@ export default function useTransactionEngine({
 
         // 🚀 THE OFFLINE INTERCEPTOR (MOVED TO THE ABSOLUTE TOP)
         // This prevents Firebase from searching the internet and hanging the UI.
-        if (!isOnline) {
+        if (!navigator.onLine) {
             try {
                 // Extract local data without touching Firebase
                 const finalTransItems = activeCart.map(item => {
@@ -52,6 +52,7 @@ export default function useTransactionEngine({
                     total: totalRevenue,
                     totalProfit: totalProfit,
                     type: 'SALE',
+                    timestamp: { seconds: Math.floor(Date.now() / 1000) }, // 🚀 FAKE TIMESTAMP FOR LOCAL CACHE
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
                     tempoDays: proofPayload?.tempoDays || null,
