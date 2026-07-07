@@ -1622,6 +1622,13 @@ const handleGitHubMirror = async () => {
             const email = currentUser.email.toLowerCase().trim();
             setCurrentUserEmail(email);
 
+            // 🚀 MASTER VIP LIST: Define this first so the offline crash handler can see it
+            const masterVIPs = [
+                'adikaryasukses99@gmail.com',
+                'THE_OWNER_EMAIL@gmail.com' // Replace later
+            ];
+            const isDeveloper = masterVIPs.includes(email);
+
             try {
                 // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? (SECURED) 🚀
                 const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
@@ -1631,8 +1638,12 @@ const handleGitHubMirror = async () => {
                 const inviteRef = doc(db, 'system_admins_invites', email);
                 const inviteSnap = await getDoc(inviteRef);
 
-                // 🚀 DEVELOPER OVERRIDE: The Architect can never be locked out
-                const isDeveloper = email === 'adikaryasukses99@gmail.com';
+                // 🚀 MASTER VIP LIST: The Architect and the Owner can never be locked out
+                const masterVIPs = [
+                    'adikaryasukses99@gmail.com', 
+                    'THE_OWNER_EMAIL@gmail.com' // <-- Replace this with the actual boss's email
+                ];
+                const isDeveloper = masterVIPs.includes(email);
 
                 if (inviteSnap.exists() || (isDeveloper && !sysAdminSnap.exists())) {
                     // Claim the Crown: Promote them to System Admin and delete the invite
@@ -1796,6 +1807,20 @@ const handleGitHubMirror = async () => {
 
             } catch (error) {
                 console.error("Traffic Cop Error:", error);
+                
+                // 🚀 OFFLINE GOD MODE: If the DB crashes due to no internet, let VIPs in anyway
+                if (isDeveloper) {
+                    console.log("OFFLINE GOD MODE ENGAGED. Bypassing network crash.");
+                    setIsSystemOwner(true);
+                    setBossUid(null);
+                    setUserRole('ADMIN'); 
+                    setAgentProfileId(null);
+                    setUser(currentUser);
+                    setIsAdmin(false); 
+                    setShowAdminLogin(true); 
+                    return;
+                }
+
                 // 🚨 SECURE FALLBACK ON ERROR 🚨
                 setUserRole('UNAUTHORIZED'); 
                 setUser(currentUser);
