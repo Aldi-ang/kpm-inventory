@@ -1,13 +1,12 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc } from 'firebase/firestore';
 import { getCurrentDate } from '../utils/helpers';
-import useOfflineEngine from './useOfflineEngine'; // 🚀 INJECT THE GHOST LEDGER
+import useOfflineEngine from './useOfflineEngine';
 
 export default function useTransactionEngine({
     db, appId, userId, userRole, agentProfileId, adminSalesMode,
     logAudit, triggerCapy, setCart, customers, user 
 }) {
 
-    // 🚀 BOOT THE GHOST LEDGER SENSORS
     const { isOnline, saveOfflineTransaction, saveOfflineNOO } = useOfflineEngine();
 
     // --- CORE TRANSACTION ENGINE ---
@@ -23,21 +22,86 @@ export default function useTransactionEngine({
         
         if(!customerName) { alert("Customer Name is required!"); return; } 
 
-        let finalAgentName = 'Admin'; 
+        let currentAgentProfileId = agentProfileId;
+        if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
+        else if (userRole === 'ADMIN') currentAgentProfileId = null;
 
+        let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+
+        // 🚀 THE OFFLINE INTERCEPTOR (MOVED TO THE ABSOLUTE TOP)
+        // This prevents Firebase from searching the internet and hanging the UI.
+        if (!isOnline) {
+            try {
+                // Extract local data without touching Firebase
+                const finalTransItems = activeCart.map(item => {
+                    const distPrice = item.product?.priceDistributor || 0;
+                    const itemProfit = (item.calculatedPrice * item.qty) - (distPrice * item.qty);
+                    return {
+                        ...item,
+                        distributorPriceSnapshot: distPrice,
+                        profitSnapshot: itemProfit
+                    };
+                });
+                const totalProfit = finalTransItems.reduce((sum, i) => sum + i.profitSnapshot, 0);
+
+                const transactionPayload = {
+                    date: getCurrentDate(),
+                    customerName,
+                    paymentType,
+                    items: finalTransItems,
+                    total: totalRevenue,
+                    totalProfit: totalProfit,
+                    type: 'SALE',
+                    agentId: currentAgentProfileId || 'ADMIN',
+                    agentName: finalAgentName,
+                    tempoDays: proofPayload?.tempoDays || null,
+                    deliveryProof: proofPayload ? {
+                        photo: proofPayload.photoData, // Massive Base64 saves safely to local hard drive
+                        latitude: proofPayload.latitude,
+                        longitude: proofPayload.longitude,
+                        capturedAt: proofPayload.timestamp
+                    } : null
+                };
+
+                await saveOfflineTransaction(transactionPayload);
+
+                if (newStoreData) {
+                    const storePayload = {
+                        name: customerName,
+                        phone: newStoreData.phone || '',
+                        address: newStoreData.address || '',
+                        pricingTier: newStoreData.isNooRegistration ? newStoreData.requestedTier : 'Ecer',
+                        latitude: newStoreData.latitude || null,
+                        longitude: newStoreData.longitude || null,
+                        status: newStoreData.isNooRegistration ? 'NOO_ACTIVE' : 'WALK_IN',
+                        mappedBy: finalAgentName,
+                        hasPhotoProof: newStoreData.isNooRegistration ? true : false,
+                        storeImage: newStoreData.photoUrl || ''
+                    };
+                    await saveOfflineNOO(storePayload);
+                }
+
+                if (!manualData && setCart) setCart([]);
+                triggerCapy("⚠️ Offline Mode: Sale recorded to Ghost Ledger! Will auto-sync when signal returns.");
+                window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+                return finalAgentName;
+            } catch (err) {
+                console.error("Ghost Ledger Error:", err);
+                alert("Failed to save to Offline Vault.");
+                return;
+            }
+        }
+
+
+        // 🌐 ONLINE MODE: Standard Firebase Processing
         try { 
             const batch = writeBatch(db);
             const updatesToPerform = [];
             const transactionItems = []; 
             let totalProfit = 0; 
 
-            let currentAgentProfileId = agentProfileId;
-            if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
-            else if (userRole === 'ADMIN') currentAgentProfileId = null;
-
-            // 📖 PHASE 1: READS (Works entirely offline by pulling from local cache)
+            // 📖 PHASE 1: READS 
             for (const item of activeCart) { 
-                // Note: Offline caching allows `getDoc` to pull from the device's hard drive!
                 const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                 const prodDoc = await getDoc(prodRef); 
                 
@@ -75,7 +139,7 @@ export default function useTransactionEngine({
                 agentDoc = await getDoc(agentRef);
             }
 
-            // ✍️ PHASE 2: WRITES (Prepare the updates)
+            // ✍️ PHASE 2: WRITES 
             for (const update of updatesToPerform) {
                 if (update.isReturUpdate) {
                     batch.update(update.ref, { badStock: update.newStock });
@@ -112,58 +176,6 @@ export default function useTransactionEngine({
                 return copy;
             });
 
-            if (userRole === 'ADMIN') {
-                finalAgentName = "Admin"; 
-            } else if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
-                finalAgentName = agentDoc.data().name; 
-            }
-
-            // 🚀 THE OFFLINE INTERCEPTOR 🚀
-            if (!isOnline) {
-                // If offline, bypass Firebase completely and save to IndexedDB Ghost Ledger
-                const transactionPayload = {
-                    date: getCurrentDate(), 
-                    customerName, 
-                    paymentType, 
-                    items: finalTransItems, 
-                    total: totalRevenue, 
-                    totalProfit: totalProfit, 
-                    type: 'SALE', 
-                    agentId: currentAgentProfileId || 'ADMIN',
-                    agentName: finalAgentName,
-                    tempoDays: proofPayload?.tempoDays || null,
-                    deliveryProof: proofPayload ? {
-                        photo: proofPayload.photoData, // We save base64 locally until online
-                        latitude: proofPayload.latitude,
-                        longitude: proofPayload.longitude,
-                        capturedAt: proofPayload.timestamp
-                    } : null
-                };
-                
-                await saveOfflineTransaction(transactionPayload);
-
-                if (newStoreData) {
-                    const storePayload = {
-                        name: customerName,
-                        phone: newStoreData.phone || '',
-                        address: newStoreData.address || '',
-                        pricingTier: newStoreData.isNooRegistration ? newStoreData.requestedTier : 'Ecer', 
-                        latitude: newStoreData.latitude || null,
-                        longitude: newStoreData.longitude || null,
-                        status: newStoreData.isNooRegistration ? 'NOO_ACTIVE' : 'WALK_IN', 
-                        mappedBy: finalAgentName,
-                        hasPhotoProof: newStoreData.isNooRegistration ? true : false,
-                        storeImage: newStoreData.photoUrl || '' // Base64 stored locally
-                    };
-                    await saveOfflineNOO(storePayload);
-                }
-                
-                if (!manualData && setCart) setCart([]); 
-                triggerCapy("⚠️ Offline Mode: Sale recorded to Ghost Ledger! Will auto-sync when signal returns.");
-                return finalAgentName;
-            }
-
-            // 🌐 ONLINE MODE: Fire the standard Firebase Batch
             const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
             batch.set(transRef, { 
                 date: getCurrentDate(), 
@@ -219,8 +231,6 @@ export default function useTransactionEngine({
             await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
             if (!manualData && setCart) setCart([]); 
             triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
-            
-            // 🚀 WAKE UP THE GPS SNIPER ENGINE! 
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
             
             return finalAgentName; 
