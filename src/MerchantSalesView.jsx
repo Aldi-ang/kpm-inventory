@@ -778,10 +778,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
          
             // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Gamified XP System
-            try {
-                const userId = user?.uid || user?.id || 'default';
-                let rules = null;
-                const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+            if (navigator.onLine) {
+                try {
+                    const userId = user?.uid || user?.id || 'default';
+                    let rules = null;
+                    const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
                 if (rulesSnap.exists() && rulesSnap.data().rules) {
                     rules = rulesSnap.data().rules;
                 } else {
@@ -1005,8 +1006,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 console.error("Live Auto-Promoter Failed:", e);
                 if (triggerCapy) triggerCapy(`Auto-Promoter Error: ${e.message}`);
             }
+        } else {
+            console.log("Ghost Ledger Mode: Bypassing XP Auto-Promoter for offline speed.");
+        }
 
-            setReceiptData({
+        setReceiptData({
                 customer: finalCust, method: finalMethod, items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
