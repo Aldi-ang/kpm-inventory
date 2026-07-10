@@ -9,6 +9,7 @@ export default function useOfflineEngine() {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [syncLogs, setSyncLogs] = useState([]);
     const [pendingCount, setPendingCount] = useState({ transactions: 0, noo: 0 });
+    const [pendingTxData, setPendingTxData] = useState([]); // 🚀 WAITING ROOM DATA
 
     // 2. INITIALIZE THE VAULT (IndexedDB)
     const initDB = async () => {
@@ -60,9 +61,11 @@ export default function useOfflineEngine() {
     const updatePendingCount = async () => {
         try {
             const db = await initDB();
-            const txCount = await db.count('transactions');
+            const txs = await db.getAll('transactions'); // 🚀 GET ALL RECEIPTS
             const nooCount = await db.count('noo_profiles');
-            setPendingCount({ transactions: txCount, noo: nooCount });
+            
+            setPendingCount({ transactions: txs.length, noo: nooCount });
+            setPendingTxData(txs); // 🚀 SEND TO FRONTEND
         } catch (err) {}
     };
 
@@ -129,6 +132,7 @@ export default function useOfflineEngine() {
         isOnline,
         syncLogs,
         pendingCount,
+        pendingTxData, // 🚀 EXPORT THE DATA TO APP.JSX
         saveOfflineTransaction,
         saveOfflineNOO,
         getPendingData,

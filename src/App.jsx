@@ -145,7 +145,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [pendingMigration, setPendingMigration] = useState(null);
 
 // 🚀 THE OFFLINE GHOST LEDGER & FLIGHT RECORDER
-  const { isOnline, syncLogs, pendingCount, getPendingData, clearProcessedItem, logSyncEvent, clearFlightRecorder } = useOfflineEngine();
+  const { isOnline, syncLogs, pendingCount, pendingTxData, getPendingData, clearProcessedItem, logSyncEvent, clearFlightRecorder } = useOfflineEngine();
   const [showFlightRecorder, setShowFlightRecorder] = useState(false);
 
   // 📡 THE LOUD AUTO-SYNC: Fires the exact millisecond the phone reconnects to 4G
@@ -3558,6 +3558,50 @@ const handleGitHubMirror = async () => {
                           </div>
 
                           <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-black font-mono">
+                              
+                              {/* 🚀 THE OFFLINE WAITING ROOM 🚀 */}
+                              {pendingTxData && pendingTxData.length > 0 && (
+                                  <div className="mb-6 border-b-2 border-slate-700 pb-4">
+                                      <h3 className="text-orange-400 font-black uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
+                                          <Database size={14}/> Ghost Ledger Queue ({pendingTxData.length})
+                                      </h3>
+                                      
+                                      <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                                          {pendingTxData.map((tx, idx) => (
+                                              <div key={idx} className="bg-slate-800 border border-orange-500/30 p-3 rounded-lg shadow-inner">
+                                                  <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                                      <div>
+                                                          <span className="text-white font-bold uppercase block text-xs">{tx.customerName}</span>
+                                                          <span className="text-slate-400 text-[10px] uppercase">{tx.date}</span>
+                                                      </div>
+                                                      <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
+                                                          {tx.type || 'SALE'}
+                                                      </span>
+                                                  </div>
+                                                  
+                                                  <div className="space-y-1 mb-2">
+                                                      {tx.items?.map((item, i) => (
+                                                          <div key={i} className="flex justify-between text-[10px] text-slate-300">
+                                                              <span>{item.qty} {item.unit} {item.name}</span>
+                                                              <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
+                                                          </div>
+                                                      ))}
+                                                  </div>
+                                                  
+                                                  <div className="flex justify-between items-center text-xs border-t border-slate-700 pt-2 mt-2">
+                                                      <span className="text-slate-400 uppercase font-bold text-[10px]">Total Revenue</span>
+                                                      <span className="text-orange-400 font-black font-mono">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              )}
+
+                              <h3 className="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+                                  <Activity size={12}/> System Telemetry Logs
+                              </h3>
+
                               {syncLogs.length === 0 ? (
                                   <p className="text-slate-600 text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
                               ) : (
