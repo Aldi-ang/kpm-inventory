@@ -2427,10 +2427,18 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         }
 
                         // 3. Create the pulsing Agent Avatar
+                        // 🚀 DYNAMIC AVATAR ENGINE: Checks for photo, falls back to emoji
+                        const agentPhoto = agent.photoUrl || agent.profilePic || agent.photo;
+                        const avatarContent = agentPhoto 
+                            ? `<img src="${agentPhoto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+                            : `👤`;
+
                         const agentIcon = L.divIcon({
                             className: 'agent-live-icon',
                             html: `<div style="position:relative; z-index: 20000;">
-                                       <div style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; font-size: 18px; animation: pulse 2s infinite;">👤</div>
+                                       <div style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; font-size: 18px; animation: pulse 2s infinite; overflow: hidden;">
+                                           ${avatarContent}
+                                       </div>
                                        <div style="position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">${agent.name?.split(' ')[0] || 'Agent'}</div>
                                    </div>`,
                             iconSize: [34, 34],
