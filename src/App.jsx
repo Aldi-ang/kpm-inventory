@@ -3568,35 +3568,45 @@ const handleGitHubMirror = async () => {
                                       
                                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                           {pendingTxData.map((tx, idx) => (
-                                              <div key={idx} className="bg-slate-800 border border-orange-500/30 p-3 rounded-lg shadow-inner">
-                                                  <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
+                                              <details key={idx} className="bg-slate-800 border border-orange-500/30 rounded-lg shadow-inner group">
+                                                  <summary className="p-3 flex justify-between items-center cursor-pointer select-none list-none outline-none">
                                                       <div>
                                                           <span className="text-white font-bold uppercase block text-xs">{tx.customerName}</span>
                                                           <span className="text-slate-400 text-[10px] uppercase">{tx.date}</span>
                                                       </div>
-                                                      <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
-                                                          {tx.type || 'SALE'}
-                                                      </span>
-                                                  </div>
+                                                      <div className="flex items-center gap-3">
+                                                          <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
+                                                              IN QUEUE
+                                                          </span>
+                                                          <span className="text-orange-500 text-[10px] uppercase font-bold bg-black/30 px-2 py-1 rounded group-open:bg-black/50 hover:text-white transition-colors">
+                                                              View Receipt ▼
+                                                          </span>
+                                                      </div>
+                                                  </summary>
                                                   
-                                                  <div className="space-y-1 mb-2">
-                                                      {tx.items?.map((item, i) => (
-                                                          <div key={i} className="flex justify-between text-[10px] text-slate-300">
-                                                              <span>{item.qty} {item.unit} {item.name}</span>
-                                                              <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
-                                                          </div>
-                                                      ))}
+                                                  {/* EXPANDED RECEIPT DETAILS */}
+                                                  <div className="p-3 pt-0 border-t border-slate-700/50 mt-1 bg-black/20 rounded-b-lg">
+                                                      <div className="space-y-1 mb-2 mt-2">
+                                                          {tx.items?.map((item, i) => (
+                                                              <div key={i} className="flex justify-between text-[10px] text-slate-300 border-b border-slate-700/30 pb-1 mb-1">
+                                                                  <span>{item.qty} {item.unit} <span className="font-bold text-slate-200">{item.name}</span></span>
+                                                                  <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
+                                                              </div>
+                                                          ))}
+                                                      </div>
+                                                      
+                                                      <div className="flex justify-between items-center text-xs border-t border-slate-600 pt-2 mt-2">
+                                                          <span className="text-slate-400 uppercase font-bold text-[10px]">Total Revenue</span>
+                                                          <span className="text-orange-400 font-black font-mono text-sm">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
+                                                      </div>
                                                   </div>
-                                                  
-                                                  <div className="flex justify-between items-center text-xs border-t border-slate-700 pt-2 mt-2">
-                                                      <span className="text-slate-400 uppercase font-bold text-[10px]">Total Revenue</span>
-                                                      <span className="text-orange-400 font-black font-mono">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
-                                                  </div>
-                                              </div>
+                                              </details>
                                           ))}
                                       </div>
                                   </div>
                               )}
+                                      
+                                     
 
                               <h3 className="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
                                   <Activity size={12}/> System Telemetry Logs

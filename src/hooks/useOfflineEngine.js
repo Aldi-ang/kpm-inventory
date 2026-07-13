@@ -31,6 +31,9 @@ export default function useOfflineEngine() {
         });
     };
 
+    // 🚀 RADIO TRANSMITTER: Alerts the whole app when IndexedDB changes
+    const broadcastUpdate = () => window.dispatchEvent(new Event('ghost-ledger-updated'));
+
     // 3. THE FLIGHT RECORDER (Logs events to local storage)
     const logSyncEvent = async (message, type = 'INFO') => {
         try {
@@ -42,6 +45,7 @@ export default function useOfflineEngine() {
             };
             await db.add('sync_logs', logEntry);
             loadLogs();
+            broadcastUpdate(); // 🚀 RADIO SIGNAL 1
         } catch (err) {
             console.error("Flight Recorder Error:", err);
         }
@@ -75,6 +79,7 @@ export default function useOfflineEngine() {
         await db.add('transactions', { ...txData, offlineTimestamp: new Date().toISOString() });
         await logSyncEvent(`🖨️ OFFLINE LOG: Saved receipt for ${txData.customerName}`, 'OFFLINE');
         updatePendingCount();
+        broadcastUpdate(); // 🚀 RADIO SIGNAL 2
     };
 
     const saveOfflineNOO = async (nooData) => {
@@ -82,6 +87,7 @@ export default function useOfflineEngine() {
         await db.add('noo_profiles', { ...nooData, offlineTimestamp: new Date().toISOString() });
         await logSyncEvent(`📍 BLIND DROP: Saved NOO for ${nooData.name}`, 'OFFLINE');
         updatePendingCount();
+        broadcastUpdate(); // 🚀 RADIO SIGNAL 3
     };
 
     // 5. THE EXTRACTION PIPELINE (Getting data out when internet returns)
@@ -96,12 +102,14 @@ export default function useOfflineEngine() {
         const db = await initDB();
         await db.delete(storeName, localId);
         updatePendingCount();
+        broadcastUpdate(); // 🚀 RADIO SIGNAL 4
     };
 
     const clearFlightRecorder = async () => {
         const db = await initDB();
         await db.clear('sync_logs');
         loadLogs();
+        broadcastUpdate(); // 🚀 RADIO SIGNAL 5
     };
 
     // 6. THE HARDWARE LISTENER (Watches the phone's 4G/WiFi chip)
@@ -115,8 +123,15 @@ export default function useOfflineEngine() {
             logSyncEvent("⚠️ CONNECTION LOST: Entering Offline Mode", 'OFFLINE');
         };
 
+        // 🚀 RADIO RECEIVER: Listens for updates from other files
+        const handleLedgerUpdate = () => {
+            updatePendingCount();
+            loadLogs();
+        };
+
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+        window.addEventListener('ghost-ledger-updated', handleLedgerUpdate); // 🚀 RADIO ATTACHED
         
         // Initial boot check
         updatePendingCount();
@@ -125,6 +140,7 @@ export default function useOfflineEngine() {
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('ghost-ledger-updated', handleLedgerUpdate); // 🚀 RADIO DETACHED
         };
     }, []);
 
