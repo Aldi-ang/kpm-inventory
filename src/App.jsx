@@ -142,14 +142,20 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [hasPasskey, setHasPasskey] = useState(localStorage.getItem('passkeyRegistered') === 'true');
   const [registeredPasskeys, setRegisteredPasskeys] = useState([]); // 🚀 SYNCED DEVICES
 
-  // 🚀 CRYPTO HELPER: Converts Base64URL to raw binary for Android Sensors
+  // 🚀 CRYPTO HELPER: Fault-tolerant converter for Windows & Android Sensors
   const base64urlToUint8Array = (base64url) => {
-      const padding = '='.repeat((4 - base64url.length % 4) % 4);
-      const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = window.atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-      return outputArray;
+      try {
+          let base64 = String(base64url).replace(/-/g, '+').replace(/_/g, '/');
+          const padLen = (4 - (base64.length % 4)) % 4;
+          base64 += '='.repeat(padLen);
+          const rawData = window.atob(base64);
+          const outputArray = new Uint8Array(rawData.length);
+          for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+          return outputArray;
+      } catch (e) {
+          console.error("Passkey ID decode failed:", e);
+          return new Uint8Array(0); // 🚨 Prevents the silent crash
+      }
   };
 
   // 🚀 THE ONBOARDING BRIDGE STATE
@@ -1019,18 +1025,21 @@ const handleGitHubMirror = async () => {
       try {
           const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           
-          // 🚨 TELLS ANDROID EXACTLY WHICH IDS TO LOOK FOR
-          const allowCredentials = registeredPasskeys.map(pk => ({
-              type: "public-key",
-              id: base64urlToUint8Array(pk.id)
-          }));
+          // 🚨 WINDOWS HELLO & ANDROID HYBRID FIX
+          const allowCredentials = registeredPasskeys
+              .map(pk => ({
+                  type: "public-key",
+                  id: base64urlToUint8Array(pk.id),
+                  transports: ["internal", "hybrid", "usb", "nfc", "ble"] // Forces Windows to check the laptop sensor
+              }))
+              .filter(pk => pk.id.length > 0); 
 
           const assertion = await navigator.credentials.get({
               publicKey: {
                   challenge: challenge,
                   rpId: window.location.hostname,
-                  allowCredentials: allowCredentials, // 🚨 FIXES THE "NO PASSKEY" ERROR
-                  userVerification: "required",
+                  allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined, 
+                  userVerification: "preferred", // 🚨 CHANGED: Stops Windows from instantly crashing if PIN fallback isn't linked
                   timeout: 60000
               }
           });
@@ -1039,7 +1048,13 @@ const handleGitHubMirror = async () => {
               setIsUnlocking(true);
               setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, 2500);
           }
-      } catch (error) { console.warn("Scan failed/canceled:", error); }
+      } catch (error) { 
+          console.error("Biometric failed:", error); 
+          // 🚨 THE FIX: Actually show the error instead of failing silently!
+          if (error.name !== 'NotAllowedError') {
+              alert("Biometric Error: " + (error.message || "Failed to scan fingerprint.")); 
+          }
+      }
   };
   
 
