@@ -329,6 +329,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setSelectedCustomerInfo(cust); 
         setBypassState({ status: 'idle', id: null, photo: null }); 
 
+        // 🚀 RADAR PING: Agent engaged a target
+        window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
         if (autoLockedDistance !== null) {
             setDistanceToStore(autoLockedDistance);
             setGpsStatus('verified'); 
@@ -605,6 +608,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
             if (triggerCapy) triggerCapy(`Target Data Secured! 📍`);
             
+            // 🚀 RADAR PING: Agent dropped a new map pin
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
             // 🚀 The terminal now has the REAL Firebase ID to evaluate, zero race conditions!
             setSelectedCustomerInfo(newStoreData);
             setLockedTier(nooForm.requestedTier);
@@ -647,6 +653,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
             if (triggerCapy) triggerCapy(`New Target Secured: ${customerName} 📍`);
             
+            // 🚀 RADAR PING: Agent dropped a new map pin
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
             alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
             setShowNooModal(false);
             setCustomerName("");
@@ -739,6 +748,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (logAudit) logAudit("SAMPLE_DEPLOYED", `Gave ${totalQtyDecimal.toFixed(2)} Bks of ${product.name} to ${customerName}`);
             if (triggerCapy) triggerCapy(`Sample deployed to ${customerName}! Pita Cukai recorded. 🎁`);
             
+            // 🚀 RADAR PING: Agent deployed a sample
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
             setShowSampleModal(false);
             setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
         } catch (err) {
@@ -1014,6 +1026,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 customer: finalCust, method: finalMethod, items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
+
+            // 🚀 RADAR PING: Deal signed, update live map location and color
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
             setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null); 
