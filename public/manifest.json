@@ -1,0 +1,17 @@
+{
+  "short_name": "KPM System",
+  "name": "KPM Inventory & Operations",
+  "icons": [
+    {
+      "src": "/icon-512.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a1815",
+  "background_color": "#0a0a0a",
+  "orientation": "portrait-primary"
+}
