@@ -140,6 +140,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [loginError, setLoginError] = useState(null); 
   const [backupToast, setBackupToast] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(localStorage.getItem('passkeyRegistered') === 'true');
+  const [registeredPasskeys, setRegisteredPasskeys] = useState([]); // 🚀 SYNCED DEVICES
+
+  // 🚀 CRYPTO HELPER: Converts Base64URL to raw binary for Android Sensors
+  const base64urlToUint8Array = (base64url) => {
+      const padding = '='.repeat((4 - base64url.length % 4) % 4);
+      const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+  };
 
   // 🚀 THE ONBOARDING BRIDGE STATE
   const [pendingMigration, setPendingMigration] = useState(null);
@@ -724,12 +735,14 @@ const handleGitHubMirror = async () => {
         const ref = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin');
         const snap = await getDoc(ref);
         
-        if (snap.exists() && snap.data().pin) {
-            setAdminPin(snap.data().pin);
-            setRecoveryWord(snap.data().recoveryWord || "");
-            setHasAdminPin(true);
-            setIsSetupMode(false);
-        } else {
+       if (snap.exists() && snap.data().pin) {
+                    const data = snap.data();
+                    setAdminPin(data.pin);
+                    setRecoveryWord(data.recoveryWord || "");
+                    setRegisteredPasskeys(data.passkeys || []); // 🚀 LOAD AUTHORIZED DEVICES
+                    setHasAdminPin(true);
+                    setIsSetupMode(false);
+                } else {
             // No PIN found: Force Setup Mode
             setHasAdminPin(false);
             setIsSetupMode(true);
@@ -946,66 +959,87 @@ const handleGitHubMirror = async () => {
       triggerCapy("Initialize PIN Reset Protocol.");
   };
 
-  // 🚀 PASSKEY REGISTRATION ENGINE (NEW) 🚀
+  // 🚀 PASSKEY REGISTRATION ENGINE (FIREBASE SYNCED) 🚀
   const handleRegisterPasskey = async () => {
+      const deviceName = prompt("Enter a name for this device (e.g., 'My Samsung S23' or 'Office iPad'):");
+      if (!deviceName) return;
+
       try {
-          const challenge = new Uint8Array(32);
-          window.crypto.getRandomValues(challenge);
-          const userId = new Uint8Array(16);
-          window.crypto.getRandomValues(userId);
+          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+          const userBuffer = new TextEncoder().encode(user.uid);
 
           const credential = await navigator.credentials.create({
               publicKey: {
                   challenge: challenge,
-                  rp: { name: "Inventory System", id: window.location.hostname },
-                  user: { id: userId, name: user?.email || "Admin", displayName: "Administrator" },
+                  rp: { name: "KPM System", id: window.location.hostname },
+                  user: { id: userBuffer, name: user?.email || "Admin", displayName: user?.displayName || "Administrator" },
                   pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
                   authenticatorSelection: { 
-                      // 🚨 REMOVED 'authenticatorAttachment' so Windows allows Fingerprint, Phone, AND USB Keys!
-                      userVerification: "required" 
+                      userVerification: "required",
+                      residentKey: "required" // 🚨 CRITICAL: Forces Android to save it locally
                   },
                   timeout: 60000
               }
           });
 
           if (credential) {
-              localStorage.setItem('passkeyRegistered', 'true'); 
-              setHasPasskey(true); // 🚨 NEW: INSTANTLY UPDATES UI
-              alert("Biometric Passkey Successfully Registered to this device!");
+              const newPasskey = { id: credential.id, name: deviceName, addedAt: new Date().toISOString() };
+
+              // 🚀 Save to Master Vault
+              const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+              await updateDoc(adminDocRef, { passkeys: arrayUnion(newPasskey) });
+
+              setRegisteredPasskeys(prev => [...prev, newPasskey]);
+              alert(`Success! "${deviceName}" is now authorized for Biometric Login.`);
           }
       } catch (error) {
-          console.error("Passkey registration failed:", error);
-          alert("Could not register fingerprint. Check your OS settings.");
+          console.error("Registration failed:", error);
+          alert("Could not register passkey. Check your device screen lock settings.");
       }
   };
 
-  // 🚀 BIOMETRIC UNLOCK ENGINE (UPDATED) 🚀
-  const handleBiometricUnlock = async () => {
+  const handleRemovePasskey = async (passkeyToRemove) => {
+      if(!window.confirm(`Remove authorization for "${passkeyToRemove.name}"? This device will no longer be able to use fingerprint login.`)) return;
       try {
-          const challenge = new Uint8Array(32);
-          window.crypto.getRandomValues(challenge);
+          const updatedPasskeys = registeredPasskeys.filter(pk => pk.id !== passkeyToRemove.id);
+          const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+          await updateDoc(adminDocRef, { passkeys: updatedPasskeys });
+          setRegisteredPasskeys(updatedPasskeys);
+          triggerCapy(`Device removed from Biometric Auth.`);
+      } catch (err) { console.error(err); }
+  };
+
+  // 🚀 BIOMETRIC UNLOCK ENGINE (DEVICE TARGETED) 🚀
+  const handleBiometricUnlock = async () => {
+      if (registeredPasskeys.length === 0) {
+          alert("No devices registered! Please enter your PIN, go to Settings, and register this device.");
+          return;
+      }
+
+      try {
+          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+          
+          // 🚨 TELLS ANDROID EXACTLY WHICH IDS TO LOOK FOR
+          const allowCredentials = registeredPasskeys.map(pk => ({
+              type: "public-key",
+              id: base64urlToUint8Array(pk.id)
+          }));
 
           const assertion = await navigator.credentials.get({
               publicKey: {
                   challenge: challenge,
-                  rpId: window.location.hostname, // 🚨 TELLS OS TO LOOK FOR LOCAL PASSKEY
+                  rpId: window.location.hostname,
+                  allowCredentials: allowCredentials, // 🚨 FIXES THE "NO PASSKEY" ERROR
                   userVerification: "required",
                   timeout: 60000
               }
           });
 
-         // 🎬 THE NEW CINEMATIC BIOMETRIC UNLOCK
           if (assertion) {
               setIsUnlocking(true);
-              setTimeout(() => {
-                  setIsAdmin(true);
-                  setShowAdminLogin(false);
-                  setIsUnlocking(false);
-              }, 2500);
+              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, 2500);
           }
-      } catch (error) {
-          console.warn("Biometric scan failed or canceled:", error);
-      }
+      } catch (error) { console.warn("Scan failed/canceled:", error); }
   };
   
 
@@ -3511,7 +3545,9 @@ const handleGitHubMirror = async () => {
                   handleMasterProtocol={handleMasterProtocol} handleSingleBackup={handleSingleBackup} handleRestoreData={handleRestoreData}
                   handleExportGranular={handleExportGranular} handleImportGranular={handleImportGranular} handleWipeData={handleWipeData}
                   currentUserEmail={currentUserEmail} handleChangePin={handleChangePin} handleAdminLogout={handleAdminLogout}
-                  handleRegisterPasskey={handleRegisterPasskey} hasPasskey={hasPasskey}
+                  handleRegisterPasskey={handleRegisterPasskey} 
+                          registeredPasskeys={registeredPasskeys} 
+                          handleRemovePasskey={handleRemovePasskey}
                   tierSettings={tierSettings} setTierSettings={setTierSettings} handleSaveTiers={handleSaveTiers} handleExportTiers={handleExportTiers} handleImportTiers={handleImportTiers} handleTierIconSelect={handleTierIconSelect}
                   appSettings={appSettings} setAppSettings={setAppSettings}
                   editCompanyProfile={editCompanyProfile} setEditCompanyProfile={setEditCompanyProfile} handleSaveCompanyProfile={handleSaveCompanyProfile}

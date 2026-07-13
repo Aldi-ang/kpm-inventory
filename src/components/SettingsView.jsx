@@ -15,7 +15,7 @@ export default function SettingsView({
     handleMasterProtocol, handleSingleBackup, handleRestoreData,
     handleExportGranular, handleImportGranular, handleWipeData,
     currentUserEmail, handleChangePin, handleAdminLogout,
-    handleRegisterPasskey, hasPasskey,
+    handleRegisterPasskey, registeredPasskeys, handleRemovePasskey,
     tierSettings, setTierSettings, handleSaveTiers, handleExportTiers, handleImportTiers, handleTierIconSelect,
     appSettings, setAppSettings,
     editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
@@ -643,15 +643,44 @@ export default function SettingsView({
                                       </div>
                                   </div>
                                   
-                                  <div className="p-4 rounded-xl border flex flex-col justify-between bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-                                      <div className="mb-4">
+                                  {/* 🚀 DEVICE AUTHORIZATION LIST 🚀 */}
+                                  <div className="p-4 rounded-xl border flex flex-col bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                                      <div className="mb-4 border-b border-blue-200 dark:border-blue-800/50 pb-3">
                                           <p className="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-2">
-                                              <ScanFace size={16}/> Biometric Passkeys
+                                              <ScanFace size={16}/> Authorized Biometric Devices
                                           </p>
-                                          <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest">Register Fingerprints, Phones, or USBs</p>
+                                          <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest">Manage Fingerprints & Phones</p>
                                       </div>
-                                      <button onClick={handleRegisterPasskey} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-2">
-                                          <Plus size={14}/> Add New Device
+                                      
+                                      <div className="space-y-2 mb-4 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                                          {registeredPasskeys && registeredPasskeys.length > 0 ? (
+                                              registeredPasskeys.map((device, idx) => (
+                                                  <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800/30 p-3 rounded-lg shadow-sm">
+                                                      <div>
+                                                          <p className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{device.name}</p>
+                                                          <p className="text-slate-500 text-[9px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
+                                                      </div>
+                                                      <button 
+                                                          onClick={() => handleRemovePasskey(device)}
+                                                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors"
+                                                          title="Revoke Access"
+                                                      >
+                                                          <Trash2 size={14}/>
+                                                      </button>
+                                                  </div>
+                                              ))
+                                          ) : (
+                                              <p className="text-slate-500 text-[10px] uppercase tracking-widest text-center py-4 bg-white/50 dark:bg-slate-900/50 rounded border border-dashed border-slate-300 dark:border-slate-700">
+                                                  No devices authorized yet.
+                                              </p>
+                                          )}
+                                      </div>
+
+                                      <button 
+                                          onClick={handleRegisterPasskey} 
+                                          className="w-full mt-auto py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-2 uppercase tracking-widest"
+                                      >
+                                          <Plus size={16}/> Authorize Current Device
                                       </button>
                                   </div>
                               </div>
