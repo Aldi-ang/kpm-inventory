@@ -7,9 +7,24 @@ import {
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, orderBy } from "firebase/firestore";
 
 // --- FINANCIAL FORMATTER ---
-    const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
+const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
 const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy }) => {
+    
+    // 🚀 THE INTERNAL CLEARANCE MATRIX (God-Mode Bypass)
+    const isHighCommand = useMemo(() => {
+        if (isAdmin === true) return true; // Inherit if App.jsx correctly flags it
+        if (!user) return false;
+        
+        // Check Tier Authorization (Tier 1, 2, 3)
+        const tierNum = Number(user.tier);
+        if (!isNaN(tierNum) && tierNum > 0 && tierNum <= 3) return true;
+        
+        // Check Role Authorization
+        const role = String(user.role || user.userRole || '').toUpperCase();
+        return ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'OWNER', 'HQ', 'HQ SALES MANAGER'].includes(role);
+    }, [isAdmin, user]);
+
     // --- CORE STATE ---
     const [viewMode, setViewMode] = useState('count'); // 'count' for worksheet, 'review' for HQ Command
     
@@ -27,7 +42,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
     // ENGINE 1: THE HQ RECONCILIATION FETCH
     // ==========================================
     const fetchPendingAudits = async () => {
-        if (!isAdmin || !db || !appId || !user) return;
+        if (!isHighCommand || !db || !appId || !user) return;
         try {
             const userId = user.uid || user.id;
             const auditsRef = collection(db, `artifacts/${appId}/users/${userId}/pending_audits`);
@@ -47,10 +62,10 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
     // Auto-fetch if Admin switches to Review Mode
     useEffect(() => {
-        if (isAdmin && viewMode === 'review') {
+        if (isHighCommand && viewMode === 'review') {
             fetchPendingAudits();
         }
-    }, [isAdmin, viewMode]);
+    }, [isHighCommand, viewMode]);
 
     // ==========================================
     // ENGINE 2: THE PAYLOAD SUBMITTER (Field -> HQ)
@@ -186,12 +201,13 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     </h2>
                     <p className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' ? 'PHYSICAL COUNT RECONCILIATION' : 'PENDING AUDIT COMMAND CENTER'}
-                        {!isAdmin && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {isHighCommand && <span className="bg-blue-900/30 text-blue-500 border border-blue-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><ShieldAlert size={10}/> COMMANDER CLEARED</span>}
                     </p>
                 </div>
                 
                 {/* ADMIN TAB SWITCHER */}
-                {isAdmin && (
+                {isHighCommand && (
                     <div className="flex bg-slate-200 dark:bg-slate-900 rounded-lg p-1 border dark:border-slate-700">
                         <button 
                             onClick={() => setViewMode('review')} 
@@ -213,7 +229,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {/* ======================================================== */}
             {/* VIEW MODE 1: THE HQ RECONCILIATION BOARD (ADMIN ONLY)    */}
             {/* ======================================================== */}
-            {viewMode === 'review' && isAdmin && (
+            {viewMode === 'review' && isHighCommand && (
                 <div className="flex-1 flex flex-col min-h-0">
                     
                     {/* 🚀 THE FINANCIAL SHRINKAGE MATRIX (MACRO DASHBOARD) */}
@@ -259,7 +275,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {pendingAudits.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3">
-                                <ShieldCheck size={48} className="text-emerald-500"/>
+                                <CheckCircle size={48} className="text-emerald-500"/>
                                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No pending audits from the field.</p>
                             </div>
                         ) : (
@@ -387,7 +403,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                         <Search size={16} className="absolute left-6 top-5 text-slate-400"/>
                     </div>
 
-                    {!isAdmin && (
+                    {!isHighCommand && (
                         <div className="absolute top-20 right-0 p-3 opacity-10 pointer-events-none">
                             <EyeOff size={120} className="text-slate-500"/>
                         </div>
@@ -398,9 +414,9 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase font-bold sticky top-0 z-10 shadow-sm text-[10px] tracking-widest">
                                 <tr>
                                     <th className="p-4">Product Name</th>
-                                    {isAdmin && <th className="p-4 w-32 text-center">System</th>}
+                                    {isHighCommand && <th className="p-4 w-32 text-center">System</th>}
                                     <th className="p-4 w-32 text-center">Actual Count</th>
-                                    {isAdmin && <th className="p-4 w-24 text-center">Status</th>}
+                                    {isHighCommand && <th className="p-4 w-24 text-center">Status</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -412,14 +428,14 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     const isMismatch = hasEntry && variance !== 0;
 
                                     return (
-                                        <tr key={item.id} className={`group transition-colors hover:bg-slate-100 dark:hover:bg-white/10 ${isAdmin && isMismatch ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${isAdmin && isMatch ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
+                                        <tr key={item.id} className={`group transition-colors hover:bg-slate-100 dark:hover:bg-white/10 ${isHighCommand && isMismatch ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${isHighCommand && isMatch ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
                                             <td className="p-4">
                                                 <div className="font-bold dark:text-white uppercase">{item.name}</div>
                                                 <div className="text-[10px] text-slate-400 font-mono">ID: {item.id}</div>
                                             </td>
                                             
                                             {/* SYSTEM STOCK (HIDDEN FROM AGENTS) */}
-                                            {isAdmin && (
+                                            {isHighCommand && (
                                                 <td className="p-4 text-center">
                                                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 font-mono font-bold">
                                                         {item.stock}
@@ -434,8 +450,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                     value={actual}
                                                     onChange={(e) => handleCountChange(item.id, e.target.value)}
                                                     className={`w-20 text-center p-2 rounded border-2 outline-none font-bold text-lg font-mono ${
-                                                        isAdmin && isMismatch ? 'border-red-400 bg-red-50 text-red-600' : 
-                                                        isAdmin && isMatch ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 
+                                                        isHighCommand && isMismatch ? 'border-red-400 bg-red-50 text-red-600' : 
+                                                        isHighCommand && isMatch ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 
                                                         hasEntry ? 'border-orange-500 bg-orange-500/10 text-orange-500' :
                                                         'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white focus:border-orange-500'
                                                     }`}
@@ -443,7 +459,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                             </td>
                                             
                                             {/* VARIANCE & STATUS (HIDDEN FROM AGENTS) */}
-                                            {isAdmin && (
+                                            {isHighCommand && (
                                                 <td className="p-4 text-center flex flex-col items-center justify-center">
                                                     {hasEntry && variance !== 0 && (
                                                         <span className={`font-black text-xs ${variance > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
