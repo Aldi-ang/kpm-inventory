@@ -2428,7 +2428,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                         // 3. Create the pulsing Agent Avatar
                         // 🚀 DYNAMIC AVATAR ENGINE: Bulletproof Database Key Net + Smart Fallback
-                        const agentPhoto = agent.photoURL || agent.photoUrl || agent.profilePic || agent.photo || agent.image || agent.avatar;
+                        const agentPhoto = agent.profileImage || agent.photoURL || agent.photoUrl || agent.profilePic || agent.photo || agent.image || agent.avatar;
                         
                         // Generates a clean, professional initials avatar if they haven't uploaded a photo yet
                         const fallbackAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${agent.name || 'Agent'}&backgroundColor=3b82f6&textColor=ffffff`;
