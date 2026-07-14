@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, orderBy } from "firebase/firestore";
 
+// --- FINANCIAL FORMATTER ---
+    const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
+
 const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy }) => {
     // --- CORE STATE ---
     const [viewMode, setViewMode] = useState('count'); // 'count' for worksheet, 'review' for HQ Command
@@ -211,112 +214,161 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {/* VIEW MODE 1: THE HQ RECONCILIATION BOARD (ADMIN ONLY)    */}
             {/* ======================================================== */}
             {viewMode === 'review' && isAdmin && (
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
-                    {pendingAudits.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3">
-                            <ShieldAlert size={48} className="text-slate-500"/>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No pending audits from the field.</p>
+                <div className="flex-1 flex flex-col min-h-0">
+                    
+                    {/* 🚀 THE FINANCIAL SHRINKAGE MATRIX (MACRO DASHBOARD) */}
+                    {pendingAudits.length > 0 && (
+                        <div className="mb-4 bg-slate-900 border-2 border-red-500/50 rounded-xl p-4 shadow-[0_0_20px_rgba(220,38,38,0.1)] shrink-0">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <ShieldAlert size={14} className="text-red-500"/> Global Shrinkage Analysis
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {(() => {
+                                    let globalAssetLoss = 0; let globalMissedRev = 0;
+                                    pendingAudits.forEach(audit => {
+                                        audit.items.forEach(item => {
+                                            if (item.variance < 0) { // Only calculate missing items
+                                                const master = inventory.find(inv => inv.id === item.productId) || {};
+                                                const hpp = Number(master.hpp || master.costPrice || master.modal || 0);
+                                                const ecer = Number(master.ecer || master.price || master.harga || master.retailPrice || 0);
+                                                globalAssetLoss += Math.abs(item.variance) * hpp;
+                                                globalMissedRev += Math.abs(item.variance) * ecer;
+                                            }
+                                        });
+                                    });
+                                    return (
+                                        <>
+                                            <div className="bg-red-950/30 p-3 rounded-lg border border-red-900/50">
+                                                <p className="text-[9px] text-red-400 uppercase font-black tracking-widest mb-1">True Asset Loss (HPP)</p>
+                                                <p className="text-xl font-black text-red-500">{formatRupiah(globalAssetLoss)}</p>
+                                                <p className="text-[9px] text-slate-500 mt-1 uppercase">Reportable Tax Write-Off</p>
+                                            </div>
+                                            <div className="bg-orange-950/30 p-3 rounded-lg border border-orange-900/50">
+                                                <p className="text-[9px] text-orange-400 uppercase font-black tracking-widest mb-1">Revenue Leakage (Ecer)</p>
+                                                <p className="text-xl font-black text-orange-500">{formatRupiah(globalMissedRev)}</p>
+                                                <p className="text-[9px] text-slate-500 mt-1 uppercase">Lost Profit Opportunity</p>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
                         </div>
-                    ) : (
-                        pendingAudits.map(audit => {
-                            const isExpanded = expandedAudit === audit.id;
-                            const totalVariance = audit.items.reduce((sum, i) => sum + Math.abs(i.variance), 0);
-                            
-                            let displayTime = "Unknown Time";
-                            if (audit.timestamp?.seconds) {
-                                displayTime = new Date(audit.timestamp.seconds * 1000).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
-                            }
+                    )}
 
-                            return (
-                                <div key={audit.id} className={`bg-white dark:bg-slate-900 border rounded-xl overflow-hidden transition-all ${totalVariance > 0 ? 'dark:border-orange-500/50' : 'dark:border-slate-700'}`}>
-                                    {/* AUDIT CARD HEADER */}
-                                    <div 
-                                        onClick={() => setExpandedAudit(isExpanded ? null : audit.id)}
-                                        className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`p-3 rounded-full ${totalVariance > 0 ? 'bg-orange-500/20 text-orange-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                                                {totalVariance > 0 ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>}
+                    {/* 🚀 PENDING AUDITS LIST */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
+                        {pendingAudits.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3">
+                                <ShieldCheck size={48} className="text-emerald-500"/>
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No pending audits from the field.</p>
+                            </div>
+                        ) : (
+                            pendingAudits.map(audit => {
+                                const isExpanded = expandedAudit === audit.id;
+                                
+                                let totalMissingUnits = 0; let localAssetLoss = 0; let localMissedRev = 0;
+                                audit.items.forEach(item => {
+                                    if (item.variance < 0) {
+                                        totalMissingUnits += Math.abs(item.variance);
+                                        const master = inventory.find(inv => inv.id === item.productId) || {};
+                                        localAssetLoss += Math.abs(item.variance) * Number(master.hpp || master.costPrice || master.modal || 0);
+                                        localMissedRev += Math.abs(item.variance) * Number(master.ecer || master.price || master.harga || master.retailPrice || 0);
+                                    }
+                                });
+
+                                let displayTime = "Unknown Time";
+                                if (audit.timestamp?.seconds) displayTime = new Date(audit.timestamp.seconds * 1000).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+
+                                return (
+                                    <div key={audit.id} className={`bg-white dark:bg-slate-900 border rounded-xl overflow-hidden transition-all ${totalMissingUnits > 0 ? 'dark:border-red-500/50' : 'dark:border-emerald-500/50'}`}>
+                                        <div onClick={() => setExpandedAudit(isExpanded ? null : audit.id)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-3 rounded-full ${totalMissingUnits > 0 ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
+                                                    {totalMissingUnits > 0 ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
+                                                        <User size={14} className="text-blue-500"/> {audit.agentName.toUpperCase()}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-1">
+                                                        <Clock size={12}/> {displayTime}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
-                                                    <User size={14} className="text-blue-500"/> {audit.agentName.toUpperCase()}
-                                                </h3>
-                                                <p className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-1">
-                                                    <Clock size={12}/> {displayTime}
-                                                </p>
+                                            <div className="flex items-center gap-6">
+                                                <div className="text-right hidden md:block">
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400">Total Loss (HPP)</p>
+                                                    <p className={`font-black text-sm ${totalMissingUnits > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                        {totalMissingUnits > 0 ? formatRupiah(localAssetLoss) : 'PERFECT'}
+                                                    </p>
+                                                </div>
+                                                {isExpanded ? <ChevronUp size={20} className="text-slate-500"/> : <ChevronDown size={20} className="text-slate-500"/>}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right hidden md:block">
-                                                <p className="text-[10px] uppercase font-bold text-slate-400">Items Scanned</p>
-                                                <p className="font-bold text-sm dark:text-slate-300">{audit.items.length}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] uppercase font-bold text-slate-400">Total Variance</p>
-                                                <p className={`font-black text-sm ${totalVariance > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                    {totalVariance > 0 ? `${totalVariance} Units` : 'PERFECT'}
-                                                </p>
-                                            </div>
-                                            {isExpanded ? <ChevronUp size={20} className="text-slate-500"/> : <ChevronDown size={20} className="text-slate-500"/>}
-                                        </div>
-                                    </div>
 
-                                    {/* EXPANDED AUDIT DETAILS */}
-                                    {isExpanded && (
-                                        <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-black/20 p-4">
-                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Itemized Discrepancy Report</h4>
-                                            
-                                            <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
-                                                {audit.items.map((item, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-xs dark:text-white uppercase">{item.name}</span>
-                                                            <span className="text-[9px] text-slate-500 font-mono">ID: {item.productId}</span>
+                                        {isExpanded && (
+                                            <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-black/20 p-4">
+                                                
+                                                {/* REGIONAL MANAGER REPORT CARD */}
+                                                {totalMissingUnits > 0 && (
+                                                    <div className="mb-4 bg-slate-800/50 border border-slate-700 p-3 rounded-lg flex justify-between items-center">
+                                                        <div>
+                                                            <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-widest">Manager Accountability</span>
+                                                            <span className="font-mono text-xs text-orange-400">Missed Revenue: {formatRupiah(localMissedRev)}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-4 text-xs font-mono">
-                                                            <div className="text-center">
-                                                                <span className="block text-[8px] text-slate-400">SYSTEM</span>
-                                                                <span className="font-bold text-slate-600 dark:text-slate-300">{item.expectedStock}</span>
-                                                            </div>
-                                                            <span className="text-slate-600 dark:text-slate-500">→</span>
-                                                            <div className="text-center">
-                                                                <span className="block text-[8px] text-slate-400">COUNTED</span>
-                                                                <span className="font-black text-blue-500">{item.physicalCount}</span>
-                                                            </div>
-                                                            <div className={`w-12 text-right font-black ${item.variance > 0 ? 'text-emerald-500' : item.variance < 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                {item.variance > 0 ? '+' : ''}{item.variance}
-                                                            </div>
+                                                        <div className="text-right">
+                                                            <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-widest">Missing Boxes</span>
+                                                            <span className="font-black text-red-500 text-lg">{totalMissingUnits}</span>
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                )}
 
-                                            {/* HQ EXECUTION BUTTONS */}
-                                            <div className="flex gap-3 pt-2 border-t dark:border-slate-700">
-                                                <button 
-                                                    onClick={() => handleRejectAudit(audit)}
-                                                    disabled={isProcessingAudit}
-                                                    className="flex-1 bg-red-950/30 hover:bg-red-900 border border-red-500/50 text-red-500 hover:text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest"
-                                                >
-                                                    <X size={14}/> Reject Count
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleApproveAudit(audit)}
-                                                    disabled={isProcessingAudit}
-                                                    className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest"
-                                                >
-                                                    <Check size={16}/> Approve & Overwrite Vault
-                                                </button>
+                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Itemized Discrepancy Report</h4>
+                                                
+                                                <div className="space-y-2 mb-4 max-h-[35vh] overflow-y-auto custom-scrollbar pr-2">
+                                                    {audit.items.map((item, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-xs dark:text-white uppercase">{item.name}</span>
+                                                                <span className="text-[9px] text-slate-500 font-mono">ID: {item.productId}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 text-xs font-mono">
+                                                                <div className="text-center">
+                                                                    <span className="block text-[8px] text-slate-400">SYS</span>
+                                                                    <span className="font-bold text-slate-600 dark:text-slate-300">{item.expectedStock}</span>
+                                                                </div>
+                                                                <span className="text-slate-600 dark:text-slate-500">→</span>
+                                                                <div className="text-center">
+                                                                    <span className="block text-[8px] text-slate-400">REAL</span>
+                                                                    <span className="font-black text-blue-500">{item.physicalCount}</span>
+                                                                </div>
+                                                                <div className={`w-12 text-right font-black ${item.variance > 0 ? 'text-emerald-500' : item.variance < 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                    {item.variance > 0 ? '+' : ''}{item.variance}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex gap-3 pt-2 border-t dark:border-slate-700">
+                                                    <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-red-950/30 hover:bg-red-900 border border-red-500/50 text-red-500 hover:text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
+                                                        <X size={14}/> Reject Count
+                                                    </button>
+                                                    <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">
+                                                        <Check size={16}/> Approve & Overwrite Vault
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
-                    )}
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
             )}
+
+
 
             {/* ======================================================== */}
             {/* VIEW MODE 2: THE COUNT WORKSHEET (AGENTS & ADMINS)       */}
