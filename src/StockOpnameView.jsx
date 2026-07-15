@@ -231,7 +231,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {/* ======================================================== */}
             {viewMode === 'review' && isHighCommand && (
                 <div className="flex-1 flex flex-col min-h-0">
-
+                    
                     {/* 🚀 THE DEPLOYED CAPITAL RADAR 🚀 */}
                     <div className="mb-4 bg-gradient-to-br from-slate-900 to-black border border-slate-700 rounded-xl p-4 shadow-lg shrink-0 relative overflow-hidden">
                         {/* Decorative Background Grid */}
@@ -244,20 +244,45 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 </h3>
                                 <p className="text-2xl font-black text-white font-mono drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                                     {formatRupiah(inventory.reduce((sum, item) => {
-                                        const hpp = Number(item.hpp || item.costPrice || item.modal || 0);
+                                        // 🚀 FIX: Mapped to exact KPM Database Schema
+                                        const hpp = Number(item.priceDistributor || item.hpp || item.costPrice || item.modal || 0);
                                         return sum + ((item.stock || 0) * hpp);
                                     }, 0))}
                                 </p>
                             </div>
                             <div className="text-right w-full md:w-auto flex flex-row md:flex-col justify-between items-center md:items-end bg-black/50 p-2 md:p-0 rounded border border-white/5 md:border-none md:bg-transparent">
                                 <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Total Physical Units</p>
-                                <p className="text-lg font-black text-blue-500 font-mono">
-                                    {new Intl.NumberFormat('id-ID').format(inventory.reduce((sum, item) => sum + (item.stock || 0), 0))} <span className="text-[10px] text-slate-400 uppercase tracking-normal">Bks</span>
-                                </p>
+                                {(() => {
+                                    // 🚀 FIX: The Bks & Batang Micro-Engine
+                                    let totalBks = 0;
+                                    let totalBatang = 0;
+                                    inventory.forEach(item => {
+                                        const stock = item.stock || 0;
+                                        const spp = item.sticksPerPack || 16; // Safely default to 16
+                                        const bks = Math.floor(stock);
+                                        const btg = Math.round((stock - bks) * spp);
+                                        totalBks += bks;
+                                        totalBatang += btg;
+                                    });
+                                    
+                                    // Normalize global batang using a standard 16-stick aggregator for macro view
+                                    const extraBks = Math.floor(totalBatang / 16);
+                                    const finalBatang = totalBatang % 16;
+                                    const finalBks = totalBks + extraBks;
+
+                                    return (
+                                        <p className="text-lg font-black text-blue-500 font-mono">
+                                            {new Intl.NumberFormat('id-ID').format(finalBks)} <span className="text-[10px] text-slate-400 uppercase tracking-normal mr-1">Bks</span>
+                                            {finalBatang > 0 && (
+                                                <>{finalBatang} <span className="text-[10px] text-slate-400 uppercase tracking-normal">Btg</span></>
+                                            )}
+                                        </p>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* 🚀 THE FINANCIAL SHRINKAGE MATRIX (MACRO DASHBOARD) */}
                     {pendingAudits.length > 0 && (
                         <div className="mb-4 bg-slate-900 border-2 border-red-500/50 rounded-xl p-4 shadow-[0_0_20px_rgba(220,38,38,0.1)] shrink-0">
@@ -269,10 +294,11 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     let globalAssetLoss = 0; let globalMissedRev = 0;
                                     pendingAudits.forEach(audit => {
                                         audit.items.forEach(item => {
-                                            if (item.variance < 0) { // Only calculate missing items
+                                            if (item.variance < 0) {
                                                 const master = inventory.find(inv => inv.id === item.productId) || {};
-                                                const hpp = Number(master.hpp || master.costPrice || master.modal || 0);
-                                                const ecer = Number(master.ecer || master.price || master.harga || master.retailPrice || 0);
+                                                // 🚀 FIX: Mapped to exact KPM Database Schema
+                                                const hpp = Number(master.priceDistributor || master.hpp || master.costPrice || master.modal || 0);
+                                                const ecer = Number(master.priceEcer || master.ecer || master.price || master.harga || master.retailPrice || 0);
                                                 globalAssetLoss += Math.abs(item.variance) * hpp;
                                                 globalMissedRev += Math.abs(item.variance) * ecer;
                                             }
@@ -300,7 +326,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     {/* 🚀 PENDING AUDITS LIST */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {pendingAudits.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3">
+                            <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 mt-8">
                                 <CheckCircle size={48} className="text-emerald-500"/>
                                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No pending audits from the field.</p>
                             </div>
@@ -313,8 +339,9 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     if (item.variance < 0) {
                                         totalMissingUnits += Math.abs(item.variance);
                                         const master = inventory.find(inv => inv.id === item.productId) || {};
-                                        localAssetLoss += Math.abs(item.variance) * Number(master.hpp || master.costPrice || master.modal || 0);
-                                        localMissedRev += Math.abs(item.variance) * Number(master.ecer || master.price || master.harga || master.retailPrice || 0);
+                                        // 🚀 FIX: Mapped to exact KPM Database Schema
+                                        localAssetLoss += Math.abs(item.variance) * Number(master.priceDistributor || master.hpp || master.costPrice || master.modal || 0);
+                                        localMissedRev += Math.abs(item.variance) * Number(master.priceEcer || master.ecer || master.price || master.harga || master.retailPrice || 0);
                                     }
                                 });
 
@@ -360,7 +387,14 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                         </div>
                                                         <div className="text-right">
                                                             <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-widest">Missing Boxes</span>
-                                                            <span className="font-black text-red-500 text-lg">{totalMissingUnits}</span>
+                                                            <span className="font-black text-red-500 text-lg">
+                                                                {/* 🚀 FIX: Formatting missing units */}
+                                                                {(() => {
+                                                                    const bks = Math.floor(totalMissingUnits);
+                                                                    const btg = Math.round((totalMissingUnits - bks) * 16);
+                                                                    return `${bks > 0 ? bks + ' Bks ' : ''}${btg > 0 ? btg + ' Btg' : ''}`.trim() || '0 Bks';
+                                                                })()}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 )}
