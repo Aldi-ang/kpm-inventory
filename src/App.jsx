@@ -3492,7 +3492,10 @@ const handleGitHubMirror = async () => {
                   inventory={inventory} 
                   db={db} 
                   appId={appId} 
-                  user={user} 
+                  // 🚀 THE FIX 1: Stitch the central userRole into the user object
+                  user={{ ...user, userRole: userRole }} 
+                  // 🚀 THE FIX 2: Pass the Master PIN-lock bypass state
+                  isAdmin={isAdmin} 
                   logAudit={logAudit}
                   triggerCapy={triggerCapy}
               />
