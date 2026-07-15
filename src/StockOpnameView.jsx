@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
     ClipboardList, Search, Save, AlertTriangle, CheckCircle, 
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
-    ChevronDown, ChevronUp, Clock, User
+    ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, orderBy } from "firebase/firestore";
 
