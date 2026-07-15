@@ -231,6 +231,32 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {/* ======================================================== */}
             {viewMode === 'review' && isHighCommand && (
                 <div className="flex-1 flex flex-col min-h-0">
+
+                    {/* 🚀 THE DEPLOYED CAPITAL RADAR 🚀 */}
+                    <div className="mb-4 bg-gradient-to-br from-slate-900 to-black border border-slate-700 rounded-xl p-4 shadow-lg shrink-0 relative overflow-hidden">
+                        {/* Decorative Background Grid */}
+                        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-1">
+                                    <Database size={14} className="text-blue-500"/> Total Capital Deployed
+                                </h3>
+                                <p className="text-2xl font-black text-white font-mono drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                                    {formatRupiah(inventory.reduce((sum, item) => {
+                                        const hpp = Number(item.hpp || item.costPrice || item.modal || 0);
+                                        return sum + ((item.stock || 0) * hpp);
+                                    }, 0))}
+                                </p>
+                            </div>
+                            <div className="text-right w-full md:w-auto flex flex-row md:flex-col justify-between items-center md:items-end bg-black/50 p-2 md:p-0 rounded border border-white/5 md:border-none md:bg-transparent">
+                                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Total Physical Units</p>
+                                <p className="text-lg font-black text-blue-500 font-mono">
+                                    {new Intl.NumberFormat('id-ID').format(inventory.reduce((sum, item) => sum + (item.stock || 0), 0))} <span className="text-[10px] text-slate-400 uppercase tracking-normal">Bks</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                     
                     {/* 🚀 THE FINANCIAL SHRINKAGE MATRIX (MACRO DASHBOARD) */}
                     {pendingAudits.length > 0 && (
