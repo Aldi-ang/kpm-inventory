@@ -1,11 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder } from 'lucide-react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 };
 
-// 🚀 ACCEPT 'appSettings' TO READ TIER 1 PRICE
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
     // 🚀 NEW STATE: Split Cukai Handover Inputs
@@ -25,6 +24,34 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         setter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
     };
 
+    // --- 🚀 NEW ENGINE: BOUNTY & PENALTY INTERCEPTOR ---
+    const agentBountyData = useMemo(() => {
+        if (isAdmin || !agentProfileId) return { total: 0, keys: [], isPending: false };
+        const agentProfile = motorists.find(m => m.id === agentProfileId) || {};
+        const cDebts = agentProfile.cukaiDebts || {};
+        
+        let total = 0;
+        let keys = [];
+        for (let [pid, val] of Object.entries(cDebts)) {
+            // Target specific Quarantine Penalty Debts
+            if (pid.startsWith('PENALTY_') && val > 0) {
+                total += val;
+                keys.push(pid);
+            }
+        }
+        
+        // Check if they already submitted the bounty cash today and are waiting for the Sheriff (Admin)
+        const todaysReports = eodReports.filter(r => {
+            if (r.agentId !== agentProfileId) return false;
+            const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : new Date());
+            return rDate.toDateString() === new Date().toDateString();
+        });
+        const pendingBounty = todaysReports.find(r => r.status === 'PENDING' && r.reportType === 'BOUNTY');
+
+        return { total, keys, isPending: !!pendingBounty };
+    }, [isAdmin, agentProfileId, motorists, eodReports]);
+
+
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
         if (isAdmin) return null;
@@ -33,7 +60,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         let expectedCash = 0;
         let expectedTransfer = 0;
         
-        // 🚀 CUKAI DEBT: Read permanent multi-product wallet from profile
         const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
         let expectedCukai = 0;
         if (!isBossCar && agentProfileId) {
@@ -44,7 +70,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             let calcTotal = 0;
             let globalCredit = cDebts['global_credit'] || 0;
             for (let [pid, val] of Object.entries(cDebts)) {
-                if (pid !== 'global_credit' && val > 0) calcTotal += Math.ceil(val);
+                // Ignore penalties here, they are handled by the Bounty Engine
+                if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
             }
             expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
         }
@@ -72,7 +99,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             }
         });
 
-        // 🚀 THE SPLIT WORKFLOW TRACKER
         const todaysReports = eodReports.filter(r => {
             if (r.agentId !== agentProfileId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : today);
@@ -160,6 +186,56 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             {/* ========================================= */}
             {!isAdmin && agentData && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
+                    {(agentBountyData.total > 0 || agentBountyData.isPending) && (
+                        <div className="md:col-span-2 bg-[#1a0505] border-2 border-red-800 rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(220,38,38,0.05)_50%,transparent_75%)] bg-[length:10px_10px] pointer-events-none"></div>
+                            <div className="absolute -right-10 -top-10 opacity-10 rotate-12 pointer-events-none">
+                                <Target size={150} className="text-red-500" />
+                            </div>
+                            
+                            <div className="relative z-10 flex-1 text-center md:text-left">
+                                <h2 className="text-4xl md:text-5xl font-black text-red-600 uppercase tracking-[0.3em] mb-2" style={{ fontFamily: 'Georgia, serif' }}>WANTED</h2>
+                                <p className="text-xs text-red-400/80 uppercase tracking-[0.4em] font-bold mb-4 border-b border-red-900/50 pb-2 inline-block md:block">Company Property Damage Fine</p>
+                                <p className="text-sm text-slate-300 leading-relaxed max-w-xl mx-auto md:mx-0">
+                                    You have an outstanding company debt for unaccounted or severely damaged inventory. You must clear this bounty with the Branch Admin to restore good standing.
+                                </p>
+                            </div>
+
+                            <div className="relative z-10 flex flex-col items-center md:items-end w-full md:w-auto shrink-0">
+                                {agentBountyData.isPending ? (
+                                    <div className="bg-black/50 border border-red-500/50 px-8 py-6 rounded-xl text-center backdrop-blur-sm w-full">
+                                        <Clock size={32} className="text-red-500 animate-pulse mx-auto mb-3"/>
+                                        <p className="text-red-400 font-black uppercase tracking-[0.2em] text-sm">Bounty Under Review</p>
+                                        <p className="text-[10px] text-red-400/70 mt-2 uppercase tracking-widest font-mono">Awaiting Sheriff Verification</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2">Total Bounty Amount</p>
+                                        <p className="text-4xl font-black text-red-500 font-mono mb-6 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                                            {formatRupiah(agentBountyData.total)}
+                                        </p>
+                                        <button 
+                                            onClick={() => {
+                                                if (window.confirm(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
+                                                    onSubmitEOD({ 
+                                                        cash: agentBountyData.total, 
+                                                        transfer: 0, cukai: 0, 
+                                                        reportType: 'BOUNTY', 
+                                                        penaltyKeys: agentBountyData.keys // Metadata so Admin knows what to clear
+                                                    });
+                                                }
+                                            }}
+                                            className="w-full md:w-auto px-10 py-4 bg-red-700 hover:bg-red-600 text-white rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                        >
+                                            <BadgeDollarSign size={20}/> Pay Bounty
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     
                     {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER */}
                     <div className="bg-black/20 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
@@ -329,7 +405,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         cukaiReturned: returned, 
                                         cukaiPaid: paid, 
                                         cukaiFine: paid * cukaiFinePrice, 
-                                        cukai: returned + paid, // Total passed to DB debt subtractor
+                                        cukai: returned + paid, 
                                         remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI' 
                                     })
                                 }}
@@ -356,11 +432,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             {pendingReports.length === 0 ? (
                                 <div className="bg-black/20 border border-white/10 p-8 rounded-2xl text-center text-slate-500 text-xs uppercase tracking-widest">No pending reports.</div>
                             ) : pendingReports.map(report => (
-                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${report.reportType === 'CUKAI' ? 'border-orange-500/30' : 'border-emerald-500/30'}`}>
+                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-orange-500/30' : 'border-emerald-500/30'}`}>
                                     
-                                    <div className={`p-4 flex justify-between items-center border-b ${report.reportType === 'CUKAI' ? 'bg-orange-950/20 border-orange-500/20' : 'bg-emerald-950/20 border-emerald-500/20'}`}>
+                                    <div className={`p-4 flex justify-between items-center border-b ${report.reportType === 'BOUNTY' ? 'bg-red-950/40 border-red-500/30' : report.reportType === 'CUKAI' ? 'bg-orange-950/20 border-orange-500/20' : 'bg-emerald-950/20 border-emerald-500/20'}`}>
                                         <div>
-                                            <h4 className="font-black text-white text-lg">{report.agentName}</h4>
+                                            <h4 className={`font-black text-lg ${report.reportType === 'BOUNTY' ? 'text-red-500' : 'text-white'}`}>{report.agentName}</h4>
                                             <p className="text-[10px] text-slate-400">
                                                 {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
                                             </p>
@@ -368,14 +444,24 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex flex-col items-end gap-1">
                                             {report.reportType === 'CASH_STOCK' && <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
                                             {report.reportType === 'CUKAI' && <span className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
+                                            {report.reportType === 'BOUNTY' && <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
                                             {!report.reportType && <span className="bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
                                         </div>
                                     </div>
 
                                     <div className="p-6 space-y-4">
                                         
-                                        {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI ONLY REPORT */}
-                                        {report.reportType !== 'CUKAI' && (
+                                        {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
+                                        {report.reportType === 'BOUNTY' && (
+                                            <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl text-center">
+                                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
+                                                <p className="text-3xl font-black text-red-500 font-mono">{formatRupiah(report.cash)}</p>
+                                                <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
+                                            </div>
+                                        )}
+
+                                        {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
+                                        {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
                                             <>
                                                 <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
                                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><DollarSign size={14}/> Physical Cash</span>
@@ -414,7 +500,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         )}
 
                                         {/* 🚀 ADMIN CUKAI BREAKDOWN & FINE VERIFIER */}
-                                        {report.reportType !== 'CASH_STOCK' && (
+                                        {(report.reportType === 'CUKAI' || !report.reportType) && (
                                             <>
                                                 <div className="flex justify-between items-center bg-orange-950/20 p-3 rounded-lg border border-orange-500/30 mt-4">
                                                     <span className="text-xs font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
@@ -458,7 +544,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex gap-2 mt-4 pt-2">
                                             <button 
                                                 onClick={() => onVerifyEOD(report)}
-                                                className={`flex-1 py-3 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}
+                                                className={`flex-1 py-3 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}
                                             >
                                                 <CheckCircle size={18}/> Verify
                                             </button>
@@ -559,13 +645,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                         <div className="p-3 pl-16 space-y-3 bg-black/40 shadow-inner">
                                                                                             {/* 📄 THE ACTUAL REPORTS */}
                                                                                             {structuredHistory[location][empName][yearMonth][fullDate].map(report => (
-                                                                                                <div key={report.id} className="bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl flex justify-between items-center hover:border-slate-500 transition-colors shadow-sm">
+                                                                                                <div key={report.id} className={`bg-slate-900/80 border p-3 rounded-xl flex justify-between items-center transition-colors shadow-sm ${report.reportType === 'BOUNTY' ? 'border-red-900/50 hover:border-red-500/50' : 'border-slate-700/50 hover:border-slate-500'}`}>
                                                                                                     <div>
                                                                                                         <h4 className="font-bold text-white text-xs flex items-center gap-2">
                                                                                                             {report.reportType === 'CASH_STOCK' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
                                                                                                             {report.reportType === 'CUKAI' && <span className="w-2 h-2 rounded-full bg-orange-500"></span>}
+                                                                                                            {report.reportType === 'BOUNTY' && <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>}
                                                                                                             {!report.reportType && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
-                                                                                                            {report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
+                                                                                                            {report.reportType === 'BOUNTY' ? <span className="text-red-400 tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
                                                                                                         </h4>
                                                                                                         <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
                                                                                                             <Clock size={10}/> 
@@ -573,8 +660,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                         </p>
                                                                                                     </div>
                                                                                                     <div className="text-right flex flex-col items-end">
-                                                                                                        {report.reportType !== 'CUKAI' && <p className="text-xs font-black text-emerald-500">{formatRupiah(report.cash)}</p>}
-                                                                                                        {report.reportType !== 'CASH_STOCK' && (
+                                                                                                        {(report.reportType === 'CASH_STOCK' || !report.reportType || report.reportType === 'BOUNTY') && <p className={`text-xs font-black ${report.reportType === 'BOUNTY' ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(report.cash)}</p>}
+                                                                                                        {report.reportType === 'CUKAI' && (
                                                                                                             <p className="text-xs font-black text-orange-400">
                                                                                                                 {report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs
                                                                                                                 {report.cukaiPaid > 0 && <span className="text-red-400 ml-1">(+{report.cukaiPaid} Paid)</span>}

@@ -611,10 +611,10 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                         <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1.5 px-3 w-full md:w-auto">
                             <Filter size={14} className="text-slate-400"/>
                             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-white font-bold uppercase tracking-widest outline-none w-full">
-                                <option value="ALL">All Regions</option>
-                                <option value="MASTER">Master Vault (HQ)</option>
-                                {uniqueBranches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
-                            </select>
+    <option value="ALL" className="bg-slate-900 text-white">All Regions</option>
+    <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
+    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+</select>
                         </div>
                     </div>
 

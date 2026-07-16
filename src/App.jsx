@@ -1568,24 +1568,26 @@ const handleGitHubMirror = async () => {
   };
 
   const handleVerifyEOD = async (report) => {
-      if(!window.confirm(`Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`)) return;
+      // 🚀 DYNAMIC CONFIRMATION: Adapt message based on the report type
+      const confirmMsg = report.reportType === 'BOUNTY'
+          ? `Verify Bounty Clearance of Rp ${new Intl.NumberFormat('id-ID').format(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
+          : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
+
+      if(!window.confirm(confirmMsg)) return;
+
       try {
           await runTransaction(db, async (t) => {
               // ==========================================
               // 📖 PHASE 1: EXECUTE ALL READS FIRST
               // ==========================================
               
-              // 1A. Fetch all products being returned
               const validItems = (report.remainingStock || []).filter(item => item.qty > 0);
               const productRefs = validItems.map(item => ({
                   itemData: item,
                   ref: doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
               }));
-              
-              // Resolve all product fetches simultaneously
               const productDocs = await Promise.all(productRefs.map(p => t.get(p.ref)));
 
-              // 1B. Fetch the Agent Profile (if applicable)
               let agentRef = null;
               let agentDoc = null;
               if (report.agentId && report.agentId !== 'ADMIN') {
@@ -1597,7 +1599,7 @@ const handleGitHubMirror = async () => {
               // ✍️ PHASE 2: EXECUTE ALL WRITES LAST
               // ==========================================
 
-              // 2A. Update Products
+              // 2A. Update Products (Return Stock)
               productDocs.forEach((pSnap, index) => {
                   if (pSnap.exists()) {
                       const pData = pSnap.data();
@@ -1612,35 +1614,48 @@ const handleGitHubMirror = async () => {
                   }
               });
 
-              // 2B. Update Agent Profile & Distributed Cukai Wallet
+              // 2B. Update Agent Profile & Financial Wallets
               if (agentRef && agentDoc && agentDoc.exists()) {
                   let currentDebts = agentDoc.data().cukaiDebts || {};
-                  
-                  // Auto-migrate legacy debt to global credit to clean the database
-                  if (agentDoc.data().cukaiDebt !== undefined) {
-                      currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) + agentDoc.data().cukaiDebt;
-                  }
+                  let currentCanvas = agentDoc.data().activeCanvas || [];
 
-                  let remainingPayment = report.cukai || 0;
-
-                  // Distribute Admin's physical stamp payment to the highest debts first
-                  for (let pid of Object.keys(currentDebts)) {
-                      if (remainingPayment <= 0) break;
-                      if (pid !== 'global_credit' && currentDebts[pid] > 0) {
-                          let stampDebt = Math.ceil(currentDebts[pid]);
-                          let applied = Math.min(stampDebt, remainingPayment);
-                          currentDebts[pid] -= applied; // e.g. 0.5 - 1 = -0.5 (Credit for tomorrow)
-                          remainingPayment -= applied;
+                  // 🤠 RDR2 BOUNTY PROTOCOL 🤠
+                  if (report.reportType === 'BOUNTY') {
+                      if (report.penaltyKeys && Array.isArray(report.penaltyKeys)) {
+                          report.penaltyKeys.forEach(key => {
+                              delete currentDebts[key]; // Physically eradicate the debt from the ledger
+                          });
                       }
-                  }
+                      // Update ONLY the debt wallet. Do NOT wipe their vehicle canvas for a mid-day fine payment!
+                      t.update(agentRef, { cukaiDebts: currentDebts });
+                  
+                  } else {
+                      // 📦 STANDARD EOD / CUKAI PROTOCOL 📦
+                      if (agentDoc.data().cukaiDebt !== undefined) {
+                          currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) + agentDoc.data().cukaiDebt;
+                      }
 
-                  // If they overpaid, funnel the extra stamps into global credit
-                  if (remainingPayment > 0) {
-                      currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) - remainingPayment;
-                  }
+                      let remainingPayment = report.cukai || 0;
+                      for (let pid of Object.keys(currentDebts)) {
+                          if (remainingPayment <= 0) break;
+                          // 🚀 FIX: Prevent standard stamp payments from accidentally wiping out CASH bounties
+                          if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && currentDebts[pid] > 0) {
+                              let stampDebt = Math.ceil(currentDebts[pid]);
+                              let applied = Math.min(stampDebt, remainingPayment);
+                              currentDebts[pid] -= applied; 
+                              remainingPayment -= applied;
+                          }
+                      }
 
-                  // Nullify the old cukaiDebt string so it stops calculating
-                  t.update(agentRef, { activeCanvas: [], cukaiDebts: currentDebts, cukaiDebt: 0 });
+                      if (remainingPayment > 0) {
+                          currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) - remainingPayment;
+                      }
+
+                      // 🚀 ANTI-WIPE BUG FIX: If they just submitted a Cukai report, do NOT wipe their stock!
+                      const finalCanvas = (report.reportType === 'CUKAI') ? currentCanvas : [];
+
+                      t.update(agentRef, { activeCanvas: finalCanvas, cukaiDebts: currentDebts, cukaiDebt: 0 });
+                  }
               }
 
               // 2C. Update the EOD Report Status
@@ -1648,8 +1663,8 @@ const handleGitHubMirror = async () => {
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
           
-          await logAudit("EOD_VERIFIED", `Verified EOD for ${report.agentName}`);
-          triggerCapy("EOD Verified & Stock Returned!");
+          await logAudit("EOD_VERIFIED", `Verified ${report.reportType || 'EOD'} for ${report.agentName}`);
+          triggerCapy(report.reportType === 'BOUNTY' ? "Bounty Cleared! The law is satisfied. 🤠" : "EOD Verified & Stock Returned! 📦");
       } catch(e) { console.error(e); alert("Verification failed: " + e.message); }
   };
 
