@@ -3492,14 +3492,14 @@ const handleGitHubMirror = async () => {
                   inventory={inventory} 
                   db={db} 
                   appId={appId} 
-                  // 🚀 THE FIX 1: Stitch the central userRole into the user object
                   user={{ ...user, userRole: userRole }} 
-                  // 🚀 THE FIX 2: Pass the Master PIN-lock bypass state
                   isAdmin={isAdmin} 
                   logAudit={logAudit}
                   triggerCapy={triggerCapy}
+                  motorists={motorists}  // 🚀 INJECT THIS PROP!
               />
           )}
+          
           {activeTab === 'sampling' && (
               <>
                   {/* EDIT FOLDER MODAL */}

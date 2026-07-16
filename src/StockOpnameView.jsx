@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
     ClipboardList, Search, Save, AlertTriangle, CheckCircle, 
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
-    Camera, UploadCloud, Image as ImageIcon, PackageMinus
+    Camera, UploadCloud, Image as ImageIcon, PackageMinus,
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign // 🚀 NEW: TACTICAL RESOLUTION ICONS
 } from 'lucide-react';
-import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 
 // --- FINANCIAL FORMATTER ---
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
@@ -34,12 +35,13 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy }) => {
+const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
     // 🚀 THE INTERNAL CLEARANCE MATRIX
     const userRole = user?.userRole || 'AGENT';
     const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
     const isAreaAdmin = userRole === 'AREA_ADMIN';
+    const masterId = user?.bossUid || user?.uid || user?.id;
 
     // --- CORE STATE ---
     const [viewMode, setViewMode] = useState(isHighCommand ? 'review' : 'count'); 
@@ -49,21 +51,18 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
     
     useEffect(() => {
         if (isAreaAdmin && user?.location && db && appId) {
-            const masterId = user.bossUid || user.uid; // Master Vault owner
             const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${user.location}/inventory`);
             const unsub = onSnapshot(branchRef, (snap) => {
                 setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             });
             return () => unsub();
         }
-    }, [isAreaAdmin, user, db, appId]);
+    }, [isAreaAdmin, user, db, appId, masterId]);
 
-    // The active target depends on rank. HQ counts Master Vault, Branch Admin counts Branch Vault.
     const activeInventory = isAreaAdmin ? branchInventory : inventory;
 
     // --- COUNT WORKSHEET STATE ---
     const [search, setSearch] = useState("");
-    // counts state is now an object: { good: string, damaged: string, photo: string }
     const [counts, setCounts] = useState({}); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,23 +72,56 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
     const [isProcessingAudit, setIsProcessingAudit] = useState(false);
     const [viewingImage, setViewingImage] = useState(null);
 
+    // --- QUARANTINE RESOLUTION STATE ---
+    const [quarantineFacility, setQuarantineFacility] = useState('MASTER');
+    const [quarantineInventory, setQuarantineInventory] = useState([]);
+    const [resolutionModal, setResolutionModal] = useState(null); // { item, method: 'SAMPLING'|'RTV'|'PENALTY' }
+
+    // Dynamic extraction of all active branches
+    const uniqueBranches = useMemo(() => {
+        const branches = new Set();
+        motorists.forEach(m => {
+            if (m.location && m.location !== 'Headquarters' && m.location !== 'UNASSIGNED') branches.add(m.location);
+        });
+        return Array.from(branches);
+    }, [motorists]);
+
+    // Fetch live damaged stock based on dropdown selection
+    useEffect(() => {
+        if (viewMode !== 'quarantine') return;
+        
+        if (quarantineFacility === 'MASTER') {
+            setQuarantineInventory(inventory.filter(i => (i.damagedStock || 0) > 0));
+        } else {
+            const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${quarantineFacility}/inventory`);
+            const unsub = onSnapshot(branchRef, (snap) => {
+                const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Cross-reference with Master Inventory to get HPP/Modal prices
+                const enrichedData = data.map(branchItem => {
+                    const masterMatch = inventory.find(m => m.id === branchItem.id) || {};
+                    return { ...masterMatch, ...branchItem };
+                });
+                setQuarantineInventory(enrichedData.filter(i => (i.damagedStock || 0) > 0));
+            });
+            return () => unsub();
+        }
+    }, [viewMode, quarantineFacility, inventory, db, appId, masterId]);
+
+
     // ==========================================
     // ENGINE 1: THE HQ RECONCILIATION FETCH
     // ==========================================
     const fetchPendingAudits = async () => {
         if (!isHighCommand || !db || !appId || !user) return;
         try {
-            const userId = user.uid || user.id;
-            const auditsRef = collection(db, `artifacts/${appId}/users/${userId}/pending_audits`);
+            const auditsRef = collection(db, `artifacts/${appId}/users/${masterId}/pending_audits`);
             const q = query(auditsRef, where("status", "==", "PENDING_HQ_APPROVAL"));
             const snap = await getDocs(q);
             
             const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             fetched.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
             setPendingAudits(fetched);
-        } catch (error) {
-            console.error("Failed to fetch pending audits:", error);
-        }
+        } catch (error) { console.error(error); }
     };
 
     useEffect(() => {
@@ -103,13 +135,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         setCounts(prev => {
             const newCounts = { ...prev };
             if (!newCounts[id]) newCounts[id] = { good: '', damaged: '', photo: null };
-            
-            newCounts[id][type] = value === '' ? '' : Math.max(0, parseInt(value) || 0); // Prevent negative inputs
-            
-            // Cleanup if both are empty
-            if (newCounts[id].good === '' && newCounts[id].damaged === '') {
-                delete newCounts[id];
-            }
+            newCounts[id][type] = value === '' ? '' : Math.max(0, parseInt(value) || 0);
+            if (newCounts[id].good === '' && newCounts[id].damaged === '') delete newCounts[id];
             return newCounts;
         });
     };
@@ -118,13 +145,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         if (!file) return;
         try {
             const base64 = await compressImageToBase64(file);
-            setCounts(prev => ({
-                ...prev,
-                [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: base64 }
-            }));
-        } catch (e) {
-            alert("Failed to process image.");
-        }
+            setCounts(prev => ({ ...prev, [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: base64 } }));
+        } catch (e) { alert("Failed to process image."); }
     };
 
     const getVariance = (item) => {
@@ -143,8 +165,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
         setIsSubmitting(true);
         try {
-            const masterId = user.bossUid || user.uid;
-            
             const auditPayload = {
                 agentId: user.uid,
                 agentName: user.displayName || user.email?.split('@')[0] || "Branch Admin",
@@ -157,7 +177,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     const good = Number(entry.good || 0);
                     const damaged = Number(entry.damaged || 0);
                     const totalFound = good + damaged;
-                    
                     return {
                         productId: item.id,
                         name: item.name,
@@ -178,69 +197,42 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
             setCounts({});
             alert("✅ Physical Count submitted to HQ successfully!");
-        } catch (error) {
-            console.error(error);
-            alert("Failed to submit audit payload to HQ.");
-        } finally {
-            setIsSubmitting(false);
-        }
+        } catch (error) { alert("Failed to submit audit payload to HQ."); } 
+        finally { setIsSubmitting(false); }
     };
 
     // ==========================================
     // ENGINE 3: THE HQ EXECUTION (Approve / Reject)
     // ==========================================
     const handleApproveAudit = async (audit) => {
-        if (!window.confirm(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation} to match the physical count. Proceed?`)) return;
+        if (!window.confirm(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
-            const masterId = user.uid || user.id;
             const batch = writeBatch(db);
-
-            // 1. Determine target collection based on Audit Type
             const basePath = audit.auditType === 'BRANCH_WAREHOUSE' 
                 ? `artifacts/${appId}/users/${masterId}/branches/${audit.branchLocation}/inventory`
                 : `artifacts/${appId}/users/${masterId}/products`;
 
-            // 2. Overwrite items & allocate damaged goods to quarantine
             for (const item of audit.items) {
                 const itemRef = doc(db, basePath, item.productId);
-                
                 if (audit.auditType === 'BRANCH_WAREHOUSE') {
-                    // Branch documents might not have all master fields, so we do a merge
-                    batch.set(itemRef, { 
-                        stock: item.goodCount,
-                        damagedStock: increment(item.damagedCount) // Safely add to quarantine ledger
-                    }, { merge: true });
+                    batch.set(itemRef, { stock: item.goodCount, damagedStock: increment(item.damagedCount) }, { merge: true });
                 } else {
-                    // Master Vault
-                    batch.update(itemRef, { 
-                        stock: item.goodCount,
-                        damagedStock: increment(item.damagedCount)
-                    });
+                    batch.update(itemRef, { stock: item.goodCount, damagedStock: increment(item.damagedCount) });
                 }
             }
 
-            // 3. Mark audit as approved
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            batch.update(auditRef, { 
-                status: 'APPROVED', 
-                resolvedAt: serverTimestamp(),
-                resolvedBy: user.email?.split('@')[0]
-            });
+            batch.update(auditRef, { status: 'APPROVED', resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] });
 
             await batch.commit();
-            
-            if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}. Inventory overwritten.`);
+            if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}.`);
             if (triggerCapy) triggerCapy(`Audit Approved! Vault updated. 🔒`);
             
             setExpandedAudit(null);
             fetchPendingAudits();
-        } catch (error) {
-            console.error(error);
-            alert("Failed to approve audit. Check console.");
-        } finally {
-            setIsProcessingAudit(false);
-        }
+        } catch (error) { alert("Failed to approve audit."); } 
+        finally { setIsProcessingAudit(false); }
     };
 
     const handleRejectAudit = async (audit) => {
@@ -249,26 +241,84 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
         setIsProcessingAudit(true);
         try {
-            const masterId = user.uid || user.id;
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            
-            await updateDoc(auditRef, { 
-                status: 'REJECTED', 
-                rejectReason: reason || "Discrepancy too high. Please recount.",
-                resolvedAt: serverTimestamp(),
-                resolvedBy: user.email?.split('@')[0]
-            });
-
+            await updateDoc(auditRef, { status: 'REJECTED', rejectReason: reason || "Discrepancy too high.", resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] });
             if (logAudit) await logAudit("STOCK_OPNAME_REJECTED", `Rejected stock audit for ${audit.branchLocation}.`);
-            
             setExpandedAudit(null);
             fetchPendingAudits();
-        } catch (error) {
-            console.error(error);
-            alert("Failed to reject audit.");
-        } finally {
-            setIsProcessingAudit(false);
-        }
+        } catch (error) { alert("Failed to reject audit."); } 
+        finally { setIsProcessingAudit(false); }
+    };
+
+    // ==========================================
+    // ENGINE 4: QUARANTINE RESOLUTION (LIQUIDATION)
+    // ==========================================
+    const executeResolution = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const qtyToResolve = Number(formData.get('qty'));
+
+        if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return alert("Invalid quantity.");
+        if (!window.confirm(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}? This cannot be undone.`)) return;
+
+        setIsProcessingAudit(true);
+        try {
+            const batch = writeBatch(db);
+            const hpp = Number(resolutionModal.item.priceDistributor || resolutionModal.item.hpp || resolutionModal.item.costPrice || 0);
+            const totalValue = qtyToResolve * hpp;
+
+            // 1. Deduct from appropriate quarantine ledger
+            const itemRef = quarantineFacility === 'MASTER' 
+                ? doc(db, `artifacts/${appId}/users/${masterId}/products`, resolutionModal.item.id)
+                : doc(db, `artifacts/${appId}/users/${masterId}/branches/${quarantineFacility}/inventory`, resolutionModal.item.id);
+
+            batch.set(itemRef, { damagedStock: increment(-qtyToResolve) }, { merge: true });
+
+            // 2. Execute Specific Method Logic
+            if (resolutionModal.method === 'SAMPLING') {
+                batch.set(doc(collection(db, `artifacts/${appId}/users/${masterId}/samplings`)), {
+                    productId: resolutionModal.item.id,
+                    productName: resolutionModal.item.name,
+                    qty: qtyToResolve,
+                    unit: 'Bks',
+                    reason: `QUARANTINE CONVERSION: ${formData.get('reason')}`,
+                    sourceId: quarantineFacility === 'MASTER' ? 'VAULT' : quarantineFacility,
+                    date: new Date().toISOString().split('T')[0],
+                    timestamp: serverTimestamp()
+                });
+                if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} to sampling.`);
+            
+            } else if (resolutionModal.method === 'RTV') {
+                if (logAudit) await logAudit("QUARANTINE_RTV", `Returned ${qtyToResolve}x ${resolutionModal.item.name} to factory. Ref: ${formData.get('rtvRef')}`);
+            
+            } else if (resolutionModal.method === 'PENALTY') {
+                const agentId = formData.get('agentId');
+                const targetAgent = motorists.find(m => m.id === agentId);
+                const agentRef = doc(db, `artifacts/${appId}/users/${masterId}/motorists`, agentId);
+                
+                // Slam them with a dynamic debt liability
+                const penaltyId = `PENALTY_${Date.now()}`;
+                batch.set(agentRef, {
+                    [`cukaiDebts.${penaltyId}`]: totalValue
+                }, { merge: true });
+                
+                // Push an aggressive notification directly to their app
+                batch.set(doc(collection(db, `artifacts/${appId}/users/${masterId}/notifications`)), {
+                    title: "⚠️ Damage Penalty Charge",
+                    message: `You have been charged Rp ${new Intl.NumberFormat('id-ID').format(totalValue)} for ${qtyToResolve} damaged boxes of ${resolutionModal.item.name}.`,
+                    type: "PENALTY",
+                    agentId: agentId,
+                    isRead: false,
+                    timestamp: serverTimestamp()
+                });
+                if (logAudit) await logAudit("QUARANTINE_PENALTY", `Charged ${targetAgent?.name} Rp ${totalValue} for damaged goods.`);
+            }
+
+            await batch.commit();
+            triggerCapy("Quarantine Resolution Executed! ☢️");
+            setResolutionModal(null);
+        } catch (error) { alert("Resolution failed: " + error.message); } 
+        finally { setIsProcessingAudit(false); }
     };
 
     const filteredItems = useMemo(() => activeInventory.filter(i => i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
@@ -284,42 +334,167 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 </div>
             )}
 
+            {/* ☢️ TACTICAL RESOLUTION MODAL */}
+            {resolutionModal && (
+                <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
+                    <div className={`w-full max-w-md bg-[#0a0a0a] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.2)]' : resolutionModal.method === 'RTV' ? 'border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.2)]' : 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]'}`}>
+                        <div className={`p-4 border-b border-white/10 flex justify-between items-center ${resolutionModal.method === 'SAMPLING' ? 'bg-purple-900/30 text-purple-400' : resolutionModal.method === 'RTV' ? 'bg-blue-900/30 text-blue-400' : 'bg-red-900/30 text-red-500'}`}>
+                            <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                                {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
+                                {resolutionModal.method === 'RTV' && <Undo2 size={18}/>}
+                                {resolutionModal.method === 'PENALTY' && <BadgeDollarSign size={18}/>}
+                                {resolutionModal.method} PROTOCOL
+                            </h3>
+                            <button onClick={() => setResolutionModal(null)} className="hover:text-white"><X size={20}/></button>
+                        </div>
+                        <form onSubmit={executeResolution} className="p-6 space-y-5">
+                            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Target Asset</p>
+                                <p className="font-bold text-white uppercase">{resolutionModal.item.name}</p>
+                                <p className="text-[10px] text-orange-400 font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
+                                <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-black border border-white/20 p-3 rounded-lg text-white font-mono text-lg font-black focus:border-orange-500 outline-none" required/>
+                            </div>
+
+                            {resolutionModal.method === 'SAMPLING' && (
+                                <div>
+                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
+                                    <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-purple-500 outline-none" required/>
+                                </div>
+                            )}
+
+                            {resolutionModal.method === 'RTV' && (
+                                <div>
+                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
+                                    <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-blue-500 outline-none font-mono uppercase" required/>
+                                </div>
+                            )}
+
+                            {resolutionModal.method === 'PENALTY' && (
+                                <div>
+                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
+                                    <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
+                                        <option value="">-- SELECT PERSONNEL --</option>
+                                        {motorists.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role || 'Staff'})</option>)}
+                                    </select>
+                                    <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[9px] text-red-400 uppercase tracking-widest leading-relaxed">
+                                        Warning: This will instantly deduct the total HPP value of these boxes from the selected personnel's Cukai Debts. They will owe the company cash.
+                                    </div>
+                                </div>
+                            )}
+
+                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-purple-600 hover:bg-purple-500 text-white' : resolutionModal.method === 'RTV' ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}>
+                                {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} Execute Protocol
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* 🚀 HEADER & HQ NAVIGATION CONTROLS */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg gap-4 shrink-0">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-widest uppercase">
-                        {viewMode === 'count' ? (
-                            <><ClipboardList size={24} className="text-emerald-500"/> Warehouse Opname</>
-                        ) : (
-                            <><ShieldAlert size={24} className="text-blue-500"/> HQ Recon Board</>
-                        )}
+                        {viewMode === 'count' && <><ClipboardList size={24} className="text-emerald-500"/> Warehouse Opname</>}
+                        {viewMode === 'review' && <><ShieldAlert size={24} className="text-blue-500"/> HQ Recon Board</>}
+                        {viewMode === 'quarantine' && <><Biohazard size={24} className="text-orange-500 animate-pulse"/> Quarantine Vault</>}
                     </h2>
                     <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
-                        {viewMode === 'count' ? `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}` : 'PENDING WAREHOUSE OVERWRITES'}
-                        {!isHighCommand && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
-                        {isHighCommand && <span className="bg-blue-900/30 text-blue-500 border border-blue-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><ShieldAlert size={10}/> COMMANDER CLEARED</span>}
+                        {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
+                        {viewMode === 'review' && 'PENDING WAREHOUSE OVERWRITES'}
+                        {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION'}
+                        {!isHighCommand && viewMode === 'count' && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
-                {/* ADMIN TAB SWITCHER */}
                 {isHighCommand && (
-                    <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700">
-                        <button 
-                            onClick={() => setViewMode('review')} 
-                            className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            <ShieldAlert size={14}/> HQ Audits
-                            {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
+                    <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
+                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        <button 
-                            onClick={() => setViewMode('count')} 
-                            className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${viewMode === 'count' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}
-                        >
+                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                            <Biohazard size={14}/> Quarantine
+                        </button>
+                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
                             <ClipboardList size={14}/> New Count
                         </button>
                     </div>
                 )}
             </div>
+
+            {/* ======================================================== */}
+            {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}
+            {/* ======================================================== */}
+            {viewMode === 'quarantine' && isHighCommand && (
+                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-orange-500/20 shadow-inner p-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-orange-500/20 pb-4">
+                        <div className="w-full md:w-auto">
+                            <label className="text-[10px] text-orange-500 font-bold uppercase tracking-widest block mb-1">Select Facility Zone</label>
+                            <select 
+                                value={quarantineFacility} 
+                                onChange={(e) => setQuarantineFacility(e.target.value)}
+                                className="w-full md:w-64 bg-slate-900 border border-orange-500/50 rounded-lg p-2.5 text-sm text-white font-black uppercase tracking-wider outline-none focus:border-orange-400"
+                            >
+                                <option value="MASTER">Master Vault (HQ)</option>
+                                {uniqueBranches.map(branch => <option key={branch} value={branch}>{branch} Branch</option>)}
+                            </select>
+                        </div>
+                        <div className="text-right w-full md:w-auto bg-orange-950/30 p-3 rounded-lg border border-orange-500/30">
+                            <p className="text-[9px] text-orange-400 uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
+                            <p className="text-xl font-black text-orange-500 font-mono">
+                                {formatRupiah(quarantineInventory.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 relative z-10 pr-2">
+                        {quarantineInventory.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
+                                <CheckCircle size={48} className="text-emerald-500"/>
+                                <p className="text-sm font-bold text-emerald-400 uppercase tracking-widest">No Damaged Assets in this zone.</p>
+                            </div>
+                        ) : (
+                            quarantineInventory.map(item => {
+                                const hpp = Number(item.priceDistributor || item.hpp || item.costPrice || 0);
+                                return (
+                                    <div key={item.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col xl:flex-row justify-between xl:items-center gap-4 hover:border-orange-500/50 transition-colors shadow-md">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-orange-900/20 text-orange-500 rounded-full border border-orange-500/30 shrink-0">
+                                                <PackageMinus size={24}/>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-white text-base uppercase tracking-wider">{item.name}</h3>
+                                                <div className="flex items-center gap-3 mt-1 text-xs font-mono">
+                                                    <span className="text-orange-400 font-bold">{item.damagedStock} Bks Damaged</span>
+                                                    <span className="text-slate-600">|</span>
+                                                    <span className="text-slate-400">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-slate-700 xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
+                                            <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-purple-900/30 hover:bg-purple-600 border border-purple-500/50 text-purple-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                                <FlaskConical size={14}/> Convert to Sample
+                                            </button>
+                                            <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-blue-900/30 hover:bg-blue-600 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                                <Undo2 size={14}/> RTV Factory
+                                            </button>
+                                            <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-red-900/30 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <BadgeDollarSign size={14}/> Penalty Charge
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ======================================================== */}
             {/* VIEW MODE 1: THE HQ RECONCILIATION BOARD (ADMIN ONLY)    */}
@@ -383,13 +558,10 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                             const hpp = Number(master.priceDistributor || master.hpp || master.costPrice || master.modal || 0);
                                             
                                             if (item.variance < 0) {
-                                                // If variance is -5 and damaged is 2, then 3 are purely missing.
                                                 const purelyMissing = Math.abs(item.variance) - (item.damagedCount || 0);
                                                 if (purelyMissing > 0) missingLoss += purelyMissing * hpp;
                                             }
-                                            if (item.damagedCount > 0) {
-                                                damagedLoss += item.damagedCount * hpp;
-                                            }
+                                            if (item.damagedCount > 0) damagedLoss += item.damagedCount * hpp;
                                         });
                                     });
                                     return (
@@ -488,7 +660,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                {/* Breakdown of what was found */}
                                                                 <div className="flex gap-4 items-center">
                                                                     <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700 flex-1 flex justify-between items-center text-[10px] font-mono">
                                                                         <span className="text-slate-500">Good Condition:</span>
@@ -502,7 +673,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                                     )}
                                                                 </div>
 
-                                                                {/* Evidence block */}
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-black/30 p-2 rounded">
                                                                         {isMissing ? (
@@ -543,7 +713,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {/* VIEW MODE 2: THE COUNT WORKSHEET (BLIND THEN REVEAL)     */}
             {/* ======================================================== */}
             {viewMode === 'count' && (
-                <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 shadow-inner overflow-hidden flex flex-col relative animate-fade-in">
+                <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     
                     <div className="p-3 border-b border-slate-700 bg-black/50 relative">
                         <input 
@@ -568,7 +738,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 return (
                                     <div key={item.id} className={`bg-slate-800 rounded-lg border transition-all ${isRevealed ? (variance === 0 ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]') : 'border-slate-700 hover:border-slate-500'}`}>
                                         
-                                        {/* TOP ROW: THE COUNT */}
                                         <div className="p-4 flex flex-col md:flex-row justify-between md:items-center gap-4">
                                             <div className="flex-1">
                                                 <div className="font-bold text-white text-sm uppercase tracking-wider">{item.name}</div>
@@ -578,31 +747,16 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
                                                     <label className="text-[8px] text-emerald-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Good Stock</label>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0"
-                                                        placeholder="0"
-                                                        value={goodVal}
-                                                        onChange={(e) => handleCountChange(item.id, 'good', e.target.value)}
-                                                        className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-emerald-400 focus:border-emerald-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"
-                                                    />
+                                                    <input type="number" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-emerald-400 focus:border-emerald-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
                                                 </div>
                                                 <span className="text-slate-600 font-bold text-lg">+</span>
                                                 <div className="relative">
                                                     <label className="text-[8px] text-orange-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Damaged</label>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0"
-                                                        placeholder="0"
-                                                        value={damagedVal}
-                                                        onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)}
-                                                        className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-orange-400 focus:border-orange-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"
-                                                    />
+                                                    <input type="number" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-orange-400 focus:border-orange-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* BOTTOM ROW: THE REVEAL */}
                                         {isRevealed && (
                                             <div className="p-4 pt-0 border-t border-slate-700/50 mt-2 bg-black/20 rounded-b-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                                 <div className="flex items-center gap-4 text-xs font-mono">
@@ -620,7 +774,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                     </div>
                                                 </div>
 
-                                                {/* OPTIONAL DAMAGE PHOTO PROTOCOL */}
                                                 {Number(damagedVal) > 0 && (
                                                     <div className="w-full md:w-auto">
                                                         {entry.photo ? (
@@ -650,19 +803,11 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                             {Object.keys(counts).length} Wares Counted
                         </div>
                         <div className="flex w-full md:w-auto gap-3">
-                            <button 
-                                onClick={() => setCounts({})}
-                                className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-2 transition-colors bg-slate-800 border border-slate-700 rounded-lg"
-                            >
+                            <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-2 transition-colors bg-slate-800 border border-slate-700 rounded-lg">
                                 <RefreshCcw size={14}/> Reset
                             </button>
-                            <button 
-                                onClick={handleCommit}
-                                disabled={isSubmitting || Object.keys(counts).length === 0}
-                                className="flex-1 md:flex-none justify-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50"
-                            >
-                                {isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>}
-                                Submit to HQ
+                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50">
+                                {isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ
                             </button>
                         </div>
                     </div>
