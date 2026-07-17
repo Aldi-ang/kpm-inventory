@@ -4,14 +4,12 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon, PackageMinus,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, Activity // 🚀 ADDED ACTIVITY ICON
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 
-// --- FINANCIAL FORMATTER ---
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
-// --- COMPRESSOR ENGINE ---
 const compressImageToBase64 = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -35,17 +33,20 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
+// 🚀 ADDED 'transactions' TO PROPS
+const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
     const userRole = user?.userRole || 'AGENT';
     const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
     const isAreaAdmin = userRole === 'AREA_ADMIN';
     const masterId = user?.bossUid || user?.uid || user?.id;
 
-    const [viewMode, setViewMode] = useState(isHighCommand ? 'review' : 'count'); 
+    // 🚀 INJECTED 'monitor' INTO THE VIEW MODES
+    const [viewMode, setViewMode] = useState(isHighCommand ? 'monitor' : 'count'); 
     const [auditSubTab, setAuditSubTab] = useState('pending'); 
     const [quarSubTab, setQuarSubTab] = useState('active'); 
     const [regionFilter, setRegionFilter] = useState('ALL');
+    const [monitorFacility, setMonitorFacility] = useState('MASTER'); // 🚀 NEW: Telemetry Target
 
     const [branchInventory, setBranchInventory] = useState([]);
     
@@ -103,6 +104,17 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
         return () => { unsubAudits(); unsubLogs(); };
     }, [isHighCommand, db, appId, masterId]);
+
+    // 🚀 TELEMETRY ENGINE: Fetch live target facility for the Monitor Tab
+    const [monitorInventory, setMonitorInventory] = useState([]);
+    useEffect(() => {
+        if (viewMode !== 'monitor' || monitorFacility === 'MASTER' || !db || !appId || !masterId) return;
+        const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${monitorFacility}/inventory`);
+        const unsub = onSnapshot(branchRef, (snap) => {
+            setMonitorInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+        return () => unsub();
+    }, [viewMode, monitorFacility, db, appId, masterId]);
 
     useEffect(() => {
         if (viewMode !== 'quarantine' || quarSubTab !== 'active') return;
@@ -330,7 +342,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 const agentRef = doc(db, `artifacts/${appId}/users/${masterId}/motorists`, agentId);
                 const penaltyId = `PENALTY_${Date.now()}`;
                 
-                // 🚀 THE DATABASE FIX: Uses structured objects to deep merge directly into the map
                 batch.set(agentRef, { 
                     cukaiDebts: {
                         [penaltyId]: totalValue
@@ -355,6 +366,91 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         } catch (error) { alert("Resolution failed: " + error.message); } 
         finally { setIsProcessingAudit(false); }
     };
+
+    // 🚀 TELEMETRY MATH ENGINE: Computes START | FIELD | SOLD dynamically
+    const monitorStats = useMemo(() => {
+        if (viewMode !== 'monitor') return [];
+        
+        const todayStr = new Date().toDateString();
+        const stats = {};
+        
+        inventory.forEach(p => {
+            stats[p.id] = { name: p.name, vault: 0, field: 0, sold: 0, start: 0, product: p };
+        });
+
+        // 1. Vault (CURRENT)
+        const activeStock = monitorFacility === 'MASTER' ? inventory : monitorInventory;
+        activeStock.forEach(item => {
+            if(stats[item.id]) stats[item.id].vault = item.stock || 0;
+        });
+
+        // 2. Field (CANVAS)
+        const targetAgents = motorists.filter(m => monitorFacility === 'MASTER' ? m.location === 'Headquarters' || !m.location : m.location === monitorFacility);
+        const agentIds = targetAgents.map(a => a.id);
+
+        targetAgents.forEach(agent => {
+            (agent.activeCanvas || []).forEach(canvasItem => {
+                if (stats[canvasItem.productId]) {
+                    const p = stats[canvasItem.productId].product;
+                    let mult = 1;
+                    if (canvasItem.unit === 'Slop') mult = p.packsPerSlop || 10;
+                    if (canvasItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                    if (canvasItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                    stats[canvasItem.productId].field += (canvasItem.qty * mult);
+                }
+            });
+        });
+
+        // 3. Sold (TRANSACTIONS)
+        const todaysTrans = (transactions || []).filter(t => {
+            const tDate = t.timestamp?.seconds ? new Date(t.timestamp.seconds * 1000) : (t.date ? new Date(t.date) : new Date());
+            return tDate.toDateString() === todayStr && agentIds.includes(t.agentId);
+        });
+
+        todaysTrans.forEach(t => {
+            (t.items || []).forEach(tItem => {
+                const pId = tItem.productId || tItem.id;
+                if (stats[pId]) {
+                    const p = stats[pId].product;
+                    let mult = 1;
+                    if (tItem.unit === 'Slop') mult = p.packsPerSlop || 10;
+                    if (tItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                    if (tItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                    stats[pId].sold += (tItem.qty * mult);
+                }
+            });
+        });
+
+        // 4. Start (REVERSE TIME)
+        Object.values(stats).forEach(s => {
+            s.start = s.vault + s.field + s.sold;
+        });
+
+        return Object.values(stats).filter(s => s.start > 0 || s.vault > 0 || s.field > 0);
+    }, [viewMode, monitorFacility, inventory, monitorInventory, motorists, transactions]);
+
+    // 🚀 GOD MODE OVERRIDE
+    const handleGodModeEdit = async (productId, productName, currentVaultStock) => {
+        if (userRole !== 'DEVELOPER' && userRole !== 'COMPANY_OWNER') return;
+        
+        const newStockStr = window.prompt(`[GOD MODE] Override Vault Stock for ${productName} in ${monitorFacility}?\nCurrent: ${currentVaultStock} Bks`, currentVaultStock);
+        if (newStockStr === null || newStockStr === "") return;
+        
+        const newStock = parseInt(newStockStr, 10);
+        if (isNaN(newStock) || newStock < 0) return alert("Invalid number.");
+
+        try {
+            const ref = monitorFacility === 'MASTER'
+                ? doc(db, `artifacts/${appId}/users/${masterId}/products`, productId)
+                : doc(db, `artifacts/${appId}/users/${masterId}/branches/${monitorFacility}/inventory`, productId);
+
+            await updateDoc(ref, { stock: newStock });
+            triggerCapy(`God Mode: ${productName} forced to ${newStock} Bks in ${monitorFacility}.`);
+        } catch (err) {
+            alert("Failed to override: " + err.message);
+        }
+    };
+
 
     const filteredItems = useMemo(() => activeInventory.filter(i => i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
     
@@ -423,7 +519,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
-                                        {/* 🚀 KEEPING THE GHOST FILTER */}
                                         {motorists.filter(m => m.id !== 'master_owner').map(m => (
                                             <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
                                         ))}
@@ -448,18 +543,23 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-emerald-500"/> Warehouse Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-blue-500"/> HQ Recon Board</>}
                         {viewMode === 'quarantine' && <><Biohazard size={24} className="text-orange-500 animate-pulse"/> Quarantine Vault</>}
+                        {viewMode === 'monitor' && <><Activity size={24} className="text-blue-500 animate-pulse"/> Supply Telemetry</>}
                     </h2>
                     <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
+                        {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
                         {!isHighCommand && viewMode === 'count' && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
                 {isHighCommand && (
                     <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                            <Activity size={14}/> Monitor
+                        </button>
+                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
                             <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
                         <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
@@ -471,6 +571,74 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     </div>
                 )}
             </div>
+
+            {/* ======================================================== */}
+            {/* VIEW MODE 0: THE LIVE BRANCH MONITOR                     */}
+            {/* ======================================================== */}
+            {viewMode === 'monitor' && isHighCommand && (
+                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-blue-500/20 shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                    
+                    <div className="flex items-center gap-2 bg-slate-900 border border-blue-500/50 rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
+                        <MapPin size={16} className="text-blue-500"/>
+                        <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="bg-transparent text-sm text-white font-black uppercase tracking-widest outline-none w-full">
+                            <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
+                            {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10">
+                        {monitorStats.map(stat => {
+                            const p = stat.product;
+                            const packsPerSlop = p.packsPerSlop || 10;
+                            const slopText = (stat.start / packsPerSlop).toFixed(1);
+
+                            return (
+                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-blue-500/30">
+                                    <div className="flex items-center p-3 border-b border-[#2a2a2a] bg-[#111]">
+                                        <div className="w-12 h-12 bg-black border border-[#333] rounded overflow-hidden shrink-0 flex items-center justify-center">
+                                            {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-slate-600"/>}
+                                        </div>
+                                        <div className="ml-3 flex-1 overflow-hidden">
+                                            <h3 className="font-black text-orange-500 text-sm uppercase truncate">{p.name}</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] text-slate-400 font-mono font-bold">({slopText} Slop)</span>
+                                                <span className="text-[10px] text-slate-500 font-bold font-mono">START: {stat.start}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3 bg-[#161616] flex justify-between items-center text-xs font-mono font-black">
+                                        <div className="text-center px-2">
+                                            <div className="text-orange-400/70 text-[9px] mb-1">FIELD</div>
+                                            <div className="text-orange-500 text-sm">{stat.field}</div>
+                                        </div>
+                                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
+                                        <div className="text-center px-2">
+                                            <div className="text-emerald-400/70 text-[9px] mb-1">SOLD</div>
+                                            <div className="text-emerald-500 text-sm">{stat.sold}</div>
+                                        </div>
+                                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
+                                        <div 
+                                            className={`text-center px-2 ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:bg-white/5 rounded transition-colors' : ''}`}
+                                            onClick={() => handleGodModeEdit(p.id, p.name, stat.vault)}
+                                        >
+                                            <div className="text-blue-400/70 text-[9px] mb-1">VAULT</div>
+                                            <div className="text-blue-400 text-sm">{stat.vault}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Sub-bar representation */}
+                                    <div className="h-1.5 w-full bg-[#222] flex">
+                                        <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.field / stat.start) * 100 : 0}%` }}></div>
+                                        <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.sold / stat.start) * 100 : 0}%` }}></div>
+                                        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.vault / stat.start) * 100 : 0}%` }}></div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* ======================================================== */}
             {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}

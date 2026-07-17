@@ -3504,15 +3504,16 @@ const handleGitHubMirror = async () => {
         
           {activeTab === 'stock_opname' && (
               <StockOpnameView 
-                  inventory={inventory} 
-                  db={db} 
-                  appId={appId} 
-                  user={{ ...user, userRole: userRole }} 
-                  isAdmin={isAdmin} 
-                  logAudit={logAudit}
-                  triggerCapy={triggerCapy}
-                  motorists={motorists}  // 🚀 INJECT THIS PROP!
-              />
+    inventory={inventory} 
+    db={db} 
+    appId={appId} 
+    user={{ ...user, userRole: userRole }} 
+    isAdmin={isAdmin} 
+    logAudit={logAudit}
+    triggerCapy={triggerCapy}
+    motorists={motorists}
+    transactions={transactions}  // 🚀 INJECT THIS LINE HERE!
+/>
           )}
           
           {activeTab === 'sampling' && (
