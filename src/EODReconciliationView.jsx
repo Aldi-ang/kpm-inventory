@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign } from 'lucide-react';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
 
 const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
@@ -7,6 +7,9 @@ const formatRupiah = (number) => {
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
+    // 🚀 NEW STATE: View Mode Toggle for Player-Coach Admins
+    const [viewMode, setViewMode] = useState(isAdmin ? 'review' : 'submit');
+
     // 🚀 NEW STATE: Split Cukai Handover Inputs
     const [cukaiReturnedInput, setCukaiReturnedInput] = useState("");
     const [cukaiPaidInput, setCukaiPaidInput] = useState("");
@@ -26,7 +29,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
     // --- 🚀 NEW ENGINE: BOUNTY & PENALTY INTERCEPTOR ---
     const agentBountyData = useMemo(() => {
-        if (isAdmin || !agentProfileId) return { total: 0, keys: [], isPending: false };
+        // 🚀 THE FIX: Removed the isAdmin block so Admins can see their own bounties!
+        if (!agentProfileId) return { total: 0, keys: [], isPending: false };
         const agentProfile = motorists.find(m => m.id === agentProfileId) || {};
         const cDebts = agentProfile.cukaiDebts || {};
         
@@ -49,13 +53,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const pendingBounty = todaysReports.find(r => r.status === 'PENDING' && r.reportType === 'BOUNTY');
 
         return { total, keys, isPending: !!pendingBounty };
-    }, [isAdmin, agentProfileId, motorists, eodReports]);
+    }, [agentProfileId, motorists, eodReports]);
 
 
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
-        if (isAdmin) return null;
-        
+        // 🚀 THE FIX: Removed the isAdmin block so Admins can submit their own EOD!
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
@@ -117,7 +120,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, cashStatus, cukaiStatus };
-    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin, motorists]);
+    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, motorists]);
 
     useEffect(() => {
         if (agentData && cukaiReturnedInput === "" && cukaiPaidInput === "") {
@@ -179,13 +182,26 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     </h2>
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
                 </div>
+                
+                {/* 🚀 ADMIN TOGGLE UI (Player-Coach Mode) */}
+                {isAdmin && (
+                    <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
+                        <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                            <ShieldAlert size={14}/> HQ Verification 
+                            {pendingReports.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
+                        </button>
+                        <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                            <Wallet size={14}/> My Setoran
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ========================================= */}
             {/* ============ AGENT VIEW ================= */}
             {/* ========================================= */}
-            {!isAdmin && agentData && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {viewMode === 'submit' && agentData && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
 
                     {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
                     {(agentBountyData.total > 0 || agentBountyData.isPending) && (
@@ -223,7 +239,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         cash: agentBountyData.total, 
                                                         transfer: 0, cukai: 0, 
                                                         reportType: 'BOUNTY', 
-                                                        penaltyKeys: agentBountyData.keys // Metadata so Admin knows what to clear
+                                                        penaltyKeys: agentBountyData.keys 
                                                     });
                                                 }
                                             }}
@@ -422,8 +438,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             {/* ========================================= */}
             {/* ============ ADMIN VIEW ================= */}
             {/* ========================================= */}
-            {isAdmin && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {viewMode === 'review' && isAdmin && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
                     
                     {/* LEFT: PENDING REPORTS */}
                     <div>
