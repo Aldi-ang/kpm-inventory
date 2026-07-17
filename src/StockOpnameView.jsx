@@ -4,7 +4,7 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon, PackageMinus,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, Activity // 🚀 ADDED ACTIVITY ICON
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 
@@ -33,20 +33,24 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-// 🚀 ADDED 'transactions' TO PROPS
-const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
+// 🚀 ADDED HARD DEFAULTS TO PROPS TO PREVENT CRASHES
+const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
+    // 🚀 TITANIUM ARMOR: Force all incoming data to be arrays, never null/undefined
+    const safeInventory = inventory || [];
+    const safeTransactions = transactions || [];
+    const safeMotorists = motorists || [];
+
     const userRole = user?.userRole || 'AGENT';
     const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
     const isAreaAdmin = userRole === 'AREA_ADMIN';
     const masterId = user?.bossUid || user?.uid || user?.id;
 
-    // 🚀 INJECTED 'monitor' INTO THE VIEW MODES
     const [viewMode, setViewMode] = useState(isHighCommand ? 'monitor' : 'count'); 
     const [auditSubTab, setAuditSubTab] = useState('pending'); 
     const [quarSubTab, setQuarSubTab] = useState('active'); 
     const [regionFilter, setRegionFilter] = useState('ALL');
-    const [monitorFacility, setMonitorFacility] = useState('MASTER'); // 🚀 NEW: Telemetry Target
+    const [monitorFacility, setMonitorFacility] = useState('MASTER'); 
 
     const [branchInventory, setBranchInventory] = useState([]);
     
@@ -60,7 +64,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
         }
     }, [isAreaAdmin, user, db, appId, masterId]);
 
-    const activeInventory = isAreaAdmin ? branchInventory : inventory;
+    const activeInventory = isAreaAdmin ? (branchInventory || []) : safeInventory;
 
     const [search, setSearch] = useState("");
     const [counts, setCounts] = useState({}); 
@@ -79,11 +83,11 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
 
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
-        motorists.forEach(m => {
-            if (m.location && m.location !== 'Headquarters' && m.location !== 'UNASSIGNED') branches.add(m.location);
+        safeMotorists.forEach(m => {
+            if (m && m.location && m.location !== 'Headquarters' && m.location !== 'UNASSIGNED') branches.add(m.location);
         });
         return Array.from(branches);
-    }, [motorists]);
+    }, [safeMotorists]);
 
     useEffect(() => {
         if (!isHighCommand || !db || !appId || !masterId) return;
@@ -105,7 +109,6 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
         return () => { unsubAudits(); unsubLogs(); };
     }, [isHighCommand, db, appId, masterId]);
 
-    // 🚀 TELEMETRY ENGINE: Fetch live target facility for the Monitor Tab
     const [monitorInventory, setMonitorInventory] = useState([]);
     useEffect(() => {
         if (viewMode !== 'monitor' || monitorFacility === 'MASTER' || !db || !appId || !masterId) return;
@@ -120,11 +123,11 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
         if (viewMode !== 'quarantine' || quarSubTab !== 'active') return;
         
         if (quarantineFacility === 'MASTER') {
-            setQuarantineInventory(inventory.filter(i => (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })));
+            setQuarantineInventory(safeInventory.filter(i => i && (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })));
         } 
         else if (quarantineFacility === 'ALL') {
             let allData = { 
-                MASTER: inventory.filter(i => (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })) 
+                MASTER: safeInventory.filter(i => i && (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })) 
             };
             const unsubs = [];
 
@@ -133,9 +136,9 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                 const unsub = onSnapshot(branchRef, (snap) => {
                     const bData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     const enriched = bData.map(bItem => {
-                        const match = inventory.find(m => m.id === bItem.id) || {};
+                        const match = safeInventory.find(m => m && m.id === bItem.id) || {};
                         return { ...match, ...bItem, damagedStock: bItem.damagedStock || 0, facility: branch };
-                    }).filter(i => i.damagedStock > 0);
+                    }).filter(i => i && (i.damagedStock || 0) > 0);
 
                     allData[branch] = enriched;
                     
@@ -157,14 +160,14 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
             const unsub = onSnapshot(branchRef, (snap) => {
                 const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const enrichedData = data.map(branchItem => {
-                    const masterMatch = inventory.find(m => m.id === branchItem.id) || {};
+                    const masterMatch = safeInventory.find(m => m && m.id === branchItem.id) || {};
                     return { ...masterMatch, ...branchItem, damagedStock: branchItem.damagedStock || 0, facility: quarantineFacility };
                 });
-                setQuarantineInventory(enrichedData.filter(i => i.damagedStock > 0));
+                setQuarantineInventory(enrichedData.filter(i => i && (i.damagedStock || 0) > 0));
             });
             return () => unsub();
         }
-    }, [viewMode, quarSubTab, quarantineFacility, inventory, db, appId, masterId, uniqueBranches]);
+    }, [viewMode, quarSubTab, quarantineFacility, safeInventory, db, appId, masterId, uniqueBranches]);
 
     const handleCountChange = (id, type, value) => {
         setCounts(prev => {
@@ -185,6 +188,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
     };
 
     const getVariance = (item) => {
+        if (!item || !item.id) return { totalFound: 0, variance: 0 };
         const entry = counts[item.id];
         if (!entry) return { totalFound: 0, variance: 0 };
         const good = Number(entry.good || 0);
@@ -194,7 +198,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
     };
 
     const handleCommit = async () => {
-        const countedItems = activeInventory.filter(i => counts[i.id] !== undefined);
+        const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return alert("No items counted! Please enter at least one physical count.");
         if (!window.confirm(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
@@ -214,7 +218,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                     const totalFound = good + damaged;
                     return {
                         productId: item.id,
-                        name: item.name,
+                        name: item.name || 'Unknown',
                         expectedStock: item.stock || 0,
                         goodCount: good,
                         damagedCount: damaged,
@@ -336,7 +340,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                 if (logAudit) await logAudit("QUARANTINE_RTV", `Returned ${qtyToResolve}x ${resolutionModal.item.name} to factory. Ref: ${rtvRefStr}`);
             
             } else if (resolutionModal.method === 'PENALTY') {
-                const targetAgent = motorists.find(m => m.id === agentId);
+                const targetAgent = safeMotorists.find(m => m && m.id === agentId);
                 logData.details = { agentId, agentName: targetAgent?.name || 'Unknown' };
                 
                 const agentRef = doc(db, `artifacts/${appId}/users/${masterId}/motorists`, agentId);
@@ -367,69 +371,71 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
         finally { setIsProcessingAudit(false); }
     };
 
-    // 🚀 TELEMETRY MATH ENGINE: Computes START | FIELD | SOLD dynamically
+    // 🚀 TITANIUM TELEMETRY ENGINE: Wrapped in Try/Catch to prevent fatal UI crashes
     const monitorStats = useMemo(() => {
         if (viewMode !== 'monitor') return [];
-        
-        const todayStr = new Date().toDateString();
-        const stats = {};
-        
-        inventory.forEach(p => {
-            stats[p.id] = { name: p.name, vault: 0, field: 0, sold: 0, start: 0, product: p };
-        });
-
-        // 1. Vault (CURRENT)
-        const activeStock = monitorFacility === 'MASTER' ? inventory : monitorInventory;
-        activeStock.forEach(item => {
-            if(stats[item.id]) stats[item.id].vault = item.stock || 0;
-        });
-
-        // 2. Field (CANVAS)
-        const targetAgents = motorists.filter(m => monitorFacility === 'MASTER' ? m.location === 'Headquarters' || !m.location : m.location === monitorFacility);
-        const agentIds = targetAgents.map(a => a.id);
-
-        targetAgents.forEach(agent => {
-            (agent.activeCanvas || []).forEach(canvasItem => {
-                if (stats[canvasItem.productId]) {
-                    const p = stats[canvasItem.productId].product;
-                    let mult = 1;
-                    if (canvasItem.unit === 'Slop') mult = p.packsPerSlop || 10;
-                    if (canvasItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                    if (canvasItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                    stats[canvasItem.productId].field += (canvasItem.qty * mult);
-                }
+        try {
+            const todayStr = new Date().toDateString();
+            const stats = {};
+            
+            safeInventory.forEach(p => {
+                if (!p || !p.id) return;
+                stats[p.id] = { name: p.name || 'Unknown', vault: 0, field: 0, sold: 0, start: 0, product: p };
             });
-        });
 
-        // 3. Sold (TRANSACTIONS)
-        const todaysTrans = (transactions || []).filter(t => {
-            const tDate = t.timestamp?.seconds ? new Date(t.timestamp.seconds * 1000) : (t.date ? new Date(t.date) : new Date());
-            return tDate.toDateString() === todayStr && agentIds.includes(t.agentId);
-        });
-
-        todaysTrans.forEach(t => {
-            (t.items || []).forEach(tItem => {
-                const pId = tItem.productId || tItem.id;
-                if (stats[pId]) {
-                    const p = stats[pId].product;
-                    let mult = 1;
-                    if (tItem.unit === 'Slop') mult = p.packsPerSlop || 10;
-                    if (tItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                    if (tItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
-                    stats[pId].sold += (tItem.qty * mult);
-                }
+            const activeStock = monitorFacility === 'MASTER' ? safeInventory : (monitorInventory || []);
+            activeStock.forEach(item => {
+                if(item && item.id && stats[item.id]) stats[item.id].vault = item.stock || 0;
             });
-        });
 
-        // 4. Start (REVERSE TIME)
-        Object.values(stats).forEach(s => {
-            s.start = s.vault + s.field + s.sold;
-        });
+            const targetAgents = safeMotorists.filter(m => m && (monitorFacility === 'MASTER' ? m.location === 'Headquarters' || !m.location : m.location === monitorFacility));
+            const agentIds = targetAgents.map(a => a.id);
 
-        return Object.values(stats).filter(s => s.start > 0 || s.vault > 0 || s.field > 0);
-    }, [viewMode, monitorFacility, inventory, monitorInventory, motorists, transactions]);
+            targetAgents.forEach(agent => {
+                (agent.activeCanvas || []).forEach(canvasItem => {
+                    if (canvasItem && canvasItem.productId && stats[canvasItem.productId]) {
+                        const p = stats[canvasItem.productId].product;
+                        let mult = 1;
+                        if (canvasItem.unit === 'Slop') mult = p.packsPerSlop || 10;
+                        if (canvasItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                        if (canvasItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                        stats[canvasItem.productId].field += ((canvasItem.qty || 0) * mult);
+                    }
+                });
+            });
 
-    // 🚀 GOD MODE OVERRIDE
+            const todaysTrans = safeTransactions.filter(t => {
+                if (!t) return false;
+                const tDate = t.timestamp?.seconds ? new Date(t.timestamp.seconds * 1000) : (t.date ? new Date(t.date) : new Date());
+                return tDate.toDateString() === todayStr && agentIds.includes(t.agentId);
+            });
+
+            todaysTrans.forEach(t => {
+                (t.items || []).forEach(tItem => {
+                    if (!tItem) return;
+                    const pId = tItem.productId || tItem.id;
+                    if (pId && stats[pId]) {
+                        const p = stats[pId].product;
+                        let mult = 1;
+                        if (tItem.unit === 'Slop') mult = p.packsPerSlop || 10;
+                        if (tItem.unit === 'Bal') mult = (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                        if (tItem.unit === 'Karton') mult = (p.balsPerCarton || 4) * (p.slopsPerBal || 20) * (p.packsPerSlop || 10);
+                        stats[pId].sold += ((tItem.qty || 0) * mult);
+                    }
+                });
+            });
+
+            Object.values(stats).forEach(s => {
+                s.start = (s.vault || 0) + (s.field || 0) + (s.sold || 0);
+            });
+
+            return Object.values(stats).filter(s => s.start > 0 || s.vault > 0 || s.field > 0);
+        } catch (err) {
+            console.error("Monitor Engine Matrix Error:", err);
+            return []; // Fails safely without destroying the app
+        }
+    }, [viewMode, monitorFacility, safeInventory, monitorInventory, safeMotorists, safeTransactions]);
+
     const handleGodModeEdit = async (productId, productName, currentVaultStock) => {
         if (userRole !== 'DEVELOPER' && userRole !== 'COMPANY_OWNER') return;
         
@@ -452,7 +458,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
     };
 
 
-    const filteredItems = useMemo(() => activeInventory.filter(i => i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
+    const filteredItems = useMemo(() => activeInventory.filter(i => i && i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
     
     const displayedAudits = useMemo(() => {
         const source = auditSubTab === 'pending' ? pendingAudits : auditHistory;
@@ -519,7 +525,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                                     <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
-                                        {motorists.filter(m => m.id !== 'master_owner').map(m => (
+                                        {safeMotorists.filter(m => m && m.id !== 'master_owner').map(m => (
                                             <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
                                         ))}
                                     </select>
@@ -543,7 +549,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-emerald-500"/> Warehouse Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-blue-500"/> HQ Recon Board</>}
                         {viewMode === 'quarantine' && <><Biohazard size={24} className="text-orange-500 animate-pulse"/> Quarantine Vault</>}
-                        {viewMode === 'monitor' && <><Activity size={24} className="text-blue-500 animate-pulse"/> Supply Telemetry</>}
+                        {viewMode === 'monitor' && <><BarChart size={24} className="text-blue-500 animate-pulse"/> Supply Telemetry</>}
                     </h2>
                     <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
@@ -557,7 +563,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                 {isHighCommand && (
                     <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
                         <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
-                            <Activity size={14}/> Monitor
+                            <BarChart size={14}/> Monitor
                         </button>
                         <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
                             <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
@@ -589,7 +595,8 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10">
                         {monitorStats.map(stat => {
                             const p = stat.product;
-                            const packsPerSlop = p.packsPerSlop || 10;
+                            if (!p || !p.id) return null;
+                            const packsPerSlop = (p.packsPerSlop && p.packsPerSlop > 0) ? p.packsPerSlop : 10;
                             const slopText = (stat.start / packsPerSlop).toFixed(1);
 
                             return (
@@ -627,7 +634,6 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
                                         </div>
                                     </div>
                                     
-                                    {/* Sub-bar representation */}
                                     <div className="h-1.5 w-full bg-[#222] flex">
                                         <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.field / stat.start) * 100 : 0}%` }}></div>
                                         <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.sold / stat.start) * 100 : 0}%` }}></div>
@@ -946,7 +952,7 @@ const StockOpnameView = ({ inventory, transactions = [], db, appId, user, isAdmi
             {viewMode === 'count' && (
                 <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     <div className="p-3 border-b border-slate-700 bg-black/50 relative">
-                        <input value={search} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Scan or Search Product..." className="bg-black border border-slate-600 pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-emerald-500 outline-none text-white font-mono"/>
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-black border border-slate-600 pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-emerald-500 outline-none text-white font-mono"/>
                         <Search size={16} className="absolute left-6 top-6 text-slate-500"/>
                     </div>
                     <div className="overflow-y-auto flex-1 z-10 relative custom-scrollbar p-3">
