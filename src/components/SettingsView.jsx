@@ -831,9 +831,8 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_journey', label: 'Journey Plan' },
         { id: 'view_fleet', label: 'Fleet & Canvas' },
         { id: 'view_master_vault', label: 'Master Vault' },
-        { id: 'view_branch_warehouse', label: 'Regional Warehouse' }, // 🚀 INJECTED THE MISSING TOGGLE HERE
+        { id: 'view_restock_vault', label: 'Logistics & Warehouse' }, // 🚀 THE FIX: Renamed to cover BOTH HQ and Regional
         { id: 'view_agent_inventory', label: 'Agent Inventory' },
-        { id: 'view_restock_vault', label: 'Restock Vault' },
         { id: 'view_sales', label: 'Sales Terminal' },
         { id: 'view_receivables', label: 'Receivables & Consign' },
         { id: 'view_eod', label: 'EOD Setoran' },
