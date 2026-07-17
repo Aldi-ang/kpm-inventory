@@ -33,17 +33,18 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-// 🚀 ADDED HARD DEFAULTS TO PROPS TO PREVENT CRASHES
 const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
-    // 🚀 TITANIUM ARMOR: Force all incoming data to be arrays, never null/undefined
     const safeInventory = inventory || [];
     const safeTransactions = transactions || [];
     const safeMotorists = motorists || [];
 
     const userRole = user?.userRole || 'AGENT';
     const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
-    const isAreaAdmin = userRole === 'AREA_ADMIN';
+    
+    // 🚀 DYNAMIC UPGRADE: Automatically adapts to any custom Tier 4/Branch Admin rank!
+    const isAreaAdmin = !isHighCommand; 
+    
     const masterId = user?.bossUid || user?.uid || user?.id;
 
     const [viewMode, setViewMode] = useState(isHighCommand ? 'monitor' : 'count'); 
@@ -371,7 +372,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
         finally { setIsProcessingAudit(false); }
     };
 
-    // 🚀 TITANIUM TELEMETRY ENGINE: Wrapped in Try/Catch to prevent fatal UI crashes
+    // 🚀 TITANIUM TELEMETRY ENGINE: Upgraded Math & Damaged Tracking
     const monitorStats = useMemo(() => {
         if (viewMode !== 'monitor') return [];
         try {
@@ -380,12 +381,16 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
             
             safeInventory.forEach(p => {
                 if (!p || !p.id) return;
-                stats[p.id] = { name: p.name || 'Unknown', vault: 0, field: 0, sold: 0, start: 0, product: p };
+                // 🚀 INJECTED 'damaged' & RENAMED 'start' to 'initial'
+                stats[p.id] = { name: p.name || 'Unknown', vault: 0, damaged: 0, field: 0, sold: 0, initial: 0, product: p };
             });
 
             const activeStock = monitorFacility === 'MASTER' ? safeInventory : (monitorInventory || []);
             activeStock.forEach(item => {
-                if(item && item.id && stats[item.id]) stats[item.id].vault = item.stock || 0;
+                if(item && item.id && stats[item.id]) {
+                    stats[item.id].vault = item.stock || 0;
+                    stats[item.id].damaged = item.damagedStock || 0; // 🚀 PULL DAMAGED STOCK
+                }
             });
 
             const targetAgents = safeMotorists.filter(m => m && (monitorFacility === 'MASTER' ? m.location === 'Headquarters' || !m.location : m.location === monitorFacility));
@@ -426,13 +431,14 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
             });
 
             Object.values(stats).forEach(s => {
-                s.start = (s.vault || 0) + (s.field || 0) + (s.sold || 0);
+                // 🚀 MATH UPDATED TO INCLUDE DAMAGED STOCK IN THE MORNING INITIAL COUNT
+                s.initial = (s.vault || 0) + (s.damaged || 0) + (s.field || 0) + (s.sold || 0);
             });
 
-            return Object.values(stats).filter(s => s.start > 0 || s.vault > 0 || s.field > 0);
+            return Object.values(stats).filter(s => s.initial > 0 || s.vault > 0 || s.field > 0 || s.damaged > 0);
         } catch (err) {
             console.error("Monitor Engine Matrix Error:", err);
-            return []; // Fails safely without destroying the app
+            return []; 
         }
     }, [viewMode, monitorFacility, safeInventory, monitorInventory, safeMotorists, safeTransactions]);
 
@@ -592,52 +598,87 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
                         </select>
                     </div>
 
+                    {/* 🚀 UPGRADED AGGRESSIVE UI PANEL */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10">
                         {monitorStats.map(stat => {
                             const p = stat.product;
                             if (!p || !p.id) return null;
-                            const packsPerSlop = (p.packsPerSlop && p.packsPerSlop > 0) ? p.packsPerSlop : 10;
-                            const slopText = (stat.start / packsPerSlop).toFixed(1);
+                            const isLowStock = stat.vault <= (p.minStock || 5);
 
                             return (
-                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-blue-500/30">
-                                    <div className="flex items-center p-3 border-b border-[#2a2a2a] bg-[#111]">
-                                        <div className="w-12 h-12 bg-black border border-[#333] rounded overflow-hidden shrink-0 flex items-center justify-center">
+                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-blue-500/50 relative group">
+                                    
+                                    {/* Background Accent */}
+                                    <div className="absolute -top-4 -right-4 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
+                                        <BarChart size={100} className="text-blue-500" />
+                                    </div>
+
+                                    {/* Header */}
+                                    <div className="flex items-center p-4 border-b border-[#2a2a2a] bg-black/40 z-10">
+                                        <div className="w-12 h-12 bg-black border border-[#333] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
                                             {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-slate-600"/>}
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
-                                            <h3 className="font-black text-orange-500 text-sm uppercase truncate">{p.name}</h3>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] text-slate-400 font-mono font-bold">({slopText} Slop)</span>
-                                                <span className="text-[10px] text-slate-500 font-bold font-mono">START: {stat.start}</span>
-                                            </div>
+                                            <h3 className="font-black text-white text-sm uppercase truncate tracking-wider drop-shadow-md">{p.name}</h3>
+                                            <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {p.id}</p>
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-[#161616] flex justify-between items-center text-xs font-mono font-black">
-                                        <div className="text-center px-2">
-                                            <div className="text-orange-400/70 text-[9px] mb-1">FIELD</div>
-                                            <div className="text-orange-500 text-sm">{stat.field}</div>
+                                    {/* Main Stats Panel */}
+                                    <div className="p-4 z-10 flex flex-col gap-3">
+                                        
+                                        {/* Vault vs Initial Row */}
+                                        <div className="flex items-center justify-between bg-black/60 border border-blue-500/20 rounded-lg p-3 shadow-inner">
+                                            <div>
+                                                <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <span 
+                                                        className={`text-2xl font-black text-white font-mono leading-none ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+                                                        onClick={() => handleGodModeEdit(p.id, p.name, stat.vault)}
+                                                        title={userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'God Mode Edit Vault Stock' : ''}
+                                                    >
+                                                        {stat.vault}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-slate-500 font-mono">/ {stat.initial}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2">Status</p>
+                                                {isLowStock ? (
+                                                    <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
+                                                ) : (
+                                                    <span className="bg-emerald-900/30 text-emerald-500 border border-emerald-500/50 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest">Healthy</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
-                                        <div className="text-center px-2">
-                                            <div className="text-emerald-400/70 text-[9px] mb-1">SOLD</div>
-                                            <div className="text-emerald-500 text-sm">{stat.sold}</div>
-                                        </div>
-                                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
-                                        <div 
-                                            className={`text-center px-2 ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:bg-white/5 rounded transition-colors' : ''}`}
-                                            onClick={() => handleGodModeEdit(p.id, p.name, stat.vault)}
-                                        >
-                                            <div className="text-blue-400/70 text-[9px] mb-1">VAULT</div>
-                                            <div className="text-blue-400 text-sm">{stat.vault}</div>
+
+                                        {/* Breakdowns Row */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-orange-500/30 transition-colors">
+                                                <span className="text-[9px] text-orange-400/70 font-bold uppercase tracking-widest mb-1 block">Field</span>
+                                                <span className="text-orange-500 font-black font-mono text-sm">{stat.field}</span>
+                                            </div>
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-emerald-500/30 transition-colors">
+                                                <span className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-widest mb-1 block">Sold</span>
+                                                <span className="text-emerald-500 font-black font-mono text-sm">{stat.sold}</span>
+                                            </div>
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-red-500/30 transition-colors">
+                                                <span className="text-[9px] text-red-400/70 font-bold uppercase tracking-widest mb-1 block">Damaged</span>
+                                                <span className="text-red-500 font-black font-mono text-sm">{stat.damaged}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div className="h-1.5 w-full bg-[#222] flex">
-                                        <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.field / stat.start) * 100 : 0}%` }}></div>
-                                        <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.sold / stat.start) * 100 : 0}%` }}></div>
-                                        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${stat.start > 0 ? (stat.vault / stat.start) * 100 : 0}%` }}></div>
+                                    {/* Multi-Color Progress Bar */}
+                                    <div className="h-1.5 w-full bg-[#111] flex mt-auto border-t border-[#2a2a2a]">
+                                        {stat.initial > 0 && (
+                                            <>
+                                                <div className="h-full bg-blue-500" style={{ width: `${(stat.vault / stat.initial) * 100}%` }} title={`Vault: ${stat.vault}`}></div>
+                                                <div className="h-full bg-orange-500" style={{ width: `${(stat.field / stat.initial) * 100}%` }} title={`Field: ${stat.field}`}></div>
+                                                <div className="h-full bg-emerald-500" style={{ width: `${(stat.sold / stat.initial) * 100}%` }} title={`Sold: ${stat.sold}`}></div>
+                                                <div className="h-full bg-red-600" style={{ width: `${(stat.damaged / stat.initial) * 100}%` }} title={`Damaged: ${stat.damaged}`}></div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             );
