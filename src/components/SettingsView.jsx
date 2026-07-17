@@ -831,6 +831,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_journey', label: 'Journey Plan' },
         { id: 'view_fleet', label: 'Fleet & Canvas' },
         { id: 'view_master_vault', label: 'Master Vault' },
+        { id: 'view_branch_warehouse', label: 'Regional Warehouse' }, // 🚀 INJECTED THE MISSING TOGGLE HERE
         { id: 'view_agent_inventory', label: 'Agent Inventory' },
         { id: 'view_restock_vault', label: 'Restock Vault' },
         { id: 'view_sales', label: 'Sales Terminal' },
@@ -843,7 +844,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_audit_logs', label: 'Audit Logs' },
         { id: 'view_settings', label: 'Settings Panel' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
-        { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, // 🚀 NEW: Matrix UI Switch
+        { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, 
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];
