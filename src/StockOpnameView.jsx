@@ -71,7 +71,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
     const [isProcessingAudit, setIsProcessingAudit] = useState(false);
     const [viewingImage, setViewingImage] = useState(null);
 
-    // 🚀 FIX: Default to 'ALL' so HQ immediately sees everything
     const [quarantineFacility, setQuarantineFacility] = useState('ALL');
     const [quarantineInventory, setQuarantineInventory] = useState([]);
     const [quarantineLogs, setQuarantineLogs] = useState([]); 
@@ -105,7 +104,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         return () => { unsubAudits(); unsubLogs(); };
     }, [isHighCommand, db, appId, masterId]);
 
-    // 🚀 THE FIX: Multi-Facility Aggregation Engine
     useEffect(() => {
         if (viewMode !== 'quarantine' || quarSubTab !== 'active') return;
         
@@ -124,7 +122,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     const bData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     const enriched = bData.map(bItem => {
                         const match = inventory.find(m => m.id === bItem.id) || {};
-                        // 🚀 FIX: Prevent Master Vault Bleed by explicitly forcing Branch damagedStock
                         return { ...match, ...bItem, damagedStock: bItem.damagedStock || 0, facility: branch };
                     }).filter(i => i.damagedStock > 0);
 
@@ -149,7 +146,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const enrichedData = data.map(branchItem => {
                     const masterMatch = inventory.find(m => m.id === branchItem.id) || {};
-                    // 🚀 FIX: Prevent Master Vault Bleed
                     return { ...masterMatch, ...branchItem, damagedStock: branchItem.damagedStock || 0, facility: quarantineFacility };
                 });
                 setQuarantineInventory(enrichedData.filter(i => i.damagedStock > 0));
@@ -289,7 +285,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             const hpp = Number(resolutionModal.item.priceDistributor || resolutionModal.item.hpp || resolutionModal.item.costPrice || 0);
             const totalValue = qtyToResolve * hpp;
 
-            // 🚀 FIX: Ensure we deduct from the correct facility even if "ALL" is selected
             const targetFacility = resolutionModal.item.facility || quarantineFacility;
             const itemRef = targetFacility === 'MASTER' 
                 ? doc(db, `artifacts/${appId}/users/${masterId}/products`, resolutionModal.item.id)
@@ -335,7 +330,13 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 const agentRef = doc(db, `artifacts/${appId}/users/${masterId}/motorists`, agentId);
                 const penaltyId = `PENALTY_${Date.now()}`;
                 
-                batch.set(agentRef, { [`cukaiDebts.${penaltyId}`]: totalValue }, { merge: true });
+                // 🚀 THE DATABASE FIX: Uses structured objects to deep merge directly into the map
+                batch.set(agentRef, { 
+                    cukaiDebts: {
+                        [penaltyId]: totalValue
+                    }
+                }, { merge: true });
+
                 batch.set(doc(collection(db, `artifacts/${appId}/users/${masterId}/notifications`)), {
                     title: "⚠️ Damage Penalty Charge",
                     message: `You have a pending debt of Rp ${new Intl.NumberFormat('id-ID').format(totalValue)} for ${qtyToResolve} damaged boxes of ${resolutionModal.item.name}. Please pay this during EOD Setoran.`,
@@ -422,7 +423,10 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
-                                        {motorists.filter(m => m.id !== 'master_owner').map(m => <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>)}
+                                        {/* 🚀 KEEPING THE GHOST FILTER */}
+                                        {motorists.filter(m => m.id !== 'master_owner').map(m => (
+                                            <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
+                                        ))}
                                     </select>
                                     <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[9px] text-red-400 uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
@@ -640,7 +644,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 audit.items.forEach(item => {
                                     if (item.damagedCount > 0) totalDamaged += item.damagedCount;
                                     if (item.variance < 0) {
-                                        // 🚀 FIX: Mathematical Correction. Variance already accounts for damaged stock.
                                         purelyMissing += Math.abs(item.variance);
                                     }
                                 });
