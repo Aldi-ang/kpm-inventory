@@ -9,9 +9,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     
     // 🚀 VIEW & IDENTITY STATES
     const [viewMode, setViewMode] = useState(isAdmin ? 'review' : 'submit');
-    const [adminSetoranId, setAdminSetoranId] = useState('ADMIN_VEHICLE'); // 🚀 NEW: Lets Admin select their active wallet
+    
+    // 🚀 THE FIX: Removed the redundant default. Forces Admin to actively select an identity.
+    const [adminSetoranId, setAdminSetoranId] = useState(''); 
 
-    // 🚀 DYNAMIC ID ENGINE: Switches focus based on Admin selection or Field Agent ID
+    // 🚀 DYNAMIC ID ENGINE
     const effectiveId = isAdmin ? adminSetoranId : agentProfileId;
     
     const [cukaiReturnedInput, setCukaiReturnedInput] = useState("");
@@ -36,8 +38,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         let total = 0;
         let keys = [];
         for (let [pid, val] of Object.entries(cDebts)) {
-            if (pid.startsWith('PENALTY_') && val > 0) {
-                total += val;
+            // 🚀 THE FIX: Removed the "val > 0" blindspot. It will now catch Rp 0 fines!
+            if (pid.startsWith('PENALTY_')) {
+                total += (val || 0);
                 keys.push(pid);
             }
         }
@@ -55,6 +58,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
     // --- 🚀 EXPECTED SETORAN CALCULATOR ---
     const agentData = useMemo(() => {
+        if (!effectiveId) return null; // 🚀 Prevent calculation if no identity is selected
+
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
@@ -62,18 +67,16 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const isBossCar = effectiveId === 'ADMIN_VEHICLE' || effectiveId === 'VAULT';
         
         let expectedCukai = 0;
-        if (effectiveId) {
-            const agentProfile = motorists.find(m => m.id === effectiveId) || {};
-            const cDebts = agentProfile.cukaiDebts || {};
-            const legacyDebt = agentProfile.cukaiDebt || 0;
-            
-            let calcTotal = 0;
-            let globalCredit = cDebts['global_credit'] || 0;
-            for (let [pid, val] of Object.entries(cDebts)) {
-                if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
-            }
-            expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
+        const agentProfile = motorists.find(m => m.id === effectiveId) || {};
+        const cDebts = agentProfile.cukaiDebts || {};
+        const legacyDebt = agentProfile.cukaiDebt || 0;
+        
+        let calcTotal = 0;
+        let globalCredit = cDebts['global_credit'] || 0;
+        for (let [pid, val] of Object.entries(cDebts)) {
+            if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
         }
+        expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
 
         const todaysSamplings = samplings.filter(s => {
             const matchesAgent = isBossCar ? (s.sourceId === effectiveId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN') : (s.sourceId === effectiveId);
@@ -169,7 +172,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     // 🚀 IDENTITY RESOLVER FOR SUBMISSIONS
     const resolveIdentityName = () => {
         const profile = motorists.find(m => m.id === effectiveId);
-        return profile ? profile.name : (effectiveId === 'ADMIN_VEHICLE' ? 'Master Admin' : 'Admin');
+        return profile ? profile.name : 'Admin';
     };
 
 
@@ -200,7 +203,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             {/* ========================================= */}
             {/* ============ AGENT VIEW ================= */}
             {/* ========================================= */}
-            {viewMode === 'submit' && agentData && (
+            {viewMode === 'submit' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
 
                     {/* 🚀 THE IDENTITY SWITCHER (ADMIN ONLY) 🚀 */}
@@ -215,8 +218,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 onChange={(e) => setAdminSetoranId(e.target.value)}
                                 className="flex-1 bg-black border border-emerald-500/50 rounded-lg p-3 text-xs text-white font-bold uppercase tracking-widest outline-none focus:border-emerald-400 w-full"
                             >
-                                <option value="ADMIN_VEHICLE" className="bg-slate-900">Master Vault / Default Boss Car</option>
-                                {/* 🚀 FIX: Filters out the Telemetry Ghost */}
+                                <option value="" className="bg-slate-900">-- SELECT IDENTITY --</option>
                                 {motorists.filter(m => m.id !== 'master_owner').map(m => (
                                     <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
                                 ))}
@@ -224,248 +226,266 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         </div>
                     )}
 
-                    {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
-                    {(agentBountyData.total > 0 || agentBountyData.isPending) && (
-                        <div className="md:col-span-2 bg-[#1a0505] border-2 border-red-800 rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(220,38,38,0.05)_50%,transparent_75%)] bg-[length:10px_10px] pointer-events-none"></div>
-                            <div className="absolute -right-10 -top-10 opacity-10 rotate-12 pointer-events-none">
-                                <Target size={150} className="text-red-500" />
-                            </div>
-                            
-                            <div className="relative z-10 flex-1 text-center md:text-left">
-                                <h2 className="text-4xl md:text-5xl font-black text-red-600 uppercase tracking-[0.3em] mb-2" style={{ fontFamily: 'Georgia, serif' }}>WANTED</h2>
-                                <p className="text-xs text-red-400/80 uppercase tracking-[0.4em] font-bold mb-4 border-b border-red-900/50 pb-2 inline-block md:block">Company Property Damage Fine</p>
-                                <p className="text-sm text-slate-300 leading-relaxed max-w-xl mx-auto md:mx-0">
-                                    You have an outstanding company debt for unaccounted or severely damaged inventory. You must clear this bounty with the Branch Admin to restore good standing.
-                                </p>
-                            </div>
-
-                            <div className="relative z-10 flex flex-col items-center md:items-end w-full md:w-auto shrink-0">
-                                {agentBountyData.isPending ? (
-                                    <div className="bg-black/50 border border-red-500/50 px-8 py-6 rounded-xl text-center backdrop-blur-sm w-full">
-                                        <Clock size={32} className="text-red-500 animate-pulse mx-auto mb-3"/>
-                                        <p className="text-red-400 font-black uppercase tracking-[0.2em] text-sm">Bounty Under Review</p>
-                                        <p className="text-[10px] text-red-400/70 mt-2 uppercase tracking-widest font-mono">Awaiting Sheriff Verification</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2">Total Bounty Amount</p>
-                                        <p className="text-4xl font-black text-red-500 font-mono mb-6 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-                                            {formatRupiah(agentBountyData.total)}
-                                        </p>
-                                        <button 
-                                            onClick={() => {
-                                                if (window.confirm(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
-                                                    onSubmitEOD({ 
-                                                        cash: agentBountyData.total, 
-                                                        transfer: 0, cukai: 0, 
-                                                        reportType: 'BOUNTY', 
-                                                        penaltyKeys: agentBountyData.keys,
-                                                        agentId: effectiveId,        // 🚀 INJECT EXACT TARGET
-                                                        agentName: resolveIdentityName()
-                                                    });
-                                                }
-                                            }}
-                                            className="w-full md:w-auto px-10 py-4 bg-red-700 hover:bg-red-600 text-white rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
-                                        >
-                                            <BadgeDollarSign size={20}/> Pay Bounty
-                                        </button>
-                                    </>
-                                )}
-                            </div>
+                    {/* 🛑 IDENTITY REQUIRED WALL 🛑 */}
+                    {isAdmin && !effectiveId ? (
+                        <div className="md:col-span-2 flex flex-col items-center justify-center py-16 opacity-40">
+                            <User size={64} className="mb-4 text-emerald-500" />
+                            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-white">Identity Required</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest mt-2">Select an operating identity above to view Setoran.</p>
                         </div>
-                    )}
-                    
-                    {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER */}
-                    <div className="bg-black/20 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-emerald-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Wallet className="text-emerald-500"/> Cash & Stock</h3>
-                        
-                        <div className="flex-1">
-                            {agentData.cashStatus === 'PENDING' ? (
-                                <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                    <Clock className="text-emerald-500 mb-4 animate-pulse" size={40}/>
-                                    <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand envelope to Admin.</p>
-                                </div>
-                            ) : agentData.cashStatus === 'VERIFIED' ? (
-                                <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                    <CheckCircle className="text-emerald-500 mb-4" size={40}/>
-                                    <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Shift Closed</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-emerald-950/30 border border-emerald-500/50 p-4 rounded-xl shadow-inner">
-                                            <p className="text-[9px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
-                                            <p className="text-xl md:text-2xl font-black text-emerald-500">{formatRupiah(agentData.expectedCash)}</p>
-                                        </div>
-                                        <div className="bg-blue-950/30 border border-blue-500/50 p-4 rounded-xl shadow-inner">
-                                            <p className="text-[9px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
-                                            <p className="text-xl md:text-2xl font-black text-blue-500">{formatRupiah(agentData.expectedTransfer)}</p>
-                                        </div>
+                    ) : agentData && (
+                        <>
+                            {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
+                            {(agentBountyData.keys.length > 0 || agentBountyData.isPending) && (
+                                <div className="md:col-span-2 bg-[#1a0505] border-2 border-red-800 rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">
+                                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(220,38,38,0.05)_50%,transparent_75%)] bg-[length:10px_10px] pointer-events-none"></div>
+                                    <div className="absolute -right-10 -top-10 opacity-10 rotate-12 pointer-events-none">
+                                        <Target size={150} className="text-red-500" />
+                                    </div>
+                                    
+                                    <div className="relative z-10 flex-1 text-center md:text-left">
+                                        <h2 className="text-4xl md:text-5xl font-black text-red-600 uppercase tracking-[0.3em] mb-2" style={{ fontFamily: 'Georgia, serif' }}>WANTED</h2>
+                                        <p className="text-xs text-red-400/80 uppercase tracking-[0.4em] font-bold mb-4 border-b border-red-900/50 pb-2 inline-block md:block">Company Property Damage Fine</p>
+                                        <p className="text-sm text-slate-300 leading-relaxed max-w-xl mx-auto md:mx-0">
+                                            You have an outstanding company debt for unaccounted or severely damaged inventory. You must clear this bounty with the Branch Admin to restore good standing.
+                                        </p>
                                     </div>
 
-                                    <div>
-                                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Truck size={14}/> Goods to Return</h4>
-                                        <div className="bg-black/40 border border-white/5 rounded-xl overflow-hidden">
-                                            {agentData.activeStock.length === 0 ? (
-                                                <p className="text-center p-4 text-slate-500 text-[10px] uppercase tracking-widest">Inventory is empty.</p>
-                                            ) : (
-                                                <table className="w-full text-left text-xs">
-                                                    <tbody>
-                                                        {agentData.activeStock.map((item, idx) => {
-                                                            const productInfo = inventory?.find(p => p.id === item.productId) || {};
-                                                            let mult = 1;
-                                                            if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
-                                                            if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                            if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                            const totalBksDecimal = item.qty * mult;
-                                                            const sp = productInfo.sticksPerPack || 16;
-                                                            const physicalBks = Math.floor(totalBksDecimal);
-                                                            const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
-                                                            let displayQty = '';
-                                                            if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                            if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-                                                            
-                                                            return (
-                                                                <tr key={idx} className="border-t border-white/5 first:border-0">
-                                                                    <td className="p-2 font-bold text-slate-300">{item.name}</td>
-                                                                    <td className="p-2 text-right font-black text-emerald-400">{displayQty.trim() || '0 Bks'}</td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            )}
-                                        </div>
+                                    <div className="relative z-10 flex flex-col items-center md:items-end w-full md:w-auto shrink-0">
+                                        {agentBountyData.isPending ? (
+                                            <div className="bg-black/50 border border-red-500/50 px-8 py-6 rounded-xl text-center backdrop-blur-sm w-full">
+                                                <Clock size={32} className="text-red-500 animate-pulse mx-auto mb-3"/>
+                                                <p className="text-red-400 font-black uppercase tracking-[0.2em] text-sm">Bounty Under Review</p>
+                                                <p className="text-[10px] text-red-400/70 mt-2 uppercase tracking-widest font-mono">Awaiting Sheriff Verification</p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2">Total Bounty Amount</p>
+                                                <p className="text-4xl font-black text-red-500 font-mono mb-4 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                                                    {formatRupiah(agentBountyData.total)}
+                                                </p>
+
+                                                {/* 🚀 THE RP 0 WARNING REVEAL */}
+                                                {agentBountyData.total === 0 && (
+                                                    <div className="bg-red-900/40 border border-red-500/50 p-2 rounded mb-4 inline-block shadow-inner">
+                                                        <p className="text-orange-400 text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
+                                                            <AlertCircle size={10}/> Warning: Fine is Rp 0 (Product missing HPP)
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                <button 
+                                                    onClick={() => {
+                                                        if (window.confirm(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
+                                                            onSubmitEOD({ 
+                                                                cash: agentBountyData.total, 
+                                                                transfer: 0, cukai: 0, 
+                                                                reportType: 'BOUNTY', 
+                                                                penaltyKeys: agentBountyData.keys,
+                                                                agentId: effectiveId,
+                                                                agentName: resolveIdentityName()
+                                                            });
+                                                        }
+                                                    }}
+                                                    className="w-full md:w-auto px-10 py-4 bg-red-700 hover:bg-red-600 text-white rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                >
+                                                    <BadgeDollarSign size={20}/> Pay Bounty
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}
-                        </div>
-
-                        {agentData.cashStatus === 'READY' && (
-                            <button 
-                                onClick={() => onSubmitEOD({ 
-                                    cash: agentData.expectedCash, 
-                                    transfer: agentData.expectedTransfer, 
-                                    cukai: 0, 
-                                    remainingStock: agentData.activeStock, 
-                                    deployedSamples: [], 
-                                    reportType: 'CASH_STOCK',
-                                    agentId: effectiveId,         // 🚀 INJECT EXACT TARGET
-                                    agentName: resolveIdentityName()
-                                })}
-                                className="w-full mt-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
-                            >
-                                <Upload size={18}/> Submit Cash & Stock
-                            </button>
-                        )}
-                    </div>
-
-                    {/* 🚀 CARD 2: PITA CUKAI HANDOVER & FINE SYSTEM */}
-                    <div className="bg-black/20 border border-orange-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-full pointer-events-none"></div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-orange-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-orange-500"/> Pita Cukai</h3>
-                        
-                        <div className="flex-1">
-                            {agentData.cukaiStatus === 'PENDING' ? (
-                                <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                    <Clock className="text-orange-500 mb-4 animate-pulse" size={40}/>
-                                    <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand stamps (and cash fines) to Admin.</p>
-                                </div>
-                            ) : agentData.cukaiStatus === 'VERIFIED' ? (
-                                <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                    <CheckCircle className="text-orange-500 mb-4" size={40}/>
-                                    <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Cukai Cleared</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Tax stamps successfully verified.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    
-                                    <div className="bg-orange-950/20 border border-orange-500/50 p-4 rounded-xl shadow-inner">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Total Stamps You Owe: <strong className="text-orange-400">{agentData.expectedCukai} Pcs</strong></p>
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {/* PHYSICAL RETURNED INPUT */}
-                                            <div className="bg-black/60 border-b-2 border-orange-500 p-3 rounded text-center">
-                                                <p className="text-[9px] font-bold text-orange-400 uppercase mb-2">Physical Returned</p>
-                                                <input 
-                                                    type="number" min="0" value={cukaiReturnedInput} onChange={(e) => setCukaiReturnedInput(e.target.value)}
-                                                    className="w-full bg-transparent text-orange-500 font-black text-3xl text-center outline-none"
-                                                />
-                                            </div>
-
-                                            {/* LOST AND PAID INPUT */}
-                                            <div className="bg-black/60 border-b-2 border-red-500 p-3 rounded text-center">
-                                                <p className="text-[9px] font-bold text-red-400 uppercase mb-2">Lost (Pay Cash)</p>
-                                                <input 
-                                                    type="number" min="0" value={cukaiPaidInput} onChange={(e) => setCukaiPaidInput(e.target.value)}
-                                                    className="w-full bg-transparent text-red-500 font-black text-3xl text-center outline-none"
-                                                />
-                                            </div>
+                            
+                            {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER */}
+                            <div className="bg-black/20 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-emerald-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Wallet className="text-emerald-500"/> Cash & Stock</h3>
+                                
+                                <div className="flex-1">
+                                    {agentData.cashStatus === 'PENDING' ? (
+                                        <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
+                                            <Clock className="text-emerald-500 mb-4 animate-pulse" size={40}/>
+                                            <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand envelope to Admin.</p>
                                         </div>
-
-                                        {/* 🚀 FINE CALCULATOR */}
-                                        {(parseInt(cukaiPaidInput) || 0) > 0 && (
-                                            <div className="mt-4 p-3 bg-red-950/30 border border-red-500/30 rounded text-center animate-fade-in">
-                                                <p className="text-[10px] text-red-400 uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
-                                                <p className="text-xl font-black text-red-500 mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
-                                                <p className="text-[8px] text-red-400/70 mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
+                                    ) : agentData.cashStatus === 'VERIFIED' ? (
+                                        <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
+                                            <CheckCircle className="text-emerald-500 mb-4" size={40}/>
+                                            <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Shift Closed</h3>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-emerald-950/30 border border-emerald-500/50 p-4 rounded-xl shadow-inner">
+                                                    <p className="text-[9px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
+                                                    <p className="text-xl md:text-2xl font-black text-emerald-500">{formatRupiah(agentData.expectedCash)}</p>
+                                                </div>
+                                                <div className="bg-blue-950/30 border border-blue-500/50 p-4 rounded-xl shadow-inner">
+                                                    <p className="text-[9px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
+                                                    <p className="text-xl md:text-2xl font-black text-blue-500">{formatRupiah(agentData.expectedTransfer)}</p>
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
 
-                                    {agentData.todaysSamplings && agentData.todaysSamplings.length > 0 && (
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={14}/> Today's Deployments</h4>
-                                            <div className="flex flex-wrap gap-2">
-                                                {agentData.todaysSamplings.map((sample, idx) => {
-                                                    const sp = sample.sticksPerPack || 16;
-                                                    const physicalBks = Math.floor(sample.qty || 0);
-                                                    const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
-                                                    let displayQty = '';
-                                                    if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                    if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-
-                                                    return (
-                                                        <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
-                                                            {sample.productName}: <strong className="text-white">{displayQty.trim() || '0 Bks'}</strong>
-                                                        </span>
-                                                    );
-                                                })}
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Truck size={14}/> Goods to Return</h4>
+                                                <div className="bg-black/40 border border-white/5 rounded-xl overflow-hidden">
+                                                    {agentData.activeStock.length === 0 ? (
+                                                        <p className="text-center p-4 text-slate-500 text-[10px] uppercase tracking-widest">Inventory is empty.</p>
+                                                    ) : (
+                                                        <table className="w-full text-left text-xs">
+                                                            <tbody>
+                                                                {agentData.activeStock.map((item, idx) => {
+                                                                    const productInfo = inventory?.find(p => p.id === item.productId) || {};
+                                                                    let mult = 1;
+                                                                    if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
+                                                                    if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                                    if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                                    const totalBksDecimal = item.qty * mult;
+                                                                    const sp = productInfo.sticksPerPack || 16;
+                                                                    const physicalBks = Math.floor(totalBksDecimal);
+                                                                    const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
+                                                                    let displayQty = '';
+                                                                    if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                                    if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+                                                                    
+                                                                    return (
+                                                                        <tr key={idx} className="border-t border-white/5 first:border-0">
+                                                                            <td className="p-2 font-bold text-slate-300">{item.name}</td>
+                                                                            <td className="p-2 text-right font-black text-emerald-400">{displayQty.trim() || '0 Bks'}</td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
 
-                        {agentData.cukaiStatus === 'READY' && (
-                            <button 
-                                onClick={() => {
-                                    const returned = parseInt(cukaiReturnedInput) || 0;
-                                    const paid = parseInt(cukaiPaidInput) || 0;
-                                    onSubmitEOD({ 
-                                        cash: 0, transfer: 0, 
-                                        cukaiReturned: returned, 
-                                        cukaiPaid: paid, 
-                                        cukaiFine: paid * cukaiFinePrice, 
-                                        cukai: returned + paid, 
-                                        remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI',
-                                        agentId: effectiveId,         // 🚀 INJECT EXACT TARGET
-                                        agentName: resolveIdentityName() 
-                                    })
-                                }}
-                                disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
-                                className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'}`}
-                            >
-                                <Upload size={18}/> Submit Stamps & Fines
-                            </button>
-                        )}
-                    </div>
+                                {agentData.cashStatus === 'READY' && (
+                                    <button 
+                                        onClick={() => onSubmitEOD({ 
+                                            cash: agentData.expectedCash, 
+                                            transfer: agentData.expectedTransfer, 
+                                            cukai: 0, 
+                                            remainingStock: agentData.activeStock, 
+                                            deployedSamples: [], 
+                                            reportType: 'CASH_STOCK',
+                                            agentId: effectiveId,
+                                            agentName: resolveIdentityName()
+                                        })}
+                                        className="w-full mt-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                                    >
+                                        <Upload size={18}/> Submit Cash & Stock
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* 🚀 CARD 2: PITA CUKAI HANDOVER & FINE SYSTEM */}
+                            <div className="bg-black/20 border border-orange-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-full pointer-events-none"></div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-orange-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-orange-500"/> Pita Cukai</h3>
+                                
+                                <div className="flex-1">
+                                    {agentData.cukaiStatus === 'PENDING' ? (
+                                        <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
+                                            <Clock className="text-orange-500 mb-4 animate-pulse" size={40}/>
+                                            <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand stamps (and cash fines) to Admin.</p>
+                                        </div>
+                                    ) : agentData.cukaiStatus === 'VERIFIED' ? (
+                                        <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
+                                            <CheckCircle className="text-orange-500 mb-4" size={40}/>
+                                            <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Cukai Cleared</h3>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Tax stamps successfully verified.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            
+                                            <div className="bg-orange-950/20 border border-orange-500/50 p-4 rounded-xl shadow-inner">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Total Stamps You Owe: <strong className="text-orange-400">{agentData.expectedCukai} Pcs</strong></p>
+                                                
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-black/60 border-b-2 border-orange-500 p-3 rounded text-center">
+                                                        <p className="text-[9px] font-bold text-orange-400 uppercase mb-2">Physical Returned</p>
+                                                        <input 
+                                                            type="number" min="0" value={cukaiReturnedInput} onChange={(e) => setCukaiReturnedInput(e.target.value)}
+                                                            className="w-full bg-transparent text-orange-500 font-black text-3xl text-center outline-none"
+                                                        />
+                                                    </div>
+
+                                                    <div className="bg-black/60 border-b-2 border-red-500 p-3 rounded text-center">
+                                                        <p className="text-[9px] font-bold text-red-400 uppercase mb-2">Lost (Pay Cash)</p>
+                                                        <input 
+                                                            type="number" min="0" value={cukaiPaidInput} onChange={(e) => setCukaiPaidInput(e.target.value)}
+                                                            className="w-full bg-transparent text-red-500 font-black text-3xl text-center outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {(parseInt(cukaiPaidInput) || 0) > 0 && (
+                                                    <div className="mt-4 p-3 bg-red-950/30 border border-red-500/30 rounded text-center animate-fade-in">
+                                                        <p className="text-[10px] text-red-400 uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
+                                                        <p className="text-xl font-black text-red-500 mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
+                                                        <p className="text-[8px] text-red-400/70 mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {agentData.todaysSamplings && agentData.todaysSamplings.length > 0 && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={14}/> Today's Deployments</h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {agentData.todaysSamplings.map((sample, idx) => {
+                                                            const sp = sample.sticksPerPack || 16;
+                                                            const physicalBks = Math.floor(sample.qty || 0);
+                                                            const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
+                                                            let displayQty = '';
+                                                            if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                            if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+
+                                                            return (
+                                                                <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
+                                                                    {sample.productName}: <strong className="text-white">{displayQty.trim() || '0 Bks'}</strong>
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {agentData.cukaiStatus === 'READY' && (
+                                    <button 
+                                        onClick={() => {
+                                            const returned = parseInt(cukaiReturnedInput) || 0;
+                                            const paid = parseInt(cukaiPaidInput) || 0;
+                                            onSubmitEOD({ 
+                                                cash: 0, transfer: 0, 
+                                                cukaiReturned: returned, 
+                                                cukaiPaid: paid, 
+                                                cukaiFine: paid * cukaiFinePrice, 
+                                                cukai: returned + paid, 
+                                                remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI',
+                                                agentId: effectiveId,
+                                                agentName: resolveIdentityName() 
+                                            })
+                                        }}
+                                        disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'}`}
+                                    >
+                                        <Upload size={18}/> Submit Stamps & Fines
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
