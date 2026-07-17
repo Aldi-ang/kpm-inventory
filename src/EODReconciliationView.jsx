@@ -17,77 +17,70 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     // 🚀 TIER 1 CONTROLLED PRICE (Defaults to Rp 5.000 if not set)
     const cukaiFinePrice = appSettings?.cukaiFinePrice || 5000;
 
-    // 🚀 ACCORDION STATES FOR HISTORY LOG
-    const [openLocations, setOpenLocations] = useState([]);
-    const [openAgents, setOpenAgents] = useState([]);
-    const [openMonths, setOpenMonths] = useState([]);
-    const [openDates, setOpenDates] = useState([]);
-
-    const toggleAccordion = (setter, key) => {
-        setter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-    };
-
     // --- 🚀 NEW ENGINE: BOUNTY & PENALTY INTERCEPTOR ---
     const agentBountyData = useMemo(() => {
-        // 🚀 THE FIX: Removed the isAdmin block so Admins can see their own bounties!
-        if (!agentProfileId) return { total: 0, keys: [], isPending: false };
-        const agentProfile = motorists.find(m => m.id === agentProfileId) || {};
+        // 🚀 THE FIX: Determine the true virtual wallet ID. Admin uses 'ADMIN_VEHICLE'
+        const effectiveId = isAdmin ? 'ADMIN_VEHICLE' : agentProfileId;
+        
+        if (!effectiveId) return { total: 0, keys: [], isPending: false };
+        const agentProfile = motorists.find(m => m.id === effectiveId) || {};
         const cDebts = agentProfile.cukaiDebts || {};
         
         let total = 0;
         let keys = [];
         for (let [pid, val] of Object.entries(cDebts)) {
-            // Target specific Quarantine Penalty Debts
             if (pid.startsWith('PENALTY_') && val > 0) {
                 total += val;
                 keys.push(pid);
             }
         }
         
-        // Check if they already submitted the bounty cash today and are waiting for the Sheriff (Admin)
         const todaysReports = eodReports.filter(r => {
-            if (r.agentId !== agentProfileId) return false;
+            // Admin reports save as 'ADMIN' in the database
+            const targetReportId = isAdmin ? 'ADMIN' : effectiveId;
+            if (r.agentId !== targetReportId && r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : new Date());
             return rDate.toDateString() === new Date().toDateString();
         });
         const pendingBounty = todaysReports.find(r => r.status === 'PENDING' && r.reportType === 'BOUNTY');
 
         return { total, keys, isPending: !!pendingBounty };
-    }, [agentProfileId, motorists, eodReports]);
+    }, [isAdmin, agentProfileId, motorists, eodReports]);
 
 
     // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
     const agentData = useMemo(() => {
-        // 🚀 THE FIX: Removed the isAdmin block so Admins can submit their own EOD!
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
         
-        const isBossCar = !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
+        const effectiveId = isAdmin ? 'ADMIN_VEHICLE' : agentProfileId;
+        const isBossCar = isAdmin || !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
+        
         let expectedCukai = 0;
-        if (!isBossCar && agentProfileId) {
-            const agentProfile = motorists.find(m => m.id === agentProfileId) || {};
+        // 🚀 THE FIX: Allow the Admin to read their own debts from the ADMIN_VEHICLE profile
+        if (effectiveId) {
+            const agentProfile = motorists.find(m => m.id === effectiveId) || {};
             const cDebts = agentProfile.cukaiDebts || {};
             const legacyDebt = agentProfile.cukaiDebt || 0;
             
             let calcTotal = 0;
             let globalCredit = cDebts['global_credit'] || 0;
             for (let [pid, val] of Object.entries(cDebts)) {
-                // Ignore penalties here, they are handled by the Bounty Engine
                 if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
             }
             expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
         }
 
         const todaysSamplings = samplings.filter(s => {
-            const matchesAgent = isBossCar ? (s.sourceId === agentProfileId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN_VEHICLE') : (s.sourceId === agentProfileId);
+            const matchesAgent = isBossCar ? (s.sourceId === effectiveId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN_VEHICLE' || s.sourceId === 'ADMIN') : (s.sourceId === effectiveId);
             if (!matchesAgent) return false;
             const sDate = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : new Date(s.date);
             return sDate.toDateString() === today.toDateString();
         });
 
         const todaysTrans = transactions.filter(t => {
-            const matchesAgent = isBossCar ? (t.agentId === agentProfileId || !t.agentId || t.agentId === 'VAULT' || t.agentId === 'ADMIN_VEHICLE') : (t.agentId === agentProfileId);
+            const matchesAgent = isBossCar ? (t.agentId === effectiveId || !t.agentId || t.agentId === 'VAULT' || t.agentId === 'ADMIN_VEHICLE' || t.agentId === 'ADMIN') : (t.agentId === effectiveId);
             if (!matchesAgent) return false;
             const tDate = t.timestamp ? new Date(t.timestamp.seconds * 1000) : new Date(t.date);
             return tDate.toDateString() === today.toDateString();
@@ -102,8 +95,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             }
         });
 
+        const targetReportId = isAdmin ? 'ADMIN' : effectiveId;
         const todaysReports = eodReports.filter(r => {
-            if (r.agentId !== agentProfileId) return false;
+            if (r.agentId !== targetReportId && r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : today);
             return rDate.toDateString() === today.toDateString();
         });
@@ -120,7 +114,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, cashStatus, cukaiStatus };
-    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, motorists]);
+    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin, motorists]);
 
     useEffect(() => {
         if (agentData && cukaiReturnedInput === "" && cukaiPaidInput === "") {

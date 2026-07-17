@@ -422,7 +422,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                     <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
-                                        {motorists.map(m => <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>)}
+                                        {motorists.filter(m => m.id !== 'master_owner').map(m => <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>)}
                                     </select>
                                     <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[9px] text-red-400 uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
