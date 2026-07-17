@@ -7,21 +7,28 @@ const formatRupiah = (number) => {
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
-    // 🚀 NEW STATE: View Mode Toggle for Player-Coach Admins
+    // 🚀 VIEW & IDENTITY STATES
     const [viewMode, setViewMode] = useState(isAdmin ? 'review' : 'submit');
+    const [adminSetoranId, setAdminSetoranId] = useState('ADMIN_VEHICLE'); // 🚀 NEW: Lets Admin select their active wallet
 
-    // 🚀 NEW STATE: Split Cukai Handover Inputs
+    // 🚀 DYNAMIC ID ENGINE: Switches focus based on Admin selection or Field Agent ID
+    const effectiveId = isAdmin ? adminSetoranId : agentProfileId;
+    
     const [cukaiReturnedInput, setCukaiReturnedInput] = useState("");
     const [cukaiPaidInput, setCukaiPaidInput] = useState("");
-
-    // 🚀 TIER 1 CONTROLLED PRICE (Defaults to Rp 5.000 if not set)
     const cukaiFinePrice = appSettings?.cukaiFinePrice || 5000;
 
-    // --- 🚀 NEW ENGINE: BOUNTY & PENALTY INTERCEPTOR ---
+    const [openLocations, setOpenLocations] = useState([]);
+    const [openAgents, setOpenAgents] = useState([]);
+    const [openMonths, setOpenMonths] = useState([]);
+    const [openDates, setOpenDates] = useState([]);
+
+    const toggleAccordion = (setter, key) => {
+        setter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
+
+    // --- 🚀 BOUNTY & PENALTY INTERCEPTOR ---
     const agentBountyData = useMemo(() => {
-        // 🚀 THE FIX: Determine the true virtual wallet ID. Admin uses 'ADMIN_VEHICLE'
-        const effectiveId = isAdmin ? 'ADMIN_VEHICLE' : agentProfileId;
-        
         if (!effectiveId) return { total: 0, keys: [], isPending: false };
         const agentProfile = motorists.find(m => m.id === effectiveId) || {};
         const cDebts = agentProfile.cukaiDebts || {};
@@ -36,29 +43,25 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         }
         
         const todaysReports = eodReports.filter(r => {
-            // Admin reports save as 'ADMIN' in the database
-            const targetReportId = isAdmin ? 'ADMIN' : effectiveId;
-            if (r.agentId !== targetReportId && r.agentId !== effectiveId) return false;
+            if (r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : new Date());
             return rDate.toDateString() === new Date().toDateString();
         });
         const pendingBounty = todaysReports.find(r => r.status === 'PENDING' && r.reportType === 'BOUNTY');
 
         return { total, keys, isPending: !!pendingBounty };
-    }, [isAdmin, agentProfileId, motorists, eodReports]);
+    }, [effectiveId, motorists, eodReports]);
 
 
-    // --- AGENT LOGIC: Calculate Today's Expected Setoran ---
+    // --- 🚀 EXPECTED SETORAN CALCULATOR ---
     const agentData = useMemo(() => {
         const today = new Date();
         let expectedCash = 0;
         let expectedTransfer = 0;
         
-        const effectiveId = isAdmin ? 'ADMIN_VEHICLE' : agentProfileId;
-        const isBossCar = isAdmin || !agentProfileId || agentProfileId === 'ADMIN_VEHICLE' || agentProfileId === 'VAULT';
+        const isBossCar = effectiveId === 'ADMIN_VEHICLE' || effectiveId === 'VAULT';
         
         let expectedCukai = 0;
-        // 🚀 THE FIX: Allow the Admin to read their own debts from the ADMIN_VEHICLE profile
         if (effectiveId) {
             const agentProfile = motorists.find(m => m.id === effectiveId) || {};
             const cDebts = agentProfile.cukaiDebts || {};
@@ -73,14 +76,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         }
 
         const todaysSamplings = samplings.filter(s => {
-            const matchesAgent = isBossCar ? (s.sourceId === effectiveId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN_VEHICLE' || s.sourceId === 'ADMIN') : (s.sourceId === effectiveId);
+            const matchesAgent = isBossCar ? (s.sourceId === effectiveId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN') : (s.sourceId === effectiveId);
             if (!matchesAgent) return false;
             const sDate = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : new Date(s.date);
             return sDate.toDateString() === today.toDateString();
         });
 
         const todaysTrans = transactions.filter(t => {
-            const matchesAgent = isBossCar ? (t.agentId === effectiveId || !t.agentId || t.agentId === 'VAULT' || t.agentId === 'ADMIN_VEHICLE' || t.agentId === 'ADMIN') : (t.agentId === effectiveId);
+            const matchesAgent = isBossCar ? (t.agentId === effectiveId || !t.agentId || t.agentId === 'VAULT' || t.agentId === 'ADMIN') : (t.agentId === effectiveId);
             if (!matchesAgent) return false;
             const tDate = t.timestamp ? new Date(t.timestamp.seconds * 1000) : new Date(t.date);
             return tDate.toDateString() === today.toDateString();
@@ -95,9 +98,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             }
         });
 
-        const targetReportId = isAdmin ? 'ADMIN' : effectiveId;
         const todaysReports = eodReports.filter(r => {
-            if (r.agentId !== targetReportId && r.agentId !== effectiveId) return false;
+            if (r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : today);
             return rDate.toDateString() === today.toDateString();
         });
@@ -114,7 +116,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, cashStatus, cukaiStatus };
-    }, [samplings, transactions, agentProfileId, agentCanvas, eodReports, isAdmin, motorists]);
+    }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists]);
 
     useEffect(() => {
         if (agentData && cukaiReturnedInput === "" && cukaiPaidInput === "") {
@@ -133,7 +135,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         });
     }, [eodReports, isAdmin]);
 
-    // --- ADMIN LOGIC: 4-Level History Engine ---
     const structuredHistory = useMemo(() => {
         if (!isAdmin) return {};
 
@@ -165,6 +166,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return tree;
     }, [eodReports, motorists, isAdmin]);
 
+    // 🚀 IDENTITY RESOLVER FOR SUBMISSIONS
+    const resolveIdentityName = () => {
+        const profile = motorists.find(m => m.id === effectiveId);
+        return profile ? profile.name : (effectiveId === 'ADMIN_VEHICLE' ? 'Master Admin' : 'Admin');
+    };
+
 
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
@@ -177,7 +184,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
                 </div>
                 
-                {/* 🚀 ADMIN TOGGLE UI (Player-Coach Mode) */}
                 {isAdmin && (
                     <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
                         <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
@@ -196,6 +202,27 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             {/* ========================================= */}
             {viewMode === 'submit' && agentData && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+
+                    {/* 🚀 THE IDENTITY SWITCHER (ADMIN ONLY) 🚀 */}
+                    {isAdmin && (
+                        <div className="md:col-span-2 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4">
+                            <div>
+                                <h3 className="text-emerald-500 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-1"><User size={12}/> Operating Identity</h3>
+                                <p className="text-slate-400 text-[10px]">Select which profile's wallet you are reconciling.</p>
+                            </div>
+                            <select 
+                                value={adminSetoranId} 
+                                onChange={(e) => setAdminSetoranId(e.target.value)}
+                                className="flex-1 bg-black border border-emerald-500/50 rounded-lg p-3 text-xs text-white font-bold uppercase tracking-widest outline-none focus:border-emerald-400 w-full"
+                            >
+                                <option value="ADMIN_VEHICLE" className="bg-slate-900">Master Vault / Default Boss Car</option>
+                                {/* 🚀 FIX: Filters out the Telemetry Ghost */}
+                                {motorists.filter(m => m.id !== 'master_owner').map(m => (
+                                    <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
                     {(agentBountyData.total > 0 || agentBountyData.isPending) && (
@@ -233,7 +260,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         cash: agentBountyData.total, 
                                                         transfer: 0, cukai: 0, 
                                                         reportType: 'BOUNTY', 
-                                                        penaltyKeys: agentBountyData.keys 
+                                                        penaltyKeys: agentBountyData.keys,
+                                                        agentId: effectiveId,        // 🚀 INJECT EXACT TARGET
+                                                        agentName: resolveIdentityName()
                                                     });
                                                 }
                                             }}
@@ -318,7 +347,16 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                         {agentData.cashStatus === 'READY' && (
                             <button 
-                                onClick={() => onSubmitEOD({ cash: agentData.expectedCash, transfer: agentData.expectedTransfer, cukai: 0, remainingStock: agentData.activeStock, deployedSamples: [], reportType: 'CASH_STOCK' })}
+                                onClick={() => onSubmitEOD({ 
+                                    cash: agentData.expectedCash, 
+                                    transfer: agentData.expectedTransfer, 
+                                    cukai: 0, 
+                                    remainingStock: agentData.activeStock, 
+                                    deployedSamples: [], 
+                                    reportType: 'CASH_STOCK',
+                                    agentId: effectiveId,         // 🚀 INJECT EXACT TARGET
+                                    agentName: resolveIdentityName()
+                                })}
                                 className="w-full mt-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                             >
                                 <Upload size={18}/> Submit Cash & Stock
@@ -416,7 +454,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         cukaiPaid: paid, 
                                         cukaiFine: paid * cukaiFinePrice, 
                                         cukai: returned + paid, 
-                                        remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI' 
+                                        remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI',
+                                        agentId: effectiveId,         // 🚀 INJECT EXACT TARGET
+                                        agentName: resolveIdentityName() 
                                     })
                                 }}
                                 disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
