@@ -4,7 +4,7 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon, PackageMinus,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter // 🚀 NEW ICONS
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 
@@ -37,21 +37,16 @@ const compressImageToBase64 = (file) => {
 
 const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
-    // 🚀 THE INTERNAL CLEARANCE MATRIX
     const userRole = user?.userRole || 'AGENT';
     const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
     const isAreaAdmin = userRole === 'AREA_ADMIN';
     const masterId = user?.bossUid || user?.uid || user?.id;
 
-    // --- CORE STATE ---
     const [viewMode, setViewMode] = useState(isHighCommand ? 'review' : 'count'); 
-    
-    // 🚀 NEW: HISTORY & FILTER STATES
-    const [auditSubTab, setAuditSubTab] = useState('pending'); // 'pending' or 'history'
-    const [quarSubTab, setQuarSubTab] = useState('active'); // 'active' or 'history'
+    const [auditSubTab, setAuditSubTab] = useState('pending'); 
+    const [quarSubTab, setQuarSubTab] = useState('active'); 
     const [regionFilter, setRegionFilter] = useState('ALL');
 
-    // --- INVENTORY ROUTER (MASTER VS BRANCH) ---
     const [branchInventory, setBranchInventory] = useState([]);
     
     useEffect(() => {
@@ -66,25 +61,22 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
     const activeInventory = isAreaAdmin ? branchInventory : inventory;
 
-    // --- COUNT WORKSHEET STATE ---
     const [search, setSearch] = useState("");
     const [counts, setCounts] = useState({}); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- HQ RECONCILIATION STATE ---
     const [pendingAudits, setPendingAudits] = useState([]);
-    const [auditHistory, setAuditHistory] = useState([]); // 🚀 NEW
+    const [auditHistory, setAuditHistory] = useState([]); 
     const [expandedAudit, setExpandedAudit] = useState(null);
     const [isProcessingAudit, setIsProcessingAudit] = useState(false);
     const [viewingImage, setViewingImage] = useState(null);
 
-    // --- QUARANTINE RESOLUTION STATE ---
-    const [quarantineFacility, setQuarantineFacility] = useState('MASTER');
+    // 🚀 FIX: Default to 'ALL' so HQ immediately sees everything
+    const [quarantineFacility, setQuarantineFacility] = useState('ALL');
     const [quarantineInventory, setQuarantineInventory] = useState([]);
-    const [quarantineLogs, setQuarantineLogs] = useState([]); // 🚀 NEW
+    const [quarantineLogs, setQuarantineLogs] = useState([]); 
     const [resolutionModal, setResolutionModal] = useState(null);
 
-    // Dynamic extraction of all active branches
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
         motorists.forEach(m => {
@@ -93,13 +85,9 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         return Array.from(branches);
     }, [motorists]);
 
-    // ==========================================
-    // ENGINE 1: MULTI-DATABASE FETCH LOGIC
-    // ==========================================
     useEffect(() => {
         if (!isHighCommand || !db || !appId || !masterId) return;
 
-        // 1. Fetch Audits (Both Pending & History)
         const auditsRef = collection(db, `artifacts/${appId}/users/${masterId}/pending_audits`);
         const unsubAudits = onSnapshot(auditsRef, (snap) => {
             const allAudits = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -107,7 +95,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             setAuditHistory(allAudits.filter(a => a.status === 'APPROVED' || a.status === 'REJECTED').sort((a, b) => (b.resolvedAt?.seconds || 0) - (a.resolvedAt?.seconds || 0)));
         });
 
-        // 2. Fetch Quarantine Liquidation Logs
         const logsRef = collection(db, `artifacts/${appId}/users/${masterId}/quarantine_logs`);
         const unsubLogs = onSnapshot(logsRef, (snap) => {
             const fetchedLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -118,29 +105,59 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         return () => { unsubAudits(); unsubLogs(); };
     }, [isHighCommand, db, appId, masterId]);
 
-    // Fetch live damaged stock based on dropdown selection
+    // 🚀 THE FIX: Multi-Facility Aggregation Engine
     useEffect(() => {
         if (viewMode !== 'quarantine' || quarSubTab !== 'active') return;
         
         if (quarantineFacility === 'MASTER') {
-            setQuarantineInventory(inventory.filter(i => (i.damagedStock || 0) > 0));
-        } else {
+            setQuarantineInventory(inventory.filter(i => (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })));
+        } 
+        else if (quarantineFacility === 'ALL') {
+            let allData = { 
+                MASTER: inventory.filter(i => (i.damagedStock || 0) > 0).map(i => ({ ...i, facility: 'MASTER' })) 
+            };
+            const unsubs = [];
+
+            uniqueBranches.forEach(branch => {
+                const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${branch}/inventory`);
+                const unsub = onSnapshot(branchRef, (snap) => {
+                    const bData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const enriched = bData.map(bItem => {
+                        const match = inventory.find(m => m.id === bItem.id) || {};
+                        // 🚀 FIX: Prevent Master Vault Bleed by explicitly forcing Branch damagedStock
+                        return { ...match, ...bItem, damagedStock: bItem.damagedStock || 0, facility: branch };
+                    }).filter(i => i.damagedStock > 0);
+
+                    allData[branch] = enriched;
+                    
+                    const combined = [];
+                    Object.values(allData).forEach(arr => combined.push(...arr));
+                    setQuarantineInventory(combined);
+                });
+                unsubs.push(unsub);
+            });
+
+            const combined = [];
+            Object.values(allData).forEach(arr => combined.push(...arr));
+            setQuarantineInventory(combined);
+
+            return () => unsubs.forEach(fn => fn());
+        } 
+        else {
             const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${quarantineFacility}/inventory`);
             const unsub = onSnapshot(branchRef, (snap) => {
                 const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const enrichedData = data.map(branchItem => {
                     const masterMatch = inventory.find(m => m.id === branchItem.id) || {};
-                    return { ...masterMatch, ...branchItem };
+                    // 🚀 FIX: Prevent Master Vault Bleed
+                    return { ...masterMatch, ...branchItem, damagedStock: branchItem.damagedStock || 0, facility: quarantineFacility };
                 });
-                setQuarantineInventory(enrichedData.filter(i => (i.damagedStock || 0) > 0));
+                setQuarantineInventory(enrichedData.filter(i => i.damagedStock > 0));
             });
             return () => unsub();
         }
-    }, [viewMode, quarSubTab, quarantineFacility, inventory, db, appId, masterId]);
+    }, [viewMode, quarSubTab, quarantineFacility, inventory, db, appId, masterId, uniqueBranches]);
 
-    // ==========================================
-    // ENGINE 2: BLIND-THEN-REVEAL LOGIC
-    // ==========================================
     const handleCountChange = (id, type, value) => {
         setCounts(prev => {
             const newCounts = { ...prev };
@@ -211,9 +228,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         finally { setIsSubmitting(false); }
     };
 
-    // ==========================================
-    // ENGINE 3: THE HQ EXECUTION (Approve / Reject)
-    // ==========================================
     const handleApproveAudit = async (audit) => {
         if (!window.confirm(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
         setIsProcessingAudit(true);
@@ -258,9 +272,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         finally { setIsProcessingAudit(false); }
     };
 
-    // ==========================================
-    // ENGINE 4: QUARANTINE RESOLUTION LOGGING
-    // ==========================================
     const executeResolution = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -278,28 +289,27 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             const hpp = Number(resolutionModal.item.priceDistributor || resolutionModal.item.hpp || resolutionModal.item.costPrice || 0);
             const totalValue = qtyToResolve * hpp;
 
-            // 1. Deduct from appropriate quarantine ledger
-            const itemRef = quarantineFacility === 'MASTER' 
+            // 🚀 FIX: Ensure we deduct from the correct facility even if "ALL" is selected
+            const targetFacility = resolutionModal.item.facility || quarantineFacility;
+            const itemRef = targetFacility === 'MASTER' 
                 ? doc(db, `artifacts/${appId}/users/${masterId}/products`, resolutionModal.item.id)
-                : doc(db, `artifacts/${appId}/users/${masterId}/branches/${quarantineFacility}/inventory`, resolutionModal.item.id);
+                : doc(db, `artifacts/${appId}/users/${masterId}/branches/${targetFacility}/inventory`, resolutionModal.item.id);
 
             batch.set(itemRef, { damagedStock: increment(-qtyToResolve) }, { merge: true });
 
-            // 2. Generate Liquidation Log
             const logRef = doc(collection(db, `artifacts/${appId}/users/${masterId}/quarantine_logs`));
             const logData = {
                 productId: resolutionModal.item.id,
                 productName: resolutionModal.item.name,
                 qty: qtyToResolve,
                 method: resolutionModal.method,
-                facility: quarantineFacility,
+                facility: targetFacility,
                 totalValueHpp: totalValue,
                 resolvedBy: user.email?.split('@')[0],
                 timestamp: serverTimestamp(),
                 details: {}
             };
 
-            // 3. Execute Specific Method Logic
             if (resolutionModal.method === 'SAMPLING') {
                 logData.details = { reason };
                 batch.set(doc(collection(db, `artifacts/${appId}/users/${masterId}/samplings`)), {
@@ -308,7 +318,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                     qty: qtyToResolve,
                     unit: 'Bks',
                     reason: `QUARANTINE CONVERSION: ${reason}`,
-                    sourceId: quarantineFacility === 'MASTER' ? 'VAULT' : quarantineFacility,
+                    sourceId: targetFacility === 'MASTER' ? 'VAULT' : targetFacility,
                     date: new Date().toISOString().split('T')[0],
                     timestamp: serverTimestamp()
                 });
@@ -345,7 +355,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
         finally { setIsProcessingAudit(false); }
     };
 
-    // --- FILTER ENGINE ---
     const filteredItems = useMemo(() => activeInventory.filter(i => i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
     
     const displayedAudits = useMemo(() => {
@@ -363,7 +372,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
     return (
         <div className="h-full flex flex-col animate-fade-in space-y-4 relative">
             
-            {/* 📸 FULL SCREEN IMAGE VIEWER */}
             {viewingImage && (
                 <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
                     <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-black/50 p-2 rounded-full"><X size={32}/></button>
@@ -371,7 +379,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 </div>
             )}
 
-            {/* ☢️ TACTICAL RESOLUTION MODAL */}
             {resolutionModal && (
                 <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
                     <div className={`w-full max-w-md bg-[#0a0a0a] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.2)]' : resolutionModal.method === 'RTV' ? 'border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.2)]' : 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]'}`}>
@@ -414,8 +421,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 <div>
                                     <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
-                                        <option value="">-- SELECT PERSONNEL --</option>
-                                        {motorists.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role || 'Staff'})</option>)}
+                                        <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
+                                        {motorists.map(m => <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>)}
                                     </select>
                                     <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[9px] text-red-400 uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
@@ -431,7 +438,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 </div>
             )}
 
-            {/* 🚀 HEADER & HQ NAVIGATION CONTROLS */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-widest uppercase">
@@ -469,7 +475,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                 <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-orange-500/20 shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
                     
-                    {/* 🚀 QUARANTINE TOGGLES & FILTERS */}
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-orange-500/20 pb-4">
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             <div className="flex bg-slate-900 rounded-lg p-1 border border-orange-500/30">
@@ -483,16 +488,17 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
 
                             {quarSubTab === 'active' ? (
                                 <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="w-full md:w-48 bg-slate-900 border border-orange-500/50 rounded-lg p-2.5 text-xs text-white font-bold uppercase tracking-widest outline-none focus:border-orange-400">
-                                    <option value="MASTER">Master Vault (HQ)</option>
-                                    {uniqueBranches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
+                                    <option value="ALL" className="bg-slate-900 text-white">All Facilities</option>
+                                    <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
+                                    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
                                 </select>
                             ) : (
                                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1.5 px-3">
                                     <Filter size={14} className="text-slate-400"/>
                                     <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-white font-bold uppercase tracking-widest outline-none">
-                                        <option value="ALL">All Facilities</option>
-                                        <option value="MASTER">Master Vault (HQ)</option>
-                                        {uniqueBranches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
+                                        <option value="ALL" className="bg-slate-900 text-white">All Facilities</option>
+                                        <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
+                                        {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
                                     </select>
                                 </div>
                             )}
@@ -528,6 +534,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                         <span className="text-orange-400 font-bold">{item.damagedStock} Bks Damaged</span>
                                                         <span className="text-slate-600">|</span>
                                                         <span className="text-slate-400">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
+                                                        <span className="text-slate-600">|</span>
+                                                        <span className="text-blue-400 uppercase tracking-widest text-[9px]">{item.facility}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -548,7 +556,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 })
                             )
                         ) : (
-                            // 🚀 QUARANTINE LIQUIDATION HISTORY
                             displayedQuarantineLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
                                     <History size={48} className="text-slate-500"/>
@@ -572,7 +579,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                 <h4 className="font-bold text-white uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
                                                 <p className="text-[10px] text-slate-400 font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
                                                 
-                                                {/* Details Expansion */}
                                                 <div className="mt-2 text-[10px] text-slate-300 font-mono bg-black/30 p-2 rounded border border-slate-800">
                                                     {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}`}
                                                     {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
@@ -598,7 +604,6 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
             {viewMode === 'review' && isHighCommand && (
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
                     
-                    {/* 🚀 AUDITS TOGGLES & FILTERS */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                         <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-full md:w-auto">
                             <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-400'}`}>
@@ -611,14 +616,13 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                         <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1.5 px-3 w-full md:w-auto">
                             <Filter size={14} className="text-slate-400"/>
                             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-white font-bold uppercase tracking-widest outline-none w-full">
-    <option value="ALL" className="bg-slate-900 text-white">All Regions</option>
-    <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
-    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
-</select>
+                                <option value="ALL" className="bg-slate-900 text-white">All Regions</option>
+                                <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
+                                {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                            </select>
                         </div>
                     </div>
 
-                    {/* 🚀 PENDING AUDITS LIST */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {displayedAudits.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 mt-8">
@@ -636,8 +640,8 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                 audit.items.forEach(item => {
                                     if (item.damagedCount > 0) totalDamaged += item.damagedCount;
                                     if (item.variance < 0) {
-                                        const missing = Math.abs(item.variance) - (item.damagedCount || 0);
-                                        if (missing > 0) purelyMissing += missing;
+                                        // 🚀 FIX: Mathematical Correction. Variance already accounts for damaged stock.
+                                        purelyMissing += Math.abs(item.variance);
                                     }
                                 });
 
@@ -698,7 +702,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                 
                                                 <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
-                                                        const isMissing = item.variance < 0 && (Math.abs(item.variance) > item.damagedCount);
+                                                        const isMissing = item.variance < 0;
                                                         
                                                         return (
                                                             <div key={idx} className="flex flex-col bg-slate-800 p-3 rounded-lg border border-slate-700">
@@ -730,7 +734,7 @@ const StockOpnameView = ({ inventory, db, appId, user, isAdmin, logAudit, trigge
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-black/30 p-2 rounded">
                                                                         {isMissing ? (
-                                                                            <span className="text-[9px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage</span>
+                                                                            <span className="text-[9px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
                                                                         ) : <span></span>}
 
                                                                         {item.damagedPhotoUrl && (
