@@ -4,7 +4,7 @@ import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, de
 
 export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
-    const isAreaAdmin = userRole === 'AREA_ADMIN';
+    const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
     const branchLocation = userLocation || 'UNASSIGNED';
     const photoInputRef = useRef(null);
 
