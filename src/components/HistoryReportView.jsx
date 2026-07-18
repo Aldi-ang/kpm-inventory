@@ -32,9 +32,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // ANALYTICS STATE
     const [expandedAgent, setExpandedAgent] = useState(null);
 
-    // 🚀 MATRIX AUTHORITY ENGINE: Checks Architect Tier Capabilities
-    // If they do NOT have the capability, they are strictly locked as a Field Agent.
-    const isFieldAgent = !hasClearance(userRole, 'can_view_team_history');
+    // 🚀 INDESTRUCTIBLE SECURITY FIREWALL
+    // If the engine has any doubt, you are treated as a Field Agent and locked down.
+    const isFieldAgent = useMemo(() => {
+        if (isAdmin === true) return false;
+        if (userRole === 'ADMIN' || userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER') return false;
+        if (hasClearance(userRole, 'can_view_team_history')) return false;
+        return true; 
+    }, [userRole, isAdmin]);
 
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
     const allTransactions = useMemo(() => {
@@ -45,13 +50,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const dateFilteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
         return allTransactions.filter(t => {
-            // 🛑 FAIL CLOSED SECURITY FIREWALL: Strict Isolation for Field Agents
-            // If they are a field agent, they MUST have a valid agentProfileId, 
-            // and it MUST perfectly match the transaction's agentId. 
-            // If agentProfileId hasn't loaded yet, it returns false (hides data).
+            // 🛑 FAIL-CLOSED PROTOCOL: Total Data Shredder
             if (isFieldAgent) {
-                if (!agentProfileId) return false; 
-                if (t.agentId !== agentProfileId) return false;
+                if (!agentProfileId) return false; // Hide everything if profile hasn't loaded
+                if (t.agentId !== agentProfileId) return false; // Shred other team members' data
             }
             
             const tDate = new Date(t.date);
@@ -88,7 +90,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
-                // 🛑 UI LOCK: Do not build UI folders for other agents if this is a Field Agent
+                // 🛑 UI LOCK: Prevent UI folders from being built for anyone else
                 if (isFieldAgent && m.id !== agentProfileId) return;
 
                 const loc = m.location || 'UNASSIGNED AREA';
@@ -183,7 +185,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return structure;
     }, [searchedTransactions, motorists, customers, isFieldAgent, agentProfileId]);
 
-    // AUTO-NAVIGATE FOR EMPLOYEES
+    // AUTO-NAVIGATE FOR RESTRICTED AGENTS
     useEffect(() => {
         if (isFieldAgent) {
             const regions = Object.keys(reportData);
@@ -350,7 +352,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             <option value="yearly">Yearly</option>
                         </select>
                         <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-slate-800 border border-slate-700 text-white p-3 rounded-xl font-bold outline-none" />
-                        {userRole === 'ADMIN' && (
+                        {!isFieldAgent && (
                             <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 active:scale-95">
                                 {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
                                 {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
@@ -367,7 +369,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
-                    {/* 🚀 UI LOCK: Field Agents cannot click Region/Agent to view team folders */}
+                    {/* 🚀 UI LOCK: Field Agents cannot navigate UP to team folders */}
                     {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
                     {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
                     
@@ -457,12 +459,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                              </h3>
                              <div className="space-y-4">
                                  {stats.agentRoster.map(agent => {
-                                     // 🚀 Auto-expand if they are restricted
                                      const isExpanded = isFieldAgent || expandedAgent === agent.name;
                                      const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
                                      
                                      return (
                                          <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-500 shadow-lg dark:bg-slate-800/80' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400'}`}>
+                                             {/* Accordion Header */}
                                              <button 
                                                 onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
                                                 className={`w-full p-4 flex items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
@@ -493,8 +495,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                  </div>
                                              </button>
 
+                                             {/* Accordion Body (Deep Dive) */}
                                              {isExpanded && (
                                                  <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
+                                                     
+                                                     {/* Agent's Product Breakdown */}
                                                      <div className="mb-8">
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
                                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -510,10 +515,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                          </div>
                                                      </div>
 
+                                                     {/* Agent's Transaction Timeline */}
                                                      <div>
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
                                                              {agent.transactions.map(t => {
+                                                                 // 🚀 FORENSIC BADGES
                                                                  const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
                                                                  const isExchange = t.paymentType === 'Tukar Ganti';
                                                                  const isIouFulfill = t.paymentType === 'IOU Fulfillment';
@@ -557,6 +564,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                              )})}
                                                          </div>
                                                      </div>
+
                                                  </div>
                                              )}
                                          </div>
@@ -734,6 +742,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {cObj.history.map(t => {
+                                                    // 🚀 FORENSIC BADGES
                                                     const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
                                                     const isExchange = t.paymentType === 'Tukar Ganti';
                                                     const isIouFulfill = t.paymentType === 'IOU Fulfillment';
