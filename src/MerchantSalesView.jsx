@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
-import { hasClearance } from './config/permissions'; // 🚀 INJECTED THE MATRIX ENGINE 
+import { hasClearance } from './config/permissions'; 
 
-// 🚀 FIXED: Added isAdmin, logAudit, triggerCapy, and agentProfileId to props!
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId }) => {  
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
@@ -21,14 +20,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState("");
     const [paymentMethod, setPaymentMethod] = useState(allowedPayments[0] || "Cash");
-    const [isProcessingSale, setIsProcessingSale] = useState(false); // 🚀 ANTI-SPAM LOCK
+    const [isProcessingSale, setIsProcessingSale] = useState(false); 
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
     const [lockedTier, setLockedTier] = useState(null); 
     const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
-    // 🚀 FIXED TIER RESTRICTION LOGIC: Now safely checks direct isAdmin prop!
     const canOverrideGps = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
 
     // 🚀 THE FIFO DEBT ENGINE 
@@ -111,7 +109,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [showSampleModal, setShowSampleModal] = useState(false);
     const [sampleForm, setSampleForm] = useState({ productId: '', qtyBks: 0, qtyBatang: 0 });
     
-    // 🚀 FIXED: NOO now defaults to the lowest tier (last in the array) instead of highest
     const defaultNooTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
     const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
@@ -168,7 +165,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
                             setDistanceToStore(Math.round(dist));
                             
-                            // 🚀 DYNAMIC THRESHOLD (Bypass allows up to 100m)
                             const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
                             setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
                         } else {
@@ -225,7 +221,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     }, [selectedCustomerInfo, customerName, customers.length, manualOverride]);
 
-    // 🚀 THE JOURNEY CATCHER: Intercepts targets sent from Journey Plan
     useEffect(() => {
         const targetName = sessionStorage.getItem('targetSalesCustomer');
         if (targetName && customers.length > 0) {
@@ -233,9 +228,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (targetCust) {
                 setTimeout(() => {
                     handleCustomerSelect(targetCust);
-                }, 600); // 0.6s delay lets the merchant doors open first for visual effect
+                }, 600); 
             }
-            sessionStorage.removeItem('targetSalesCustomer'); // Clear the stamp so it doesn't fire twice
+            sessionStorage.removeItem('targetSalesCustomer'); 
         }
     }, [customers.length]);
 
@@ -290,33 +285,29 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
-        // 🚀 THE POS INTERCEPTOR (LAYER 2A: DOUBLE-TAP DEFENSE)
-        // en-CA forces the output to YYYY-MM-DD in your local timezone (WIB)
         const localToday = new Date().toLocaleDateString('en-CA'); 
         
         if (cust.lastVisit === localToday) {
             const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
             const proceed = window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`);
             if (!proceed) {
-                setCustomerName(""); // Reset field, abort selection
+                setCustomerName(""); 
                 setShowCustomerDropdown(false);
                 return; 
             }
         }
 
-        // 🚀 THE POS INTERCEPTOR (LAYER 2B: TERRITORY TRESPASS DEFENSE)
         const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
         const assignedAgent = cust.assignedAgent;
         
         if (assignedAgent && assignedAgent !== 'Unassigned') {
-            // Check if the current user's name matches the assigned agent's name
             const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || 
                                    assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
             
             if (!isAssignedToMe) {
                 const proceedTrespass = window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()} in the Journey Plan.\n\nAre you sure you want to intercept their target?`);
                 if (!proceedTrespass) {
-                    setCustomerName(""); // Reset field, abort selection
+                    setCustomerName(""); 
                     setShowCustomerDropdown(false);
                     return;
                 }
@@ -329,7 +320,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setSelectedCustomerInfo(cust); 
         setBypassState({ status: 'idle', id: null, photo: null }); 
 
-        // 🚀 RADAR PING: Agent engaged a target
         window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
         if (autoLockedDistance !== null) {
@@ -404,7 +394,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             return [...prev, { 
                 productId: product.id, name: product.name, qty: 1, unit: 'Bks', 
-                priceTier: tierToUse, calculatedPrice: basePrice, product 
+                priceTier: tierToUse, calculatedPrice: basePrice, product,
+                condition: 'GOOD', returnReason: '', otherReasonDetail: '' // 🚀 FORENSIC DATA INJECTED
             }];
         });
     };
@@ -422,7 +413,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                 }
 
+                // 🚀 RESET REASON IF SWITCHED TO GOOD
                 const updated = { ...item, [field]: finalVal };
+                if (field === 'condition' && finalVal === 'GOOD') {
+                    updated.returnReason = '';
+                    updated.otherReasonDetail = '';
+                }
+
                 const prod = item.product;
                 let base = prod.priceRetail || 0;
                 if (updated.priceTier === 'Grosir') base = prod.priceGrosir || 0;
@@ -461,7 +458,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         reader.readAsDataURL(file);
     };
 
-    // 🚀 ANTI-FRAUD HQ BYPASS REQUEST ENGINE
     const handleBypassPhotoCapture = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -480,11 +476,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 setBypassState({ status: 'uploading', id: null, photo: compressedDataUrl });
                 try {
-                    // 🛡️ PROTOCOL C: DEFENSIVE DATA CASTING
                     const payload = {
                         storeId: String(selectedCustomerInfo?.id || 'UNKNOWN'),
                         storeName: String(selectedCustomerInfo?.name || customerName || 'Unknown Store'),
-                        // Use realUid for the agent's actual identity, fallback to hijacked uid
                         salesmanId: String(user?.realUid || user?.uid || user?.id || 'UNKNOWN'),
                         salesmanName: String(user?.displayName || user?.email?.split('@')[0] || 'Field Agent'),
                         latitude: Number(agentLocation?.latitude || 0),
@@ -496,14 +490,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         createdAt: serverTimestamp()
                     };
 
-                    // 🛡️ PATH FIX: Route to the Master Vault, not the global root!
                     const masterUid = user?.uid || user?.id || 'default';
                     const dbPath = `artifacts/${appId}/users/${masterUid}/gps_bypasses`;
 
                     const bypassRef = await addDoc(collection(db, dbPath), payload);
                     
-                    // 🔔 HQ COMPANION NOTIFICATION DISPATCH
-                    // This injects the alert straight into the Tier 1/2/3 notification ledger
                     await addDoc(collection(db, `artifacts/${appId}/users/${masterUid}/notifications`), {
                         title: "📡 GEOFENCE BYPASS REQUEST",
                         message: `${payload.salesmanName} is requesting a 100m geofence bypass for ${payload.storeName} (${payload.distance}m away).`,
@@ -511,21 +502,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         read: false,
                         isRead: false,
                         timestamp: serverTimestamp(),
-                        agentId: "ADMIN", // Targets Supervisor dashboards dynamically
+                        agentId: "ADMIN", 
                         bypassId: String(bypassRef.id),
-                        linkToTab: "fleet" // 🚀 DIRECTS ADMIN TO THE FLEET & ROSTER TAB
+                        linkToTab: "fleet" 
                     });
 
                     setBypassState({ status: 'pending', id: bypassRef.id, photo: compressedDataUrl });
                     if (triggerCapy) triggerCapy("Bypass proof sent to HQ. Awaiting approval...");
 
-                    // 🚀 REAL-TIME LISTENER FOR HQ APPROVAL
                     const unsub = onSnapshot(doc(db, dbPath, bypassRef.id), (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
                             if (data.status === 'APPROVED') {
                                 setBypassState(prev => ({ ...prev, status: 'approved' }));
-                                setGpsStatus('verified'); // Instantly unlock!
+                                setGpsStatus('verified'); 
                                 if (triggerCapy) triggerCapy("HQ Approved! Geofence widened to 100m. 🟢");
                                 unsub();
                             } else if (data.status === 'REJECTED') {
@@ -547,7 +537,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const validateNoo = () => {
-        // 🚀 FIXED: Removed the slow manual address typing requirement!
         if (!nooForm.phone || !nooForm.photoUrl) {
             alert("Phone number and Photo are required to register a new outlet! GPS will be automatically locked.");
             return false;
@@ -585,7 +574,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const userId = user?.uid || user?.id || 'default';
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             
-            // 🚀 FIXED: We pre-emptively build the REAL Firebase document right now, instead of holding it in temporary memory!
             const newStoreData = {
                 id: newRef.id,
                 name: customerName.toUpperCase().trim(),
@@ -602,16 +590,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 createdAt: new Date().toISOString()
             };
 
-            // 🔥 INSTANT WRITE: The store is cemented in the database before you even start the sale!
             await setDoc(newRef, newStoreData);
 
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
             if (triggerCapy) triggerCapy(`Target Data Secured! 📍`);
             
-            // 🚀 RADAR PING: Agent dropped a new map pin
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-            // 🚀 The terminal now has the REAL Firebase ID to evaluate, zero race conditions!
             setSelectedCustomerInfo(newStoreData);
             setLockedTier(nooForm.requestedTier);
             updateCartPricing(nooForm.requestedTier);
@@ -624,7 +609,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     };
 
-    // 🚀 FIXED: Added triggerCapy and logAudit to NOO Only Submit!
     const submitNooOnly = async () => {
         if (!validateNoo()) return;
         if (!db || !appId) return alert("Database connection missing!");
@@ -638,7 +622,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 name: customerName.toUpperCase().trim(),
                 phone: nooForm.phone,
                 address: "GPS Locked via NOO Form",
-                // 🚀 FIXED: Decoupled! New NOOs explicitly start 'UNRANKED'
                 tier: 'UNRANKED',
                 priceTier: nooForm.requestedTier,
                 storeType: 'Retailer',
@@ -646,14 +629,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 longitude: agentLocation?.longitude,
                 status: 'Active',
                 visitFreq: 7,
-                storeImage: nooForm.photoUrl, // 🚀 FIXED: Saved as storeImage to sync with the Map System!
+                storeImage: nooForm.photoUrl,
                 createdAt: new Date().toISOString()
             });
             
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
             if (triggerCapy) triggerCapy(`New Target Secured: ${customerName} 📍`);
             
-            // 🚀 RADAR PING: Agent dropped a new map pin
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
@@ -668,7 +650,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     };
 
-    // 🚀 QUICK SAMPLE ENGINE: Direct POS-to-Wallet Marketing Deploy
     const handleDeploySample = async () => {
         const qtyBks = parseInt(sampleForm.qtyBks) || 0;
         const qtyBatang = parseInt(sampleForm.qtyBatang) || 0;
@@ -686,11 +667,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         setIsProcessingSale(true);
         try {
             const masterUid = user?.uid || user?.id || 'default';
-            // 🚀 BUG FIX: Prioritize the actively selected vehicle (Boss Car) over the fallback Vault!
             const sourceId = agentProfileId || user?.agentId || 'VAULT';
 
             await runTransaction(db, async (t) => {
-                // 1. Deduct from Vehicle or Vault
                 if (sourceId !== 'VAULT') {
                     const agentRef = doc(db, `artifacts/${appId}/users/${masterUid}/motorists`, sourceId);
                     const agentDoc = await t.get(agentRef);
@@ -709,7 +688,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        // 🚀 NEW: EXACT DECIMAL CUKAI TRACKING (PER PRODUCT)
                         const cukaiToAdd = totalQtyDecimal; 
                         let currentDebts = agentData.cukaiDebts || {};
                         currentDebts[product.id] = (currentDebts[product.id] || 0) + cukaiToAdd;
@@ -729,7 +707,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                 }
 
-                // 2. Log the Sample Record permanently
                 const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${masterUid}/samplings`));
                 t.set(newSampleRef, {
                     date: new Date().toISOString().split('T')[0],
@@ -738,7 +715,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     qty: totalQtyDecimal,
                     unit: 'Bks',
                     sticksPerPack: sp,
-                    reason: customerName.trim(), // Automatically inherits Customer Name!
+                    reason: customerName.trim(), 
                     note: 'POS Quick Sample',
                     sourceId: sourceId,
                     timestamp: serverTimestamp()
@@ -748,7 +725,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (logAudit) logAudit("SAMPLE_DEPLOYED", `Gave ${totalQtyDecimal.toFixed(2)} Bks of ${product.name} to ${customerName}`);
             if (triggerCapy) triggerCapy(`Sample deployed to ${customerName}! Pita Cukai recorded. 🎁`);
             
-            // 🚀 RADAR PING: Agent deployed a sample
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setShowSampleModal(false);
@@ -762,10 +738,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleFinalDeal = async () => {
-        // 🚀 Reject rapid fire clicks if it's already processing
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
         
-        setIsProcessingSale(true); // 🚀 LOCK THE ENGINE
+        setIsProcessingSale(true); 
         
         const finalCust = customerName.trim();
         const finalMethod = isReturMode ? 'Retur/BS' : paymentMethod;
@@ -789,27 +764,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
          
-            // 🚀 THE LIVE AUTO-PROMOTER ENGINE: Gamified XP System
             if (navigator.onLine) {
                 try {
                     const userId = user?.uid || user?.id || 'default';
                     let rules = null;
                     const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
-                if (rulesSnap.exists() && rulesSnap.data().rules) {
-                    rules = rulesSnap.data().rules;
-                } else {
-                    const mainSettingsSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
-                    if (mainSettingsSnap.exists() && mainSettingsSnap.data().tierRules) rules = mainSettingsSnap.data().tierRules;
-                }
+                    if (rulesSnap.exists() && rulesSnap.data().rules) {
+                        rules = rulesSnap.data().rules;
+                    } else {
+                        const mainSettingsSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
+                        if (mainSettingsSnap.exists() && mainSettingsSnap.data().tierRules) rules = mainSettingsSnap.data().tierRules;
+                    }
                 
                 if (rules && !isReturMode) {
 
-                    let earnedTier = 'Unranked'; // 🚀 DEFAULT BASELINE
+                    let earnedTier = 'Unranked'; 
                     let currentStoreSeasonalXP = 0;
                     let debugTarget = 0;
                     let debugMetric = 0;
 
-                    // 🚀 THE ULTIMATE SIMPLE DATE PARSER
                     const getSafeTime = (t) => {
                         if (!t) return 0;
                         if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
@@ -848,7 +821,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     const safeTrans = Array.isArray(transactions) ? transactions : [];
 
-                    // 🚀 STEP 1: Absolute Lifetime XP
                     let lifetimeXP = 0;
                     safeTrans.forEach(t => {
                         const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
@@ -858,7 +830,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     });
 
-                    // 🚀 STEP 2: Strict Bracket Promotion Rules
                     const safeRules = rules || {};
                     const sortedRules = Object.entries(safeRules).sort((a, b) => {
                         const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
@@ -874,7 +845,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (!rule) continue; 
                         
                         const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                        // 🚀 GHOST RULE CATCHER
                         const isValidTier = allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase());
                         if (!isValidTier) continue;
                         
@@ -924,7 +894,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             }
                         });
 
-                        // Add current live sale
                         if (isOmset) metricTotal += Number(finalTotal);
                         else if (ruleType.includes('volume')) {
                             finalCart.forEach(item => {
@@ -943,7 +912,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
                         debugMetric = metricTotal;
 
-                        // 🚀 STRICT BRACKET LOGIC
                         if (metricTotal >= target) {
                             earnedTier = ruleTierName;
                             debugTarget = target;
@@ -952,7 +920,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         }
                     }
 
-                    // 🚀 THE MASTER BRACKET FALLBACK (Live Checkout guarantees your logic)
                     if (!matchedDynamic) {
                         let fallbackMetric = currentStoreSeasonalXP > 0 ? currentStoreSeasonalXP : (debugMetric > 0 ? debugMetric : finalTotal);
                         if (fallbackMetric >= 2500000) earnedTier = 'Mythic';
@@ -961,11 +928,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         else if (fallbackMetric >= 250000) earnedTier = 'Bronze';
                         else earnedTier = 'Unranked';
                     }
-
-
-
-
-
 
                     const storeId = selectedCustomerInfo?.id;
                     let targetDocRef = null;
@@ -989,7 +951,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     if (targetDocRef) {
                         const localToday = new Date().toLocaleDateString('en-CA');
                         
-                        // 🚀 LAYER 1 & 2 SYNC: Cement the agent's footprint into the database!
                         const storeUpdates = {
                             lastVisit: localToday,
                             lastVisitedBy: agentFallback,
@@ -1002,7 +963,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                         await updateDoc(targetDocRef, storeUpdates);
 
-                        // 🚀 MEMORY OVERRIDE: Force local state update so the terminal knows instantly without a page refresh!
                         const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
                         if (localCust) {
                             localCust.lastVisit = localToday;
@@ -1027,7 +987,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
-            // 🚀 RADAR PING: Deal signed, update live map location and color
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
@@ -1040,7 +999,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             console.error("Transaction failed:", error);
             alert("Transaction Failed! Please try again.");
         } finally {
-            setIsProcessingSale(false); // 🚀 UNLOCK THE ENGINE
+            setIsProcessingSale(false); 
         }
     };
 
@@ -1060,7 +1019,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
-    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale;
+    
+    // 🚀 FORENSIC VALIDATION: Block submission if a damaged item is missing a reason
+    const hasInvalidDamagedItems = isReturMode && cart.some(i => 
+        i.condition === 'DAMAGED' && 
+        (!i.returnReason || (i.returnReason === 'Other' && (!i.otherReasonDetail || i.otherReasonDetail.trim() === '')))
+    );
+
+    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems;
 
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
@@ -1071,6 +1037,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {showCustomerDropdown && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
                 )}
+
+                {/* --- 🚀 MODE TOGGLE (SALE VS RETUR) --- */}
+                <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
+                    <button onClick={() => setIsReturMode(false)} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-emerald-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
+                    <button onClick={() => {
+                        if (!allowRetur) return alert("You do not have clearance to process returns.");
+                        setIsReturMode(true);
+                    }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${isReturMode ? 'bg-red-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
+                </div>
 
                 {debtInfo && debtInfo.status === 'RED' && (
                         <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
@@ -1151,7 +1126,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                                     </div>
                                     
-                                    {/* 🚀 QUICK SAMPLE BUTTON WITH MATRIX GEO-LOCK */}
                                     {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
                                         <button disabled className="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-500 text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
@@ -1190,8 +1164,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
 
                 <div>
-
-
                     <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
@@ -1248,6 +1220,50 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
+
+                            {/* 🚀 ITEM-LEVEL FORENSIC TAGGING (RETUR ONLY) */}
+                            {isReturMode && (
+                                <div className="mt-2 pt-2 border-t border-red-300/50 flex flex-col gap-2">
+                                    <div className="flex gap-2">
+                                        <select 
+                                            value={item.condition || 'GOOD'} 
+                                            onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
+                                            className={`text-[9px] font-bold uppercase p-1.5 rounded outline-none border ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
+                                        >
+                                            <option value="GOOD">🟢 Good (Resellable)</option>
+                                            <option value="DAMAGED">🔴 Damaged (Quarantine)</option>
+                                        </select>
+
+                                        {item.condition === 'DAMAGED' && (
+                                            <select 
+                                                value={item.returnReason || ''}
+                                                onChange={(e) => updateCartItem(item.productId, 'returnReason', e.target.value)}
+                                                className="text-[9px] font-bold uppercase p-1.5 rounded outline-none border bg-white border-red-400 text-red-800 flex-1"
+                                            >
+                                                <option value="">-- Select Reason --</option>
+                                                <option value="Expired / Out of Date">Expired</option>
+                                                <option value="Water / Weather Damage">Water Damage</option>
+                                                <option value="Torn / Crushed Packaging">Torn/Crushed</option>
+                                                <option value="Pest / Rodent Damage">Pest Damage</option>
+                                                <option value="Factory Defect">Factory Defect</option>
+                                                <option value="Other">Other...</option>
+                                            </select>
+                                        )}
+                                    </div>
+                                    
+                                    {/* 🚀 THE MANDATORY "OTHER" DESCRIPTION FIELD */}
+                                    {item.condition === 'DAMAGED' && item.returnReason === 'Other' && (
+                                        <input 
+                                            type="text" 
+                                            placeholder="Describe the damage..." 
+                                            value={item.otherReasonDetail || ''}
+                                            onChange={(e) => updateCartItem(item.productId, 'otherReasonDetail', e.target.value)}
+                                            className="w-full text-[10px] p-1.5 rounded border border-red-400 bg-white text-black outline-none focus:border-red-600"
+                                        />
+                                    )}
+                                </div>
+                            )}
+
                             <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">
                                 {isReturMode ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
                             </div>
@@ -1287,12 +1303,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-red-500">*</span></label>
-                        {/* 🚀 ANTI-FRAUD LOCK: 'capture="environment"' strictly forces the live rear camera and disables gallery uploads */}
                         <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
                             <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
-                                {/* 🚀 FIXED: object-contain prevents the image from getting chopped off on mobile! */}
                                 <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
@@ -1311,6 +1325,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </span>
                     </div>
                     
+                    {hasInvalidDamagedItems && (
+                        <div className="bg-red-900/40 border border-red-500 text-red-500 p-2 rounded mb-3 text-[10px] uppercase tracking-widest font-bold flex items-center justify-center gap-2">
+                            <AlertTriangle size={14}/> Please complete damage reasons for all items.
+                        </div>
+                    )}
+
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
@@ -1320,6 +1340,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
                          isGpsRestricted ? <><Lock size={20}/> LOC. RESTRICTED</> :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
+                         hasInvalidDamagedItems ? <><AlertTriangle size={20}/> REASON REQ.</> :
                          customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
@@ -1402,7 +1423,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             <div>
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
-                                {/* 🚀 FIXED: Added capture="environment" to force the rear camera and block the gallery */}
                                 <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
                                     <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
@@ -1494,7 +1514,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         onChange={e => {
                                             let val = parseInt(e.target.value) || 0;
                                             const maxBtg = (inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1;
-                                            if (val > maxBtg) val = maxBtg; // Auto-correct if they type too high
+                                            if (val > maxBtg) val = maxBtg; 
                                             setSampleForm({...sampleForm, qtyBatang: val});
                                         }} 
                                         className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" 
@@ -1568,7 +1588,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
-                            {/* --- THERMAL POS LAYOUT --- */}
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
@@ -1619,7 +1638,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
-                            {/* --- A4 STANDARD INVOICE LAYOUT --- */}
                             {printFormat === 'a4' && (
                                 <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
                                     <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
