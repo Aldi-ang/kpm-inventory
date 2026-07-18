@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 // --- FINANCIAL HELPERS ---
@@ -17,6 +17,9 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
+    
+    // 🚀 NEW: QUARANTINE TOGGLE STATE
+    const [viewMode, setViewMode] = useState('HEALTHY'); // 'HEALTHY' | 'QUARANTINE'
 
     // 🛡️ ARMOR-PLATED EMAIL ROUTER (Fixes Cache Ghosting & State Bleed)
     // 1. Sanitize the active Google login email to prevent space/case mismatch
@@ -140,6 +143,27 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         revGrosir += (bksQty * grosir);
     });
 
+    // 🚀 NEW: EXTRACT QUARANTINED CARGO DIRECTLY FROM TODAY'S TRANSACTIONS
+    const quarantinedCargo = useMemo(() => {
+        return todayTransactions
+            .filter(tx => tx.forensicData?.condition === 'DAMAGED')
+            .flatMap(tx => {
+                if (tx.items && tx.items.length > 0) {
+                    return tx.items.map(item => ({
+                        id: tx.transactionId || tx.id || Math.random().toString(),
+                        itemName: item.name || 'Unknown Asset',
+                        qty: item.qty || 0,
+                        returnReason: tx.forensicData?.returnReason || 'Unclassified',
+                        customerOrigin: tx.customerName || 'Walk-in / Unknown',
+                        timestamp: tx.timestamp
+                    }));
+                }
+                return [];
+            });
+    }, [todayTransactions]);
+
+    const quarantineCount = quarantinedCargo.reduce((sum, item) => sum + item.qty, 0);
+
     return (
         <div className="h-[850px] lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-slate-950 font-sans border-x border-slate-800 shadow-2xl overflow-hidden relative">
             
@@ -214,166 +238,203 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
             </div>
 
+            {/* 🚀 SEGMENTED CONTROL TOGGLE */}
+            <div className="px-4 pt-4 shrink-0 relative z-10 bg-slate-950">
+                <div className="flex p-1 bg-slate-900 rounded-lg ring-1 ring-slate-800">
+                    <button
+                        onClick={() => setViewMode('HEALTHY')}
+                        className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                            viewMode === 'HEALTHY'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        Healthy Canvas
+                    </button>
+                    <button
+                        onClick={() => setViewMode('QUARANTINE')}
+                        className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center gap-2 ${
+                            viewMode === 'QUARANTINE'
+                                ? 'bg-red-950/50 text-red-400 ring-1 ring-red-900 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        Quarantine Ledger
+                        {quarantineCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                                {quarantineCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
+            </div>
+
             {/* SCROLLABLE CONTENT AREA */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10">
                 
-                {/* 1. PRODUCT MANIFEST LIST */}
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-40 opacity-50">
-                        <div className="text-center animate-pulse">
-                            <AlertCircle size={32} className="mx-auto mb-3 text-slate-600"/>
-                            <p className="text-xs font-bold tracking-widest uppercase text-slate-500">Syncing database...</p>
-                        </div>
-                    </div>
-                ) : canvasItems.length === 0 ? (
-                    <div className="flex items-center justify-center h-40 opacity-30 flex-col">
-                        <Package size={48} className="mb-4 text-slate-600"/>
-                        <p className="font-black text-lg tracking-widest uppercase text-slate-500">Vehicle empty</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
-                        {canvasItems.map((item, idx) => {
-                            const itemBksDecimal = calculateBks(item.qty, item.unit);
-                            
-                            // CHECK FOR MISSING DISTRIBUTOR PRICE
-                            const productInfo = inventory.find(p => p.id === item.productId) || {};
-                            const isMissingCost = !productInfo.priceDistributor || productInfo.priceDistributor <= 0;
-                            
-                            // 🚀 DECIMAL-TO-PHYSICAL CONVERTER
-                            const sp = productInfo.sticksPerPack || 16;
-                            const physicalBks = Math.floor(itemBksDecimal);
-                            const physicalBtg = Math.round((itemBksDecimal - physicalBks) * sp);
-
-                            return (
-                                <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-slate-600 transition-colors shadow-sm group">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-slate-600 transition-colors">
-                                            <Package size={18} className="text-slate-500 group-hover:text-blue-400 transition-colors"/>
-                                        </div>
-                                        <div className="min-w-0 flex flex-col">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide group-hover:text-white transition-colors truncate">{item.name}</h4>
-                                                {/* MISSING COST WARNING BADGE */}
-                                                {isMissingCost && (
-                                                    <span className="bg-red-500/20 border border-red-500 text-red-500 text-[8px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
-                                                        No Cost Data
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-[10px] text-slate-600 font-mono mt-0.5 font-semibold">ID: {item.productId.slice(0,8)}</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="text-right flex flex-col items-end shrink-0 ml-4">
-                                        {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
-                                        {physicalBks > 0 && (
-                                            <div className="flex items-baseline gap-1.5">
-                                                <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">{new Intl.NumberFormat('id-ID').format(physicalBks)}</p>
-                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
-                                            </div>
-                                        )}
-                                        {physicalBtg > 0 && (
-                                            <div className={`flex items-baseline gap-1.5 ${physicalBks > 0 ? 'mt-1' : ''}`}>
-                                                <p className="text-sm md:text-base font-black text-emerald-300 leading-none">{physicalBtg}</p>
-                                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Btg</p>
-                                            </div>
-                                        )}
-                                        {(physicalBks === 0 && physicalBtg === 0) && (
-                                            <div className="flex items-baseline gap-1.5">
-                                                <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">0</p>
-                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
-                                            </div>
-                                        )}
-                                        <div className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider shadow-inner mt-1.5">
-                                            [{Number(item.qty).toFixed(2).replace(/\.00$/, '')} {item.unit}]
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/* 2. TODAY'S SALES BREAKDOWN LEDGER */}
-                <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
-                    <Receipt size={16} className="text-orange-500" />
-                    <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Today's Transactions</h3>
-                </div>
-
-                {todayTransactions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-6">
-                        <Coins size={32} className="mb-3 text-slate-600"/>
-                        <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No sales recorded today</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3 mb-6">
-                        {todayTransactions.map((tx, idx) => (
-                            <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
-                                    <div className="flex items-center gap-2 mt-1.5">
-                                        <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
-                                            {tx.paymentType || 'CASH'}
-                                        </span>
-                                        <span className="text-[10px] text-slate-500 font-mono font-semibold">
-                                            {tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-lg md:text-xl font-black text-orange-400 leading-none drop-shadow-sm">{formatRupiah(tx.total || tx.amountPaid || 0)}</p>
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} Items Sold</p>
+                {viewMode === 'HEALTHY' ? (
+                    <>
+                        {/* 1. PRODUCT MANIFEST LIST */}
+                        {isLoading ? (
+                            <div className="flex items-center justify-center h-40 opacity-50">
+                                <div className="text-center animate-pulse">
+                                    <AlertCircle size={32} className="mx-auto mb-3 text-slate-600"/>
+                                    <p className="text-xs font-bold tracking-widest uppercase text-slate-500">Syncing database...</p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        ) : canvasItems.length === 0 ? (
+                            <div className="flex items-center justify-center h-40 opacity-30 flex-col">
+                                <Package size={48} className="mb-4 text-slate-600"/>
+                                <p className="font-black text-lg tracking-widest uppercase text-slate-500">Vehicle empty</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
+                                {canvasItems.map((item, idx) => {
+                                    const itemBksDecimal = calculateBks(item.qty, item.unit);
+                                    
+                                    // CHECK FOR MISSING DISTRIBUTOR PRICE
+                                    const productInfo = inventory.find(p => p.id === item.productId) || {};
+                                    const isMissingCost = !productInfo.priceDistributor || productInfo.priceDistributor <= 0;
+                                    
+                                    // 🚀 DECIMAL-TO-PHYSICAL CONVERTER
+                                    const sp = productInfo.sticksPerPack || 16;
+                                    const physicalBks = Math.floor(itemBksDecimal);
+                                    const physicalBtg = Math.round((itemBksDecimal - physicalBks) * sp);
 
-                {/* 3. TODAY'S SAMPLING LEDGER */}
-                <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
-                    <Package size={16} className="text-indigo-500" />
-                    <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Marketing Samples Deployed</h3>
-                </div>
+                                    return (
+                                        <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-slate-600 transition-colors shadow-sm group">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-slate-600 transition-colors">
+                                                    <Package size={18} className="text-slate-500 group-hover:text-blue-400 transition-colors"/>
+                                                </div>
+                                                <div className="min-w-0 flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide group-hover:text-white transition-colors truncate">{item.name}</h4>
+                                                        {/* MISSING COST WARNING BADGE */}
+                                                        {isMissingCost && (
+                                                            <span className="bg-red-500/20 border border-red-500 text-red-500 text-[8px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
+                                                                No Cost Data
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-600 font-mono mt-0.5 font-semibold">ID: {item.productId.slice(0,8)}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-right flex flex-col items-end shrink-0 ml-4">
+                                                {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
+                                                {physicalBks > 0 && (
+                                                    <div className="flex items-baseline gap-1.5">
+                                                        <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">{new Intl.NumberFormat('id-ID').format(physicalBks)}</p>
+                                                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                                    </div>
+                                                )}
+                                                {physicalBtg > 0 && (
+                                                    <div className={`flex items-baseline gap-1.5 ${physicalBks > 0 ? 'mt-1' : ''}`}>
+                                                        <p className="text-sm md:text-base font-black text-emerald-300 leading-none">{physicalBtg}</p>
+                                                        <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Btg</p>
+                                                    </div>
+                                                )}
+                                                {(physicalBks === 0 && physicalBtg === 0) && (
+                                                    <div className="flex items-baseline gap-1.5">
+                                                        <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">0</p>
+                                                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                                    </div>
+                                                )}
+                                                <div className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider shadow-inner mt-1.5">
+                                                    [{Number(item.qty).toFixed(2).replace(/\.00$/, '')} {item.unit}]
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
 
-                {todaySamplings.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
-                        <Package size={32} className="mb-3 text-slate-600"/>
-                        <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No samples deployed today</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3 pb-20">
-                        {todaySamplings.map((sample, idx) => {
-                            const cukaiOwed = Math.ceil(sample.qty);
-                            
-                            // 🚀 PRECISE DECIMAL-TO-PHYSICAL CONVERTER
-                            const sp = sample.sticksPerPack || 16;
-                            const bks = Math.floor(sample.qty || 0);
-                            const btg = Math.round(((sample.qty || 0) - bks) * sp);
+                        {/* 2. TODAY'S SALES BREAKDOWN LEDGER */}
+                        <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                            <Receipt size={16} className="text-orange-500" />
+                            <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Today's Transactions</h3>
+                        </div>
 
-                            return (
-                                <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
-                                    <div>
-                                        <h4 className="font-bold text-indigo-300 text-sm uppercase tracking-wide">{sample.reason || 'Unknown Target'}</h4>
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
-                                                {sample.productName}
-                                            </span>
-                                            <span className="text-[10px] text-slate-500 font-mono font-semibold">
-                                                {sample.timestamp?.seconds ? new Date(sample.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
-                                            </span>
+                        {todayTransactions.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-6">
+                                <Coins size={32} className="mb-3 text-slate-600"/>
+                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No sales recorded today</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 mb-6">
+                                {todayTransactions.map((tx, idx) => (
+                                    <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
+                                        <div>
+                                            <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                                    {tx.paymentType || 'CASH'}
+                                                </span>
+                                                <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                                    {tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-lg md:text-xl font-black text-orange-400 leading-none drop-shadow-sm">{formatRupiah(tx.total || tx.amountPaid || 0)}</p>
+                                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} Items Sold</p>
                                         </div>
                                     </div>
-                                    <div className="text-right flex flex-col items-end">
-                                        {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
-                                        {bks > 0 && <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{bks} Bks</p>}
-                                        {btg > 0 && <p className={`text-xs font-black text-indigo-300 drop-shadow-sm ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
-                                        
-                                        <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* 3. TODAY'S SAMPLING LEDGER */}
+                        <div className="mt-6 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                            <Package size={16} className="text-indigo-500" />
+                            <h3 className="text-slate-300 font-bold uppercase tracking-widest text-xs">Marketing Samples Deployed</h3>
+                        </div>
+
+                        {todaySamplings.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
+                                <Package size={32} className="mb-3 text-slate-600"/>
+                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No samples deployed today</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 pb-20">
+                                {todaySamplings.map((sample, idx) => {
+                                    const cukaiOwed = Math.ceil(sample.qty);
+                                    
+                                    // 🚀 PRECISE DECIMAL-TO-PHYSICAL CONVERTER
+                                    const sp = sample.sticksPerPack || 16;
+                                    const bks = Math.floor(sample.qty || 0);
+                                    const btg = Math.round(((sample.qty || 0) - bks) * sp);
+
+                                    return (
+                                        <div key={idx} className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center hover:border-slate-600 transition-colors shadow-sm">
+                                            <div>
+                                                <h4 className="font-bold text-indigo-300 text-sm uppercase tracking-wide">{sample.reason || 'Unknown Target'}</h4>
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                    <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                                        {sample.productName}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                                        {sample.timestamp?.seconds ? new Date(sample.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right flex flex-col items-end">
+                                                {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
+                                                {bks > 0 && <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{bks} Bks</p>}
+                                                {btg > 0 && <p className={`text-xs font-black text-indigo-300 drop-shadow-sm ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
+                                                
+                                                <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <QuarantineLedgerBoard cargo={quarantinedCargo} />
                 )}
 
             </div>
@@ -381,5 +442,65 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         </div>
     );
 };
+
+// ==========================================
+// 🚀 SUB-COMPONENT: QUARANTINE LEDGER BOARD
+// ==========================================
+function QuarantineLedgerBoard({ cargo }) {
+    if (!cargo || cargo.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 opacity-50">
+          <ShieldAlert className="w-12 h-12 text-slate-500 mb-3" />
+          <p className="text-slate-400 text-sm font-medium">Quarantine sector is empty.</p>
+          <p className="text-slate-500 text-xs text-center mt-1">
+            No damaged goods collected today.
+          </p>
+        </div>
+      );
+    }
+  
+    return (
+      <div className="space-y-3 pb-20">
+        {cargo.map((item) => (
+          <div 
+            key={item.id} 
+            className="bg-slate-900 rounded-xl p-4 border border-red-900/30 relative overflow-hidden shadow-sm"
+          >
+            {/* Visual Warning Bar */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600/80"></div>
+            
+            <div className="flex justify-between items-start pl-2">
+              <div>
+                <h3 className="font-semibold text-slate-100 text-base">{item.itemName}</h3>
+                <div className="flex items-center gap-1 mt-1 text-red-400 text-[10px] font-bold uppercase tracking-wide">
+                  <AlertOctagon className="w-3 h-3" />
+                  {item.returnReason}
+                </div>
+              </div>
+              
+              {/* Exact Quantity Marker */}
+              <div className="flex flex-col items-end shrink-0 ml-4">
+                <div className="bg-red-950/50 text-red-400 px-3 py-1 rounded-lg text-lg font-black ring-1 ring-red-900/50">
+                  - {item.qty}
+                </div>
+              </div>
+            </div>
+  
+            {/* Forensic Audit Details */}
+            <div className="mt-4 pt-3 border-t border-slate-800/50 pl-2 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                <User className="w-3 h-3 text-slate-500" />
+                <span>Origin: <span className="text-slate-300">{item.customerOrigin}</span></span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                <Tag className="w-3 h-3 text-slate-500" />
+                <span>Tx ID: <span className="font-mono text-slate-500">{item.id.slice(-8)}</span></span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+}
 
 export default AgentInventoryView;
