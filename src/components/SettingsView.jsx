@@ -9,7 +9,7 @@ import CrownTransferProtocol from './CrownTransferProtocol';
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions } from '../config/permissions';
 
 export default function SettingsView({
-    user, userId, db, appId, isAdmin, isSystemOwner, userRole, // <-- Added userRole here
+    user, userId, db, appId, isAdmin, isSystemOwner, userRole,
     showCrownTransfer, setShowCrownTransfer, triggerCapy, setShowAdminLogin,
     sessionStatus, setSessionStatus, auditLogs,
     handleMasterProtocol, handleSingleBackup, handleRestoreData,
@@ -22,7 +22,7 @@ export default function SettingsView({
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
     triggerDiscoParty, isDiscoMode,
-    isLiteMode, setIsLiteMode /* 🚀 NEW: LITE MODE PROPS */
+    isLiteMode, setIsLiteMode 
 }) {
 
     // --- TIER AUTOMATION LOGIC ---
@@ -395,7 +395,6 @@ export default function SettingsView({
                                                           <Upload size={14}/> 
                                                           {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
                                                           
-                                                          {/* 🚀 RESTORED CROPPER HOOK: Calls handleTierIconSelect again */}
                                                           <input 
                                                               id={`tier-upload-${idx}`} 
                                                               type="file" 
@@ -405,7 +404,6 @@ export default function SettingsView({
                                                           />
                                                       </label>
                                                       
-                                                      {/* 🚀 THE GHOSTBUSTER BUTTON: Clears stuck heavy images */}
                                                       {tier.value?.startsWith('data:') && (
                                                           <button 
                                                               onClick={() => {
@@ -793,11 +791,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
-    // 🚀 ISOLATE TIER 1 ONLY (Tier 2 "Owner" is now manageable)
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS.filter(t => t.id !== 'DEVELOPER'));
     const [isSaving, setIsSaving] = React.useState(false);
 
-    // 🚀 CRITICAL FIX: Fetch the actual saved matrix from the Master Vault on mount
     React.useEffect(() => {
         if (!db || !appId || !userId) return;
         const fetchMatrix = async () => {
@@ -809,7 +805,6 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                     const data = snap.data();
                     if (data.matrix && Object.keys(data.matrix).length > 0) setMatrix(data.matrix);
                     if (data.tiers && data.tiers.length > 0) {
-                        // 🚀 Filter out ONLY Tier 1 (Developer)
                         setTiers(data.tiers.filter(t => t.id !== 'DEVELOPER'));
                     }
                 }
@@ -825,13 +820,14 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const [draggedIdx, setDraggedIdx] = React.useState(null);
     const [dragOverIdx, setDragOverIdx] = React.useState(null);
 
+    // 🚀 NEW: 'can_view_team_history' injected into the Matrix array
     const ALL_FEATURES = [
         { id: 'view_dashboard', label: 'Command Center' },
         { id: 'view_map', label: 'Map System' },
         { id: 'view_journey', label: 'Journey Plan' },
         { id: 'view_fleet', label: 'Fleet & Canvas' },
         { id: 'view_master_vault', label: 'Master Vault' },
-        { id: 'view_restock_vault', label: 'Logistics & Warehouse' }, // 🚀 THE FIX: Renamed to cover BOTH HQ and Regional
+        { id: 'view_restock_vault', label: 'Logistics & Warehouse' }, 
         { id: 'view_agent_inventory', label: 'Agent Inventory' },
         { id: 'view_sales', label: 'Sales Terminal' },
         { id: 'view_receivables', label: 'Receivables & Consign' },
@@ -840,6 +836,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_customers', label: 'Customers' },
         { id: 'view_sampling', label: 'Sampling' },
         { id: 'view_reports', label: 'Reports' },
+        { id: 'can_view_team_history', label: 'View Team History' }, 
         { id: 'view_audit_logs', label: 'Audit Logs' },
         { id: 'view_settings', label: 'Settings Panel' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
@@ -924,11 +921,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const saveMatrixToFirebase = async () => {
         setIsSaving(true);
         try {
-            // 🚀 PROTECT TIER 1: Merge the hidden T1 (DEVELOPER) back into the payload before saving
             const godTiers = DYNAMIC_TIERS.filter(t => t.id === 'DEVELOPER');
             const fullTiers = [...godTiers, ...tiers];
 
-            // 🚀 CRITICAL FIX: Save to BOTH settings paths to ensure App.jsx reads it correctly
             const payload = { matrix, tiers: fullTiers, updatedAt: new Date().toISOString() };
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
@@ -942,7 +937,6 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setIsSaving(false);
     };
 
-    // Safety fallback for mobile
     const activeTier = tiers.find(t => t.id === activeMobileTierId) || tiers[0];
     const activeTierIdx = tiers.findIndex(t => t.id === activeTier?.id);
 

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
+import { hasClearance } from './config/permissions'; // 🚀 THE MATRIX ENGINE IMPORT
 
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,8 +32,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // ANALYTICS STATE
     const [expandedAgent, setExpandedAgent] = useState(null);
 
-    // 🚀 AUTHORITY ENGINE: Identify Field Agents (Tier 5 & 6) vs Command (Tier 1-4)
-    const isFieldAgent = userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN';
+    // 🚀 MATRIX AUTHORITY ENGINE: Checks Architect Tier Capabilities
+    // If they do NOT have the capability, they are strictly locked as a Field Agent.
+    const isFieldAgent = !hasClearance(userRole, 'can_view_team_history');
 
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
     const allTransactions = useMemo(() => {
@@ -43,7 +45,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const dateFilteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
         return allTransactions.filter(t => {
-            // 🛑 SECURITY FIREWALL: Strict Isolation for Tier 5 & 6 Field Agents
+            // 🛑 SECURITY FIREWALL: Strict Isolation for tiers without Team History Clearance
             if (isFieldAgent && agentProfileId && t.agentId !== agentProfileId) {
                 return false; 
             }
@@ -180,7 +182,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
     // AUTO-NAVIGATE FOR EMPLOYEES
     useEffect(() => {
-        if (userRole !== 'ADMIN') {
+        if (!hasClearance(userRole, 'can_view_team_history')) {
             const regions = Object.keys(reportData);
             if (regions.length === 1 && !selectedRegion) {
                 setSelectedRegion(regions[0]);
@@ -362,7 +364,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
-                    {/* 🚀 UI LOCK: Field Agents cannot click Region/Agent to view team folders */}
+                    {/* 🚀 UI LOCK: Tiers without team clearance cannot click Region/Agent to view team folders */}
                     {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
                     {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
                     
@@ -411,7 +413,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                          {/* MACRO VIEW: GLOBAL STATS */}
                          <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
-                                 {/* 🚀 DYNAMIC TITLE: Field Agents see "My Performance" */}
+                                 {/* 🚀 DYNAMIC TITLE: Matrix Check limits to "My Performance" */}
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
                                      {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
@@ -453,7 +455,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                              </h3>
                              <div className="space-y-4">
                                  {stats.agentRoster.map(agent => {
-                                     // 🚀 Auto-expand if they are a Field Agent (since it's just them)
+                                     // 🚀 Auto-expand if they are restricted (since it's just them)
                                      const isExpanded = isFieldAgent || expandedAgent === agent.name;
                                      const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
                                      
@@ -1043,7 +1045,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         );
                                                     })}
                                                 </tbody>
-                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</td></tr></tfoot>
+                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                             </table>
                                         )}
                                     </div>
