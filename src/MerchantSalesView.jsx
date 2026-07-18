@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions'; 
 
@@ -14,8 +14,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [merchantMood, setMerchantMood] = useState("idle");
     const [doorsOpen, setDoorsOpen] = useState(false);
 
-    // 🚀 RETUR ENGINE
+    // 🚀 DUAL RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(false);
+    const [returType, setReturType] = useState('EXCHANGE'); // 'BUYBACK' | 'EXCHANGE'
 
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState("");
@@ -28,6 +29,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
     const canOverrideGps = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+
+    // 🚀 PRICE RECALCULATION ENGINE (Fires when switching Buyback <-> Exchange)
+    useEffect(() => {
+        setCart(prev => prev.map(item => {
+            if (item.isIouFulfillment) return item; 
+
+            const prod = item.product;
+            let basePrice = prod.priceRetail || 0;
+            if (item.priceTier === 'Ecer') basePrice = prod.priceEcer || 0;
+            if (item.priceTier === 'Grosir') basePrice = prod.priceGrosir || 0;
+            
+            let mult = 1;
+            if (item.unit === 'Slop') mult = prod.packsPerSlop || 10;
+            if (item.unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
+            if (item.unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
+            
+            const calcPrice = (isReturMode && returType === 'EXCHANGE') ? 0 : (basePrice * mult);
+            
+            return {
+                ...item,
+                calculatedPrice: calcPrice,
+                condition: (isReturMode && returType === 'EXCHANGE' && item.condition === 'GOOD') ? 'DAMAGED' : (item.condition || 'GOOD')
+            };
+        }));
+    }, [isReturMode, returType]);
 
     // 🚀 THE FIFO DEBT ENGINE 
     const debtInfo = React.useMemo(() => {
@@ -102,10 +128,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [manualOverride, setManualOverride] = useState(false); 
     const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
-    // THE NOO MODAL STATE
     const [showNooModal, setShowNooModal] = useState(false);
-
-    // 🚀 SAMPLING MODAL STATE
     const [showSampleModal, setShowSampleModal] = useState(false);
     const [sampleForm, setSampleForm] = useState({ productId: '', qtyBks: 0, qtyBatang: 0 });
     
@@ -113,9 +136,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
 
-    const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
-
     const [txProofPhoto, setTxProofPhoto] = useState(null);
 
     const handleTxPhotoCapture = (e) => {
@@ -132,8 +153,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
-                setTxProofPhoto(compressedDataUrl);
+                setTxProofPhoto(canvas.toDataURL('image/jpeg', 0.6));
             };
             img.src = event.target.result;
         };
@@ -147,8 +167,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const Δφ = (lat2-lat1) * Math.PI/180;
         const Δλ = (lon2-lon1) * Math.PI/180;
         const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; 
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
     };
 
     const verifyLocation = (useLowAccuracy = false) => {
@@ -164,109 +183,65 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
                             const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
                             setDistanceToStore(Math.round(dist));
-                            
                             const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
                             setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
                         } else {
                             setGpsStatus('bypass'); 
                         }
                     } else if (!manualOverride && customers.length > 0) {
-                        let closestStore = null;
-                        let minDistance = Infinity;
-
+                        let closestStore = null; let minDistance = Infinity;
                         customers.forEach(c => {
                             if (c.latitude && c.longitude && c.status !== 'PENDING') {
                                 const dist = calculateDistance(lat, lon, c.latitude, c.longitude);
-                                if (dist < minDistance) {
-                                    minDistance = dist;
-                                    closestStore = c;
-                                }
+                                if (dist < minDistance) { minDistance = dist; closestStore = c; }
                             }
                         });
-
                         if (closestStore && minDistance <= 50) {
                             setDistanceToStore(Math.round(minDistance));
                             handleCustomerSelect(closestStore, Math.round(minDistance));
-                        } else {
-                            setGpsStatus('idle');
-                        }
-                    } else if (customerName.trim().length > 0) {
-                        setGpsStatus('walk_in'); 
-                    } else {
-                        setGpsStatus('idle');
-                    }
+                        } else setGpsStatus('idle');
+                    } else if (customerName.trim().length > 0) setGpsStatus('walk_in'); 
+                    else setGpsStatus('idle');
                 },
-                (error) => {
-                    console.error("GPS Error:", error);
-                    setGpsStatus('error');
-                },
+                (error) => setGpsStatus('error'),
                 { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 0 }
             );
-        } else {
-            setGpsStatus('error');
-        }
+        } else setGpsStatus('error');
     };
 
     useEffect(() => { 
-        if (selectedCustomerInfo) {
-            verifyLocation();
-        } else if (customerName.trim().length > 2) {
-            const timer = setTimeout(() => { verifyLocation(); }, 1000); 
-            return () => clearTimeout(timer);
-        } else if (!manualOverride && customers.length > 0) {
-            verifyLocation();
-        } else {
-            setGpsStatus('idle');
-            setAgentLocation(null);
-        }
+        if (selectedCustomerInfo) verifyLocation();
+        else if (customerName.trim().length > 2) { const timer = setTimeout(() => verifyLocation(), 1000); return () => clearTimeout(timer); } 
+        else if (!manualOverride && customers.length > 0) verifyLocation();
+        else { setGpsStatus('idle'); setAgentLocation(null); }
     }, [selectedCustomerInfo, customerName, customers.length, manualOverride]);
 
     useEffect(() => {
         const targetName = sessionStorage.getItem('targetSalesCustomer');
         if (targetName && customers.length > 0) {
             const targetCust = customers.find(c => (c.name || '').toLowerCase() === targetName.toLowerCase());
-            if (targetCust) {
-                setTimeout(() => {
-                    handleCustomerSelect(targetCust);
-                }, 600); 
-            }
+            if (targetCust) setTimeout(() => handleCustomerSelect(targetCust), 600); 
             sessionStorage.removeItem('targetSalesCustomer'); 
         }
     }, [customers.length]);
 
     useEffect(() => {
         const timer = setTimeout(() => setDoorsOpen(true), 500);
-        const handleClickOutside = (e) => {
-            if (!e.target.closest('.manifest-dropdown-area')) {
-                setShowCustomerDropdown(false);
-            }
-        };
-
+        const handleClickOutside = (e) => { if (!e.target.closest('.manifest-dropdown-area')) setShowCustomerDropdown(false); };
         document.addEventListener("mousedown", handleClickOutside);
         document.addEventListener("touchstart", handleClickOutside, { passive: true }); 
-        
-        return () => { 
-            clearTimeout(timer); 
-            document.removeEventListener("mousedown", handleClickOutside); 
-            document.removeEventListener("touchstart", handleClickOutside); 
-        };
+        return () => { clearTimeout(timer); document.removeEventListener("mousedown", handleClickOutside); document.removeEventListener("touchstart", handleClickOutside); };
     }, []);
 
-    useEffect(() => {
-        if (!allowedPayments.includes(paymentMethod)) setPaymentMethod(allowedPayments[0] || 'Cash');
-    }, [allowedPayments]);
+    useEffect(() => { if (!allowedPayments.includes(paymentMethod)) setPaymentMethod(allowedPayments[0] || 'Cash'); }, [allowedPayments]);
 
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
-        
-        const rawTier = c.priceTier || c.tier || c.pricingTier || '';
-        const tierUpper = rawTier.toUpperCase();
-        
+        const tierUpper = (c.priceTier || c.tier || c.pricingTier || '').toUpperCase();
         let mappedTier = 'Retail'; 
         if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
         else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
-
         return allowedTiers.includes(mappedTier);
     }).slice(0, 5);
 
@@ -278,39 +253,26 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             checkout: ["Heh heh heh... Thank you!", "Come back anytime.", "Pleasure doing business."]
         };
         const selectedSet = lines[type] || lines.welcome;
-        const randomLine = selectedSet[Math.floor(Math.random() * selectedSet.length)];
-        setMerchantMsg(randomLine);
+        setMerchantMsg(selectedSet[Math.floor(Math.random() * selectedSet.length)]);
         setMerchantMood("talking");
         setTimeout(() => setMerchantMood("idle"), 2500);
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         const localToday = new Date().toLocaleDateString('en-CA'); 
-        
         if (cust.lastVisit === localToday) {
             const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
-            const proceed = window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`);
-            if (!proceed) {
-                setCustomerName(""); 
-                setShowCustomerDropdown(false);
-                return; 
+            if (!window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`)) {
+                setCustomerName(""); setShowCustomerDropdown(false); return; 
             }
         }
 
         const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
         const assignedAgent = cust.assignedAgent;
-        
         if (assignedAgent && assignedAgent !== 'Unassigned') {
-            const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || 
-                                   assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
-            
-            if (!isAssignedToMe) {
-                const proceedTrespass = window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()} in the Journey Plan.\n\nAre you sure you want to intercept their target?`);
-                if (!proceedTrespass) {
-                    setCustomerName(""); 
-                    setShowCustomerDropdown(false);
-                    return;
-                }
+            const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
+            if (!isAssignedToMe && !window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()}.\n\nAre you sure you want to intercept their target?`)) {
+                setCustomerName(""); setShowCustomerDropdown(false); return;
             }
         }
 
@@ -322,14 +284,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
         window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-        if (autoLockedDistance !== null) {
-            setDistanceToStore(autoLockedDistance);
-            setGpsStatus('verified'); 
-        }
+        if (autoLockedDistance !== null) { setDistanceToStore(autoLockedDistance); setGpsStatus('verified'); }
 
-        const rawTier = cust.priceTier || cust.tier || cust.pricingTier || '';
-        const tierUpper = rawTier.toUpperCase();
-        
+        const tierUpper = (cust.priceTier || cust.tier || cust.pricingTier || '').toUpperCase();
         let mappedTier = 'Retail'; 
         if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
         else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
@@ -340,18 +297,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleManualCustomerType = (e) => {
-        setCustomerName(e.target.value);
-        setShowCustomerDropdown(true);
-        setSelectedCustomerInfo(null); 
-        setLockedTier('Ecer'); 
-        updateCartPricing('Ecer');
-        setManualOverride(true); 
-        setBypassState({ status: 'idle', id: null, photo: null });
+        setCustomerName(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerInfo(null); 
+        setLockedTier('Ecer'); updateCartPricing('Ecer'); setManualOverride(true); setBypassState({ status: 'idle', id: null, photo: null });
     };
 
     const updateCartPricing = (tier) => {
         if (!tier) return;
         setCart(prev => prev.map(item => {
+            if (item.isIouFulfillment) return item;
             const prod = item.product;
             let base = prod.priceRetail || 0;
             if (tier === 'Ecer') base = prod.priceEcer || 0;
@@ -362,19 +315,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (item.unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
             if (item.unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
 
-            return { ...item, priceTier: tier, calculatedPrice: base * mult };
+            const calcPrice = (isReturMode && returType === 'EXCHANGE') ? 0 : (base * mult);
+            return { ...item, priceTier: tier, calculatedPrice: calcPrice };
         }));
     };
 
     const addToCart = (product) => {
-        if (!isReturMode && product.stock <= 0) {
-            alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
-            return;
-        }
+        if (!isReturMode && product.stock <= 0) return alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
 
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
-            
             if (existing) {
                 if (!isReturMode && existing.qty >= product.stock) {
                     alert(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
@@ -385,17 +335,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             }
             
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
-            const defaultTier = allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail');
-            const tierToUse = lockedTier || defaultTier;
+            const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail'));
             
             let basePrice = product.priceRetail || 0;
             if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
             if (tierToUse === 'Grosir') basePrice = product.priceGrosir || 0;
+            const calcPrice = (isReturMode && returType === 'EXCHANGE') ? 0 : basePrice;
 
             return [...prev, { 
-                productId: product.id, name: product.name, qty: 1, unit: 'Bks', 
-                priceTier: tierToUse, calculatedPrice: basePrice, product,
-                condition: 'GOOD', returnReason: '', otherReasonDetail: '' // 🚀 FORENSIC DATA INJECTED
+                productId: product.id, name: product.name, qty: 1, unit: 'Bks', priceTier: tierToUse, calculatedPrice: calcPrice, product,
+                condition: (isReturMode && returType === 'EXCHANGE') ? 'DAMAGED' : 'GOOD', 
+                returnReason: '', otherReasonDetail: '', fulfillment: 'NOW' // 🚀 FORENSIC DATA INJECTED
             }];
         });
     };
@@ -405,7 +355,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (item.productId === id) {
                 let finalVal = val;
                 
-                if (field === 'qty' && !isReturMode) {
+                // Only enforce stock limit if it's a SALE or an EXCHANGE where we must supply healthy stock NOW
+                if (field === 'qty' && (!isReturMode || (isReturMode && returType === 'EXCHANGE' && item.fulfillment === 'NOW'))) {
                     const maxStock = item.product.stock || 0;
                     if (val > maxStock) {
                         alert(`INSUFFICIENT VEHICLE STOCK!\n\nYou only have ${maxStock} units of ${item.name} available.`);
@@ -413,12 +364,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                 }
 
-                // 🚀 RESET REASON IF SWITCHED TO GOOD
                 const updated = { ...item, [field]: finalVal };
                 if (field === 'condition' && finalVal === 'GOOD') {
-                    updated.returnReason = '';
-                    updated.otherReasonDetail = '';
+                    updated.returnReason = ''; updated.otherReasonDetail = '';
                 }
+
+                if (updated.isIouFulfillment) return updated;
 
                 const prod = item.product;
                 let base = prod.priceRetail || 0;
@@ -429,36 +380,29 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 if (updated.unit === 'Slop') mult = prod.packsPerSlop || 10;
                 if (updated.unit === 'Bal') mult = (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
                 if (updated.unit === 'Karton') mult = (prod.balsPerCarton || 4) * (prod.slopsPerBal || 20) * (prod.packsPerSlop || 10);
-                updated.calculatedPrice = base * mult;
+                
+                updated.calculatedPrice = (isReturMode && returType === 'EXCHANGE') ? 0 : (base * mult);
                 return updated;
             }
             return item;
         }));
     };
 
-   const handlePhotoCapture = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; 
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
-                setNooForm(prev => ({ ...prev, photoUrl: compressedDataUrl })); 
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
+    // 🚀 THE IOU TEAMWORK ENGINE
+    const handleFulfillIOU = (iou) => {
+        const product = inventory.find(p => p.id === iou.productId);
+        if (!product) return alert("Product no longer exists in inventory!");
+        if (product.stock < iou.qty) return alert("You don't have enough healthy stock in your vehicle to fulfill this IOU!");
+
+        setCart(prev => [...prev, {
+            productId: product.id, name: product.name, qty: iou.qty, unit: iou.unit,
+            priceTier: 'Retail', calculatedPrice: 0, product,
+            condition: 'GOOD', returnReason: '', otherReasonDetail: '', fulfillment: 'NOW',
+            isIouFulfillment: true, iouId: iou.id 
+        }]);
     };
 
-    const handleBypassPhotoCapture = async (e) => {
+   const handleBypassPhotoCapture = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
@@ -466,12 +410,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const img = new Image();
             img.onload = async () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; 
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const MAX_WIDTH = 600; const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6); 
                 
                 setBypassState({ status: 'uploading', id: null, photo: compressedDataUrl });
@@ -481,30 +422,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         storeName: String(selectedCustomerInfo?.name || customerName || 'Unknown Store'),
                         salesmanId: String(user?.realUid || user?.uid || user?.id || 'UNKNOWN'),
                         salesmanName: String(user?.displayName || user?.email?.split('@')[0] || 'Field Agent'),
-                        latitude: Number(agentLocation?.latitude || 0),
-                        longitude: Number(agentLocation?.longitude || 0),
-                        distance: Number(distanceToStore || 0),
-                        photoData: String(compressedDataUrl),
-                        status: 'PENDING',
-                        timestamp: new Date().toISOString(),
-                        createdAt: serverTimestamp()
+                        latitude: Number(agentLocation?.latitude || 0), longitude: Number(agentLocation?.longitude || 0),
+                        distance: Number(distanceToStore || 0), photoData: String(compressedDataUrl),
+                        status: 'PENDING', timestamp: new Date().toISOString(), createdAt: serverTimestamp()
                     };
 
                     const masterUid = user?.uid || user?.id || 'default';
                     const dbPath = `artifacts/${appId}/users/${masterUid}/gps_bypasses`;
-
                     const bypassRef = await addDoc(collection(db, dbPath), payload);
                     
                     await addDoc(collection(db, `artifacts/${appId}/users/${masterUid}/notifications`), {
                         title: "📡 GEOFENCE BYPASS REQUEST",
                         message: `${payload.salesmanName} is requesting a 100m geofence bypass for ${payload.storeName} (${payload.distance}m away).`,
-                        type: "GPS_BYPASS",
-                        read: false,
-                        isRead: false,
-                        timestamp: serverTimestamp(),
-                        agentId: "ADMIN", 
-                        bypassId: String(bypassRef.id),
-                        linkToTab: "fleet" 
+                        type: "GPS_BYPASS", read: false, isRead: false, timestamp: serverTimestamp(),
+                        agentId: "ADMIN", bypassId: String(bypassRef.id), linkToTab: "fleet" 
                     });
 
                     setBypassState({ status: 'pending', id: bypassRef.id, photo: compressedDataUrl });
@@ -514,22 +445,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (docSnap.exists()) {
                             const data = docSnap.data();
                             if (data.status === 'APPROVED') {
-                                setBypassState(prev => ({ ...prev, status: 'approved' }));
-                                setGpsStatus('verified'); 
+                                setBypassState(prev => ({ ...prev, status: 'approved' })); setGpsStatus('verified'); 
                                 if (triggerCapy) triggerCapy("HQ Approved! Geofence widened to 100m. 🟢");
                                 unsub();
                             } else if (data.status === 'REJECTED') {
-                                setBypassState({ status: 'rejected', id: null, photo: null });
-                                alert("HQ Rejected your Bypass Request.");
-                                unsub();
+                                setBypassState({ status: 'rejected', id: null, photo: null }); alert("HQ Rejected your Bypass Request."); unsub();
                             }
                         }
                     });
-                } catch (err) {
-                    console.error("Bypass Error:", err);
-                    alert(`Failed to submit bypass request: ${err.message || "Network Error"}`);
-                    setBypassState({ status: 'idle', id: null, photo: null });
-                }
+                } catch (err) { alert(`Failed to submit bypass request: ${err.message || "Network Error"}`); setBypassState({ status: 'idle', id: null, photo: null }); }
             };
             img.src = event.target.result;
         };
@@ -537,117 +461,40 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const validateNoo = () => {
-        if (!nooForm.phone || !nooForm.photoUrl) {
-            alert("Phone number and Photo are required to register a new outlet! GPS will be automatically locked.");
-            return false;
-        }
-        const duplicateName = customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim());
-        if (duplicateName) {
-            alert(`DUPLICATE DETECTED!\n\nA store named "${duplicateName.name}" is already in the database.`);
-            return false;
-        }
-        let tooClose = null;
-        let tooCloseDistance = Infinity;
+        if (!nooForm.phone || !nooForm.photoUrl) return alert("Phone number and Photo are required to register a new outlet!");
+        if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return alert("DUPLICATE DETECTED!\n\nA store with this name is already in the database.");
+        
+        let tooClose = null; let tooCloseDistance = Infinity;
         if (agentLocation) {
             customers.forEach(c => {
                 if (c.latitude && c.longitude) {
                     const dist = calculateDistance(agentLocation.latitude, agentLocation.longitude, c.latitude, c.longitude);
-                    if (dist < 15 && dist < tooCloseDistance) { 
-                        tooClose = c;
-                        tooCloseDistance = dist;
-                    }
+                    if (dist < 15 && dist < tooCloseDistance) { tooClose = c; tooCloseDistance = dist; }
                 }
             });
         }
-        if (tooClose) {
-            const confirmProximity = window.confirm(`⚠️ EXTREME PROXIMITY WARNING!\n\nYou are attempting to register a new store, but you are standing only ${Math.round(tooCloseDistance)} meters away from an existing store: "${tooClose.name}".\n\nAre you absolutely sure this is a different building/customer?`);
-            if (!confirmProximity) return false;
-        }
+        if (tooClose && !window.confirm(`⚠️ EXTREME PROXIMITY WARNING!\n\nYou are standing only ${Math.round(tooCloseDistance)} meters away from an existing store: "${tooClose.name}".\n\nAre you sure this is a different building/customer?`)) return false;
         return true;
     };
 
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
-        if (!db || !appId) return alert("Database connection missing!");
-        
         try {
             const userId = user?.uid || user?.id || 'default';
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-            
             const newStoreData = {
-                id: newRef.id,
-                name: customerName.toUpperCase().trim(),
-                phone: nooForm.phone,
-                address: nooForm.address || "GPS Locked via NOO Form",
-                tier: 'UNRANKED', 
-                priceTier: nooForm.requestedTier,
-                storeType: 'Retailer',
-                latitude: agentLocation?.latitude,
-                longitude: agentLocation?.longitude,
-                status: 'Active',
-                visitFreq: 7,
-                storeImage: nooForm.photoUrl, 
-                createdAt: new Date().toISOString()
+                id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
+                tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
+                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString()
             };
-
             await setDoc(newRef, newStoreData);
-
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
             if (triggerCapy) triggerCapy(`Target Data Secured! 📍`);
-            
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-            setSelectedCustomerInfo(newStoreData);
-            setLockedTier(nooForm.requestedTier);
-            updateCartPricing(nooForm.requestedTier);
-            setShowNooModal(false);
-            setGpsStatus('verified'); 
-            triggerMerchantSpeak('expensive');
-        } catch (e) {
-            console.error(e);
-            alert("Failed to save NOO: " + e.message);
-        }
-    };
-
-    const submitNooOnly = async () => {
-        if (!validateNoo()) return;
-        if (!db || !appId) return alert("Database connection missing!");
-        
-        try {
-            const userId = user?.uid || user?.id || 'default';
-            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-            
-            await setDoc(newRef, {
-                id: newRef.id,
-                name: customerName.toUpperCase().trim(),
-                phone: nooForm.phone,
-                address: "GPS Locked via NOO Form",
-                tier: 'UNRANKED',
-                priceTier: nooForm.requestedTier,
-                storeType: 'Retailer',
-                latitude: agentLocation?.latitude,
-                longitude: agentLocation?.longitude,
-                status: 'Active',
-                visitFreq: 7,
-                storeImage: nooForm.photoUrl,
-                createdAt: new Date().toISOString()
-            });
-            
-            if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
-            if (triggerCapy) triggerCapy(`New Target Secured: ${customerName} 📍`);
-            
-            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
-
-            alert("✅ NOO Successfully Registered!\n\nStore is now live in the database.");
-            setShowNooModal(false);
-            setCustomerName("");
-            setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-            setGpsStatus('idle');
-            setAgentLocation(null);
-        } catch (e) {
-            console.error(e);
-            alert("Failed to save NOO: " + e.message);
-        }
+            setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
+            setShowNooModal(false); setGpsStatus('verified'); triggerMerchantSpeak('expensive');
+        } catch (e) { alert("Failed to save NOO: " + e.message); }
     };
 
     const handleDeploySample = async () => {
@@ -660,9 +507,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const sp = product?.sticksPerPack || 16;
         const totalQtyDecimal = qtyBks + (qtyBatang / sp);
 
-        if ((product.stock || 0) < totalQtyDecimal) {
-            return alert(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
-        }
+        if ((product.stock || 0) < totalQtyDecimal) return alert(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
 
         setIsProcessingSale(true);
         try {
@@ -680,22 +525,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (canvasIdx === -1) throw "Product not found in your vehicle!";
                         
                         let cItem = updatedCanvas[canvasIdx];
-                        let mCanvas = cItem.unit === 'Slop' ? (product.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : cItem.unit === 'Karton' ? ((product.balsPerCarton || 4) * (product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : 1;
-                        
-                        const currentCanvasBks = cItem.qty * mCanvas;
-                        const newCanvasBks = currentCanvasBks - totalQtyDecimal;
-                        
+                        let mCanvas = cItem.unit === 'Slop' ? (product.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : 1;
+                        const newCanvasBks = (cItem.qty * mCanvas) - totalQtyDecimal;
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        const cukaiToAdd = totalQtyDecimal; 
-                        let currentDebts = agentData.cukaiDebts || {};
-                        currentDebts[product.id] = (currentDebts[product.id] || 0) + cukaiToAdd;
-
-                        t.update(agentRef, { 
-                            activeCanvas: updatedCanvas.filter(c => c.qty > 0),
-                            cukaiDebts: currentDebts
-                        });
+                        let currentDebts = agentData.cukaiDebts || {}; currentDebts[product.id] = (currentDebts[product.id] || 0) + totalQtyDecimal;
+                        t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0), cukaiDebts: currentDebts });
                     }
                 } else {
                     const prodRef = doc(db, `artifacts/${appId}/users/${masterUid}/products`, product.id);
@@ -707,282 +543,250 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     }
                 }
 
-                const newSampleRef = doc(collection(db, `artifacts/${appId}/users/${masterUid}/samplings`));
-                t.set(newSampleRef, {
-                    date: new Date().toISOString().split('T')[0],
-                    productId: product.id,
-                    productName: product.name,
-                    qty: totalQtyDecimal,
-                    unit: 'Bks',
-                    sticksPerPack: sp,
-                    reason: customerName.trim(), 
-                    note: 'POS Quick Sample',
-                    sourceId: sourceId,
-                    timestamp: serverTimestamp()
+                t.set(doc(collection(db, `artifacts/${appId}/users/${masterUid}/samplings`)), {
+                    date: new Date().toISOString().split('T')[0], productId: product.id, productName: product.name,
+                    qty: totalQtyDecimal, unit: 'Bks', sticksPerPack: sp, reason: customerName.trim(), note: 'POS Quick Sample', sourceId: sourceId, timestamp: serverTimestamp()
                 });
             });
 
             if (logAudit) logAudit("SAMPLE_DEPLOYED", `Gave ${totalQtyDecimal.toFixed(2)} Bks of ${product.name} to ${customerName}`);
             if (triggerCapy) triggerCapy(`Sample deployed to ${customerName}! Pita Cukai recorded. 🎁`);
-            
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-            setShowSampleModal(false);
-            setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
-        } catch (err) {
-            console.error(err);
-            alert("Failed to deploy sample: " + err);
-        } finally {
-            setIsProcessingSale(false);
-        }
+            setShowSampleModal(false); setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
+        } catch (err) { alert("Failed to deploy sample: " + err); } finally { setIsProcessingSale(false); }
     };
 
     const handleFinalDeal = async () => {
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
-        
         setIsProcessingSale(true); 
         
         const finalCust = customerName.trim();
-        const finalMethod = isReturMode ? 'Retur/BS' : paymentMethod;
+        let finalMethod = paymentMethod;
+        if (isReturMode) {
+            finalMethod = returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS';
+        } else if (cart.some(i => i.isIouFulfillment)) {
+            finalMethod = 'IOU Fulfillment';
+        }
+
         const finalCart = [...cart];
-        const finalTotal = cartTotal;
+        const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
 
         try {
             const isFormalNoo = selectedCustomerInfo?.isNooRegistration;
             const newStorePayload = isFormalNoo ? selectedCustomerInfo : null;
 
             const proofPayload = {
-                photoData: txProofPhoto,
-                latitude: agentLocation?.latitude || 0,
-                longitude: agentLocation?.longitude || 0,
-                timestamp: new Date().toISOString(),
-                tempoDays: paymentMethod === 'Titip' ? tempoDays : null,
-                isRetur: isReturMode,
-                type: isReturMode ? 'RETUR' : 'SALE'
+                photoData: txProofPhoto, latitude: agentLocation?.latitude || 0, longitude: agentLocation?.longitude || 0,
+                timestamp: new Date().toISOString(), tempoDays: paymentMethod === 'Titip' ? tempoDays : null,
+                isRetur: isReturMode, type: isReturMode ? (returType === 'EXCHANGE' ? 'SALE' : 'RETUR') : 'SALE' 
             };
 
             const trueAgentName = await onProcessSale(finalCust, finalMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
          
-            if (navigator.onLine) {
+            // 🚀 1. FIRE THE IOU DATABASE INJECTION
+            const generatedIOUs = finalCart.filter(i => isReturMode && returType === 'EXCHANGE' && i.fulfillment === 'IOU').map(i => ({
+                id: `IOU_${Date.now()}_${Math.random().toString(36).substr(2,9)}`,
+                productId: i.productId, name: i.name, qty: i.qty, unit: i.unit,
+                date: new Date().toISOString(), agentName: agentFallback
+            }));
+            const fulfilledIOUIds = finalCart.filter(i => i.isIouFulfillment).map(i => i.iouId);
+            
+            if (selectedCustomerInfo && (generatedIOUs.length > 0 || fulfilledIOUIds.length > 0)) {
+                const userId = user?.uid || user?.id || 'default';
+                const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, selectedCustomerInfo.id);
+                const custSnap = await getDoc(custRef);
+                if (custSnap.exists()) {
+                    let currentIOUs = custSnap.data().pendingIOUs || [];
+                    currentIOUs = currentIOUs.filter(iou => !fulfilledIOUIds.includes(iou.id));
+                    currentIOUs = [...currentIOUs, ...generatedIOUs];
+                    await updateDoc(custRef, { pendingIOUs: currentIOUs });
+                }
+            }
+
+            // 🚀 2. FIRE THE FORENSIC TICKET INJECTION
+            const damagedItems = finalCart.filter(i => isReturMode && i.condition === 'DAMAGED');
+            if (damagedItems.length > 0) {
+                const userId = user?.uid || user?.id || 'default';
+                const safeAgentId = agentProfileId || user?.agentId;
+                if (safeAgentId && safeAgentId !== 'VAULT' && safeAgentId !== 'ADMIN') {
+                    const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, safeAgentId);
+                    const agentSnap = await getDoc(agentRef);
+                    if (agentSnap.exists()) {
+                        let currentDamaged = agentSnap.data().damagedCargo || [];
+                        damagedItems.forEach(di => {
+                            currentDamaged.push({
+                                id: `DMG_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
+                                productId: di.productId, name: di.name, qty: di.qty, unit: di.unit,
+                                reason: di.returnReason === 'Other' ? di.otherReasonDetail : di.returnReason,
+                                customerName: finalCust, date: new Date().toISOString()
+                            });
+                        });
+                        await updateDoc(agentRef, { damagedCargo: currentDamaged });
+                    }
+                }
+            }
+
+            if (navigator.onLine && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
                 try {
                     const userId = user?.uid || user?.id || 'default';
                     let rules = null;
                     const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
-                    if (rulesSnap.exists() && rulesSnap.data().rules) {
-                        rules = rulesSnap.data().rules;
-                    } else {
-                        const mainSettingsSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
-                        if (mainSettingsSnap.exists() && mainSettingsSnap.data().tierRules) rules = mainSettingsSnap.data().tierRules;
-                    }
+                    if (rulesSnap.exists() && rulesSnap.data().rules) rules = rulesSnap.data().rules;
                 
-                if (rules && !isReturMode) {
+                    if (rules) {
+                        let earnedTier = 'Unranked'; 
+                        let currentStoreSeasonalXP = 0;
+                        let debugTarget = 0; let debugMetric = 0;
 
-                    let earnedTier = 'Unranked'; 
-                    let currentStoreSeasonalXP = 0;
-                    let debugTarget = 0;
-                    let debugMetric = 0;
-
-                    const getSafeTime = (t) => {
-                        if (!t) return 0;
-                        if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
-                        if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
-                        
-                        const parseDateStr = (dateStr) => {
-                            if (!dateStr) return 0;
-                            let ms = new Date(dateStr).getTime();
-                            if (!isNaN(ms)) return ms; 
-                            
-                            let cleanStr = String(dateStr).toLowerCase()
-                                .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
-                                .replace(/maret|mar/g, 'march').replace(/mei/g, 'may')
-                                .replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
-                                .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october')
-                                .replace(/desember|des/g, 'december');
-                            
-                            ms = new Date(cleanStr).getTime();
-                            if (!isNaN(ms)) return ms;
-
-                            const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
-                            if (parts.length === 3) {
-                                let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
-                                let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
-                                let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
-                                ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                        const getSafeTime = (t) => {
+                            if (!t) return 0;
+                            if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
+                            if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
+                            const parseDateStr = (dateStr) => {
+                                if (!dateStr) return 0;
+                                let ms = new Date(dateStr).getTime();
+                                if (!isNaN(ms)) return ms; 
+                                let cleanStr = String(dateStr).toLowerCase()
+                                    .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
+                                    .replace(/maret|mar/g, 'march').replace(/mei/g, 'may').replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
+                                    .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october').replace(/desember|des/g, 'december');
+                                ms = new Date(cleanStr).getTime();
                                 if (!isNaN(ms)) return ms;
-                            }
-                            return 0;
+                                const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
+                                if (parts.length === 3) {
+                                    let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
+                                    let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
+                                    let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
+                                    ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
+                                    if (!isNaN(ms)) return ms;
+                                }
+                                return 0;
+                            };
+                            const tsTime = parseDateStr(t.timestamp);
+                            if (tsTime > 0) return tsTime;
+                            return parseDateStr(t.date);
                         };
 
-                        const tsTime = parseDateStr(t.timestamp);
-                        if (tsTime > 0) return tsTime;
-                        return parseDateStr(t.date);
-                    };
+                        const safeTrans = Array.isArray(transactions) ? transactions : [];
 
-                    const safeTrans = Array.isArray(transactions) ? transactions : [];
-
-                    let lifetimeXP = 0;
-                    safeTrans.forEach(t => {
-                        const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                        const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
-                        if (t && isMatch && tType === 'SALE') {
-                            lifetimeXP += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                        }
-                    });
-
-                    const safeRules = rules || {};
-                    const sortedRules = Object.entries(safeRules).sort((a, b) => {
-                        const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
-                        const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
-                        const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                        const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                        return tB - tA;
-                    });
-
-                    let matchedDynamic = false;
-
-                    for (let [ruleKey, rule] of sortedRules) {
-                        if (!rule) continue; 
-                        
-                        const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                        const isValidTier = allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase());
-                        if (!isValidTier) continue;
-                        
-                        const ruleType = String(rule.type || 'omset').toLowerCase();
-                        const isOmset = ruleType.includes('omset');
-                        const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                        
-                        let timeframeDays = 90;
-                        if (rule.timeframe) {
-                            const tfStr = String(rule.timeframe).toLowerCase();
-                            const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
-                            if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
-                            else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
-                            else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
-                            else timeframeDays = numVal;
-                        }
-
-                        const cutoff = new Date();
-                        cutoff.setDate(cutoff.getDate() - timeframeDays);
-                        let metricTotal = 0;
-
-                        safeTrans.forEach(t => {
-                            const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                            const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
-                            
-                            if (t && isMatch && tType === 'SALE') {
-                                const tTime = getSafeTime(t); 
-
-                                if (tTime >= cutoff.getTime()) {
-                                    if (isOmset) {
-                                        metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                                    } else if (ruleType.includes('volume')) {
-                                        const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
-                                        itemsList.forEach(item => {
-                                            let qtyInBks = Number(item.qty) || 0;
-                                            if (item.unit === 'Slop') qtyInBks *= 10;
-                                            if (item.unit === 'Bal') qtyInBks *= 200;
-                                            if (item.unit === 'Karton') qtyInBks *= 800;
-                                            const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
-                                            if (vUnit.includes('bks')) metricTotal += qtyInBks;
-                                            if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
-                                            if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
-                                            if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
-                                        });
-                                    }
-                                }
-                            }
+                        const safeRules = rules || {};
+                        const sortedRules = Object.entries(safeRules).sort((a, b) => {
+                            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
+                            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
+                            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                            return tB - tA;
                         });
 
-                        if (isOmset) metricTotal += Number(finalTotal);
-                        else if (ruleType.includes('volume')) {
-                            finalCart.forEach(item => {
-                                let qtyInBks = Number(item.qty) || 0;
-                                if (item.unit === 'Slop') qtyInBks *= 10;
-                                if (item.unit === 'Bal') qtyInBks *= 200;
-                                if (item.unit === 'Karton') qtyInBks *= 800;
-                                const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
-                                if (vUnit.includes('bks')) metricTotal += qtyInBks;
-                                if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
-                                if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
-                                if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
+                        let matchedDynamic = false;
+
+                        for (let [ruleKey, rule] of sortedRules) {
+                            if (!rule) continue; 
+                            
+                            const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
+                            if (!allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase())) continue;
+                            
+                            const ruleType = String(rule.type || 'omset').toLowerCase();
+                            const isOmset = ruleType.includes('omset');
+                            const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
+                            
+                            let timeframeDays = 90;
+                            if (rule.timeframe) {
+                                const tfStr = String(rule.timeframe).toLowerCase();
+                                const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
+                                if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
+                                else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
+                                else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
+                                else timeframeDays = numVal;
+                            }
+
+                            const cutoff = new Date();
+                            cutoff.setDate(cutoff.getDate() - timeframeDays);
+                            let metricTotal = 0;
+
+                            safeTrans.forEach(t => {
+                                const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
+                                const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
+                                
+                                if (t && isMatch && tType === 'SALE') {
+                                    if (getSafeTime(t) >= cutoff.getTime()) {
+                                        if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
+                                        else if (ruleType.includes('volume')) {
+                                            const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
+                                            itemsList.forEach(item => {
+                                                let qtyInBks = Number(item.qty) || 0;
+                                                if (item.unit === 'Slop') qtyInBks *= 10;
+                                                if (item.unit === 'Bal') qtyInBks *= 200;
+                                                if (item.unit === 'Karton') qtyInBks *= 800;
+                                                const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                                if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                                if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                                if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                                if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
+                                            });
+                                        }
+                                    }
+                                }
                             });
+
+                            if (isOmset) metricTotal += Number(finalTotal);
+                            else if (ruleType.includes('volume')) {
+                                finalCart.forEach(item => {
+                                    let qtyInBks = Number(item.qty) || 0;
+                                    if (item.unit === 'Slop') qtyInBks *= 10;
+                                    if (item.unit === 'Bal') qtyInBks *= 200;
+                                    if (item.unit === 'Karton') qtyInBks *= 800;
+                                    const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
+                                    if (vUnit.includes('bks')) metricTotal += qtyInBks;
+                                    if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
+                                    if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
+                                    if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
+                                });
+                            }
+
+                            if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
+                            debugMetric = metricTotal;
+
+                            if (metricTotal >= target) { earnedTier = ruleTierName; debugTarget = target; matchedDynamic = true; break; }
                         }
 
-                        if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
-                        debugMetric = metricTotal;
-
-                        if (metricTotal >= target) {
-                            earnedTier = ruleTierName;
-                            debugTarget = target;
-                            matchedDynamic = true;
-                            break; 
+                        if (!matchedDynamic) {
+                            let fallbackMetric = currentStoreSeasonalXP > 0 ? currentStoreSeasonalXP : (debugMetric > 0 ? debugMetric : finalTotal);
+                            if (fallbackMetric >= 2500000) earnedTier = 'Mythic'; else if (fallbackMetric >= 1000000) earnedTier = 'Epic'; else if (fallbackMetric >= 500000) earnedTier = 'Grandmaster'; else if (fallbackMetric >= 250000) earnedTier = 'Bronze'; else earnedTier = 'Unranked';
                         }
-                    }
 
-                    if (!matchedDynamic) {
-                        let fallbackMetric = currentStoreSeasonalXP > 0 ? currentStoreSeasonalXP : (debugMetric > 0 ? debugMetric : finalTotal);
-                        if (fallbackMetric >= 2500000) earnedTier = 'Mythic';
-                        else if (fallbackMetric >= 1000000) earnedTier = 'Epic';
-                        else if (fallbackMetric >= 500000) earnedTier = 'Grandmaster';
-                        else if (fallbackMetric >= 250000) earnedTier = 'Bronze';
-                        else earnedTier = 'Unranked';
-                    }
+                        const storeId = selectedCustomerInfo?.id;
+                        let targetDocRef = null; let currentTier = null;
 
-                    const storeId = selectedCustomerInfo?.id;
-                    let targetDocRef = null;
-                    let currentTier = null;
-
-                    if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
-                        targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
-                        const storeSnap = await getDoc(targetDocRef);
-                        if (storeSnap.exists()) currentTier = storeSnap.data().tier;
-                    } else {
-                        if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
-                        const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
-                        const qSnap = await getDocs(customersRef);
-                        const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
-                        if (foundDoc) {
-                            targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, foundDoc.id);
-                            currentTier = foundDoc.data().tier;
+                        if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
+                            targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
+                            const storeSnap = await getDoc(targetDocRef);
+                            if (storeSnap.exists()) currentTier = storeSnap.data().tier;
+                        } else {
+                            if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
+                            const qSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+                            const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
+                            if (foundDoc) { targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, foundDoc.id); currentTier = foundDoc.data().tier; }
                         }
-                    }
-                    
-                    if (targetDocRef) {
-                        const localToday = new Date().toLocaleDateString('en-CA');
                         
-                        const storeUpdates = {
-                            lastVisit: localToday,
-                            lastVisitedBy: agentFallback,
-                            updatedAt: serverTimestamp()
-                        };
+                        if (targetDocRef) {
+                            const localToday = new Date().toLocaleDateString('en-CA');
+                            const storeUpdates = { lastVisit: localToday, lastVisitedBy: agentFallback, updatedAt: serverTimestamp() };
+                            if (currentTier !== earnedTier) storeUpdates.tier = earnedTier;
+                            await updateDoc(targetDocRef, storeUpdates);
 
-                        if (currentTier !== earnedTier) {
-                            storeUpdates.tier = earnedTier;
-                        }
+                            const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
+                            if (localCust) { localCust.lastVisit = localToday; localCust.lastVisitedBy = agentFallback; }
 
-                        await updateDoc(targetDocRef, storeUpdates);
-
-                        const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
-                        if (localCust) {
-                            localCust.lastVisit = localToday;
-                            localCust.lastVisitedBy = agentFallback;
-                        }
-
-                        if (currentTier !== earnedTier && triggerCapy) {
-                            triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. (Math: Rp ${new Intl.NumberFormat('id-ID').format(debugMetric)} vs Target: Rp ${new Intl.NumberFormat('id-ID').format(debugTarget)}) 🚀`);
+                            if (currentTier !== earnedTier && triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. 🚀`);
                         }
                     }
-                }
-            } catch (e) {
-                console.error("Live Auto-Promoter Failed:", e);
-                if (triggerCapy) triggerCapy(`Auto-Promoter Error: ${e.message}`);
+                } catch (e) { console.error("Auto-Promoter Failed:", e); }
             }
-        } else {
-            console.log("Ghost Ledger Mode: Bypassing XP Auto-Promoter for offline speed.");
-        }
 
-        setReceiptData({
+            setReceiptData({
                 customer: finalCust, method: finalMethod, items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
@@ -991,24 +795,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
             setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null); 
-            setIsReturMode(false); setManualOverride(false); 
+            setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
             setMerchantMood("deal"); setMerchantMsg("Heh heh heh... Thank you, stranger!");
             setTimeout(() => setMerchantMood("idle"), 3000);
-        } catch (error) {
-            console.error("Transaction failed:", error);
-            alert("Transaction Failed! Please try again.");
-        } finally {
-            setIsProcessingSale(false); 
-        }
+        } catch (error) { alert("Transaction Failed! Please try again."); } 
+        finally { setIsProcessingSale(false); }
     };
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
             const cardNode = scrollContainerRef.current.querySelector('.product-card');
             if (cardNode) {
-                const gap = window.innerWidth >= 1024 ? 24 : 12; 
-                const scrollAmount = cardNode.offsetWidth + gap; 
+                const scrollAmount = cardNode.offsetWidth + (window.innerWidth >= 1024 ? 24 : 12); 
                 scrollContainerRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
             }
         }
@@ -1026,7 +825,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         (!i.returnReason || (i.returnReason === 'Other' && (!i.otherReasonDetail || i.otherReasonDetail.trim() === '')))
     );
 
-    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems;
+    const hasInsufficientStockForExchange = isReturMode && returType === 'EXCHANGE' && cart.some(i => {
+        if (i.fulfillment === 'IOU') return false;
+        const maxStock = i.product.stock || 0; 
+        return i.qty > maxStock;
+    });
+
+    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;
 
     const renderManifestUI = (isMobile) => (
         <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
@@ -1038,14 +843,42 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
                 )}
 
-                {/* --- 🚀 MODE TOGGLE (SALE VS RETUR) --- */}
+                {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
-                    <button onClick={() => setIsReturMode(false)} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-emerald-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-emerald-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return alert("You do not have clearance to process returns.");
                         setIsReturMode(true);
                     }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${isReturMode ? 'bg-red-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
                 </div>
+
+                {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
+                {isReturMode && (
+                    <div className="flex bg-[#2a2520] rounded border border-[#5c4b3a] p-1 mb-2 shadow-inner">
+                        <button onClick={() => setReturType('BUYBACK')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'BUYBACK' ? 'bg-orange-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>💵 Buyback (Refund)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-blue-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
+                    </div>
+                )}
+
+                {/* --- 🚀 TEAMWORK IOU BANNER --- */}
+                {selectedCustomerInfo?.pendingIOUs?.length > 0 && !isReturMode && (
+                    <div className="bg-blue-900/40 border-2 border-blue-500 p-3 rounded mb-3 shadow-[0_0_15px_rgba(59,130,246,0.3)] animate-fade-in-up">
+                        <h4 className="text-blue-400 font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
+                        {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
+                            const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
+                            return (
+                                <div key={i} className="flex justify-between items-center text-[9px] text-blue-200 mb-1 border-b border-blue-800/50 pb-1">
+                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-slate-500 font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
+                                    {!isAlreadyInCart ? (
+                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
+                                    ) : (
+                                        <span className="text-emerald-400 font-bold uppercase px-2 py-1 border border-emerald-500/50 rounded bg-emerald-900/30"><Check size={10} className="inline mr-1"/> Added</span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {debtInfo && debtInfo.status === 'RED' && (
                         <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
@@ -1206,29 +1039,30 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 p-2 rounded border shadow-sm ${isReturMode ? 'bg-red-100 border-red-300' : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
+                        <div key={idx} className={`flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 p-2 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-100 border-blue-300' : 'bg-red-100 border-red-300') : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
-                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? 'text-red-900' : 'text-[#3e3226]'}`}>
-                                    {item.name} {isReturMode && '(RETUR)'}
+                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-blue-900' : 'text-red-900') : 'text-[#3e3226]'}`}>
+                                    {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
+                                    {item.isIouFulfillment && ' (FULFILLING IOU)'}
                                 </span>
-                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className="text-red-800 hover:text-red-600 bg-red-100 p-1 rounded"><X size={14}/></button>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200 hover:text-blue-600' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
                             </div>
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? 'bg-red-200/50 border-red-300' : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
-                                <input type="number" value={item.qty} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className="w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226]" />
-                                <select value={item.unit} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className="bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2"><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200/50 border-blue-300' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
+                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
 
                             {/* 🚀 ITEM-LEVEL FORENSIC TAGGING (RETUR ONLY) */}
-                            {isReturMode && (
-                                <div className="mt-2 pt-2 border-t border-red-300/50 flex flex-col gap-2">
+                            {isReturMode && !item.isIouFulfillment && (
+                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-blue-300/50' : 'border-red-300/50'}`}>
                                     <div className="flex gap-2">
                                         <select 
                                             value={item.condition || 'GOOD'} 
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
-                                            className={`text-[9px] font-bold uppercase p-1.5 rounded outline-none border ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
+                                            className={`text-[9px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
                                         >
                                             <option value="GOOD">🟢 Good (Resellable)</option>
                                             <option value="DAMAGED">🔴 Damaged (Quarantine)</option>
@@ -1251,7 +1085,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         )}
                                     </div>
                                     
-                                    {/* 🚀 THE MANDATORY "OTHER" DESCRIPTION FIELD */}
                                     {item.condition === 'DAMAGED' && item.returnReason === 'Other' && (
                                         <input 
                                             type="text" 
@@ -1261,11 +1094,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             className="w-full text-[10px] p-1.5 rounded border border-red-400 bg-white text-black outline-none focus:border-red-600"
                                         />
                                     )}
+
+                                    {/* 🚀 EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
+                                    {returType === 'EXCHANGE' && (
+                                        <div className="flex gap-2 mt-1">
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>✅ Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>⏳ Hutang Barang (IOU)</button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">
-                                {isReturMode ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
+                                {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
                             </div>
                         </div>
                     )})
@@ -1320,8 +1161,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#5c4b3a] pb-2 md:pb-3 font-mono">
                         <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
-                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none drop-shadow-sm ${isReturMode ? 'text-red-500' : 'text-[#ff9d00]'}`}>
-                            {isReturMode ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
+                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none drop-shadow-sm ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[#ff9d00]'}`}>
+                            {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                         </span>
                     </div>
                     
@@ -1330,17 +1171,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <AlertTriangle size={14}/> Please complete damage reasons for all items.
                         </div>
                     )}
+                    {hasInsufficientStockForExchange && (
+                        <div className="bg-orange-900/40 border border-orange-500 text-orange-500 p-2 rounded mb-3 text-[10px] uppercase tracking-widest font-bold flex items-center justify-center gap-2 text-center">
+                            <AlertTriangle size={16} className="shrink-0"/> You lack healthy vehicle stock to exchange. Switch to "Hutang Barang" or "Buyback".
+                        </div>
+                    )}
 
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-blue-600 to-blue-800 border-blue-500 text-white hover:from-blue-500 hover:to-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
                          isGpsRestricted ? <><Lock size={20}/> LOC. RESTRICTED</> :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
                          hasInvalidDamagedItems ? <><AlertTriangle size={20}/> REASON REQ.</> :
+                         hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> NO STOCK</> :
                          customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
