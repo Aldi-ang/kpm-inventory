@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 
@@ -14,12 +14,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [isFetchingHistory, setIsFetchingHistory] = useState(false);
 
     // 🏢 6-TIER HIERARCHY NAVIGATION STATE
-    const [selectedRegion, setSelectedRegion] = useState(null); // Level 1: Team
-    const [selectedAgent, setSelectedAgent] = useState(null);   // Level 2: Agent
-    const [selectedProv, setSelectedProv] = useState(null);     // Level 3: Provinsi
-    const [selectedKab, setSelectedKab] = useState(null);       // Level 4: Kabupaten
-    const [selectedKec, setSelectedKec] = useState(null);       // Level 5: Kecamatan
-    const [selectedCustomer, setSelectedCustomer] = useState(null); // Level 6: Store
+    const [selectedRegion, setSelectedRegion] = useState(null); 
+    const [selectedAgent, setSelectedAgent] = useState(null);   
+    const [selectedProv, setSelectedProv] = useState(null);     
+    const [selectedKab, setSelectedKab] = useState(null);       
+    const [selectedKec, setSelectedKec] = useState(null);       
+    const [selectedCustomer, setSelectedCustomer] = useState(null); 
 
     // MODAL STATES
     const [editingTrans, setEditingTrans] = useState(null);
@@ -29,7 +29,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const [printScale, setPrintScale] = useState(100); 
 
     // ANALYTICS STATE
-    const [expandedAgent, setExpandedAgent] = useState(null); // Controls the agent accordion in analytics
+    const [expandedAgent, setExpandedAgent] = useState(null);
 
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
     const allTransactions = useMemo(() => {
@@ -40,7 +40,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const dateFilteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
         return allTransactions.filter(t => {
-            if (userRole !== 'ADMIN' && agentProfileId && t.agentId !== agentProfileId) return false;
+            // 🛑 BUG FIX: Removed the redundant frontend role filter!
+            // The Firebase backend securely scopes the 'transactions' array to the user's permissions. 
+            // Filtering it out again on the frontend was blinding Tier 6 and Area Admins.
             
             const tDate = new Date(t.date);
             if (rangeType === 'daily') return t.date === targetDate;
@@ -53,7 +55,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
             return false;
         }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-    }, [allTransactions, rangeType, targetDate, userRole, agentProfileId]);
+    }, [allTransactions, rangeType, targetDate]);
 
     // --- ENGINE 2: GLOBAL SEARCH ---
     const searchedTransactions = useMemo(() => {
@@ -74,7 +76,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const reportData = useMemo(() => {
         const structure = {}; 
         
-        // 1. PRE-LOAD THE FLEET ROSTER (Ensures regions/agents show up even with 0 sales)
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
                 const loc = m.location || 'UNASSIGNED AREA';
@@ -85,13 +86,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         }
         if (!structure['Headquarters']) structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
 
-        // 2. POUR TRANSACTIONS INTO THE 6-TIER FOLDERS
         searchedTransactions.forEach(t => {
             const agentId = t.agentId || 'ADMIN';
             let agentName = t.agentName || 'Admin';
             let regionName = 'UNASSIGNED AREA';
 
-            // Resolve Agent's Team
             if (agentId === 'ADMIN') {
                 const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
                 if (boss && boss.location) {
@@ -108,7 +107,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 }
             }
 
-            // 🚀 THE CROSS-REFERENCE ENGINE: Find Geography from Customer Directory
             let cust = (t.customerName || 'Walk-in Customer').trim();
             const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
             const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
@@ -118,7 +116,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             let kab = 'UNMAPPED KABUPATEN';
             let kec = 'UNMAPPED KECAMATAN';
 
-            // Find match in customer directory
             if (customers && customers.length > 0 && !isWalkIn && !isEcer) {
                 const matchedCustomer = customers.find(c => c.name.trim().toLowerCase() === cust.toLowerCase());
                 if (matchedCustomer) {
@@ -128,7 +125,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 }
             }
 
-            // Ensure hierarchy exists
             if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
             if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, provinsi: {} };
             
@@ -146,8 +142,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             const storeNode = kecNode.stores[cust];
 
-            // Tally the Money
-            const tValue = (t.total || t.amountPaid || 0);
+            // 🚀 Negative total check correctly tallies Returns
+            const tValue = t.type === 'RETUR' ? -Math.abs(t.total || t.amountPaid || 0) : (t.total || t.amountPaid || 0);
             
             structure[regionName].total += tValue;
             structure[regionName].count += 1;
@@ -172,7 +168,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return structure;
     }, [searchedTransactions, motorists, customers]);
 
-    // AUTO-NAVIGATE FOR EMPLOYEES
     useEffect(() => {
         if (userRole !== 'ADMIN') {
             const regions = Object.keys(reportData);
@@ -199,7 +194,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         setIsFetchingHistory(false);
     };
 
-    // --- CONTEXTUAL ANALYTICS ENGINE ---
     const contextualTransactions = useMemo(() => {
         if (selectedAgent && selectedRegion) return searchedTransactions.filter(t => (t.agentName || 'Admin') === selectedAgent);
         if (selectedRegion) return searchedTransactions.filter(t => {
@@ -210,14 +204,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return searchedTransactions; 
     }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);
 
-    // 🚀 NEW: MACRO TO MICRO ANALYTICS 🚀
     const stats = useMemo(() => {
         const totalRev = contextualTransactions.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
         const totalProfit = contextualTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0);
         const count = contextualTransactions.length;
         const items = {};
         const payments = { Cash: 0, QRIS: 0, Transfer: 0, Titip: 0 };
-        const agents = {}; // Build Agent Roster
+        const agents = {}; 
 
         contextualTransactions.forEach(t => {
             const method = t.paymentType || 'Cash';
@@ -236,19 +229,16 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 const product = inventory.find(p => p.id === i.productId);
                 const bksQty = convertToBks(i.qty, i.unit, product || {});
                 
-                // Master Item List
                 if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
                 items[i.name].qty += bksQty;
                 items[i.name].val += (i.calculatedPrice * i.qty);
 
-                // Agent Specific Item List
                 if(!agents[aName].items[i.name]) agents[aName].items[i.name] = { qty: 0, val: 0 };
                 agents[aName].items[i.name].qty += bksQty;
                 agents[aName].items[i.name].val += (i.calculatedPrice * i.qty);
             });
         });
 
-        // Sort agent transactions chronologically
         Object.values(agents).forEach(a => a.transactions.sort((x, y) => (y.timestamp?.seconds||0) - (x.timestamp?.seconds||0)));
 
         return { 
@@ -257,7 +247,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         };
     }, [contextualTransactions, inventory]);
 
-    // 🛡️ DYNAMIC INVENTORY PRICE INSPECTOR
     const getProductPrice = (product, tier, fallbackPrice) => {
         if (!product) return Number(fallbackPrice) || 0;
         const tierKey = String(tier).toLowerCase();
@@ -505,7 +494,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                      <div>
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
-                                                             {agent.transactions.map(t => (
+                                                             {agent.transactions.map(t => {
+                                                                 // 🚀 FORENSIC BADGES FOR ANALYTICS TIMELINE
+                                                                 const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+                                                                 const isExchange = t.paymentType === 'Tukar Ganti';
+                                                                 const isIouFulfill = t.paymentType === 'IOU Fulfillment';
+
+                                                                 return (
                                                                  <div key={t.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                                                                      <div className="flex items-center gap-4 w-full md:w-auto">
                                                                          <div className="bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-center shrink-0">
@@ -513,18 +508,34 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                              <p className="text-xs font-mono font-black dark:text-white">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
                                                                          </div>
                                                                          <div className="min-w-0">
-                                                                             <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
-                                                                             <p className="text-[10px] text-slate-500 uppercase mt-0.5 truncate">
-                                                                                 {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : 'N/A'}
+                                                                             <div className="flex items-center gap-2 mb-0.5">
+                                                                                <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
+                                                                                {isRetur ? (
+                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-100 text-red-600 border border-red-300">RETUR</span>
+                                                                                ) : isExchange ? (
+                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
+                                                                                ) : isIouFulfill ? (
+                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
+                                                                                ) : null}
+                                                                             </div>
+                                                                             <p className="text-[10px] text-slate-500 uppercase truncate">
+                                                                                 {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
+                                                                                     let lbl = `${i.qty} ${i.unit} ${i.name}`;
+                                                                                     if (i.condition === 'DAMAGED') lbl += ' [DMG]';
+                                                                                     if (i.fulfillment === 'IOU') lbl += ' [IOU]';
+                                                                                     return lbl;
+                                                                                 }).join(", ") : 'N/A'}
                                                                              </p>
                                                                          </div>
                                                                      </div>
                                                                      <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
-                                                                         <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>{t.paymentType || 'Cash'}</span>
-                                                                         <p className={`font-black text-base mt-1 ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</p>
+                                                                         <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-600'}`}>{t.paymentType || 'Cash'}</span>
+                                                                         <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
+                                                                         </p>
                                                                      </div>
                                                                  </div>
-                                                             ))}
+                                                             )})}
                                                          </div>
                                                      </div>
 
@@ -694,7 +705,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
-                                                <p className="text-xl md:text-2xl font-black text-emerald-400">{formatRupiah(cObj.total)}</p>
+                                                <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -704,13 +715,27 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                                {cObj.history.map(t => (
+                                                {cObj.history.map(t => {
+                                                    // 🚀 FORENSIC BADGES
+                                                    const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+                                                    const isExchange = t.paymentType === 'Tukar Ganti';
+                                                    const isIouFulfill = t.paymentType === 'IOU Fulfillment';
+
+                                                    return (
                                                     <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                                                         <td className="p-3 font-mono text-slate-600 dark:text-slate-400 text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
                                                         <td className="p-3">
-                                                            <span className={`px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black ${t.type === 'SALE' ? 'bg-emerald-100 text-emerald-700' : t.type === 'RETURN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                                {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.type.replace('_', ' ')}
-                                                            </span>
+                                                            {isRetur ? (
+                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-red-100 text-red-700 border border-red-300">RETUR</span>
+                                                            ) : isExchange ? (
+                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
+                                                            ) : isIouFulfill ? (
+                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">IOU FULFILLED</span>
+                                                            ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
+                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
+                                                            ) : (
+                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">SALE</span>
+                                                            )}
                                                         </td>
                                                         <td className="p-3 text-slate-700 dark:text-slate-300 text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
                                                             {t.type === 'CONSIGNMENT_PAYMENT' ? (
@@ -720,12 +745,20 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                     }, []).map((item, idx) => <div key={idx}>• {item.name}</div>)}
                                                                 </div>
                                                             ) : (
-                                                                t.items ? t.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(", ") : 'N/A'
+                                                                t.items ? t.items.map(i => {
+                                                                    let lbl = `${i.qty} ${i.unit} ${i.name}`;
+                                                                    if (i.condition === 'DAMAGED') lbl += ' [DMG]';
+                                                                    if (i.fulfillment === 'IOU') lbl += ' [IOU]';
+                                                                    if (i.isIouFulfillment) lbl += ' [FULFILLED]';
+                                                                    return lbl;
+                                                                }).join(", ") : 'N/A'
                                                             )}
                                                             {t.paymentType === 'Titip' && <span className="block mt-1 text-[9px] text-orange-500 tracking-widest border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
-                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && <span className="block mt-1 text-[9px] text-blue-500 tracking-widest">({t.paymentType})</span>}
+                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[9px] text-blue-500 tracking-widest">({t.paymentType})</span>}
                                                         </td>
-                                                        <td className={`p-3 text-right font-black ${t.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(t.amountPaid || t.total)}</td>
+                                                        <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
+                                                        </td>
                                                         <td className="p-3 text-center">
                                                             <div className="flex justify-center gap-2">
                                                                 {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded-lg transition-colors"><Camera size={14}/></button>}
@@ -735,7 +768,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                )})}
                                             </tbody>
                                         </table>
                                     </div>
@@ -825,7 +858,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* RECEIPT PRINTER MODAL */}
+            {/* 🚀 UPGRADED FORENSIC RECEIPT PRINTER MODAL 🚀 */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
@@ -837,30 +870,59 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                     const parts = receiptDateStr.split(', ');
                     receiptDateStr = parts[0]; receiptTimeStr = parts[1] || '';
                 }
-                const isNormalSale = viewingReceipt.type === 'SALE' || viewingReceipt.type === 'RETURN';
+                
+                const isNormalSale = viewingReceipt.type !== 'CONSIGNMENT_PAYMENT';
+                const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
+                const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
                 
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
-                                    <div className="text-center mb-4"><h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2><p className="text-[10px] font-bold mt-1 !text-slate-600">{viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : 'SALES RECEIPT'}</p></div>
+                                    <div className="text-center mb-4">
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
+                                            {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : 
+                                             isReturReceipt ? 'RETURN RECEIPT' : 
+                                             viewingReceipt.paymentType === 'Tukar Ganti' ? 'EXCHANGE RECEIPT' : 'SALES RECEIPT'}
+                                        </p>
+                                    </div>
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
                                         <div className="flex"><span className="w-12 font-bold">TGL</span><span>: {receiptDateStr}</span></div>
                                         <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
                                         <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {viewingReceipt.customerName}</span></div>
                                         {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {viewingReceipt.agentName}</span></div>}
+                                        <div className="flex"><span className="w-12 font-bold">TYPE</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>: {viewingReceipt.paymentType || 'Cash'}</span></div>
                                     </div>
                                     <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
                                         {isNormalSale && (
-                                            <table className="w-full text-left">
-                                                <thead><tr className="border-b border-dashed !border-slate-400"><th className="pb-1 font-bold">ITEM</th><th className="pb-1 text-right font-bold">TOTAL</th></tr></thead>
-                                                <tbody className="align-top">
+                                            <div className="w-full text-left">
+                                                <div className="flex justify-between border-b border-dashed !border-slate-400 pb-1 mb-2 font-bold">
+                                                    <span>ITEM</span><span>TOTAL</span>
+                                                </div>
+                                                <div>
                                                     {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                                        <tr key={i}><td className="py-1 pr-2"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div></td><td className="py-1 text-right font-black whitespace-nowrap">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</td></tr>
-                                                    )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
-                                                </tbody>
-                                            </table>
+                                                        <div key={i} className="mb-2">
+                                                            <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
+                                                                {item.name}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
+                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                                            </div>
+                                                            {item.condition === 'DAMAGED' && item.returnReason && (
+                                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                            )}
+                                                            <div className="flex justify-between text-xs mt-0.5">
+                                                                <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                                                <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
+                                                                    {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )) : <div className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</div>}
+                                                </div>
+                                            </div>
                                         )}
                                         {!isNormalSale && (
                                             <div className="space-y-4"><div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
@@ -878,7 +940,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black"><span>TOTAL COLLECTED</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span></div>
+                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
+                                        <span>TOTAL</span>
+                                        <span className={isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-black'}>
+                                            {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
+                                        </span>
+                                    </div>
                                     <div className="text-center text-[10px] mb-2 font-bold !text-slate-500"><p>*** THANK YOU ***</p></div>
                                 </div>
                             )}
@@ -892,7 +959,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">{viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 'NOTA PENJUALAN'}</h2>
+                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
+                                                    {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 
+                                                     isReturReceipt ? 'NOTA RETUR' : 
+                                                     viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
+                                                </h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
                                             </div>
                                         </div>
@@ -901,7 +972,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
                                                 {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
                                                 <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                             </tbody></table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
                                                 <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
@@ -910,8 +981,27 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                         {isNormalSale ? (
                                             <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
                                                 <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
-                                                <tbody>{viewingReceipt.items?.map((item, i) => (<tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.qty} {item.unit}</td><td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</td></tr>))}</tbody>
-                                                <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || 0)}</td></tr></tfoot>
+                                                <tbody>{viewingReceipt.items?.map((item, i) => (
+                                                    <tr key={i}>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">
+                                                            <div className="flex flex-wrap gap-1 items-center mb-1">
+                                                                {item.name}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">IOU PENDING</span>}
+                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">IOU FULFILLED</span>}
+                                                            </div>
+                                                            {item.condition === 'DAMAGED' && item.returnReason && (
+                                                                <div className="text-[10px] italic !text-slate-500 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                            )}
+                                                        </td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700 align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-top">
+                                                            {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                        </td>
+                                                    </tr>
+                                                ))}</tbody>
+                                                <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-slate-800 p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-blue-900'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                             </table>
                                         ) : (
                                             <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
@@ -932,7 +1022,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         );
                                                     })}
                                                 </tbody>
-                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</td></tr></tfoot>
+                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                             </table>
                                         )}
                                     </div>
@@ -944,7 +1034,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>Standard Invoice (A4)</label>
                             </div>
                             
-                            {/* 🚀 RESTORED SHARE & PRINT BUTTONS 🚀 */}
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => {
                                     const receipt = document.querySelector('.print-receipt'); if (!receipt) return;
@@ -962,12 +1051,17 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 <button onClick={() => {
                                     let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
                                     if (viewingReceipt.items && viewingReceipt.items.length > 0) {
-                                        viewingReceipt.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
+                                        viewingReceipt.items.forEach(item => { 
+                                            text += `${item.qty} ${item.unit} ${item.name}`;
+                                            if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
+                                            if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
+                                            text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; 
+                                        });
                                     }
                                     if (viewingReceipt.itemsPaid && viewingReceipt.itemsPaid.length > 0) {
                                         viewingReceipt.itemsPaid.forEach(item => { text += `[LAKU] ${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
-                                    text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you for your business!`;
+                                    text += `------------------------\n*TOTAL: ${isReturReceipt && displayTotal > 0 ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(displayTotal)}*\n\nThank you for your business!`;
                                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                                 }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> Share
