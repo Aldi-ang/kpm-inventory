@@ -1,1106 +1,1111 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
-import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
-import { hasClearance } from '../config/permissions'; 
+import React, { useState } from 'react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2 } from 'lucide-react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [reportView, setReportView] = useState(false);
+import LandlordDashboard from './LandlordDashboard'; 
+import CrownTransferProtocol from './CrownTransferProtocol';
+
+// 🚀 IMPORT THE MATRIX BRAIN
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions } from '../config/permissions';
+
+export default function SettingsView({
+    user, userId, db, appId, isAdmin, isSystemOwner, userRole,
+    showCrownTransfer, setShowCrownTransfer, triggerCapy, setShowAdminLogin,
+    sessionStatus, setSessionStatus, auditLogs,
+    handleMasterProtocol, handleSingleBackup, handleRestoreData,
+    handleExportGranular, handleImportGranular, handleWipeData,
+    currentUserEmail, handleChangePin, handleAdminLogout,
+    handleRegisterPasskey, registeredPasskeys, handleRemovePasskey,
+    tierSettings, setTierSettings, handleSaveTiers, handleExportTiers, handleImportTiers, handleTierIconSelect,
+    appSettings, setAppSettings,
+    editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
+    handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
+    activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
+    triggerDiscoParty, isDiscoMode,
+    isLiteMode, setIsLiteMode 
+}) {
+
+    // --- TIER AUTOMATION LOGIC ---
+    const [tierRules, setTierRules] = useState({});
+    const [isSavingTierRules, setIsSavingTierRules] = useState(false);
     
-    // 🚀 TIME MACHINE & COMMAND CENTER STATE
-    const [rangeType, setRangeType] = useState('daily');
-    const [targetDate, setTargetDate] = useState(getCurrentDate());
-    const [historicalData, setHistoricalData] = useState([]);
-    const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+    // --- SIDEBAR NAVIGATION STATE ---
+    const [activeTab, setActiveTab] = useState('general');
 
-    // 🏢 6-TIER HIERARCHY NAVIGATION STATE
-    const [selectedRegion, setSelectedRegion] = useState(null); 
-    const [selectedAgent, setSelectedAgent] = useState(null);   
-    const [selectedProv, setSelectedProv] = useState(null);     
-    const [selectedKab, setSelectedKab] = useState(null);       
-    const [selectedKec, setSelectedKec] = useState(null);       
-    const [selectedCustomer, setSelectedCustomer] = useState(null); 
+    const defaultLogic = {
+        type: 'omset', 
+        omsetTarget: 10000000,
+        volumeTarget: 30,
+        volumeUnit: 'Bal', 
+        timeframe: '90' 
+    };
 
-    // MODAL STATES
-    const [editingTrans, setEditingTrans] = useState(null);
-    const [viewingReceipt, setViewingReceipt] = useState(null); 
-    const [viewingPhoto, setViewingPhoto] = useState(null); 
-    const [printFormat, setPrintFormat] = useState('thermal'); 
-    const [printScale, setPrintScale] = useState(100); 
-
-    // ANALYTICS STATE
-    const [expandedAgent, setExpandedAgent] = useState(null);
-
-    // 🚀 INDESTRUCTIBLE SECURITY FIREWALL
-    // If the engine has any doubt, you are treated as a Field Agent and locked down.
-    const isFieldAgent = useMemo(() => {
-        if (isAdmin === true) return false;
-        if (userRole === 'ADMIN' || userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER') return false;
-        if (hasClearance(userRole, 'can_view_team_history')) return false;
-        return true; 
-    }, [userRole, isAdmin]);
-
-    // --- ENGINE 1: DATA MERGE & TIME FILTER ---
-    const allTransactions = useMemo(() => {
-        const combined = [...transactions, ...historicalData];
-        return Array.from(new Map(combined.map(t => [t.id, t])).values());
-    }, [transactions, historicalData]);
-
-    const dateFilteredTransactions = useMemo(() => {
-        const target = new Date(targetDate);
-        return allTransactions.filter(t => {
-            // 🛑 FAIL-CLOSED PROTOCOL: Total Data Shredder
-            if (isFieldAgent) {
-                if (!agentProfileId) return false; // Hide everything if profile hasn't loaded
-                if (t.agentId !== agentProfileId) return false; // Shred other team members' data
-            }
-            
-            const tDate = new Date(t.date);
-            if (rangeType === 'daily') return t.date === targetDate;
-            if (rangeType === 'weekly') {
-                const start = new Date(target); start.setDate(target.getDate() - target.getDay()); start.setHours(0,0,0,0);
-                const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
-                return tDate >= start && tDate <= end;
-            }
-            if (rangeType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
-            if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
-            return false;
-        }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-    }, [allTransactions, rangeType, targetDate, isFieldAgent, agentProfileId]);
-
-    // --- ENGINE 2: GLOBAL SEARCH ---
-    const searchedTransactions = useMemo(() => {
-        if (!searchTerm.trim()) return dateFilteredTransactions;
-        const term = searchTerm.toLowerCase();
-        
-        return dateFilteredTransactions.filter(t => {
-            const customerMatch = (t.customerName || '').toLowerCase().includes(term);
-            const agentMatch = (t.agentName || '').toLowerCase().includes(term);
-            const valueMatch = String(t.total || t.amountPaid || 0).includes(term);
-            let itemsMatch = false;
-            if (t.items) itemsMatch = t.items.some(i => (i.name || '').toLowerCase().includes(term));
-            return customerMatch || agentMatch || valueMatch || itemsMatch;
-        });
-    }, [dateFilteredTransactions, searchTerm]);
-
-    // --- ENGINE 3: THE 6-TIER ENTERPRISE HIERARCHY BUILDER ---
-    const reportData = useMemo(() => {
-        const structure = {}; 
-        
-        if (motorists && motorists.length > 0) {
-            motorists.forEach(m => {
-                // 🛑 UI LOCK: Prevent UI folders from being built for anyone else
-                if (isFieldAgent && m.id !== agentProfileId) return;
-
-                const loc = m.location || 'UNASSIGNED AREA';
-                const aName = m.name || m.agentName || 'Unknown Agent';
-                if (!structure[loc]) structure[loc] = { name: loc, total: 0, count: 0, agents: {} };
-                if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, provinsi: {} };
-            });
-        }
-        
-        if (!isFieldAgent && !structure['Headquarters']) {
-            structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
-        }
-
-        searchedTransactions.forEach(t => {
-            const agentId = t.agentId || 'ADMIN';
-            let agentName = t.agentName || 'Admin';
-            let regionName = 'UNASSIGNED AREA';
-
-            if (agentId === 'ADMIN') {
-                const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
-                if (boss && boss.location) {
-                    regionName = boss.location;
-                    agentName = boss.name || agentName;
+    React.useEffect(() => {
+        if (!isAdmin || !db || !appId || !userId) return;
+        const loadTierRules = async () => {
+            try {
+                const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                if (snap.exists() && snap.data().rules) {
+                    setTierRules(snap.data().rules);
                 } else {
-                    regionName = 'Headquarters';
+                    const init = {};
+                    (tierSettings || []).forEach(t => init[t.id] = { ...defaultLogic });
+                    setTierRules(init);
                 }
-            } else if (motorists && motorists.length > 0) {
-                const motorist = motorists.find(m => m.id === agentId);
-                if (motorist) {
-                    regionName = motorist.location || 'UNASSIGNED AREA';
-                    agentName = motorist.name || motorist.agentName || agentName;
-                }
-            }
-
-            let cust = (t.customerName || 'Walk-in Customer').trim();
-            const isWalkIn = cust.toLowerCase().includes('walk-in') || !t.customerName;
-            const isEcer = t.items?.some(i => i.priceTier === 'Ecer');
-            if (isWalkIn || isEcer) cust = "Individuals (Ecer)";
-
-            let prov = 'UNMAPPED PROVINSI';
-            let kab = 'UNMAPPED KABUPATEN';
-            let kec = 'UNMAPPED KECAMATAN';
-
-            if (customers && customers.length > 0 && !isWalkIn && !isEcer) {
-                const matchedCustomer = customers.find(c => c.name.trim().toLowerCase() === cust.toLowerCase());
-                if (matchedCustomer) {
-                    if (matchedCustomer.province && !matchedCustomer.province.toLowerCase().includes('unknown')) prov = matchedCustomer.province;
-                    if (matchedCustomer.region && !matchedCustomer.region.toLowerCase().includes('unknown')) kab = matchedCustomer.region;
-                    if (matchedCustomer.city && !matchedCustomer.city.toLowerCase().includes('unknown')) kec = matchedCustomer.city;
-                }
-            }
-
-            if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
-            if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, provinsi: {} };
-            
-            const agentNode = structure[regionName].agents[agentName];
-            if (!agentNode.provinsi[prov]) agentNode.provinsi[prov] = { name: prov, total: 0, count: 0, kabupaten: {} };
-            
-            const provNode = agentNode.provinsi[prov];
-            if (!provNode.kabupaten[kab]) provNode.kabupaten[kab] = { name: kab, total: 0, count: 0, kecamatan: {} };
-            
-            const kabNode = provNode.kabupaten[kab];
-            if (!kabNode.kecamatan[kec]) kabNode.kecamatan[kec] = { name: kec, total: 0, count: 0, stores: {} };
-            
-            const kecNode = kabNode.kecamatan[kec];
-            if (!kecNode.stores[cust]) kecNode.stores[cust] = { name: cust, total: 0, count: 0, history: [] };
-
-            const storeNode = kecNode.stores[cust];
-
-            const tValue = t.type === 'RETUR' ? -Math.abs(t.total || t.amountPaid || 0) : (t.total || t.amountPaid || 0);
-            
-            structure[regionName].total += tValue;
-            structure[regionName].count += 1;
-
-            agentNode.total += tValue;
-            agentNode.count += 1;
-
-            provNode.total += tValue;
-            provNode.count += 1;
-
-            kabNode.total += tValue;
-            kabNode.count += 1;
-
-            kecNode.total += tValue;
-            kecNode.count += 1;
-
-            storeNode.total += tValue;
-            storeNode.count += 1;
-            storeNode.history.push(t);
-        });
-        
-        return structure;
-    }, [searchedTransactions, motorists, customers, isFieldAgent, agentProfileId]);
-
-    // AUTO-NAVIGATE FOR RESTRICTED AGENTS
-    useEffect(() => {
-        if (isFieldAgent) {
-            const regions = Object.keys(reportData);
-            if (regions.length === 1 && !selectedRegion) {
-                setSelectedRegion(regions[0]);
-                const agents = Object.keys(reportData[regions[0]].agents);
-                if (agents.length === 1 && !selectedAgent) setSelectedAgent(agents[0]);
-            }
-        }
-    }, [isFieldAgent, reportData, selectedRegion, selectedAgent]);
-
-    const handlePullArchive = async () => {
-        if (!fetchHistoricalTransactions) return;
-        setIsFetchingHistory(true);
-        const target = new Date(targetDate);
-        let start = new Date(target); let end = new Date(target);
-        if (rangeType === 'daily') { start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
-        else if (rangeType === 'weekly') { start.setDate(target.getDate() - target.getDay()); start.setHours(0,0,0,0); end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); }
-        else if (rangeType === 'monthly') { start = new Date(target.getFullYear(), target.getMonth(), 1); end = new Date(target.getFullYear(), target.getMonth() + 1, 0, 23, 59, 59); }
-        else if (rangeType === 'yearly') { start = new Date(target.getFullYear(), 0, 1); end = new Date(target.getFullYear(), 11, 31, 23, 59, 59); }
-        
-        const data = await fetchHistoricalTransactions(start, end);
-        setHistoricalData(data);
-        setIsFetchingHistory(false);
-    };
-
-    const contextualTransactions = useMemo(() => {
-        if (selectedAgent && selectedRegion) return searchedTransactions.filter(t => (t.agentName || 'Admin') === selectedAgent);
-        if (selectedRegion) return searchedTransactions.filter(t => {
-            const agentId = t.agentId || 'ADMIN';
-            if (agentId === 'ADMIN') return selectedRegion === 'Headquarters';
-            return motorists?.find(m => m.id === agentId)?.location === selectedRegion;
-        });
-        return searchedTransactions; 
-    }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);
-
-    const stats = useMemo(() => {
-        const totalRev = contextualTransactions.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
-        const totalProfit = contextualTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0);
-        const count = contextualTransactions.length;
-        const items = {};
-        const payments = { Cash: 0, QRIS: 0, Transfer: 0, Titip: 0 };
-        const agents = {}; 
-
-        contextualTransactions.forEach(t => {
-            const method = t.paymentType || 'Cash';
-            const value = t.total || t.amountPaid || 0;
-            if (t.type === 'RETUR') payments['Cash'] -= Math.abs(value);
-            else payments[method] = (payments[method] || 0) + value;
-
-            const aName = t.agentName || 'Admin';
-            if (!agents[aName]) agents[aName] = { name: aName, agentId: t.agentId, total: 0, count: 0, items: {}, transactions: [] };
-            
-            agents[aName].total += t.type === 'RETUR' ? -Math.abs(value) : value;
-            agents[aName].count += 1;
-            agents[aName].transactions.push(t);
-
-            if(t.items) t.items.forEach(i => {
-                const product = inventory.find(p => p.id === i.productId);
-                const bksQty = convertToBks(i.qty, i.unit, product || {});
-                
-                if(!items[i.name]) items[i.name] = { qty: 0, val: 0 };
-                items[i.name].qty += bksQty;
-                items[i.name].val += (i.calculatedPrice * i.qty);
-
-                if(!agents[aName].items[i.name]) agents[aName].items[i.name] = { qty: 0, val: 0 };
-                agents[aName].items[i.name].qty += bksQty;
-                agents[aName].items[i.name].val += (i.calculatedPrice * i.qty);
-            });
-        });
-
-        Object.values(agents).forEach(a => a.transactions.sort((x, y) => (y.timestamp?.seconds||0) - (x.timestamp?.seconds||0)));
-
-        return { 
-            totalRev, totalProfit, count, items, payments, 
-            agentRoster: Object.values(agents).sort((a,b) => b.total - a.total) 
+            } catch(e) { console.error("Failed to load tier rules", e); }
         };
-    }, [contextualTransactions, inventory]);
+        loadTierRules();
+    }, [db, appId, userId, isAdmin, tierSettings]);
 
-    const getProductPrice = (product, tier, fallbackPrice) => {
-        if (!product) return Number(fallbackPrice) || 0;
-        const tierKey = String(tier).toLowerCase();
-        for (let key of Object.keys(product)) {
-            if (key.toLowerCase().includes(tierKey)) {
-                const val = Number(String(product[key] || '').replace(/[^0-9]/g, ''));
-                if (val > 0) return val;
-            }
-        }
-        const generic = Number(String(product.price || product.harga || product.retailPrice || '').replace(/[^0-9]/g, ''));
-        if (generic > 0) return generic;
-        return Number(fallbackPrice) || 0;
+    const handleUpdateTierRule = (tierId, field, value) => {
+        setTierRules(prev => ({
+            ...prev,
+            [tierId]: { ...(prev[tierId] || defaultLogic), [field]: value }
+        }));
     };
 
-    const handleEditItemChange = (index, field, value) => {
-        const newItems = [...(editingTrans.items || [])];
-        const currentItem = newItems[index];
-        newItems[index] = { ...currentItem, [field]: value };
-
-        if (field === 'productId' || field === 'unit' || field === 'qty') {
-            const product = inventory.find(p => p.id === newItems[index].productId);
-            const tier = editingTrans.priceTier || 'Retail';
-            const currentMultiplier = currentItem.unit === 'Slop' ? 10 : currentItem.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
-            const fallbackPackPrice = (Number(currentItem.calculatedPrice) || 0) / currentMultiplier;
-            const basePrice = getProductPrice(product, tier, fallbackPackPrice);
-            const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
-            newItems[index].calculatedPrice = basePrice * multiplier;
-        }
-
-        const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
-        setEditingTrans({ ...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal });
-    };
-
-    const handleEditTierChange = (e) => {
-        const newTier = e.target.value;
-        const newItems = (editingTrans.items || []).map(item => {
-            const product = inventory.find(p => p.id === item.productId);
-            const currentMultiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
-            const fallbackPackPrice = (Number(item.calculatedPrice) || 0) / currentMultiplier;
-            const basePrice = getProductPrice(product, newTier, fallbackPackPrice);
-            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
-            return { ...item, calculatedPrice: basePrice * multiplier };
+    const handleSaveTierRules = async () => {
+        setIsSavingTierRules(true);
+        const cleanedRules = {};
+        Object.keys(tierRules).forEach(key => {
+            cleanedRules[key] = {
+                ...tierRules[key],
+                omsetTarget: tierRules[key].omsetTarget === '' ? 0 : tierRules[key].omsetTarget,
+                volumeTarget: tierRules[key].volumeTarget === '' ? 0 : tierRules[key].volumeTarget
+            };
         });
-        const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
-        setEditingTrans({ ...editingTrans, priceTier: newTier, items: newItems, total: newTotal, amountPaid: newTotal });
-    };
 
-    const handleEditSubmit = async () => {
-        if(!editingTrans || !user) return;
         try {
-            const rawDate = editingTrans.date; 
-            let fakeTimestamp = serverTimestamp(); 
-            if (rawDate) {
-                const dateObj = new Date(`${rawDate}T12:00:00Z`);
-                if (!isNaN(dateObj.getTime())) fakeTimestamp = { seconds: Math.floor(dateObj.getTime() / 1000), nanoseconds: 0 };
-            }
-            const cleanItems = (editingTrans.items || []).map(i => ({ productId: i.productId || '', name: i.name || 'Unknown', qty: Number(i.qty) || 1, unit: i.unit || 'Bks', calculatedPrice: Number(i.calculatedPrice) || 0 }));
-
-            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
-                date: rawDate, customerName: editingTrans.customerName, total: Number(editingTrans.total) || 0, amountPaid: Number(editingTrans.total) || 0, priceTier: editingTrans.priceTier || 'Retail', items: cleanItems, timestamp: fakeTimestamp, updatedAt: serverTimestamp() 
-            });
-            alert("✅ Audit Successful!");
-            setEditingTrans(null);
-        } catch(err) { alert(err.message); }
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'), { rules: cleanedRules });
+            setTierRules(cleanedRules);
+            alert("✅ Tier Automation Rules locked in!");
+        } catch(e) { 
+            alert("Failed to save settings."); 
+        }
+        setIsSavingTierRules(false);
     };
+
+    // 1. LOCKSCREEN
+    if (!isAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
+                    <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+                        <Lock size={40} className="animate-bounce-slow" />
+                    </div>
+                </div>
+                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+            </div>
+        );
+    }
+
+    // --- LOGIC HUB: MERGING DATABASE + INSTANT SESSION STATUS ---
+    const resetThreshold = parseInt(localStorage.getItem('indicator_reset_time') || '0');
+    const sNow = new Date();
+    const sTodayStr = sNow.toLocaleDateString();
+
+    const confirmedMirror = auditLogs.find(log => 
+        (log.action === "DATABASE_MIRROR" || log.action === "MASTER_BACKUP") && 
+        log.timestamp && 
+        (log.timestamp.seconds * 1000 > resetThreshold)
+    );
+
+    const dbRecoveryCount = auditLogs.filter(log => {
+        if (!log.isSavePoint || !log.timestamp) return false;
+        const logTime = log.timestamp.seconds * 1000;
+        if (logTime < resetThreshold) return false;
+        return new Date(logTime).toLocaleDateString() === sTodayStr;
+    }).length;
+
+    const lastUsbTime = parseInt(localStorage.getItem('last_usb_backup') || '0');
+    const isUsbValidInDb = lastUsbTime > resetThreshold && (sNow.getTime() - lastUsbTime) < (7 * 24 * 60 * 60 * 1000);
+
+    const isRecoverySecure = sessionStatus.recovery || dbRecoveryCount > 0;
+    const isUsbSecure = sessionStatus.usb || isUsbValidInDb;
+    const isCloudSecure = sessionStatus.cloud || !!confirmedMirror;
+
+    const handleResetIndicators = () => {
+        localStorage.setItem('indicator_reset_time', new Date().getTime().toString());
+        localStorage.removeItem('last_usb_backup'); 
+        setSessionStatus({ recovery: false, usb: false, cloud: false }); 
+        triggerCapy("Indicators Reset to REQUIRED state.");
+    };
+
+    // --- DEFINE DYNAMIC TABS ---
+    const navTabs = [
+        { id: 'general', label: 'General & Brand', icon: <Settings size={18} /> },
+        { id: 'tiers', label: 'Tiers & Logic', icon: <Tag size={18} /> },
+        { id: 'security', label: 'Security & Data', icon: <ShieldCheck size={18} /> },
+    ];
+    
+    if (isSystemOwner) {
+        navTabs.push({ id: 'architect', label: 'Architect (Tier 1)', icon: <Lock size={18} /> });
+    }
 
     return (
-        <div className="print-reset animate-fade-in max-w-6xl mx-auto pb-20 relative">
-            
-            {/* 🚀 THE GLOBAL COMMAND CENTER 🚀 */}
-            {!reportView && (
-                <div className="bg-slate-900 rounded-2xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative overflow-hidden border border-slate-700">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-                    <div className="z-10 flex-1 w-full">
-                        <h2 className="text-white text-lg font-black tracking-widest uppercase mb-1 flex items-center gap-2">
-                            <Database size={20} className="text-indigo-400"/> Operational Command
-                        </h2>
-                        <p className="text-slate-400 text-[10px] font-mono uppercase tracking-widest">Filter dates & extract deep historical records</p>
-                    </div>
-                    <div className="z-10 flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-slate-800 border border-slate-700 text-white p-3 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                        <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-slate-800 border border-slate-700 text-white p-3 rounded-xl font-bold outline-none" />
-                        {!isFieldAgent && (
-                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 active:scale-95">
-                                {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
-                                {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
+      <div className="animate-fade-in max-w-6xl mx-auto pb-20">
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 dark:border-white/10 pb-4">
+              <div>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white uppercase tracking-tighter">Command Center</h2>
+                  <p className={`text-[10px] font-mono font-bold animate-pulse ${isSystemOwner ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {isSystemOwner ? 'CLEARANCE: TIER 1 (OVERSEER)' : 'CLEARANCE: TIER 2 (MANAGER)'}
+                  </p>
+              </div>
+              <div className="flex gap-2 mt-4 md:mt-0">
+                  <button onClick={handleResetIndicators} className="bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-900/50 hover:text-red-400 hover:border-red-500 transition-all">
+                      Reset Indicators
+                  </button>
+                  <button onClick={handleAdminLogout} className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-500 px-4 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition-all">
+                      Lock Terminal
+                  </button>
+              </div>
+          </div>
 
-            {/* BREADCRUMB NAVIGATION */}
-            {!reportView && (
-                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                    {!isFieldAgent && (
-                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
-                    )}
-                    
-                    {/* 🚀 UI LOCK: Field Agents cannot navigate UP to team folders */}
-                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
-                    
-                    {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
-                    {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
-                    {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-orange-500 text-red-500 flex items-center gap-1">{selectedKec}</span> </>}
-                    {selectedCustomer && <> <ChevronRight size={14}/> <span className="text-slate-800 dark:text-white flex items-center gap-1"><Store size={14}/> {selectedCustomer}</span> </>}
-                </div>
-            )}
+          <div className="flex flex-col md:flex-row gap-8">
+              <div className="w-full md:w-56 shrink-0 flex flex-col gap-2">
+                  {navTabs.map(tab => (
+                      <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                              activeTab === tab.id 
+                                ? (tab.id === 'architect' ? 'bg-red-600 text-white shadow-md' : 'bg-blue-600 text-white shadow-md')
+                                : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                          }`}
+                      >
+                          {tab.icon}
+                          <span className="uppercase tracking-wider">{tab.label}</span>
+                      </button>
+                  ))}
+              </div>
 
-            {/* ACTION BAR (Search & Analytics Trigger) */}
-            {!reportView && (
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <div className="relative w-full shadow-sm rounded-xl group transition-shadow hover:shadow-md focus-within:shadow-md">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <Search size={20} className={`transition-colors ${searchTerm ? 'text-orange-500' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
-                        </div>
-                        <input type="text" placeholder="Search product, value, or store..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-12 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-orange-500 rounded-xl text-slate-900 dark:text-white font-medium text-sm outline-none transition-all"/>
-                        {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>}
-                    </div>
-                    
-                    <button onClick={() => setReportView(true)} className="bg-orange-600 hover:bg-orange-500 border border-orange-400 px-6 py-3 rounded-xl shadow-md flex items-center justify-center gap-2 font-bold text-white transition-all whitespace-nowrap active:scale-95 text-xs uppercase tracking-widest">
-                        <Calendar size={16}/> Context Analytics
-                    </button>
-                </div>
-            )}
+              <div className="flex-1 min-w-0 space-y-6">
 
-            {/* --- 🚀 THE NEW MACRO-TO-MICRO ANALYTICS DASHBOARD --- */}
-            {reportView && (
-                <div className="animate-fade-in relative z-10">
-                     <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
-                        <div className="flex items-center gap-3">
-                            <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border dark:border-slate-700 shadow-sm print:hidden">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scale</span>
-                                <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
-                                <span className="text-[10px] font-mono text-slate-400 w-8 text-right">{printScale}%</span>
-                            </div>
-                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl shadow-sm text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Printer size={16}/> Print PDF</button>
-                        </div>
-                     </div>
+                  {/* ---------------------------------------------------- */}
+                  {/* WORKSPACE: GENERAL & BRAND */}
+                  {/* ---------------------------------------------------- */}
+                  {activeTab === 'general' && (
+                      <div className="animate-fade-in space-y-6">
+                          
+                          {/* 🚀 LITE MODE (POTATO ENGINE) TOGGLE */}
+                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${isLiteMode ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                              <div className="flex items-center justify-between">
+                                  <div>
+                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${isLiteMode ? 'text-emerald-500' : 'dark:text-white'}`}>
+                                          ⚡ Cello Lite Mode
+                                      </h3>
+                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                          Disables blur, animations, and heavy GPU effects to save battery on low-end phones.
+                                      </p>
+                                  </div>
+                                  <button 
+                                      onClick={() => {
+                                          setIsLiteMode(!isLiteMode);
+                                          triggerCapy(!isLiteMode ? "Lite Mode Enabled! Battery saving active. ⚡" : "Lite Mode Disabled. Full graphics restored!");
+                                      }}
+                                      className={`transition-all duration-300 ${isLiteMode ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                  >
+                                      {isLiteMode ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                  </button>
+                              </div>
+                          </div>
 
-                     <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
+                          {/* COMPANY IDENTITY */}
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
+                              <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity & Invoice Data</h3>
+                              <div className="space-y-3">
+                                  <div>
+                                      <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
+                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
+                                  </div>
+                                  <div>
+                                      <label className="text-xs font-bold text-slate-500 uppercase">Official Address (Used on Invoice Header)</label>
+                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="e.g. Jl. Jendral Sudirman No.123, Jakarta"/>
+                                  </div>
+                                  <div>
+                                      <label className="text-xs font-bold text-slate-500 uppercase">Contact Number</label>
+                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="e.g. (021) 1234567"/>
+                                  </div>
 
-                     <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
-                         {/* MACRO VIEW: GLOBAL STATS */}
-                         <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
-                             <div>
-                                 <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
-                                     {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
-                                 </h1>
-                                 <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
-                             </div>
-                             <div className="text-right"><p className="text-xs print:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
-                         </div>
-                         
-                         <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
-                         </div>
+                                  <div className="pt-4 border-t dark:border-slate-700">
+                                      <label className="text-xs font-bold text-emerald-500 uppercase">Admin/Boss Display Name (For Signature)</label>
+                                      <input 
+                                          className="w-full p-2 border rounded dark:bg-slate-900 dark:border-emerald-800/50 dark:text-white focus:border-emerald-500 outline-none transition-colors" 
+                                          value={appSettings.adminDisplayName || ''} 
+                                          onChange={(e) => {
+                                              const val = e.target.value;
+                                              setAppSettings(prev => ({...prev, adminDisplayName: val}));
+                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { adminDisplayName: val }, {merge: true});
+                                          }}
+                                          placeholder="e.g. Abednego YB"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-xs font-bold text-blue-500 uppercase">Bank Details (Invoice Footer)</label>
+                                      <textarea 
+                                          className="w-full p-2 border rounded dark:bg-slate-900 dark:border-blue-800/50 dark:text-white focus:border-blue-500 outline-none transition-colors resize-none h-20" 
+                                          value={appSettings.bankDetails || ''} 
+                                          onChange={(e) => {
+                                              const val = e.target.value;
+                                              setAppSettings(prev => ({...prev, bankDetails: val}));
+                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { bankDetails: val }, {merge: true});
+                                          }}
+                                          placeholder={"BCA 0301138379\nA/N ABEDNEGO YB"}
+                                      />
+                                  </div>
 
-                         <div className="mb-8 print:mb-0">
-                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-orange-500"/> Product Performance</h3>
-                             <div className="overflow-x-auto pb-2">
-                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse min-w-[450px]">
-                                    <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
-                                        <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
-                                        {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
-                                            <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                                <td className="py-3 print:py-1.5 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black uppercase text-xs">{name}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
-                                                <td className="py-3 print:py-1.5 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                 </table>
-                             </div>
-                         </div>
+                                  {/* 🚀 TIER 1 ONLY: PITA CUKAI FINE PRICING */}
+                                  {isSystemOwner && (
+                                      <div className="pt-4 border-t dark:border-slate-700">
+                                          <label className="text-xs font-bold text-red-500 uppercase flex items-center gap-1"><ShieldAlert size={14}/> Lost Pita Cukai Fine (Rp)</label>
+                                          <div className="flex items-center gap-2 mt-1">
+                                              <span className="text-slate-500 font-black">Rp</span>
+                                              <input 
+                                                  type="number" 
+                                                  min="0"
+                                                  className="w-full p-2 border rounded dark:bg-slate-900 dark:border-red-800/50 dark:text-white focus:border-red-500 outline-none transition-colors font-mono" 
+                                                  value={appSettings?.cukaiFinePrice || 5000} 
+                                                  onChange={(e) => {
+                                                      const val = parseInt(e.target.value) || 0;
+                                                      setAppSettings(prev => ({...prev, cukaiFinePrice: val}));
+                                                      if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiFinePrice: val }, {merge: true});
+                                                  }}
+                                                  placeholder="e.g. 5000"
+                                              />
+                                          </div>
+                                          <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-widest">Amount charged to salesmen per tax stamp lost.</p>
+                                      </div>
+                                  )}
 
-                         {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}
-                         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
-                             <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest">
-                                 <User size={24} className="text-blue-500"/> {isFieldAgent ? 'My Detailed Breakdown' : 'Agent Roster'}
-                             </h3>
-                             <div className="space-y-4">
-                                 {stats.agentRoster.map(agent => {
-                                     const isExpanded = isFieldAgent || expandedAgent === agent.name;
-                                     const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
-                                     
-                                     return (
-                                         <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-500 shadow-lg dark:bg-slate-800/80' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400'}`}>
-                                             {/* Accordion Header */}
-                                             <button 
-                                                onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
-                                                className={`w-full p-4 flex items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
-                                             >
-                                                 <div className="flex items-center gap-4">
-                                                     {agentProfile.photoURL ? (
-                                                         <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shrink-0" alt={agent.name} />
-                                                     ) : (
-                                                         <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                                                             <User size={24} className="text-blue-500" />
-                                                         </div>
-                                                     )}
-                                                     <div>
-                                                         <h4 className="font-bold text-lg dark:text-white leading-none mb-1">{agent.name}</h4>
-                                                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">{agent.count} Receipts</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="flex items-center gap-6">
-                                                     <div className="text-right">
-                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
-                                                         <p className={`font-black text-lg ${agent.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(agent.total)}</p>
-                                                     </div>
-                                                     {!isFieldAgent && (
-                                                        <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-full text-slate-400">
-                                                            {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
-                                                        </div>
-                                                     )}
-                                                 </div>
-                                             </button>
+                                  <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-4 shadow-md">Save Corporate Profile</button>
+                              </div>
+                          </div>
 
-                                             {/* Accordion Body (Deep Dive) */}
-                                             {isExpanded && (
-                                                 <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
-                                                     
-                                                     {/* Agent's Product Breakdown */}
-                                                     <div className="mb-8">
-                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
-                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                             {Object.entries(agent.items).sort((a,b) => b[1].val - a[1].val).map(([pName, pData]) => (
-                                                                 <div key={pName} className="bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700 flex justify-between items-center shadow-sm">
-                                                                     <div>
-                                                                         <p className="text-xs font-bold dark:text-white uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
-                                                                         <p className="text-[10px] text-slate-500 font-mono">{pData.qty} Bks</p>
-                                                                     </div>
-                                                                     <p className="text-sm font-black text-emerald-500">{formatRupiah(pData.val)}</p>
-                                                                 </div>
-                                                             ))}
-                                                         </div>
-                                                     </div>
+                          {/* MASCOT SETTINGS */}
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
+                              <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white mb-4"><MessageSquare size={20}/> Mascot Settings</h3>
+                              <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
+                                  <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-500 uppercase">Mascot Size</label><span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span></div>
+                                  <input type="range" min="0.5" max="2.0" step="0.1" value={appSettings.mascotScale || 1} onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }} className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"/>
+                              </div>
+                              <div className="mb-4">
+                                  <label className="text-xs font-bold text-slate-500 mb-1 block">Add New Dialogue Line</label>
+                                  <div className="flex gap-2">
+                                      <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Type a message..." value={newMascotMessage} onChange={(e) => setNewMascotMessage(e.target.value)}/>
+                                      <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold">Add</button>
+                                  </div>
+                              </div>
+                              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                  {activeMessages.map((msg, idx) => (
+                                      <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                                          {editingMsgIndex === idx ? (
+                                              <div className="flex gap-2 w-full animate-fade-in">
+                                                  <input autoFocus className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" value={editMsgText} onChange={(e) => setEditMsgText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
+                                                  <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600"><Save size={16}/></button>
+                                                  <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-500"><X size={16}/></button>
+                                              </div>
+                                          ) : (
+                                              <>
+                                                  <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
+                                                  <div className="flex gap-2 shrink-0">
+                                                      <button onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} className="text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
+                                                      <button onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                                                  </div>
+                                              </>
+                                          )}
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
 
-                                                     {/* Agent's Transaction Timeline */}
-                                                     <div>
-                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
-                                                         <div className="space-y-2">
-                                                             {agent.transactions.map(t => {
-                                                                 // 🚀 FORENSIC BADGES
-                                                                 const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
-                                                                 const isExchange = t.paymentType === 'Tukar Ganti';
-                                                                 const isIouFulfill = t.paymentType === 'IOU Fulfillment';
+                          {/* PROFILE PICTURE */}
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
+                              <h3 className="font-bold text-lg mb-4 dark:text-white"><ImageIcon size={20}/> Mascot Profile</h3>
+                              <div className="flex items-start gap-6">
+                                  <div className="flex flex-col items-center">
+                                      <img src={appSettings?.mascotImage || "/mr capy.png"} className="w-24 h-24 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                                      <span className="text-xs text-slate-400 mt-2">Current</span>
+                                  </div>
+                                  <div className="flex-1">
+                                      <label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium">
+                                          <Upload size={16} /> Select & Crop
+                                          <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                                      </label>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  )}
 
-                                                                 return (
-                                                                 <div key={t.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                                                                     <div className="flex items-center gap-4 w-full md:w-auto">
-                                                                         <div className="bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-center shrink-0">
-                                                                             <p className="text-[10px] text-slate-500 font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
-                                                                             <p className="text-xs font-mono font-black dark:text-white">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
-                                                                         </div>
-                                                                         <div className="min-w-0">
-                                                                             <div className="flex items-center gap-2 mb-0.5">
-                                                                                <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
-                                                                                {isRetur ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-100 text-red-600 border border-red-300">RETUR</span>
-                                                                                ) : isExchange ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
-                                                                                ) : isIouFulfill ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
-                                                                                ) : null}
-                                                                             </div>
-                                                                             <p className="text-[10px] text-slate-500 uppercase mt-0.5 truncate">
-                                                                                 {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
-                                                                                     let lbl = `${i.qty} ${i.unit} ${i.name}`;
-                                                                                     if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                                     if (i.fulfillment === 'IOU') lbl += ' [IOU]';
-                                                                                     if (i.isIouFulfillment) lbl += ' [FULFILLED]';
-                                                                                     return lbl;
-                                                                                 }).join(", ") : 'N/A'}
-                                                                             </p>
-                                                                         </div>
-                                                                     </div>
-                                                                     <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
-                                                                         <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-600'}`}>{t.paymentType || 'Cash'}</span>
-                                                                         <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
-                                                                         </p>
-                                                                     </div>
-                                                                 </div>
-                                                             )})}
-                                                         </div>
-                                                     </div>
+                  {/* ---------------------------------------------------- */}
+                  {/* WORKSPACE: TIERS & LOGIC */}
+                  {/* ---------------------------------------------------- */}
+                  {activeTab === 'tiers' && (
+                      <div className="animate-fade-in space-y-6">
+                          
+                         {/* TIER & MAP ICON MANAGER */}
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+                              <div className="flex justify-between items-center mb-4">
+                                  <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
+                                  <div className="flex gap-2">
+                                      <button onClick={() => {
+                                          const hasUnranked = tierSettings.some(t => t.id.toLowerCase() === 'unranked');
+                                          const newTier = !hasUnranked 
+                                              ? { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
+                                              : { id: `Tier_${Date.now()}`, label: 'New Rank', color: '#94a3b8', iconType: 'emoji', value: '❓' };
+                                          
+                                          const newTiers = [...tierSettings, newTier];
+                                          setTierSettings(newTiers);
+                                          handleSaveTiers(newTiers);
+                                      }} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-md transition-all active:scale-95">
+                                          <Plus size={14}/> Add Tier
+                                      </button>
+                                      <button onClick={handleExportTiers} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold"><Download size={14}/></button>
+                                      <label className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer"><Upload size={14}/><input type="file" accept=".json" onChange={handleImportTiers} className="hidden" /></label>
+                                  </div>
+                              </div>
+                              <div className="overflow-x-auto pb-2">
+                                  <div className="space-y-3 min-w-[650px]">
+                                  {tierSettings.map((tier, idx) => (
+                                      <div key={tier.id || idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700 transition-colors hover:border-slate-400 dark:hover:border-slate-500">
+                                          <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
+                                          
+                                          <input 
+                                              value={tier.label} 
+                                              onChange={(e) => { 
+                                                  const newTiers = [...tierSettings]; 
+                                                  newTiers[idx].label = e.target.value; 
+                                                  if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
+                                                  setTierSettings(newTiers); 
+                                              }} 
+                                              onBlur={() => handleSaveTiers(tierSettings)} 
+                                              className="w-28 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase tracking-wider" 
+                                          />
+                                          
+                                          <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
+                                          
+                                          <div className="flex-1">
+                                              {tier.iconType === 'image' ? (
+                                                  <div className="flex gap-2">
+                                                      <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
+                                                          <Upload size={14}/> 
+                                                          {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
+                                                          
+                                                          <input 
+                                                              id={`tier-upload-${idx}`} 
+                                                              type="file" 
+                                                              accept="image/*" 
+                                                              className="hidden" 
+                                                              onChange={(e) => handleTierIconSelect(e, idx)} 
+                                                          />
+                                                      </label>
+                                                      
+                                                      {tier.value?.startsWith('data:') && (
+                                                          <button 
+                                                              onClick={() => {
+                                                                  const newTiers = [...tierSettings];
+                                                                  newTiers[idx].value = '';
+                                                                  setTierSettings(newTiers);
+                                                                  handleSaveTiers(newTiers);
+                                                              }} 
+                                                              className="px-3 bg-red-100 dark:bg-red-900/40 text-red-500 rounded hover:bg-red-200 dark:hover:bg-red-500 dark:hover:text-white transition-colors flex items-center justify-center border border-red-500/30"
+                                                              title="Clear Image"
+                                                          >
+                                                              <X size={14}/>
+                                                          </button>
+                                                      )}
+                                                  </div>
+                                              ) : (
+                                                  <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji Here" />
+                                              )}
+                                          </div>
+                                          
+                                          <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-inner" style={{ borderColor: tier.color }}>
+                                              {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
+                                          </div>
 
-                                                 </div>
-                                             )}
-                                         </div>
-                                     );
-                                 })}
-                                 {stats.agentRoster.length === 0 && <p className="text-center text-slate-500 py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
-                             </div>
-                         </div>
+                                          <button onClick={() => {
+                                              if(window.confirm(`Are you sure you want to delete the tier: ${tier.label}?`)) {
+                                                  const newTiers = tierSettings.filter((_, i) => i !== idx);
+                                                  setTierSettings(newTiers);
+                                                  handleSaveTiers(newTiers);
+                                              }
+                                          }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-1" title="Delete Tier">
+                                              <Trash2 size={16}/>
+                                          </button>
+                                      </div>
+                                  ))}
+                                  </div>
+                              </div>
+                          </div>
+                          
+                      
 
-                     </div>
-                </div>
-            )}
+                          {/* AUTOMATED PERFORMANCE TIERS (TIER 1 OVERSEER ONLY) */}
+                          {isSystemOwner && (
+                              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-red-500/20 mb-6 transition-all relative overflow-hidden">
+                                  <div className="absolute top-0 right-0 p-4 opacity-5"><Lock size={120} className="text-red-500" /></div>
+                                  
+                                  <div className="relative z-10">
+                                      <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
+                                          <div>
+                                              <h3 className="font-bold text-lg flex items-center gap-2 text-red-600 dark:text-red-400">
+                                                  <Settings size={20}/> Performance Tier Logic (Tier 1 Only)
+                                              </h3>
+                                              <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Configure automated promotion/demotion conditions</p>
+                                          </div>
+                                          <button 
+                                              onClick={handleSaveTierRules}
+                                              disabled={isSavingTierRules}
+                                              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md disabled:opacity-50"
+                                          >
+                                              <Save size={14} /> {isSavingTierRules ? 'Saving...' : 'Save Logic'}
+                                          </button>
+                                      </div>
 
-            <div className="hide-on-print w-full">
+                                      <div className="space-y-3">
+                                          {tierSettings.map((tier, idx) => {
+                                              const rule = tierRules[tier.id] || defaultLogic;
+                                              const isOmset = rule.type === 'omset';
 
-            {/* --- LEVEL 1: REGION SELECTION (TEAM) --- */}
-            {!reportView && !isFieldAgent && !selectedRegion && (
-                <div className="animate-fade-in relative z-10">
-                    {Object.keys(reportData).length === 0 ? (
-                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Regions Active</p></div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.values(reportData).sort((a,b) => b.total - a.total).map(r => (
-                                <div key={r.name} onClick={() => setSelectedRegion(r.name)} className="bg-gradient-to-br from-blue-50 to-white dark:from-slate-800 dark:to-slate-900 p-6 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-lg hover:border-blue-500 transition-all group">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="p-4 bg-blue-100 dark:bg-slate-800 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm"><MapPin size={28} /></div>
-                                    </div>
-                                    <h3 className="font-black text-xl dark:text-white mb-2 tracking-wide">{r.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                                        <div><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-blue-600 text-xl">{formatRupiah(r.total)}</p></div>
-                                        <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-white text-xl">{r.count}</p></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+                                              return (
+                                                  <div key={tier.id} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:border-red-500/30">
+                                                      
+                                                      <div className="flex items-center gap-3 min-w-[140px] shrink-0">
+                                                          <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: tier.color }}></div>
+                                                          <div>
+                                                              <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{tier.label}</h4>
+                                                              <p className="text-[9px] text-slate-500 uppercase tracking-widest">Target Requirement</p>
+                                                          </div>
+                                                      </div>
 
-            {/* --- LEVEL 2: AGENT SELECTION --- */}
-            {!reportView && selectedRegion && !selectedAgent && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents || {}).sort((a,b) => b.total - a.total).map(a => (
-                            <div key={a.name} onClick={() => setSelectedAgent(a.name)} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-emerald-500 transition-all group">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-emerald-50 dark:bg-slate-700 rounded-xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors"><User size={24} /></div>
-                                </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-4 truncate">{a.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-emerald-600 text-lg">{formatRupiah(a.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-white text-lg">{a.count}</p></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                                                      <ChevronRight className="hidden lg:block text-slate-400 shrink-0" size={16}/>
 
-            {/* --- LEVEL 3: PROVINSI SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && !selectedProv && (
-                <div className="animate-fade-in relative z-10">
-                    {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).length === 0 ? (
-                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-purple-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Provinces Visited</p></div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).sort((a,b) => b.total - a.total).map(p => (
-                                <div key={p.name} onClick={() => setSelectedProv(p.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-purple-500 transition-all group">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 rounded-xl transition-colors bg-purple-100 dark:bg-slate-700 text-purple-600 group-hover:bg-purple-500 group-hover:text-white"><MapPin size={20}/></div>
-                                    </div>
-                                    <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{p.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-purple-500">{formatRupiah(p.total)}</p></div>
-                                        <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{p.count}</p></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+                                                      <div className="flex-1 flex flex-wrap items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                          
+                                                          <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                                              <div className="px-2 text-slate-500 dark:text-slate-400">
+                                                                  {isOmset ? <TrendingUp size={14}/> : <Package size={14}/>}
+                                                              </div>
+                                                              <select 
+                                                                  value={rule.type}
+                                                                  onChange={(e) => handleUpdateTierRule(tier.id, 'type', e.target.value)}
+                                                                  className="bg-transparent text-xs font-bold text-slate-700 dark:text-white uppercase p-2 outline-none cursor-pointer hover:text-blue-500 dark:hover:text-blue-400"
+                                                              >
+                                                                  <option value="omset" className="dark:bg-slate-900">Total Omset</option>
+                                                                  <option value="volume" className="dark:bg-slate-900">Total Volume</option>
+                                                              </select>
+                                                          </div>
 
-            {/* --- LEVEL 4: KABUPATEN SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && !selectedKab && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten || {}).sort((a,b) => b.total - a.total).map(k => (
-                            <div key={k.name} onClick={() => setSelectedKab(k.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-pink-500 transition-all group">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-pink-100 dark:bg-slate-700 text-pink-600 group-hover:bg-pink-500 group-hover:text-white"><Folder size={20}/></div>
-                                </div>
-                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{k.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{k.count}</p></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                                                          <span className="text-slate-400 font-black text-sm">=</span>
 
-            {/* --- LEVEL 5: KECAMATAN SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && !selectedKec && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan || {}).sort((a,b) => b.total - a.total).map(c => (
-                            <div key={c.name} onClick={() => setSelectedKec(c.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-red-500 transition-all group">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-red-100 dark:bg-slate-700 text-red-600 group-hover:bg-red-500 group-hover:text-white"><Folder size={20}/></div>
-                                </div>
-                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{c.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-red-500">{formatRupiah(c.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                                                          {isOmset ? (
+                                                              <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                                                  <span className="px-2 text-xs font-black text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30">Rp</span>
+                                                                  <input 
+                                                                      type="text" 
+                                                                      value={rule.omsetTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.omsetTarget || 0)}
+                                                                      onChange={(e) => {
+                                                                          const val = e.target.value.replace(/[^0-9]/g, ''); 
+                                                                          handleUpdateTierRule(tier.id, 'omsetTarget', val === '' ? '' : Number(val));
+                                                                      }}
+                                                                      className="bg-transparent text-xs font-black text-emerald-600 dark:text-emerald-400 p-2 w-32 outline-none text-right"
+                                                                  />
+                                                              </div>
+                                                          ) : (
+                                                              <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
+                                                                  <input 
+                                                                      type="text" 
+                                                                      value={rule.volumeTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.volumeTarget || 0)}
+                                                                      onChange={(e) => {
+                                                                          const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                          handleUpdateTierRule(tier.id, 'volumeTarget', val === '' ? '' : Number(val));
+                                                                      }}
+                                                                      className="bg-transparent text-xs font-black text-orange-600 dark:text-orange-400 p-2 w-16 outline-none text-center border-r border-slate-200 dark:border-slate-700"
+                                                                  />
+                                                                  <select 
+                                                                      value={rule.volumeUnit}
+                                                                      onChange={(e) => handleUpdateTierRule(tier.id, 'volumeUnit', e.target.value)}
+                                                                      className="bg-transparent text-xs font-bold text-orange-600 dark:text-orange-300 uppercase p-2 outline-none cursor-pointer"
+                                                                  >
+                                                                      <option value="Bks" className="dark:bg-slate-900">Bks</option>
+                                                                      <option value="Slop" className="dark:bg-slate-900">Slop</option>
+                                                                      <option value="Bal" className="dark:bg-slate-900">Bal</option>
+                                                                      <option value="Karton" className="dark:bg-slate-900">Karton</option>
+                                                                  </select>
+                                                              </div>
+                                                          )}
 
-            {/* --- LEVEL 6: CUSTOMER SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && !selectedCustomer && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores || {}).sort((a,b) => b.total - a.total).map(c => {
-                            const isIndiv = c.name === "Individuals (Ecer)";
-                            return (
-                                <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500' : 'dark:border-slate-700 hover:border-orange-500'}`}>
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className={`p-2.5 rounded-xl transition-colors ${isIndiv ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white' : 'bg-orange-100 dark:bg-slate-700 text-orange-600 group-hover:bg-orange-500 group-hover:text-white'}`}>
-                                            {isIndiv ? <User size={20}/> : <Store size={20} />}
-                                        </div>
-                                    </div>
-                                    <h3 className="font-black text-base dark:text-white mb-3 truncate">{c.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
-                                        <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
+                                                          <span className="text-slate-400 font-black text-sm">/</span>
 
-            {/* --- LEVEL 7: RECEIPT ARCHIVE --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && selectedCustomer && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
-                        {(() => {
-                            const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores[selectedCustomer];
-                            if (!cObj) return null;
-                            
-                            return (
-                                <>
-                                    <div className="bg-slate-900 text-white p-6 md:p-8">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="text-orange-500 font-bold tracking-widest text-[10px] uppercase mb-1">Audit Log • {selectedAgent}</p>
-                                                <h1 className="text-2xl md:text-3xl font-black">{cObj.name}</h1>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
-                                                <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 md:p-6 overflow-x-auto">
-                                        <table className="w-full text-sm text-left min-w-[600px]">
-                                            <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
-                                                <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                                {cObj.history.map(t => {
-                                                    // 🚀 FORENSIC BADGES
-                                                    const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
-                                                    const isExchange = t.paymentType === 'Tukar Ganti';
-                                                    const isIouFulfill = t.paymentType === 'IOU Fulfillment';
+                                                          <select 
+                                                              value={rule.timeframe}
+                                                              onChange={(e) => handleUpdateTierRule(tier.id, 'timeframe', e.target.value)}
+                                                              className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-xs font-bold text-blue-600 dark:text-blue-300 uppercase p-2 outline-none cursor-pointer hover:border-blue-500"
+                                                          >
+                                                              <option value="30" className="dark:bg-slate-900">1 Bulan</option>
+                                                              <option value="90" className="dark:bg-slate-900">3 Bulan</option>
+                                                              <option value="180" className="dark:bg-slate-900">6 Bulan</option>
+                                                              <option value="365" className="dark:bg-slate-900">1 Tahun</option>
+                                                          </select>
+                                                      </div>
+                                                  </div>
+                                              );
+                                          })}
+                                      </div>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  )}
 
-                                                    return (
-                                                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400 text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
-                                                        <td className="p-3">
-                                                            {isRetur ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-red-100 text-red-700 border border-red-300">RETUR</span>
-                                                            ) : isExchange ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
-                                                            ) : isIouFulfill ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">IOU FULFILLED</span>
-                                                            ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">SALE</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="p-3 text-slate-700 dark:text-slate-300 text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
-                                                            {t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <div className="space-y-1">
-                                                                    {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
-                                                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
-                                                                    }, []).map((item, idx) => <div key={idx}>• {item.name}</div>)}
-                                                                </div>
-                                                            ) : (
-                                                                t.items ? t.items.map(i => {
-                                                                    let lbl = `${i.qty} ${i.unit} ${i.name}`;
-                                                                    if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                    if (i.fulfillment === 'IOU') lbl += ' [IOU]';
-                                                                    if (i.isIouFulfillment) lbl += ' [FULFILLED]';
-                                                                    return lbl;
-                                                                }).join(", ") : 'N/A'
-                                                            )}
-                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[9px] text-orange-500 tracking-widest border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
-                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[9px] text-blue-500 tracking-widest">({t.paymentType})</span>}
-                                                        </td>
-                                                        <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
-                                                        </td>
-                                                        <td className="p-3 text-center">
-                                                            <div className="flex justify-center gap-2">
-                                                                {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded-lg transition-colors"><Camera size={14}/></button>}
-                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-orange-500 rounded-lg transition-colors"><FileText size={14}/></button>
-                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-500 rounded-lg transition-colors"><Pencil size={14}/></button>}
-                                                                {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )})}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
-            </div>
+                  {/* ---------------------------------------------------- */}
+                  {/* WORKSPACE: SECURITY & DATA */}
+                  {/* ---------------------------------------------------- */}
+                  {activeTab === 'security' && (
+                      <div className="animate-fade-in space-y-6">
+                          
+                          {/* MASTER SECURITY CARD */}
+                          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-orange-500/20 relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck size={120} className="text-orange-500" /></div>
+                              <div className="relative z-10">
+                                  <h3 className="font-bold text-xl mb-1 dark:text-white flex items-center gap-3"><ShieldCheck className="text-emerald-500" size={24}/> Master Security Protocol</h3>
+                                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-8">Triple-Layer Data Redundancy</p>
+                                  
+                                  <button onClick={handleMasterProtocol} className="w-full group relative bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-6 rounded-2xl font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 mb-6">
+                                      <div className="flex flex-col items-center gap-2">
+                                          <span className="text-sm">EXECUTE MASTER BACKUP</span>
+                                          <span className="text-[9px] opacity-70 font-mono tracking-normal">Generate 3 Recovery Points Now</span>
+                                      </div>
+                                  </button>
 
-            {/* MODALS */}
-            {viewingPhoto && (
-                 <div className="fixed inset-0 z-[600] bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
-                     <button onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-white hover:text-red-500 z-50 bg-black/50 p-2 rounded-full transition-colors"><X size={32}/></button>
-                     <div className="bg-white p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
-                         <img src={viewingPhoto.photo || viewingPhoto} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" alt="Delivery Proof" />
-                     </div>
-                     {viewingPhoto.latitude && (
-                         <div className="text-white mt-4 font-mono text-xs text-center bg-black/60 px-6 py-3 rounded-xl border border-white/10 shadow-lg">
-                             <p className="font-bold text-emerald-400 mb-1">GPS VERIFIED LOCATION</p>
-                             <p>LAT/LNG: {viewingPhoto.latitude.toFixed(5)}, {viewingPhoto.longitude.toFixed(5)}</p>
-                             <p>TIME: {new Date(viewingPhoto.capturedAt).toLocaleString('id-ID')}</p>
-                         </div>
-                     )}
-                 </div>
-             )}
+                                  <div className="grid grid-cols-3 gap-3 mb-6">
+                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isRecoverySecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
+                                          {isRecoverySecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                                          <div className="text-center">
+                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">RECOVERY</p>
+                                              <p className="text-xs font-bold">{isRecoverySecure ? "SECURE" : "REQUIRED"}</p>
+                                          </div>
+                                      </div>
+                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isUsbSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-orange-500/20 border-orange-500 text-orange-500 animate-pulse'}`}>
+                                          {isUsbSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                                          <div className="text-center">
+                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">USB SAFE</p>
+                                              <p className="text-xs font-bold">{isUsbSecure ? "SECURE" : "UPDATE"}</p>
+                                          </div>
+                                      </div>
+                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isCloudSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
+                                          {isCloudSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
+                                          <div className="text-center">
+                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">CLOUD SYNC</p>
+                                              <p className="text-xs font-bold">{isCloudSecure ? "SECURE" : "REQUIRED"}</p>
+                                          </div>
+                                      </div>
+                                  </div>
 
-            {editingTrans && (
-                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border dark:border-slate-700">
-                        <h3 className="font-black text-xl mb-4 dark:text-white flex items-center gap-2"><Pencil size={22} className="text-orange-500"/> DATA AUDIT</h3>
-                        <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-5">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700">
-                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
-                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-orange-500 uppercase">Pricing Tier</label>
-                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 font-bold text-orange-500 outline-none">
-                                        <option value="Grosir">Grosir</option>
-                                        <option value="Retail">Retail</option>
-                                        <option value="Ecer">Ecer</option>
-                                    </select>
-                                </div>
-                            </div>
+                                  <div className="grid grid-cols-3 gap-2 mb-6">
+                                      <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Recovery</button>
+                                      <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download USB</button>
+                                      <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Cloud</button>
+                                  </div>
 
-                            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-                                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 flex justify-between items-center border-b border-indigo-100 dark:border-indigo-900/50">
-                                    <span className="font-bold text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Itemized Receipt</span>
-                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="text-[10px] bg-indigo-500 text-white px-3 py-1.5 rounded font-bold hover:bg-indigo-600 shadow active:scale-95 transition-transform">+ ADD ITEM</button>
-                                </div>
-                                <div className="p-3 space-y-2 bg-white dark:bg-slate-800">
-                                    {(editingTrans.items || []).map((item, idx) => (
-                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border dark:border-slate-700">
-                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none min-w-[150px]">
-                                                <option value="">-- Select Product --</option>
-                                                {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                            </select>
-                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none" />
-                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none">
-                                                <option value="Bks">Bks</option>
-                                                <option value="Slop">Slop</option>
-                                                <option value="Karton">Karton</option>
-                                            </select>
-                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-emerald-600 font-bold outline-none" placeholder="Price/Unit" />
-                                            <button type="button" onClick={() => {
-                                                const newItems = editingTrans.items.filter((_, i) => i !== idx);
-                                                const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
-                                                setEditingTrans({...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal});
-                                            }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"><Trash2 size={16}/></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                                <div>
-                                    <span className="font-black text-sm uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">Grand Total</span>
-                                </div>
-                                <input type="number" value={editingTrans.total} onChange={e=>setEditingTrans({...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value)})} className="w-40 p-2 text-right border-2 border-emerald-200 dark:border-emerald-800 rounded-lg bg-white dark:bg-slate-800 dark:text-white font-black text-xl text-emerald-600 outline-none focus:border-emerald-500 transition-colors" />
-                            </div>
-                        </div>
-                        <div className="flex gap-3 pt-5 mt-2 shrink-0">
-                            <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl font-bold transition-colors">Cancel</button>
-                            <button type="button" onClick={handleEditSubmit} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95">Save Changes</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                                  <div className="border-t border-orange-500/30 pt-6">
+                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3">System Recovery Terminal</p>
+                                      <label className="w-full flex items-center justify-center gap-3 py-4 border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-xl text-slate-400 hover:text-emerald-500 cursor-pointer transition-all bg-black/30 hover:bg-emerald-900/20 group">
+                                          <UploadCloud size={24} className="group-hover:-translate-y-1 transition-transform" />
+                                          <span className="font-bold uppercase tracking-widest text-xs">Load Backup File & Restore Data (.json)</span>
+                                          <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
+                                      </label>
+                                  </div>
+                              </div>
+                          </div>
 
-            {/* RECEIPT PRINTER MODAL */}
-            {viewingReceipt && (() => {
-                let receiptDateStr = viewingReceipt.date || '';
-                let receiptTimeStr = '';
-                if (viewingReceipt.timestamp) {
-                    const dateObj = new Date(viewingReceipt.timestamp.seconds * 1000);
-                    receiptDateStr = dateObj.toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
-                    receiptTimeStr = dateObj.toLocaleTimeString('id-ID');
-                } else if (receiptDateStr.includes(',')) {
-                    const parts = receiptDateStr.split(', ');
-                    receiptDateStr = parts[0]; receiptTimeStr = parts[1] || '';
-                }
-                
-                const isNormalSale = viewingReceipt.type !== 'CONSIGNMENT_PAYMENT';
-                const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
-                const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
-                
-                return (
-                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
-                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
-                            {printFormat === 'thermal' && (
-                                <div className="p-4 shrink-0 font-mono text-xs">
-                                    <div className="text-center mb-4">
-                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
-                                            {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : 
-                                             isReturReceipt ? 'RETURN RECEIPT' : 
-                                             viewingReceipt.paymentType === 'Tukar Ganti' ? 'EXCHANGE RECEIPT' : 'SALES RECEIPT'}
-                                        </p>
-                                    </div>
-                                    <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
-                                        <div className="flex"><span className="w-12 font-bold">TGL</span><span>: {receiptDateStr}</span></div>
-                                        <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
-                                        <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {viewingReceipt.customerName}</span></div>
-                                        {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {viewingReceipt.agentName}</span></div>}
-                                        <div className="flex"><span className="w-12 font-bold">TYPE</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>: {viewingReceipt.paymentType || 'Cash'}</span></div>
-                                    </div>
-                                    <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
-                                        {isNormalSale && (
-                                            <div className="w-full text-left">
-                                                <div className="flex justify-between border-b border-dashed !border-slate-400 pb-1 mb-2 font-bold">
-                                                    <span>ITEM</span><span>TOTAL</span>
-                                                </div>
-                                                <div>
-                                                    {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                                        <div key={i} className="mb-2">
-                                                            <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
-                                                                {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
-                                                            </div>
-                                                            {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
-                                                            )}
-                                                            <div className="flex justify-between text-xs mt-0.5">
-                                                                <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                                                <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
-                                                                    {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )) : <div className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</div>}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {!isNormalSale && (
-                                            <div className="space-y-4"><div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
-                                                {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => { if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc; }, []).map((item, i) => {
-                                                    const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
-                                                    if (!paidItem && !returItem && !remainItem) return null;
-                                                    return (
-                                                        <div key={i} className="mb-3"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">Total Consigned: {(paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0)} Bks</div><div className="pl-2 space-y-0.5 text-[10px] !text-slate-600 font-mono">
-                                                                {paidItem && paidItem.qty > 0 && <div className="flex justify-between"><span>• Sold: {paidItem.qty}</span><span className="font-black !text-black">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span></div>}
-                                                                {returItem && returItem.qty > 0 && <div className="flex justify-between"><span>• Retur: {returItem.qty}</span><span>-</span></div>}
-                                                                {remainItem && remainItem.qty > 0 && <div className="flex justify-between"><span>• Sisa: {remainItem.qty}</span><span>-</span></div>}
-                                                            </div></div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
-                                        <span>TOTAL</span>
-                                        <span className={isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-black'}>
-                                            {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
-                                        </span>
-                                    </div>
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500"><p>*** THANK YOU ***</p></div>
-                                </div>
-                            )}
+                          {/* USER PROFILE & PIN */}
+                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                              <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile & Security</h3>
+                              <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
+                              <input type="email" className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white mb-4" value={currentUserEmail || ""} disabled/>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="p-4 rounded-xl border flex flex-col justify-between bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
+                                      <div className="mb-4">
+                                          <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 mb-1">Vault PIN Status</p>
+                                          <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-widest">Administrator Access Verified</p>
+                                      </div>
+                                      <div className="flex gap-2">
+                                          <button onClick={handleChangePin} className="flex-1 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Change PIN</button>
+                                      </div>
+                                  </div>
+                                  
+                                  {/* 🚀 DEVICE AUTHORIZATION LIST 🚀 */}
+                                  <div className="p-4 rounded-xl border flex flex-col bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                                      <div className="mb-4 border-b border-blue-200 dark:border-blue-800/50 pb-3">
+                                          <p className="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-2">
+                                              <ScanFace size={16}/> Authorized Biometric Devices
+                                          </p>
+                                          <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest">Manage Fingerprints & Phones</p>
+                                      </div>
+                                      
+                                      <div className="space-y-2 mb-4 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                                          {registeredPasskeys && registeredPasskeys.length > 0 ? (
+                                              registeredPasskeys.map((device, idx) => (
+                                                  <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800/30 p-3 rounded-lg shadow-sm">
+                                                      <div>
+                                                          <p className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{device.name}</p>
+                                                          <p className="text-slate-500 text-[9px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
+                                                      </div>
+                                                      <button 
+                                                          onClick={() => handleRemovePasskey(device)}
+                                                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors"
+                                                          title="Revoke Access"
+                                                      >
+                                                          <Trash2 size={14}/>
+                                                      </button>
+                                                  </div>
+                                              ))
+                                          ) : (
+                                              <p className="text-slate-500 text-[10px] uppercase tracking-widest text-center py-4 bg-white/50 dark:bg-slate-900/50 rounded border border-dashed border-slate-300 dark:border-slate-700">
+                                                  No devices authorized yet.
+                                              </p>
+                                          )}
+                                      </div>
 
-                            {printFormat === 'a4' && (
-                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
-                                    <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
-                                        <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
-                                            <div className="flex-1">
-                                                <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
-                                                <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
-                                            </div>
-                                            <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
-                                                    {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 
-                                                     isReturReceipt ? 'NOTA RETUR' : 
-                                                     viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
-                                                </h2>
-                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between mb-8 text-sm">
-                                            <table className="w-1/3"><tbody>
-                                                <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
-                                                {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
-                                            </tbody></table>
-                                            <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
-                                            </div>
-                                        </div>
-                                        {isNormalSale ? (
-                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                                <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
-                                                <tbody>{viewingReceipt.items?.map((item, i) => (
-                                                    <tr key={i}>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">
-                                                            <div className="flex flex-wrap gap-1 items-center mb-1">
-                                                                {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">IOU FULFILLED</span>}
-                                                            </div>
-                                                            {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[10px] italic !text-slate-500 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
-                                                            )}
-                                                        </td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700 align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-top">
-                                                            {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
-                                                        </td>
-                                                    </tr>
-                                                ))}</tbody>
-                                                <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-slate-800 p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-blue-900'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
-                                            </table>
-                                        ) : (
-                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                                <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">AUDITED PRODUCT</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">INITIAL STOCK</th><th className="border-2 !border-slate-800 p-3 text-center w-32 font-black">BREAKDOWN</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">TAGIHAN (Rp)</th></tr></thead>
-                                                <tbody>
-                                                    {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => { if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc; }, []).map((item, i) => {
-                                                        const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
-                                                        if (!paidItem && !returItem && !remainItem) return null; const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
-                                                        return (
-                                                            <tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
-                                                                <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
-                                                                    {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
-                                                                    {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
-                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
-                                                                </td>
-                                                                <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
-                                            </table>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                                      <button 
+                                          onClick={handleRegisterPasskey} 
+                                          className="w-full mt-auto py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-2 uppercase tracking-widest"
+                                      >
+                                          <Plus size={16}/> Authorize Current Device
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
 
-                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>Thermal POS (58mm)</label>
-                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>Standard Invoice (A4)</label>
-                            </div>
-                            
-                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                                <button onClick={() => {
-                                    const receipt = document.querySelector('.print-receipt'); if (!receipt) return;
-                                    const clone = receipt.cloneNode(true); clone.querySelectorAll('.no-print').forEach(el => el.remove()); clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
-                                    let parentStyles = ''; document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => { parentStyles += el.outerHTML; });
-                                    const isThermal = clone.classList.contains('format-thermal');
-                                    const iframe = document.createElement('iframe'); iframe.style.position = 'absolute'; iframe.style.top = '0'; iframe.style.left = '0'; iframe.style.width = '1px'; iframe.style.height = '1px'; iframe.style.opacity = '0'; iframe.style.pointerEvents = 'none'; iframe.style.border = 'none'; document.body.appendChild(iframe);
-                                    const doc = iframe.contentWindow.document; doc.open();
-                                    doc.write(`<!DOCTYPE html><html><head><title>KPM Invoice</title><meta name="viewport" content="width=device-width, initial-scale=1.0">${parentStyles}<style>@media print { @page { margin: 0; } html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; min-height: 0 !important; overflow: hidden !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; box-shadow: none !important; border: none !important; page-break-after: avoid !important; } .format-thermal { font-family: 'Courier New', Courier, monospace !important; } .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; } .format-thermal .font-bold { font-weight: bold !important; } .format-thermal .font-black { font-weight: 900 !important; } .format-thermal table { width: 100% !important; border-collapse: collapse !important; } .format-thermal th, .format-thermal td { padding: 2px 0 !important; } .format-thermal .text-right { text-align: right !important; } .format-thermal .text-center { text-align: center !important; } .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; } .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; } .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; } .format-thermal .flex { display: flex !important; } .format-thermal .justify-between { justify-content: space-between !important; } .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; } } body { background: white; margin: 0; padding: 0; display: block; }</style></head><body>${clone.outerHTML}<script>window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };</script></body></html>`);
-                                    doc.close(); setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
-                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                    <Printer size={14}/> Print Document
-                                </button>
-                                
-                                <button onClick={() => {
-                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
-                                    if (viewingReceipt.items && viewingReceipt.items.length > 0) {
-                                        viewingReceipt.items.forEach(item => { 
-                                            text += `${item.qty} ${item.unit} ${item.name}`;
-                                            if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
-                                            if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
-                                            if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
-                                            text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; 
-                                        });
-                                    }
-                                    if (viewingReceipt.itemsPaid && viewingReceipt.itemsPaid.length > 0) {
-                                        viewingReceipt.itemsPaid.forEach(item => { text += `[LAKU] ${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
-                                    }
-                                    text += `------------------------\n*TOTAL: ${isReturReceipt && displayTotal > 0 ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(displayTotal)}*\n\nThank you for your business!`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
-                                    <MessageSquare size={14}/> Share
-                                </button>
-                            </div>
-                            
-                            <button onClick={() => { setViewingReceipt(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
-                        </div>
-                    </div>
-                );
-            })()}
+                          {/* TEAM SHARING & DATA RESET */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                                  <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
+                                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4">Export specific datasets</p>
+                                  <div className="space-y-4">
+                                      {[
+                                          { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
+                                          { label: 'Customer Directory', type: 'customers', icon: <User size={16}/> },
+                                          { label: 'Full Configuration', type: 'both', icon: <Settings size={16}/> }
+                                      ].map((item) => (
+                                          <div key={item.type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700">
+                                              <div className="flex items-center gap-3">
+                                                  <div className="text-orange-500">{item.icon}</div>
+                                                  <span className="text-sm font-bold dark:text-white">{item.label}</span>
+                                              </div>
+                                              <div className="flex gap-2">
+                                                  <button onClick={() => handleExportGranular(item.type)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors uppercase">Export</button>
+                                                  <label className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 cursor-pointer transition-colors uppercase">
+                                                      Import <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
+                                                  </label>
+                                              </div>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
 
-        </div>
+                              <div className="bg-red-50 dark:bg-red-950/20 p-6 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/50">
+                                  <h3 className="font-bold text-lg mb-1 text-red-600 dark:text-red-500 flex items-center gap-2"><Trash2 size={20}/> Data Wipe</h3>
+                                  <p className="text-[10px] text-red-500/70 uppercase tracking-widest mb-4">Permanently delete datasets</p>
+                                  <div className="space-y-4">
+                                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
+                                          <div className="flex items-center gap-3 text-red-500"><Package size={16}/> <span className="text-sm font-bold">Wipe Products & Prices</span></div>
+                                          <button onClick={() => handleWipeData('products')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
+                                      </div>
+                                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
+                                          <div className="flex items-center gap-3 text-red-500"><User size={16}/> <span className="text-sm font-bold">Wipe Customers</span></div>
+                                          <button onClick={() => handleWipeData('customers')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
+                                      </div>
+                                      <div className="flex items-center justify-between p-3 bg-red-600 rounded-xl border border-red-700 shadow-md">
+                                          <div className="flex items-center gap-3 text-white"><ShieldAlert size={16}/> <span className="text-sm font-bold">Full Reset (Both)</span></div>
+                                          <button onClick={() => handleWipeData('both')} className="px-4 py-1.5 bg-black/20 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-black/40 transition-colors uppercase border border-white/20">Wipe All</button>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* ---------------------------------------------------- */}
+                  {/* WORKSPACE: ARCHITECT TERMINAL (TIER 1 ONLY) */}
+                  {/* ---------------------------------------------------- */}
+                  {activeTab === 'architect' && isSystemOwner && (
+                      <div className="animate-fade-in space-y-6">
+                          
+                          {/* 🚀 THE NEW PERMISSION MATRIX EDITOR 🚀 */}
+                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
+
+                          {/* LANDLORD DASHBOARD */}
+                          <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                             <LandlordDashboard db={db} appId={appId} user={user} />
+                          </div>
+
+                          {/* CROWN TRANSFER */}
+                          <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-2xl flex justify-between items-center">
+                              <div>
+                                  <h3 className="text-red-500 font-black uppercase tracking-widest text-lg">Danger Zone</h3>
+                                  <p className="text-xs font-mono text-slate-400 mt-1">Permanently transfer ownership of this software.</p>
+                              </div>
+                              <button onClick={() => setShowCrownTransfer(true)} className="bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white border border-red-500 px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all">
+                                  Initiate Transfer
+                              </button>
+                          </div>
+
+                          {showCrownTransfer && (
+                              <CrownTransferProtocol 
+                                  db={db} 
+                                  appId={appId} 
+                                  userId={userId} 
+                                  user={user} 
+                                  onClose={() => setShowCrownTransfer(false)} 
+                                  triggerCapy={triggerCapy} 
+                              />
+                          )}
+
+                          {/* DISCO PROTOCOL */}
+                          <div className="pt-8 border-t-2 border-red-900/30">
+                              <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16}/> System Overload</h4>
+                              <button onClick={triggerDiscoParty} disabled={isDiscoMode} className={`w-full py-4 rounded-xl font-bold text-white shadow-xl transition-all ${isDiscoMode ? 'bg-slate-500' : 'bg-red-600 hover:bg-red-700'}`}>
+                                  {isDiscoMode ? <><Music size={24} className="animate-spin inline mr-2"/> SYSTEM OVERLOAD...</> : <><ShieldAlert size={24} className="animate-pulse inline mr-2"/> DO NOT PRESS: CAPY DISCO PROTOCOL</>}
+                              </button>
+                              <p className="text-[10px] text-red-400 text-center mt-3 font-mono opacity-70">Warning: Extreme funkiness levels incoming.</p>
+                          </div>
+                      </div>
+                  )}
+
+              </div>
+          </div>
+      </div>
     );
 }
+
+// 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR
+const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
+    if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
+
+    const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
+    const [tiers, setTiers] = React.useState(DYNAMIC_TIERS.filter(t => t.id !== 'DEVELOPER'));
+    const [isSaving, setIsSaving] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!db || !appId || !userId) return;
+        const fetchMatrix = async () => {
+            try {
+                let snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'));
+                if (!snap.exists()) snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'));
+                
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.matrix && Object.keys(data.matrix).length > 0) setMatrix(data.matrix);
+                    if (data.tiers && data.tiers.length > 0) {
+                        setTiers(data.tiers.filter(t => t.id !== 'DEVELOPER'));
+                    }
+                }
+            } catch (error) { console.error("Failed to load Master Permission Matrix:", error); }
+        };
+        fetchMatrix();
+    }, [db, appId, userId]);
+    
+    // Mobile View State
+    const [activeMobileTierId, setActiveMobileTierId] = React.useState(tiers[0]?.id);
+
+    // DND States (Desktop)
+    const [draggedIdx, setDraggedIdx] = React.useState(null);
+    const [dragOverIdx, setDragOverIdx] = React.useState(null);
+
+    // 🚀 THE FIX: ALL_FEATURES no longer contains individual report toggles.
+    const ALL_FEATURES = [
+        { id: 'view_dashboard', label: 'Command Center' },
+        { id: 'view_map', label: 'Map System' },
+        { id: 'view_journey', label: 'Journey Plan' },
+        { id: 'view_fleet', label: 'Fleet & Canvas' },
+        { id: 'view_master_vault', label: 'Master Vault' },
+        { id: 'view_restock_vault', label: 'Logistics & Warehouse' }, 
+        { id: 'view_agent_inventory', label: 'Agent Inventory' },
+        { id: 'view_sales', label: 'Sales Terminal' },
+        { id: 'view_receivables', label: 'Receivables & Consign' },
+        { id: 'view_eod', label: 'EOD Setoran' },
+        { id: 'view_stock_opname', label: 'Stock Opname' },
+        { id: 'view_customers', label: 'Customers' },
+        { id: 'view_sampling', label: 'Sampling' },
+        { id: 'view_audit_logs', label: 'Audit Logs' },
+        { id: 'view_settings', label: 'Settings Panel' },
+        { id: 'view_agent_profile', label: 'Agent Profile' },
+        { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, 
+        { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
+        { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
+    ];
+
+    const REPORT_PERMS = ['view_reports_global', 'view_reports_regional', 'view_reports_personal'];
+
+    const togglePermission = (tierId, featureId) => {
+        const newMatrix = { ...matrix };
+        const tierPerms = [...(newMatrix[tierId] || [])];
+        if (tierPerms.includes(featureId)) newMatrix[tierId] = tierPerms.filter(f => f !== featureId);
+        else newMatrix[tierId] = [...tierPerms, featureId];
+        setMatrix(newMatrix);
+    };
+
+    // 🚀 NEW: Absolute dropdown handler for Report Authority
+    const changeReportAccess = (tierId, newAccessLevel) => {
+        const newMatrix = { ...matrix };
+        let tierPerms = (newMatrix[tierId] || []).filter(p => !REPORT_PERMS.includes(p));
+        
+        if (newAccessLevel !== 'none') {
+            tierPerms.push(newAccessLevel);
+        }
+        
+        newMatrix[tierId] = tierPerms;
+        setMatrix(newMatrix);
+    };
+
+    // 🚀 DESKTOP DRAG AND DROP HANDLERS
+    const handleDragStart = (e, idx) => { setDraggedIdx(idx); e.dataTransfer.effectAllowed = "move"; };
+    const handleDragOver = (e, idx) => { e.preventDefault(); setDragOverIdx(idx); };
+    const handleDrop = (e, targetIdx) => {
+        e.preventDefault();
+        if (draggedIdx === null || draggedIdx === targetIdx) { setDragOverIdx(null); return; }
+        const newTiers = [...tiers];
+        const [moved] = newTiers.splice(draggedIdx, 1);
+        newTiers.splice(targetIdx, 0, moved);
+        recalculateTierRanks(newTiers);
+        setDraggedIdx(null); setDragOverIdx(null);
+    };
+    const handleDragEnd = () => { setDraggedIdx(null); setDragOverIdx(null); };
+
+    // 🚀 MOBILE REORDER HANDLERS
+    const handleShiftTier = (id, direction) => {
+        const idx = tiers.findIndex(t => t.id === id);
+        if ((direction === -1 && idx === 0) || (direction === 1 && idx === tiers.length - 1)) return;
+        const newTiers = [...tiers];
+        const temp = newTiers[idx];
+        newTiers[idx] = newTiers[idx + direction];
+        newTiers[idx + direction] = temp;
+        recalculateTierRanks(newTiers);
+    };
+
+    const recalculateTierRanks = (tierArray) => {
+        const renumbered = tierArray.map((t, idx) => {
+            const cleanName = t.label.replace(/^T\d+:\s*/, '');
+            return { ...t, label: `T${idx + 2}: ${cleanName}` };
+        });
+        setTiers(renumbered);
+    };
+
+    // 🚀 TIER EDITING HANDLERS
+    const handleAddTier = () => {
+        const name = prompt("Enter new Rank Name (e.g., WAREHOUSE):");
+        if (!name || name.trim() === '') return;
+        const newId = `CUSTOM_TIER_${Date.now()}`;
+        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
+        setTiers(newTiers);
+        setMatrix({ ...matrix, [newId]: [] });
+        setActiveMobileTierId(newId);
+    };
+
+    const handleRenameTier = (id) => {
+        const idx = tiers.findIndex(t => t.id === id);
+        const cleanName = tiers[idx].label.replace(/^T\d+:\s*/, '');
+        const newName = prompt(`Rename Rank T${idx + 2}:`, cleanName);
+        if (newName && newName.trim() !== '') {
+            setTiers(tiers.map((t, i) => t.id === id ? { ...t, label: `T${i + 2}: ${newName.toUpperCase().trim()}` } : t));
+        }
+    };
+
+    const handleDeleteTier = (id) => {
+        if (!id.startsWith('CUSTOM_')) return alert("System core tiers cannot be deleted, but you can rename and move them!");
+        if (window.confirm("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
+            const remaining = tiers.filter(t => t.id !== id);
+            recalculateTierRanks(remaining);
+            const newMatrix = { ...matrix };
+            delete newMatrix[id];
+            setMatrix(newMatrix);
+            if (activeMobileTierId === id) setActiveMobileTierId(remaining[0]?.id);
+        }
+    };
+
+    const saveMatrixToFirebase = async () => {
+        setIsSaving(true);
+        try {
+            const godTiers = DYNAMIC_TIERS.filter(t => t.id === 'DEVELOPER');
+            const fullTiers = [...godTiers, ...tiers];
+
+            const payload = { matrix, tiers: fullTiers, updatedAt: new Date().toISOString() };
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
+            
+            injectDynamicPermissions(matrix, fullTiers); 
+            alert("✅ Matrix & Hierarchy Deployed to Global Server!");
+        } catch (e) { 
+            console.error(e);
+            alert("Matrix Deployment Failed."); 
+        }
+        setIsSaving(false);
+    };
+
+    const activeTier = tiers.find(t => t.id === activeMobileTierId) || tiers[0];
+    const activeTierIdx = tiers.findIndex(t => t.id === activeTier?.id);
+
+    return (
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 lg:p-6 shadow-2xl mt-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 className="text-lg lg:text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 hidden lg:block">Tier 1 Overrides - Drag columns to reorder ranks.</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 lg:hidden">Select a tier below to edit its permissions.</p>
+                </div>
+                <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                    <button onClick={handleAddTier} className="flex-1 lg:flex-none justify-center bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
+                        <Plus size={16}/> Add Tier
+                    </button>
+                    <button onClick={saveMatrixToFirebase} disabled={isSaving} className="flex-1 lg:flex-none justify-center bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
+                        <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
+                    </button>
+                </div>
+            </div>
+
+            {/* ========================================= */}
+            {/* 📱 MOBILE VIEW (Hidden on large screens)  */}
+            {/* ========================================= */}
+            <div className="block lg:hidden space-y-4">
+                <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar snap-x">
+                    {tiers.map((t) => (
+                        <button 
+                            key={t.id} 
+                            onClick={() => setActiveMobileTierId(t.id)}
+                            className={`snap-start whitespace-nowrap px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMobileTierId === t.id ? 'bg-slate-800 text-white border border-emerald-500 shadow-inner' : 'bg-slate-950/50 text-slate-500 border border-slate-800 hover:text-slate-300'}`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {activeTier && (
+                    <div className="bg-slate-950/50 rounded-xl border border-slate-800 p-4">
+                        <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-4">
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronLeft size={18}/></button>
+                                <span className={`text-xs font-black uppercase tracking-widest ${activeTier.color}`}>{activeTier.label}</span>
+                                <button onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronRight size={18}/></button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => handleRenameTier(activeTier.id)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><Edit size={14}/></button>
+                                {activeTier.id.startsWith('CUSTOM_') && (
+                                    <button onClick={() => handleDeleteTier(activeTier.id)} className="text-red-500 hover:text-red-400 p-1 bg-red-950/30 rounded"><Trash2 size={14}/></button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 🚀 MOBILE DROPDOWN FOR REPORTING AUTHORITY 🚀 */}
+                        <div className="mb-6 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
+                            <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><BarChart2 size={14}/> Reporting Authority</label>
+                            <select 
+                                value={(matrix[activeTier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none'}
+                                onChange={(e) => changeReportAccess(activeTier.id, e.target.value)}
+                                className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-orange-500"
+                            >
+                                <option value="none">No Access</option>
+                                <option value="view_reports_personal">Lone Wolf (Personal Data Only)</option>
+                                <option value="view_reports_regional">Regional Command (Branch Data)</option>
+                                <option value="view_reports_global">God Mode (Global Master Data)</option>
+                            </select>
+                        </div>
+
+                        {/* Toggle List */}
+                        <div className="space-y-2">
+                            {ALL_FEATURES.map(feature => {
+                                const hasAccess = (matrix[activeTier.id] || []).includes(feature.id);
+                                return (
+                                    <div key={feature.id} className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
+                                        <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
+                                        <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600'}`}>
+                                            {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ========================================= */}
+            {/* 💻 DESKTOP VIEW (Hidden on small screens) */}
+            {/* ========================================= */}
+            <div className="hidden lg:block overflow-x-auto custom-scrollbar pb-4">
+                <table className="w-full text-left border-collapse min-w-[800px] select-none">
+                    <thead>
+                        <tr>
+                            <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
+                            {tiers.map((tier, idx) => {
+                                const cleanName = tier.label.replace(/^T\d+:\s*/, '');
+                                return (
+                                    <th 
+                                        key={tier.id} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}
+                                        className={`p-3 border-b border-slate-800 text-center bg-slate-950/50 group cursor-move transition-all duration-200 ${dragOverIdx === idx ? 'bg-slate-800 border-b-emerald-500 border-b-2 shadow-inner' : ''} ${draggedIdx === idx ? 'opacity-20' : ''}`}
+                                        title="Drag to adjust Rank Hierarchy"
+                                    >
+                                        <div className="flex flex-col items-center justify-center gap-0.5">
+                                            <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
+                                                    {cleanName} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
+                                                </button>
+                                                {tier.id.startsWith('CUSTOM_') && <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
+                                            </div>
+                                        </div>
+                                    </th>
+                                );
+                            })}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ALL_FEATURES.map((feature) => (
+                            <tr key={feature.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
+                                {tiers.map(tier => {
+                                    const hasAccess = (matrix[tier.id] || []).includes(feature.id);
+                                    return (
+                                        <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
+                                            <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600 hover:text-slate-400'}`}>
+                                                {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
+                                            </button>
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                        {/* 🚀 DESKTOP DROPDOWN FOR REPORTING AUTHORITY 🚀 */}
+                        <tr className="border-t-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
+                            <td className="p-3 text-xs font-black uppercase tracking-widest text-orange-400 flex items-center gap-2"><BarChart2 size={16}/> Reporting Authority</td>
+                            {tiers.map(tier => {
+                                const currentReportAccess = (matrix[tier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none';
+                                return (
+                                    <td key={`report-${tier.id}`} className="p-2 text-center">
+                                        <select 
+                                            value={currentReportAccess}
+                                            onChange={(e) => changeReportAccess(tier.id, e.target.value)}
+                                            className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[9px] font-bold text-slate-300 outline-none focus:border-orange-500 mx-auto"
+                                        >
+                                            <option value="none">No Access</option>
+                                            <option value="view_reports_personal">Personal Only</option>
+                                            <option value="view_reports_regional">Regional Team</option>
+                                            <option value="view_reports_global">Global Master</option>
+                                        </select>
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};

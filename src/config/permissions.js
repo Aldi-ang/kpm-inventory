@@ -20,23 +20,24 @@ export let DYNAMIC_TIERS = [
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_reports', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config',
-        'can_unrestricted_sample', 'can_view_team_history' // 🚀 NEW: Registered Capability
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample',
+        'view_reports_global' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_3]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_reports', 'view_agent_profile',
-        'can_unrestricted_sample', 'can_view_team_history' // 🚀 NEW: Registered Capability
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'can_unrestricted_sample',
+        'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_4]: [ 
-        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_reports', 'view_agent_profile',
-        'can_view_team_history' // 🚀 NEW: Captains can view their team history
+        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile',
+        'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_5]: [ 
-        'view_map', 'view_journey', 'view_agent_inventory', 'view_sales', 'view_eod', 'view_reports', 'view_agent_profile'
-        // Tier 5 Operatives explicitly lack 'can_view_team_history' by default
+        'view_map', 'view_journey', 'view_agent_inventory', 'view_sales', 'view_eod', 'view_agent_profile',
+        'view_reports_personal' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_6]: [ 
-        'view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile'
+        'view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile',
+        'view_reports_personal' // 🚀 THE DROPDOWN AUTHORITY
     ]
 };
 
@@ -66,7 +67,7 @@ export const hasClearance = (userRole, requiredFeature) => {
     let activePerms = ROLE_PERMISSIONS[role];
     if (!activePerms) {
         // Force fallback to Tier 5 Operative defaults
-        activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile'];
+        activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile', 'view_reports_personal'];
     }
     
     if (activePerms.includes('ALL_ACCESS')) return true;
