@@ -31,6 +31,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // ANALYTICS STATE
     const [expandedAgent, setExpandedAgent] = useState(null);
 
+    // 🚀 AUTHORITY ENGINE: Identify Field Agents (Tier 5 & 6) vs Command (Tier 1-4)
+    const isFieldAgent = userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN';
+
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
     const allTransactions = useMemo(() => {
         const combined = [...transactions, ...historicalData];
@@ -40,9 +43,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const dateFilteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
         return allTransactions.filter(t => {
-            // 🛑 BUG FIX: Removed the redundant frontend role filter!
-            // The Firebase backend securely scopes the 'transactions' array to the user's permissions. 
-            // Filtering it out again on the frontend was blinding Tier 6 and Area Admins.
+            // 🛑 SECURITY FIREWALL: Strict Isolation for Tier 5 & 6 Field Agents
+            if (isFieldAgent && agentProfileId && t.agentId !== agentProfileId) {
+                return false; 
+            }
             
             const tDate = new Date(t.date);
             if (rangeType === 'daily') return t.date === targetDate;
@@ -55,7 +59,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
             return false;
         }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-    }, [allTransactions, rangeType, targetDate]);
+    }, [allTransactions, rangeType, targetDate, isFieldAgent, agentProfileId]);
 
     // --- ENGINE 2: GLOBAL SEARCH ---
     const searchedTransactions = useMemo(() => {
@@ -78,13 +82,19 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
+                // Skip loading other agents into the UI structure if this is a field agent
+                if (isFieldAgent && m.id !== agentProfileId) return;
+
                 const loc = m.location || 'UNASSIGNED AREA';
                 const aName = m.name || m.agentName || 'Unknown Agent';
                 if (!structure[loc]) structure[loc] = { name: loc, total: 0, count: 0, agents: {} };
                 if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, provinsi: {} };
             });
         }
-        if (!structure['Headquarters']) structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
+        
+        if (!isFieldAgent && !structure['Headquarters']) {
+            structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
+        }
 
         searchedTransactions.forEach(t => {
             const agentId = t.agentId || 'ADMIN';
@@ -166,8 +176,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         });
         
         return structure;
-    }, [searchedTransactions, motorists, customers]);
+    }, [searchedTransactions, motorists, customers, isFieldAgent, agentProfileId]);
 
+    // AUTO-NAVIGATE FOR EMPLOYEES
     useEffect(() => {
         if (userRole !== 'ADMIN') {
             const regions = Object.keys(reportData);
@@ -350,8 +361,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                     {userRole === 'ADMIN' && (
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
-                    {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-blue-500 flex items-center gap-1"><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-emerald-500 flex items-center gap-1"><User size={14}/> {selectedAgent}</span> </>}
+                    
+                    {/* 🚀 UI LOCK: Field Agents cannot click Region/Agent to view team folders */}
+                    {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
+                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
+                    
                     {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
                     {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
                     {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-orange-500 text-red-500 flex items-center gap-1">{selectedKec}</span> </>}
@@ -397,8 +411,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                          {/* MACRO VIEW: GLOBAL STATS */}
                          <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
+                                 {/* 🚀 DYNAMIC TITLE: Field Agents see "My Performance" */}
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
-                                     {selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
+                                     {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
                                  <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
                              </div>
@@ -433,10 +448,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                          {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}
                          <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
-                             <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest"><User size={24} className="text-blue-500"/> Agent Roster</h3>
+                             <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest">
+                                 <User size={24} className="text-blue-500"/> {isFieldAgent ? 'My Detailed Breakdown' : 'Agent Roster'}
+                             </h3>
                              <div className="space-y-4">
                                  {stats.agentRoster.map(agent => {
-                                     const isExpanded = expandedAgent === agent.name;
+                                     // 🚀 Auto-expand if they are a Field Agent (since it's just them)
+                                     const isExpanded = isFieldAgent || expandedAgent === agent.name;
                                      const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
                                      
                                      return (
@@ -444,7 +462,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                              {/* Accordion Header */}
                                              <button 
                                                 onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
-                                                className="w-full p-4 flex items-center justify-between text-left focus:outline-none"
+                                                className={`w-full p-4 flex items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
                                              >
                                                  <div className="flex items-center gap-4">
                                                      {agentProfile.photoURL ? (
@@ -464,9 +482,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
                                                          <p className={`font-black text-lg ${agent.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(agent.total)}</p>
                                                      </div>
-                                                     <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-full text-slate-400">
-                                                         {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
-                                                     </div>
+                                                     {!isFieldAgent && (
+                                                        <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-full text-slate-400">
+                                                            {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
+                                                        </div>
+                                                     )}
                                                  </div>
                                              </button>
 
@@ -495,7 +515,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
                                                              {agent.transactions.map(t => {
-                                                                 // 🚀 FORENSIC BADGES FOR ANALYTICS TIMELINE
+                                                                 // 🚀 FORENSIC BADGES
                                                                  const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
                                                                  const isExchange = t.paymentType === 'Tukar Ganti';
                                                                  const isIouFulfill = t.paymentType === 'IOU Fulfillment';
@@ -518,11 +538,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                                     <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
                                                                                 ) : null}
                                                                              </div>
-                                                                             <p className="text-[10px] text-slate-500 uppercase truncate">
+                                                                             <p className="text-[10px] text-slate-500 uppercase mt-0.5 truncate">
                                                                                  {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
                                                                                      let lbl = `${i.qty} ${i.unit} ${i.name}`;
                                                                                      if (i.condition === 'DAMAGED') lbl += ' [DMG]';
                                                                                      if (i.fulfillment === 'IOU') lbl += ' [IOU]';
+                                                                                     if (i.isIouFulfillment) lbl += ' [FULFILLED]';
                                                                                      return lbl;
                                                                                  }).join(", ") : 'N/A'}
                                                                              </p>
@@ -555,7 +576,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             <div className="hide-on-print w-full">
 
             {/* --- LEVEL 1: REGION SELECTION (TEAM) --- */}
-            {!reportView && userRole === 'ADMIN' && !selectedRegion && (
+            {!reportView && !isFieldAgent && !selectedRegion && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData).length === 0 ? (
                         <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Regions Active</p></div>
@@ -858,7 +879,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 </div>
             )}
 
-            {/* 🚀 UPGRADED FORENSIC RECEIPT PRINTER MODAL 🚀 */}
+            {/* RECEIPT PRINTER MODAL */}
             {viewingReceipt && (() => {
                 let receiptDateStr = viewingReceipt.date || '';
                 let receiptTimeStr = '';
@@ -1022,7 +1043,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         );
                                                     })}
                                                 </tbody>
-                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
+                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</td></tr></tfoot>
                                             </table>
                                         )}
                                     </div>
@@ -1055,6 +1076,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             text += `${item.qty} ${item.unit} ${item.name}`;
                                             if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
                                             if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
+                                            if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
                                             text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; 
                                         });
                                     }
