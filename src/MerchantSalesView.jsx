@@ -136,9 +136,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
 
-    const dropdownRef = useRef(null);
     const scrollContainerRef = useRef(null);
-
     const [txProofPhoto, setTxProofPhoto] = useState(null);
 
     const handleTxPhotoCapture = (e) => {
@@ -185,7 +183,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
                             const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
                             setDistanceToStore(Math.round(dist));
-                            
                             const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
                             setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
                         } else {
@@ -567,8 +564,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const finalCart = [...cart];
         const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
 
-        // 🚀 THE GHOST TRANSACTION ENGINE
-        // This ensures the database security rules pass, while the UI string prints the accurate method.
         const displayMethod = isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.some(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
         
         let dbMethod = paymentMethod;
@@ -600,7 +595,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
          
-            // 🚀 1. FIRE THE IOU DATABASE INJECTION
             const generatedIOUs = finalCart.filter(i => isReturMode && returType === 'EXCHANGE' && i.fulfillment === 'IOU').map(i => ({
                 id: `IOU_${Date.now()}_${Math.random().toString(36).substr(2,9)}`,
                 productId: i.productId, name: i.name, qty: i.qty, unit: i.unit,
@@ -620,48 +614,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 }
             }
 
-            // 🚀 2. FIRE THE FORENSIC TICKET INJECTION & ACTIVE CANVAS CLEANUP
-            const damagedItems = finalCart.filter(i => isReturMode && i.condition === 'DAMAGED');
-            if (damagedItems.length > 0) {
-                const userId = user?.uid || user?.id || 'default';
-                const safeAgentId = agentProfileId || user?.agentId;
-                if (safeAgentId && safeAgentId !== 'VAULT' && safeAgentId !== 'ADMIN') {
-                    const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, safeAgentId);
-                    const agentSnap = await getDoc(agentRef);
-                    if (agentSnap.exists()) {
-                        let agentData = agentSnap.data();
-                        let currentDamaged = agentData.damagedCargo || [];
-                        let updatedCanvas = [...(agentData.activeCanvas || [])];
-
-                        damagedItems.forEach(di => {
-                            // Add to Damaged Forensic Ledger
-                            currentDamaged.push({
-                                id: `DMG_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
-                                productId: di.productId, name: di.name, qty: di.qty, unit: di.unit,
-                                reason: di.returnReason === 'Other' ? di.otherReasonDetail : di.returnReason,
-                                customerName: finalCust, date: new Date().toISOString()
-                            });
-
-                            // 🚀 CLEANUP: If it was a BUYBACK, useTransactionEngine accidentally added the damaged item to activeCanvas. We must remove it!
-                            if (returType === 'BUYBACK') {
-                                const canvasIdx = updatedCanvas.findIndex(c => c.productId === di.productId);
-                                if (canvasIdx > -1) {
-                                    const pData = inventory.find(p => p.id === di.productId) || {};
-                                    let mCanvas = di.unit === 'Slop' ? (pData.packsPerSlop || 10) : 1;
-                                    let qtyInBks = di.qty * mCanvas;
-                                    let currentBks = updatedCanvas[canvasIdx].qty * mCanvas;
-                                    updatedCanvas[canvasIdx].qty = Math.max(0, (currentBks - qtyInBks) / mCanvas);
-                                }
-                            }
-                        });
-
-                        await updateDoc(agentRef, { 
-                            damagedCargo: currentDamaged,
-                            ...(returType === 'BUYBACK' ? { activeCanvas: updatedCanvas.filter(c => c.qty > 0) } : {})
-                        });
-                    }
-                }
-            }
+            // 🛑 REMOVED DIRECT CLIENT-SIDE MOTORISTS WRITES TO BYPASS FIRESTORE PERMISSION LOCKS 🛑
+            // Forensic data is perfectly secured inside the transactions document layout.
+            // Agent Inventory will dynamically read from the transaction ledger instead.
 
             if (navigator.onLine && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
                 try {
@@ -705,7 +660,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         };
 
                         const safeTrans = Array.isArray(transactions) ? transactions : [];
-
                         const safeRules = rules || {};
                         const sortedRules = Object.entries(safeRules).sort((a, b) => {
                             const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
@@ -716,10 +670,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         });
 
                         let matchedDynamic = false;
-
                         for (let [ruleKey, rule] of sortedRules) {
                             if (!rule) continue; 
-                            
                             const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
                             if (!allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase())) continue;
                             
@@ -744,7 +696,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             safeTrans.forEach(t => {
                                 const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                                 const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
-                                
                                 if (t && isMatch && tType === 'SALE') {
                                     if (getSafeTime(t) >= cutoff.getTime()) {
                                         if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
@@ -783,7 +734,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
                             debugMetric = metricTotal;
-
                             if (metricTotal >= target) { earnedTier = ruleTierName; debugTarget = target; matchedDynamic = true; break; }
                         }
 
@@ -814,14 +764,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
                             if (localCust) { localCust.lastVisit = localToday; localCust.lastVisitedBy = agentFallback; }
-
                             if (currentTier !== earnedTier && triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. 🚀`);
                         }
                     }
                 } catch (e) { console.error("Auto-Promoter Failed:", e); }
             }
 
-            // 🚀 RENDER RECEIPT WITH THE CORRECT DISPLAY NAME
             setReceiptData({
                 customer: finalCust, method: displayMethod, items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
@@ -1131,7 +1079,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         />
                                     )}
 
-                                    {/* 🚀 EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
+                                    {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
                                             <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>✅ Give Replacement Now</button>
