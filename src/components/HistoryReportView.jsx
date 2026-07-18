@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
-import { hasClearance } from '../config/permissions'; // 🚀 THE FIX: Corrected relative path!
+import { hasClearance } from '../config/permissions'; 
 
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,9 +45,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     const dateFilteredTransactions = useMemo(() => {
         const target = new Date(targetDate);
         return allTransactions.filter(t => {
-            // 🛑 SECURITY FIREWALL: Strict Isolation for tiers without Team History Clearance
-            if (isFieldAgent && agentProfileId && t.agentId !== agentProfileId) {
-                return false; 
+            // 🛑 FAIL CLOSED SECURITY FIREWALL: Strict Isolation for Field Agents
+            // If they are a field agent, they MUST have a valid agentProfileId, 
+            // and it MUST perfectly match the transaction's agentId. 
+            // If agentProfileId hasn't loaded yet, it returns false (hides data).
+            if (isFieldAgent) {
+                if (!agentProfileId) return false; 
+                if (t.agentId !== agentProfileId) return false;
             }
             
             const tDate = new Date(t.date);
@@ -84,7 +88,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
-                // Skip loading other agents into the UI structure if this is a field agent
+                // 🛑 UI LOCK: Do not build UI folders for other agents if this is a Field Agent
                 if (isFieldAgent && m.id !== agentProfileId) return;
 
                 const loc = m.location || 'UNASSIGNED AREA';
@@ -154,7 +158,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             const storeNode = kecNode.stores[cust];
 
-            // 🚀 Negative total check correctly tallies Returns
             const tValue = t.type === 'RETUR' ? -Math.abs(t.total || t.amountPaid || 0) : (t.total || t.amountPaid || 0);
             
             structure[regionName].total += tValue;
@@ -182,7 +185,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
     // AUTO-NAVIGATE FOR EMPLOYEES
     useEffect(() => {
-        if (!hasClearance(userRole, 'can_view_team_history')) {
+        if (isFieldAgent) {
             const regions = Object.keys(reportData);
             if (regions.length === 1 && !selectedRegion) {
                 setSelectedRegion(regions[0]);
@@ -190,7 +193,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 if (agents.length === 1 && !selectedAgent) setSelectedAgent(agents[0]);
             }
         }
-    }, [userRole, reportData, selectedRegion, selectedAgent]);
+    }, [isFieldAgent, reportData, selectedRegion, selectedAgent]);
 
     const handlePullArchive = async () => {
         if (!fetchHistoricalTransactions) return;
@@ -360,12 +363,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {/* BREADCRUMB NAVIGATION */}
             {!reportView && (
                 <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                    {userRole === 'ADMIN' && (
+                    {!isFieldAgent && (
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
-                    {/* 🚀 UI LOCK: Tiers without team clearance cannot click Region/Agent to view team folders */}
-                    {selectedRegion && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
+                    {/* 🚀 UI LOCK: Field Agents cannot click Region/Agent to view team folders */}
+                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
                     {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
                     
                     {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
@@ -413,7 +416,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                          {/* MACRO VIEW: GLOBAL STATS */}
                          <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
                              <div>
-                                 {/* 🚀 DYNAMIC TITLE: Matrix Check limits to "My Performance" */}
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
                                      {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
@@ -455,13 +457,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                              </h3>
                              <div className="space-y-4">
                                  {stats.agentRoster.map(agent => {
-                                     // 🚀 Auto-expand if they are restricted (since it's just them)
+                                     // 🚀 Auto-expand if they are restricted
                                      const isExpanded = isFieldAgent || expandedAgent === agent.name;
                                      const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
                                      
                                      return (
                                          <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-500 shadow-lg dark:bg-slate-800/80' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400'}`}>
-                                             {/* Accordion Header */}
                                              <button 
                                                 onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
                                                 className={`w-full p-4 flex items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
@@ -492,11 +493,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                  </div>
                                              </button>
 
-                                             {/* Accordion Body (Deep Dive) */}
                                              {isExpanded && (
                                                  <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
-                                                     
-                                                     {/* Agent's Product Breakdown */}
                                                      <div className="mb-8">
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
                                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -512,12 +510,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                          </div>
                                                      </div>
 
-                                                     {/* Agent's Transaction Timeline */}
                                                      <div>
                                                          <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
                                                              {agent.transactions.map(t => {
-                                                                 // 🚀 FORENSIC BADGES
                                                                  const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
                                                                  const isExchange = t.paymentType === 'Tukar Ganti';
                                                                  const isIouFulfill = t.paymentType === 'IOU Fulfillment';
@@ -561,7 +557,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                              )})}
                                                          </div>
                                                      </div>
-
                                                  </div>
                                              )}
                                          </div>
@@ -739,7 +734,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {cObj.history.map(t => {
-                                                    // 🚀 FORENSIC BADGES
                                                     const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
                                                     const isExchange = t.paymentType === 'Tukar Ganti';
                                                     const isIouFulfill = t.paymentType === 'IOU Fulfillment';
