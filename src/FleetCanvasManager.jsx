@@ -5,15 +5,12 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
-import { DYNAMIC_TIERS } from './config/permissions'; // 🚀 IMPORT THE MATRIX TIERS 
+import { DYNAMIC_TIERS } from './config/permissions'; 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
-    // 🚀 DYNAMIC SCOPE ENGINE 🚀
-    // The Matrix controls the UI door, but this engine controls the Data.
-    // Tiers 1/2 are Global. Anyone else given access by the Matrix is strictly Regional.
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
-    const isAreaAdmin = !isGlobalAdmin; // Automatically applies Regional security to Tiers 3, 4, 5, and 6
+    const isAreaAdmin = !isGlobalAdmin; 
     
     const userId = user?.uid || user?.id || 'default';
     const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
@@ -100,13 +97,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
 
-    // 🚀 GEOFENCE BYPASS STATE (Global Queue Architecture)
     const [allBypasses, setAllBypasses] = useState([]);
 
     useEffect(() => {
         if (!userId || !db || !appId) return;
-        
-        // We pull ALL bypasses globally, independent of which agent is selected.
         const bypassRef = collection(db, `artifacts/${appId}/users/${userId}/gps_bypasses`);
         const unsub = onSnapshot(bypassRef, (snap) => {
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -353,20 +347,29 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const handleWhatsAppShare = () => {
         if (!viewingReceipt) return;
+        const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
+        const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
+
         let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT (REPRINT)*\n------------------------\n`;
         text += `Date: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') : viewingReceipt.date}\n`;
         text += `Customer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
         if (viewingReceipt.items) {
             viewingReceipt.items.forEach(item => {
-                text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
+                text += `${item.qty} ${item.unit} ${item.name}`;
+                if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
+                if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
+                if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
+                text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
             });
         }
-        text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
+        text += `------------------------\n*TOTAL: ${isReturReceipt && displayTotal > 0 ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(displayTotal)}*\n\nThank you!`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && t.type === 'SALE');
+    
+    // 🚀 FORENSIC UPDATE: Ensure we grab BOTH sales AND return logs for the agent today
+    const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && ['SALE', 'RETUR'].includes(t.type || 'SALE'));
     
     const combinedItems = useMemo(() => {
         if (!selectedAgent) return [];
@@ -382,6 +385,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         
         agentSales.forEach(t => {
             (t.items || []).forEach(item => {
+                // 🚀 MATH ENGINE FIX: Don't deduct from car if it was a Buyback or Pending IOU
+                if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return;
+                if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return;
+
                 const p = inventory.find(x => x.id === item.productId);
                 const bks = convertToBks(item.qty, item.unit, p);
                 if (!map[item.productId]) {
@@ -409,48 +416,66 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     return (
         <div className="print-reset h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
             
-            {/* RECEIPT MODAL */}
-            {viewingReceipt && (
-                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
-                    <div className="print-receipt format-thermal !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
-                        <div className="p-6 pb-2 shrink-0">
-                            <div className="text-center mb-6">
-                                <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
-                                <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
-                            </div>
-                            <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
-                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
-                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName || 'Unknown'}</span></div>
-                                <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className="!text-black font-black uppercase">{viewingReceipt.paymentType || 'Cash'}</span></div>
-                            </div>
-                            <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
-                                {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
-                                    <div key={i} className="mb-2">
-                                        <div className="font-bold uppercase text-xs !text-black">{item.name}</div>
-                                        <div className="flex justify-between text-xs mt-0.5">
-                                            <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                            <span className="!text-black font-black">{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}</span>
+            {/* 🚀 UPGRADED FORENSIC RECEIPT MODAL 🚀 */}
+            {viewingReceipt && (() => {
+                const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
+                const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
+
+                return (
+                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
+                        <div className="print-receipt format-thermal !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
+                            <div className="p-6 pb-2 shrink-0">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                    <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                    <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
+                                </div>
+                                <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
+                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName || 'Unknown'}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                </div>
+                                <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
+                                    {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
+                                        <div key={i} className="mb-2">
+                                            <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
+                                                {item.name}
+                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
+                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
+                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                            </div>
+                                            {item.condition === 'DAMAGED' && item.returnReason && (
+                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                            )}
+                                            <div className="flex justify-between text-xs mt-0.5">
+                                                <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                                <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
+                                                    {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                )) : (
-                                    <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">{viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment' : 'No Itemized Data'}</div>
-                                )}
+                                    )) : (
+                                        <div className="flex items-center justify-center h-full !text-slate-400 text-[10px] uppercase tracking-widest text-center">{viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'Consignment Payment' : 'No Itemized Data'}</div>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
+                                    <span>TOTAL</span>
+                                    <span className={isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-black'}>
+                                        {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
+                                    </span>
+                                </div>
+                                <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
                             </div>
-                            <div className="flex justify-between items-center text-lg font-black mb-6 border-t !border-slate-300 pt-3 !text-black">
-                                <span>TOTAL</span><span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.total || viewingReceipt.amountPaid || 0)}</span>
+                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                                <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
+                                <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
                             </div>
-                            <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
+                            <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
                         </div>
-                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
-                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
-                            <button onClick={handleWhatsAppShare} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><MessageSquare size={14}/> Share</button>
-                        </div>
-                        <button onClick={() => setViewingReceipt(null)} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg"><div className="flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</div></button>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
            {/* SURAT JALAN MODAL */}
             {viewingSuratJalan && selectedAgent && (
@@ -527,7 +552,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
                                         <p className="text-sm mt-2 uppercase font-bold">
                                             {(() => {
-                                                // 🚀 THE FIX: Dynamically find the Tier 3 Area Admin for this motorist's branch
                                                 const branchAdmin = activeMotorists.find(m => 
                                                     m.userRole === 'AREA_ADMIN' && 
                                                     String(m.location || '').trim().toUpperCase() === String(selectedAgent.location || '').trim().toUpperCase()
@@ -596,7 +620,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         style={{ colorScheme: 'dark' }}
                                         title="Assign Corporate Matrix Tier"
                                     >
-                                        {/* 🚀 ISOLATION FILTER: Prevents assigning God Tiers to field employees */}
                                         {DYNAMIC_TIERS.filter(t => !['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id)).map(t => (
                                             <option key={t.id} value={t.id} className="bg-slate-900 text-white">
                                                 {t.label}
@@ -606,7 +629,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 )}
                             </div>
                             
-                            {/* 🚀 THE FIX: RESTORED LOCATION SELECTION INPUTS 🚀 */}
                             <div className="flex gap-2 mb-2">
                                 {isNewProv || existingProvinces.length === 0 ? (
                                     <div className="flex-1 flex gap-2">
@@ -655,7 +677,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                 )}
 
-                                {/* 🚀 NEW: OPERATIONAL PRIVILEGES FOR RETUR */}
                                 <div className="mb-4">
                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Operational Privileges</label>
                                     <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
@@ -793,7 +814,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             {/* RIGHT PANEL: THE LOADING DOCK */}
             <div className="hide-on-print flex-1 bg-slate-900 flex flex-col relative">
                 
-                {/* 🚀 GLOBAL GEOFENCE COMMAND CENTER (Always Visible if Pending) 🚀 */}
+                {/* 🚀 GLOBAL GEOFENCE COMMAND CENTER 🚀 */}
                 {allBypasses.some(b => b.status === 'PENDING') && (
                     <div className="m-6 mb-0 bg-slate-800/90 rounded-2xl border-2 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.3)] overflow-hidden shrink-0 animate-fade-in-up z-20 backdrop-blur-sm">
                         <div className="p-4 bg-orange-500/20 border-b border-orange-500/50 flex justify-between items-center">
@@ -881,9 +902,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             const product = inventory.find(p => p.id === item.productId);
                                             currentLoadBks += convertToBks(item.qty, item.unit, product);
                                         });
+                                        
                                         let soldTodayBks = 0;
                                         agentSales.forEach(t => {
                                             (t.items || []).forEach(item => {
+                                                // 🚀 IGNORE PURE BUYBACKS AND IOU PROMISES FROM "SOLD" TALLY
+                                                if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return; 
+                                                if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return; 
+                                                
                                                 const product = inventory.find(p => p.id === item.productId);
                                                 soldTodayBks += convertToBks(item.qty, item.unit, product);
                                             });
@@ -982,10 +1008,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                             {/* 🚀 AGENT-SPECIFIC BYPASS HISTORY 🚀 */}
                             {(() => {
-                                // Smart loose-filter to find history despite ID mismatches
                                 const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
                                 const agentBypasses = allBypasses.filter(b => 
-                                    b.status !== 'PENDING' && // Pending is handled by the Global Queue now
+                                    b.status !== 'PENDING' && 
                                     (
                                         b.salesmanId === selectedAgent.id || 
                                         (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
@@ -1034,13 +1059,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
                                     <div className="flex items-center gap-2">
                                         <FileText size={18} className="text-blue-500"/>
-                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Sales)</h3>
+                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Transactions)</h3>
                                     </div>
                                     {showHistory ? <ChevronUp size={18} className="text-slate-400"/> : <ChevronDown size={18} className="text-slate-400"/>}
                                 </button>
                                 
                                 {showHistory && (() => {
-                                    // 1. Compile the agent's historical bypass log
                                     const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
                                     const agentBypasses = allBypasses.filter(b => 
                                         b.status !== 'PENDING' &&
@@ -1048,7 +1072,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             b.salesmanId === selectedAgent.id || 
                                             (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
                                             (b.salesmanName || '').toLowerCase() === agentPrefix ||
-                                            // 🚀 ROBUST FALLBACK: If a sale was made at this exact store by this agent today, the bypass belongs to them!
                                             agentSales.some(tx => (tx.customerName || '').toLowerCase() === (b.storeName || '').toLowerCase())
                                         )
                                     );
@@ -1057,28 +1080,39 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <div className="p-4 bg-black/10 border-t border-slate-700 max-h-[600px] overflow-y-auto custom-scrollbar">
                                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                                                 
-                                                {/* LEFT COLUMN: SALES CORRELATION ENGINE */}
+                                                {/* LEFT COLUMN: FORENSIC SALES LOG */}
                                                 <div className="space-y-3">
-                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Sales Transactions</h4>
+                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Daily Transactions</h4>
                                                     {agentSales.length === 0 ? (
-                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No sales recorded today.</p>
+                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No transactions recorded today.</p>
                                                     ) : (
                                                         agentSales.map(tx => {
-                                                            // 2. Identify if this specific sale required an HQ override (Timezone Safe!)
                                                             const linkedBypass = agentBypasses.find(b => {
                                                                 if (b.status !== 'APPROVED') return false;
                                                                 if ((b.storeName || '').toLowerCase() !== (tx.customerName || '').toLowerCase()) return false;
-                                                                
-                                                                // Timezone-safe check: Was the bypass requested within the last 24 hours?
                                                                 const bypassTime = new Date(b.timestamp || b.createdAt?.seconds * 1000 || 0).getTime();
                                                                 const now = new Date().getTime();
                                                                 return (now - bypassTime) < (24 * 60 * 60 * 1000);
                                                             });
 
+                                                            // 🚀 BADGE LOGIC
+                                                            const isRetur = tx.type === 'RETUR' || tx.paymentType === 'Retur/BS';
+                                                            const isExchange = tx.paymentType === 'Tukar Ganti';
+                                                            const isIouFulfill = tx.paymentType === 'IOU Fulfillment';
+
                                                             return (
                                                                 <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm transition-all hover:border-blue-500/50 group">
                                                                     <div>
-                                                                        <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
+                                                                            {isRetur ? (
+                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white shadow-md">RETUR</span>
+                                                                            ) : isExchange ? (
+                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-500 text-white shadow-md">EXCHANGE</span>
+                                                                            ) : isIouFulfill ? (
+                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">IOU FULFILLED</span>
+                                                                            ) : null}
+                                                                        </div>
                                                                         <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
                                                                         
                                                                         {linkedBypass && (
@@ -1089,7 +1123,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                     </div>
                                                                     <div className="flex items-center gap-3 md:gap-4">
                                                                         <div className="text-right">
-                                                                            <p className="text-emerald-400 font-black text-sm md:text-base">{new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}</p>
+                                                                            <p className={`font-black text-sm md:text-base ${isRetur ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                                                {isRetur && (tx.total || tx.amountPaid || 0) > 0 ? '-' : ''}
+                                                                                {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}
+                                                                            </p>
                                                                             <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
                                                                         </div>
                                                                         <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 group-hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
