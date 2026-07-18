@@ -28,11 +28,9 @@ export default function useTransactionEngine({
 
         let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
 
-        // 🚀 THE OFFLINE INTERCEPTOR (MOVED TO THE ABSOLUTE TOP)
-        // This prevents Firebase from searching the internet and hanging the UI.
+        // 🚀 THE OFFLINE INTERCEPTOR
         if (!navigator.onLine) {
             try {
-                // Extract local data without touching Firebase
                 const finalTransItems = activeCart.map(item => {
                     const distPrice = item.product?.priceDistributor || 0;
                     const itemProfit = (item.calculatedPrice * item.qty) - (distPrice * item.qty);
@@ -51,13 +49,13 @@ export default function useTransactionEngine({
                     items: finalTransItems,
                     total: totalRevenue,
                     totalProfit: totalProfit,
-                    type: 'SALE',
-                    timestamp: { seconds: Math.floor(Date.now() / 1000) }, // 🚀 FAKE TIMESTAMP FOR LOCAL CACHE
+                    type: proofPayload?.type || 'SALE', // 🚀 Respect dynamic txType
+                    timestamp: { seconds: Math.floor(Date.now() / 1000) }, 
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
                     tempoDays: proofPayload?.tempoDays || null,
                     deliveryProof: proofPayload ? {
-                        photo: proofPayload.photoData, // Massive Base64 saves safely to local hard drive
+                        photo: proofPayload.photoData,
                         latitude: proofPayload.latitude,
                         longitude: proofPayload.longitude,
                         capturedAt: proofPayload.timestamp
@@ -114,22 +112,33 @@ export default function useTransactionEngine({
                 if (item.unit === 'Bal') mult = (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
                 if (item.unit === 'Karton') mult = (prodData.balsPerCarton || 4) * (prodData.slopsPerBal || 20) * (prodData.packsPerSlop || 10); 
                 
-                const qtyToDeduct = item.qty * mult; 
-                
-                if (!currentAgentProfileId && !proofPayload?.isRetur) {
-                    if(prodData.stock < qtyToDeduct) throw `Not enough stock in Vault for ${item.name}`;
-                    updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyToDeduct });
+                const qtyInBks = item.qty * mult; 
+
+                // 🚀 MATH ENGINE: Determine if we are actually handing over stock right now
+                let isPhysicallyGiven = true;
+                if (proofPayload?.type === 'RETUR') isPhysicallyGiven = false; // Buyback: Store is returning stock to us
+                if (item.fulfillment === 'IOU') isPhysicallyGiven = false; // Exchange: We owe them, nothing given today
+
+                // If Admin Vault is processing, deduct from Master Vault
+                if (!currentAgentProfileId && isPhysicallyGiven) {
+                    if(prodData.stock < qtyInBks) throw `Not enough stock in Vault for ${item.name}`;
+                    updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyInBks });
                 }
 
-                if (proofPayload?.isRetur) {
-                    updatesToPerform.push({ ref: prodRef, newStock: (prodData.badStock || 0) + qtyToDeduct, isReturUpdate: true });
-                }
+                // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
                 
                 const distributorPrice = prodData.priceDistributor || 0; 
-                const itemProfit = (item.calculatedPrice * item.qty) - (distributorPrice * qtyToDeduct); 
+                const itemProfit = (item.calculatedPrice * item.qty) - (distributorPrice * (isPhysicallyGiven ? qtyInBks : 0)); 
                 
                 totalProfit += itemProfit;
-                transactionItems.push({ ...item, distributorPriceSnapshot: distributorPrice, profitSnapshot: itemProfit, prodData }); 
+                transactionItems.push({ 
+                    ...item, 
+                    distributorPriceSnapshot: distributorPrice, 
+                    profitSnapshot: itemProfit, 
+                    prodData,
+                    isPhysicallyGiven,
+                    qtyInBks
+                }); 
             } 
 
             let agentDoc = null;
@@ -142,27 +151,25 @@ export default function useTransactionEngine({
 
             // ✍️ PHASE 2: WRITES 
             for (const update of updatesToPerform) {
-                if (update.isReturUpdate) {
-                    batch.update(update.ref, { badStock: update.newStock });
-                } else {
-                    batch.update(update.ref, { stock: update.newStock });
-                }
+                batch.update(update.ref, { stock: update.newStock });
             }
             
+            // 🚀 SMART AGENT INVENTORY DEDUCTION
             if (agentDoc && agentDoc.exists()) {
                 let currentCanvas = agentDoc.data().activeCanvas || [];
+                
                 let updatedCanvas = currentCanvas.map(c => {
-                    const soldItem = transactionItems.find(cartItem => cartItem.productId === c.productId);
-                    if (soldItem) {
-                        const pData = soldItem.prodData || {};
-                        let mSold = soldItem.unit === 'Slop' ? (pData.packsPerSlop || 10) : soldItem.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : soldItem.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
+                    // Find if this product was physically given to the customer in this transaction
+                    const givenItems = transactionItems.filter(cartItem => cartItem.productId === c.productId && cartItem.isPhysicallyGiven);
+                    
+                    if (givenItems.length > 0) {
+                        const pData = givenItems[0].prodData || {};
                         let mCanvas = c.unit === 'Slop' ? (pData.packsPerSlop || 10) : c.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : c.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
                         
-                        const soldBks = soldItem.qty * mSold;
-                        const currentCanvasBks = (c.qty * mCanvas) - soldBks;
+                        const totalGivenBks = givenItems.reduce((sum, gi) => sum + gi.qtyInBks, 0);
+                        const currentCanvasBks = (c.qty * mCanvas) - totalGivenBks;
                         
-                        if (proofPayload?.isRetur) return c;
-                        if (currentCanvasBks < 0) throw `Vehicle doesn't have enough ${soldItem.name} left!`;
+                        if (currentCanvasBks < 0) throw `Vehicle doesn't have enough ${givenItems[0].name} left!`;
 
                         return { ...c, qty: currentCanvasBks / mCanvas }; 
                     }
@@ -171,12 +178,16 @@ export default function useTransactionEngine({
                 batch.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
             }
 
+            // Clean up the temporary tracking flags before saving to DB
             const finalTransItems = transactionItems.map(i => {
                 const copy = {...i};
                 delete copy.prodData;
+                delete copy.isPhysicallyGiven;
+                delete copy.qtyInBks;
                 return copy;
             });
 
+            // 📖 PHASE 3: RECEIPT GENERATION (Source of Truth)
             const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
             batch.set(transRef, { 
                 date: getCurrentDate(), 
@@ -185,7 +196,7 @@ export default function useTransactionEngine({
                 items: finalTransItems, 
                 total: totalRevenue, 
                 totalProfit: totalProfit, 
-                type: 'SALE', 
+                type: proofPayload?.type || 'SALE', 
                 timestamp: serverTimestamp(),
                 agentId: currentAgentProfileId || 'ADMIN',
                 agentName: finalAgentName,
@@ -229,9 +240,9 @@ export default function useTransactionEngine({
 
             await batch.commit();
 
-            await logAudit("SALE", `Sold to ${customerName} via ${paymentType}`); 
+            await logAudit("SALE", `Transacted with ${customerName} via ${paymentType}`); 
             if (!manualData && setCart) setCart([]); 
-            triggerCapy("Sale Recorded! Database & Vehicle Updated. 💰"); 
+            triggerCapy("Manifest Recorded & Receipts Signed! 📜"); 
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
             
             return finalAgentName; 
