@@ -36,14 +36,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // Reads the "Reporting Authority" dropdown set in Settings > Global Permission Matrix.
     // If the engine has any doubt, the safest (most restrictive) level wins.
     const reportAccessLevel = useMemo(() => {
-        if (isAdmin === true) return 'global';
         if (userRole === 'ADMIN' || userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER') return 'global';
         if (hasClearance(userRole, 'view_reports_global')) return 'global';
         if (hasClearance(userRole, 'view_reports_regional')) return 'regional';
         if (hasClearance(userRole, 'view_reports_personal')) return 'personal';
         // 🛑 FAIL-CLOSED: nothing configured for this tier yet? Lock to the safest option.
         return 'personal';
-    }, [userRole, isAdmin]);
+    }, [userRole]);
 
     const isFieldAgent = reportAccessLevel === 'personal';
     const isRegionalOnly = reportAccessLevel === 'regional';
@@ -390,7 +389,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {/* BREADCRUMB NAVIGATION */}
             {!reportView && (
                 <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                    {!isFieldAgent && (
+                    {reportAccessLevel === 'global' && (
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
@@ -606,7 +605,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             <div className="hide-on-print w-full">
 
             {/* --- LEVEL 1: REGION SELECTION (TEAM) --- */}
-            {!reportView && !isFieldAgent && !selectedRegion && (
+            {!reportView && reportAccessLevel === 'global' && !selectedRegion && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData).length === 0 ? (
                         <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Regions Active</p></div>
