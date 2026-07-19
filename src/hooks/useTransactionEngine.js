@@ -13,12 +13,22 @@ export default function useTransactionEngine({
     const processTransaction = async (e, manualData = null) => { 
         if (e) e.preventDefault(); 
         
-        const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
-        const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
         const activeCart = manualData ? manualData.cart : []; 
         const newStoreData = manualData ? manualData.newStoreData : null; 
         const proofPayload = manualData ? manualData.proofPayload : null; 
         const totalRevenue = activeCart.reduce((acc, item) => acc + (item.calculatedPrice * item.qty), 0); 
+
+        // 🚀 THE FORENSIC EXTRACTOR: Strip heavy arrays and create a clean root ledger
+        const quarantineCargo = activeCart
+            .filter(item => item.condition === 'DAMAGED')
+            .map(item => ({
+                productId: item.productId,
+                itemName: item.name,
+                qty: item.qty,
+                unit: item.unit,
+                returnReason: item.returnReason === 'Other' ? (item.otherReasonDetail || 'Unclassified') : (item.returnReason || 'Unclassified')
+            }));
+        const forensicData = quarantineCargo.length > 0 ? { quarantineCargo } : null;
         
         if(!customerName) { alert("Customer Name is required!"); return; } 
 
@@ -49,11 +59,12 @@ export default function useTransactionEngine({
                     items: finalTransItems,
                     total: totalRevenue,
                     totalProfit: totalProfit,
-                    type: proofPayload?.type || 'SALE', // 🚀 Respect dynamic txType
+                    type: proofPayload?.type || 'SALE', 
                     timestamp: { seconds: Math.floor(Date.now() / 1000) }, 
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
                     tempoDays: proofPayload?.tempoDays || null,
+                    forensicData: forensicData, // 🚀 Bind forensic root for Ghost Ledger
                     deliveryProof: proofPayload ? {
                         photo: proofPayload.photoData,
                         latitude: proofPayload.latitude,
@@ -201,13 +212,14 @@ export default function useTransactionEngine({
                 agentId: currentAgentProfileId || 'ADMIN',
                 agentName: finalAgentName,
                 tempoDays: proofPayload?.tempoDays || null,
+                forensicData: forensicData, // 🚀 Bind forensic root for real-time Firebase sync
                 deliveryProof: proofPayload ? {
                     photo: proofPayload.photoData,
                     latitude: proofPayload.latitude,
                     longitude: proofPayload.longitude,
                     capturedAt: proofPayload.timestamp
                 } : null
-            }); 
+            });
 
             if (newStoreData) {
                 const custRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));

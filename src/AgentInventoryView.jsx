@@ -143,22 +143,19 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         revGrosir += (bksQty * grosir);
     });
 
-    // 🚀 NEW: EXTRACT QUARANTINED CARGO DIRECTLY FROM TODAY'S TRANSACTIONS
+    // 🚀 NEW: EXTRACT QUARANTINED CARGO DIRECTLY FROM THE FORENSIC ROOT
     const quarantinedCargo = useMemo(() => {
         return todayTransactions
-            .filter(tx => tx.forensicData?.condition === 'DAMAGED')
+            .filter(tx => tx.forensicData && tx.forensicData.quarantineCargo)
             .flatMap(tx => {
-                if (tx.items && tx.items.length > 0) {
-                    return tx.items.map(item => ({
-                        id: tx.transactionId || tx.id || Math.random().toString(),
-                        itemName: item.name || 'Unknown Asset',
-                        qty: item.qty || 0,
-                        returnReason: tx.forensicData?.returnReason || 'Unclassified',
-                        customerOrigin: tx.customerName || 'Walk-in / Unknown',
-                        timestamp: tx.timestamp
-                    }));
-                }
-                return [];
+                return tx.forensicData.quarantineCargo.map((item, index) => ({
+                    id: `${tx.id || tx.transactionId || Math.random().toString()}-${index}`,
+                    itemName: item.itemName || 'Unknown Asset',
+                    qty: item.qty || 0,
+                    returnReason: item.returnReason || 'Unclassified',
+                    customerOrigin: tx.customerName || 'Walk-in / Unknown',
+                    timestamp: tx.timestamp
+                }));
             });
     }, [todayTransactions]);
 
