@@ -43,8 +43,15 @@ export default function BiohazardTheme({
         { id: 'settings', label: 'Settings', feature: 'view_settings' }
     ];
 
+    // 🚀 THE 3 REPORT VISIBILITY MODES (matches Settings > Global Permission Matrix > Reporting Authority)
+    const REPORT_PERMS = ['view_reports_global', 'view_reports_regional', 'view_reports_personal'];
+
     // 🚀 THE MAGIC: The Matrix automatically filters the sidebar based on their Corporate Tier
-    const visibleMenu = allMenuItems.filter(item => hasClearance(userRole, item.feature));
+    const visibleMenu = allMenuItems.filter(item => {
+        // Reports button: show it if the tier has ANY of the 3 report modes (the old single 'view_reports' toggle no longer exists in Settings)
+        if (item.feature === 'view_reports') return REPORT_PERMS.some(p => hasClearance(userRole, p));
+        return hasClearance(userRole, item.feature);
+    });
 
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">

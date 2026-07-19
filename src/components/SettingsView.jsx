@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2 } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard'; 
@@ -835,8 +835,6 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_stock_opname', label: 'Stock Opname' },
         { id: 'view_customers', label: 'Customers' },
         { id: 'view_sampling', label: 'Sampling' },
-        { id: 'view_reports', label: 'Reports' },
-        { id: 'can_view_team_history', label: 'View Team History' }, 
         { id: 'view_audit_logs', label: 'Audit Logs' },
         { id: 'view_settings', label: 'Settings Panel' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
@@ -845,11 +843,27 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];
 
+    // 🚀 THE 3 REPORT VISIBILITY MODES
+    const REPORT_PERMS = ['view_reports_global', 'view_reports_regional', 'view_reports_personal'];
+
     const togglePermission = (tierId, featureId) => {
         const newMatrix = { ...matrix };
         const tierPerms = [...(newMatrix[tierId] || [])];
         if (tierPerms.includes(featureId)) newMatrix[tierId] = tierPerms.filter(f => f !== featureId);
         else newMatrix[tierId] = [...tierPerms, featureId];
+        setMatrix(newMatrix);
+    };
+
+    // 🚀 NEW: Sets which of the 3 report modes a tier has (none/personal/regional/global)
+    const changeReportAccess = (tierId, newAccessLevel) => {
+        const newMatrix = { ...matrix };
+        let tierPerms = (newMatrix[tierId] || []).filter(p => !REPORT_PERMS.includes(p));
+
+        if (newAccessLevel !== 'none') {
+            tierPerms.push(newAccessLevel);
+        }
+
+        newMatrix[tierId] = tierPerms;
         setMatrix(newMatrix);
     };
 
@@ -997,12 +1011,30 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                             {ALL_FEATURES.map(feature => {
                                 const hasAccess = (matrix[activeTier.id] || []).includes(feature.id);
                                 return (
-                                    <div key={feature.id} className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
-                                        <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
-                                        <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600'}`}>
-                                            {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
-                                        </button>
-                                    </div>
+                                    <React.Fragment key={feature.id}>
+                                        <div className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
+                                            <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
+                                            <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600'}`}>
+                                                {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
+                                            </button>
+                                        </div>
+                                        {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
+                                        {feature.id === 'view_sampling' && (
+                                            <div className="my-2 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
+                                                <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><BarChart2 size={14}/> Reporting Authority</label>
+                                                <select 
+                                                    value={(matrix[activeTier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none'}
+                                                    onChange={(e) => changeReportAccess(activeTier.id, e.target.value)}
+                                                    className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-orange-500"
+                                                >
+                                                    <option value="none">No Access</option>
+                                                    <option value="view_reports_personal">Lone Wolf (Personal Data Only)</option>
+                                                    <option value="view_reports_regional">Regional Command (Branch Data)</option>
+                                                    <option value="view_reports_global">God Mode (Global Master Data)</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
@@ -1042,19 +1074,44 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                     </thead>
                     <tbody>
                         {ALL_FEATURES.map((feature) => (
-                            <tr key={feature.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                                <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
-                                {tiers.map(tier => {
-                                    const hasAccess = (matrix[tier.id] || []).includes(feature.id);
-                                    return (
-                                        <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
-                                            <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600 hover:text-slate-400'}`}>
-                                                {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
-                                            </button>
-                                        </td>
-                                    );
-                                })}
-                            </tr>
+                            <React.Fragment key={feature.id}>
+                                <tr className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                    <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
+                                    {tiers.map(tier => {
+                                        const hasAccess = (matrix[tier.id] || []).includes(feature.id);
+                                        return (
+                                            <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
+                                                <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600 hover:text-slate-400'}`}>
+                                                    {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
+                                                </button>
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                                {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
+                                {feature.id === 'view_sampling' && (
+                                    <tr className="border-t-2 border-b-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-3 text-xs font-black uppercase tracking-widest text-orange-400 flex items-center gap-2"><BarChart2 size={16}/> Reporting Authority</td>
+                                        {tiers.map(tier => {
+                                            const currentReportAccess = (matrix[tier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none';
+                                            return (
+                                                <td key={`report-${tier.id}`} className="p-2 text-center">
+                                                    <select 
+                                                        value={currentReportAccess}
+                                                        onChange={(e) => changeReportAccess(tier.id, e.target.value)}
+                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[9px] font-bold text-slate-300 outline-none focus:border-orange-500 mx-auto"
+                                                    >
+                                                        <option value="none">No Access</option>
+                                                        <option value="view_reports_personal">Personal Only</option>
+                                                        <option value="view_reports_regional">Regional Team</option>
+                                                        <option value="view_reports_global">Global Master</option>
+                                                    </select>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                     </tbody>
                 </table>
