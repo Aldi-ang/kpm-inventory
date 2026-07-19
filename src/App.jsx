@@ -22,7 +22,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier } from './config/permissions';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
 import NotificationBell from './components/NotificationBell';
@@ -1539,9 +1539,14 @@ const handleGitHubMirror = async () => {
       try {
           const formattedAgentName = `${user.displayName || "Field Agent"} - ${user.email || "No Email"}`;
 
+          // 🚀 FIX: Match the exact same ID the Sales Terminal uses, so Verify EOD can find the right vehicle record
+          const effectiveAgentId = userRole === 'ADMIN'
+              ? (adminSalesMode === 'VEHICLE' ? 'ADMIN_VEHICLE' : 'VAULT')
+              : (agentProfileId || 'ADMIN');
+
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`), {
               agentName: formattedAgentName, 
-              agentId: agentProfileId || 'ADMIN',
+              agentId: effectiveAgentId,
               timestamp: serverTimestamp(),
               status: 'PENDING',
               ...reportData 
@@ -1580,18 +1585,32 @@ const handleGitHubMirror = async () => {
               // ==========================================
               // 📖 PHASE 1: EXECUTE ALL READS FIRST
               // ==========================================
-              
+
+              // 🚀 FIX: 'ADMIN' was a legacy mistagging of the Boss's own vehicle (ADMIN_VEHICLE).
+              const lookupAgentId = report.agentId === 'ADMIN' ? 'ADMIN_VEHICLE' : report.agentId;
+
+              // 🚀 NEW: Field-level tiers (salesmen) return stock to their own region's branch.
+              // Tier 3 and above always return to the Master Vault.
+              const agentProfile = motorists.find(m => m.id === lookupAgentId);
+              const agentIsFieldLevel = isFieldLevelTier(agentProfile?.userRole);
+              const agentLocation = agentProfile?.location;
+              const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA';
+              const safeBranchPath = useBranchWarehouse ? agentLocation.replace(/\//g, '-') : null;
+
               const validItems = (report.remainingStock || []).filter(item => item.qty > 0);
               const productRefs = validItems.map(item => ({
                   itemData: item,
-                  ref: doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
+                  ref: useBranchWarehouse
+                      ? doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, item.productId)
+                      : doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
               }));
               const productDocs = await Promise.all(productRefs.map(p => t.get(p.ref)));
 
               let agentRef = null;
               let agentDoc = null;
-              if (report.agentId && report.agentId !== 'ADMIN') {
-                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, report.agentId);
+              // 'VAULT' mode has no vehicle canvas at all, so there's genuinely nothing to look up there.
+              if (lookupAgentId && lookupAgentId !== 'VAULT') {
+                  agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, lookupAgentId);
                   agentDoc = await t.get(agentRef);
               }
 
@@ -1599,18 +1618,24 @@ const handleGitHubMirror = async () => {
               // ✍️ PHASE 2: EXECUTE ALL WRITES LAST
               // ==========================================
 
-              // 2A. Update Products (Return Stock)
+              // 2A. Update Products (Return Stock) — now correctly routes to branch or master vault
               productDocs.forEach((pSnap, index) => {
-                  if (pSnap.exists()) {
-                      const pData = pSnap.data();
-                      const item = productRefs[index].itemData;
-                      let mult = 1;
-                      if (item.unit === 'Slop') mult = pData.packsPerSlop || 10;
-                      if (item.unit === 'Bal') mult = (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                      if (item.unit === 'Karton') mult = (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                      const bksToReturn = item.qty * mult;
-                      
-                      t.update(productRefs[index].ref, { stock: (pData.stock || 0) + bksToReturn });
+                  const item = productRefs[index].itemData;
+                  // Unit-conversion ratios (Slop/Bal/Karton → Bks) always come from the master product,
+                  // since branch inventory docs may not carry those fields themselves.
+                  const masterProduct = inventory.find(p => p.id === item.productId);
+                  let mult = 1;
+                  if (item.unit === 'Slop') mult = masterProduct?.packsPerSlop || 10;
+                  if (item.unit === 'Bal') mult = (masterProduct?.slopsPerBal || 20) * (masterProduct?.packsPerSlop || 10);
+                  if (item.unit === 'Karton') mult = (masterProduct?.balsPerCarton || 4) * (masterProduct?.slopsPerBal || 20) * (masterProduct?.packsPerSlop || 10);
+                  const bksToReturn = item.qty * mult;
+                  const currentStock = pSnap.exists() ? (pSnap.data().stock || 0) : 0;
+
+                  if (useBranchWarehouse) {
+                      // Branch inventory doc might not exist yet for this product — set+merge handles both cases
+                      t.set(productRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, stock: currentStock + bksToReturn }, { merge: true });
+                  } else {
+                      t.set(productRefs[index].ref, { stock: currentStock + bksToReturn }, { merge: true });
                   }
               });
 

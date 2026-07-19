@@ -17,6 +17,22 @@ export let DYNAMIC_TIERS = [
     { id: CORPORATE_TIERS.TIER_6, label: 'T6: ROOKIE', color: 'text-slate-400' }
 ];
 
+// 🚀 SHARED WAREHOUSE-ROUTING RULE: Field-level tiers (T5/T6, real salesmen) return
+// stock to their own regional branch. Tier 3 and above always return to the Master Vault.
+// Used by both EOD verification and the Fleet & Canvas "Clear Canvas" button, so the
+// two can never disagree about where an agent's stock belongs.
+export const isFieldLevelTier = (userRole) => {
+    let role = userRole || CORPORATE_TIERS.TIER_5;
+    if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
+    else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
+    else if (role === 'AREA_ADMIN') role = CORPORATE_TIERS.TIER_3;
+    else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
+    else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
+    else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
+
+    return role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6;
+};
+
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
@@ -70,6 +86,8 @@ export const hasClearance = (userRole, requiredFeature) => {
         activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile', 'view_reports_personal'];
     }
     
-    if (activePerms.includes('ALL_ACCESS')) return true;
+    // 🛡️ ALL_ACCESS is Tier 1's exclusive god-mode key. Never honor it for any other tier,
+    // even if it somehow ends up saved inside another tier's permission array.
+    if (role === CORPORATE_TIERS.TIER_1 && activePerms.includes('ALL_ACCESS')) return true;
     return activePerms.includes(requiredFeature) || false;
 };
