@@ -4,8 +4,8 @@ import {
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
-import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot } from 'firebase/firestore'; 
-import { DYNAMIC_TIERS } from './config/permissions'; 
+import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot } from 'firebase/firestore'; 
+import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions'; 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
@@ -53,23 +53,33 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     
     const [branchStock, setBranchStock] = useState([]);
 
+    // 🚀 FIX: Follows the SELECTED AGENT's own warehouse, not the viewer's — same rule as
+    // EOD, Clear Canvas, and Load Canvas, so the number shown here always matches reality.
+    const selectedAgentUsesBranch = selectedAgent
+        ? isFieldLevelTier(selectedAgent.userRole) && selectedAgent.location && selectedAgent.location !== 'Headquarters' && selectedAgent.location !== 'UNASSIGNED AREA' && selectedAgent.location !== 'UNASSIGNED'
+        : false;
+    const selectedAgentLocation = selectedAgent?.location;
+
     useEffect(() => {
-        if (isAreaAdmin && branchPathLocation !== 'UNASSIGNED') {
-            const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${branchPathLocation}/inventory`);
+        if (selectedAgentUsesBranch) {
+            const safeBranchPath = selectedAgentLocation.replace(/\//g, '-');
+            const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`);
             const unsub = onSnapshot(stockRef, (snap) => {
                 setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             });
             return () => unsub();
+        } else {
+            setBranchStock([]);
         }
-    }, [db, appId, userId, isAreaAdmin, branchPathLocation]);
+    }, [db, appId, userId, selectedAgentUsesBranch, selectedAgentLocation]);
 
     const displayInventory = useMemo(() => {
-        if (!isAreaAdmin) return inventory; 
+        if (!selectedAgentUsesBranch) return inventory; 
         return inventory.map(item => {
             const bItem = branchStock.find(b => b.id === item.id);
             return { ...item, stock: bItem ? (bItem.stock || 0) : 0 };
         });
-    }, [inventory, branchStock, isAreaAdmin]);
+    }, [inventory, branchStock, selectedAgentUsesBranch]);
 
     const defaultAgentState = { 
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
@@ -258,90 +268,130 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const handleLoadCanvas = async () => {
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
         if (!selectedAgent) return;
-        const product = displayInventory.find(p => p.id === selectedProduct);
-        if (!product) return;
+
+        // Use the master product record for name/pricing/conversion metadata — always correct,
+        // regardless of which warehouse the actual stock count comes from.
+        const masterProduct = inventory.find(p => p.id === selectedProduct);
+        if (!masterProduct) return;
 
         const qtyToLoad = Number(loadQty);
         const unitToLoad = 'Bks';
-        const loadInBks = qtyToLoad; 
+        const loadInBks = qtyToLoad;
 
-        if ((product.stock || 0) < loadInBks) {
-            return alert(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks, but the ${isAreaAdmin ? 'Branch' : 'Master'} Vault only has ${product.stock || 0} Bks available.`);
-        }
+        // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
+        // Matches the same rule used by EOD verification and Clear Canvas.
+        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
+        const agentLocation = selectedAgent.location;
+        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const sourceLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master';
+
+        const sourceRef = useBranchWarehouse
+            ? doc(db, `artifacts/${appId}/users/${userId}/branches/${agentLocation.replace(/\//g, '-')}/inventory`, masterProduct.id)
+            : doc(db, `artifacts/${appId}/users/${userId}/products`, masterProduct.id);
 
         try {
-            const batch = writeBatch(db);
-            
-            if (isAreaAdmin) {
-                const safeBranchPath = branchPathLocation.replace(/\//g, '-');
-                const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, product.id);
-                batch.set(branchRef, { productId: product.id, name: product.name, stock: (product.stock || 0) - loadInBks }, { merge: true });
-            } else {
-                const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-                batch.set(hqRef, { stock: (product.stock || 0) - loadInBks }, { merge: true });
-            }
+            // 🚀 FIX: Upgraded from writeBatch to runTransaction so we READ the correct
+            // source's real current stock first, instead of trusting the viewer's own
+            // displayInventory numbers (which reflect the VIEWER's branch, not the agent's).
+            await runTransaction(db, async (t) => {
+                // 📖 PHASE 1: READS
+                const sourceSnap = await t.get(sourceRef);
+                const currentSourceStock = sourceSnap.exists() ? (sourceSnap.data().stock || 0) : 0;
 
-            const agentRef = doc(db, collPath, selectedAgent.id);
-            let updatedCanvas = JSON.parse(JSON.stringify(selectedAgent.activeCanvas || []));
-            const existingItemIndex = updatedCanvas.findIndex(item => item.productId === product.id);
+                if (currentSourceStock < loadInBks) {
+                    throw new Error(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks, but the ${sourceLabel} Vault only has ${currentSourceStock} Bks available.`);
+                }
 
-            if (existingItemIndex >= 0) {
-                updatedCanvas[existingItemIndex].qty += qtyToLoad;
-            } else {
-                updatedCanvas.push({ 
-                    productId: product.id, 
-                    name: product.name, 
-                    qty: qtyToLoad, 
-                    unit: unitToLoad,
-                    priceTier: product.priceTier || 'Retail',
-                    calculatedPrice: product.priceRetail || 0
-                });
-            }
+                const agentRef = doc(db, collPath, selectedAgent.id);
+                const agentSnap = await t.get(agentRef);
+                const liveCanvas = agentSnap.exists() ? (agentSnap.data().activeCanvas || []) : (selectedAgent.activeCanvas || []);
 
-            batch.update(agentRef, { activeCanvas: updatedCanvas });
-            await batch.commit();
+                // ✍️ PHASE 2: WRITES
+                if (useBranchWarehouse) {
+                    t.set(sourceRef, { productId: masterProduct.id, name: masterProduct.name, stock: currentSourceStock - loadInBks }, { merge: true });
+                } else {
+                    t.set(sourceRef, { stock: currentSourceStock - loadInBks }, { merge: true });
+                }
 
-            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${isAreaAdmin ? 'Branch' : 'HQ'} stock deducted! 📦`);
+                let updatedCanvas = JSON.parse(JSON.stringify(liveCanvas));
+                const existingItemIndex = updatedCanvas.findIndex(item => item.productId === masterProduct.id);
+
+                if (existingItemIndex >= 0) {
+                    updatedCanvas[existingItemIndex].qty += qtyToLoad;
+                } else {
+                    updatedCanvas.push({ 
+                        productId: masterProduct.id, 
+                        name: masterProduct.name, 
+                        qty: qtyToLoad, 
+                        unit: unitToLoad,
+                        priceTier: masterProduct.priceTier || 'Retail',
+                        calculatedPrice: masterProduct.priceRetail || 0
+                    });
+                }
+
+                t.update(agentRef, { activeCanvas: updatedCanvas });
+            });
+
+            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${sourceLabel} stock deducted! 📦`);
             setLoadQty("");
             setSelectedProduct("");
-            logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${product.name} to ${selectedAgent.name}`);
+            logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${masterProduct.name} to ${selectedAgent.name} (from ${sourceLabel})`);
         } catch (e) {
             console.error(e);
-            alert("Failed to load vehicle canvas: " + e.message);
+            alert(e.message || "Failed to load vehicle canvas.");
         }
     };
 
     const handleClearCanvas = async () => {
         if (!selectedAgent) return;
-        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${isAreaAdmin ? 'Branch' : 'Master'} Vault.`)) return;
+
+        // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
+        // Matches the same rule EOD verification uses, so the two can never disagree.
+        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
+        const agentLocation = selectedAgent.location;
+        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const destinationLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master Vault';
+
+        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${destinationLabel}.`)) return;
 
         try {
-            const batch = writeBatch(db);
             const currentCanvas = selectedAgent.activeCanvas || [];
-            
-            currentCanvas.forEach(item => {
-                const product = inventory.find(p => p.id === item.productId);
-                if (product) {
-                    const returnInBks = convertToBks(item.qty, item.unit, product);
-                    
-                    if (isAreaAdmin) {
-                        const safeBranchPath = branchPathLocation.replace(/\//g, '-');
-                        const branchRef = doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, product.id);
-                        const currentBranchStock = branchStock.find(b => b.id === product.id)?.stock || 0;
-                        batch.set(branchRef, { productId: product.id, name: product.name, stock: currentBranchStock + returnInBks }, { merge: true });
+            const itemsToReturn = currentCanvas
+                .map(item => ({ item, product: inventory.find(p => p.id === item.productId) }))
+                .filter(x => x.product);
+
+            // 🚀 FIX: Upgraded from writeBatch to runTransaction so we can safely READ the
+            // correct destination's current stock first — writeBatch can't read, so it was
+            // trusting the viewer's own (possibly wrong-region) cached branch numbers.
+            await runTransaction(db, async (t) => {
+                // 📖 PHASE 1: READS
+                const destRefs = itemsToReturn.map(({ item, product }) => ({
+                    item, product,
+                    ref: useBranchWarehouse
+                        ? doc(db, `artifacts/${appId}/users/${userId}/branches/${agentLocation.replace(/\//g, '-')}/inventory`, product.id)
+                        : doc(db, `artifacts/${appId}/users/${userId}/products`, product.id)
+                }));
+                const destDocs = await Promise.all(destRefs.map(r => t.get(r.ref)));
+
+                // ✍️ PHASE 2: WRITES
+                destRefs.forEach((r, index) => {
+                    const returnInBks = convertToBks(r.item.qty, r.item.unit, r.product);
+                    const dSnap = destDocs[index];
+                    const currentStock = dSnap.exists() ? (dSnap.data().stock || 0) : 0;
+
+                    if (useBranchWarehouse) {
+                        t.set(r.ref, { productId: r.product.id, name: r.product.name, stock: currentStock + returnInBks }, { merge: true });
                     } else {
-                        const hqRef = doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
-                        batch.set(hqRef, { stock: (product.stock || 0) + returnInBks }, { merge: true });
+                        t.set(r.ref, { stock: currentStock + returnInBks }, { merge: true });
                     }
-                }
+                });
+
+                const agentRef = doc(db, collPath, selectedAgent.id);
+                t.update(agentRef, { activeCanvas: [] });
             });
 
-            const agentRef = doc(db, collPath, selectedAgent.id);
-            batch.update(agentRef, { activeCanvas: [] });
-            
-            await batch.commit();
-            triggerCapy(`Vehicle cleared. All unsold stock returned to Vault! 🧹`);
-            logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name}`);
+            triggerCapy(`Vehicle cleared. All unsold stock returned to the ${destinationLabel}! 🧹`);
+            logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name} → ${destinationLabel}`);
         } catch(e) { alert("Failed to clear canvas: " + e.message); }
     };
 
@@ -945,7 +995,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 <div className="flex flex-col lg:flex-row gap-3 items-end">
                                     <div className="w-full lg:flex-1">
                                         <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 block">
-                                            Select {isAreaAdmin ? 'Branch Warehouse' : 'Main Vault'} Stock
+                                            Select {selectedAgentUsesBranch ? `${selectedAgentLocation} Branch` : 'Main Vault'} Stock
                                         </label>
                                         <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500">
                                             <option value="">-- Choose Product --</option>
