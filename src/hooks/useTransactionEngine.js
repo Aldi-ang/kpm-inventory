@@ -13,6 +13,8 @@ export default function useTransactionEngine({
     const processTransaction = async (e, manualData = null) => { 
         if (e) e.preventDefault(); 
         
+       const customerName = manualData ? manualData.customerName : new FormData(e.target).get('customerName')?.trim(); 
+        const paymentType = manualData ? manualData.paymentType : new FormData(e.target).get('paymentType'); 
         const activeCart = manualData ? manualData.cart : []; 
         const newStoreData = manualData ? manualData.newStoreData : null; 
         const proofPayload = manualData ? manualData.proofPayload : null; 
@@ -30,7 +32,7 @@ export default function useTransactionEngine({
             }));
         const forensicData = quarantineCargo.length > 0 ? { quarantineCargo } : null;
         
-        if(!customerName) { alert("Customer Name is required!"); return; } 
+        if(!customerName) { alert("Customer Name is required!"); return; }
 
         let currentAgentProfileId = agentProfileId;
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
