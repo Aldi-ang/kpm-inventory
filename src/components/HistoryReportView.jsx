@@ -45,9 +45,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     }, [userRole]);
 
     const isFieldAgent = reportAccessLevel === 'personal';
-
-    // 🕵️ TEMPORARY SPY LINE — delete this after we find the bug
-    console.log('🕵️ REPORTS DEBUG:', { userRole, reportAccessLevel, isAdmin });
     const isRegionalOnly = reportAccessLevel === 'regional';
 
     // The current viewer's own branch/region — used to fence in 'regional' access
