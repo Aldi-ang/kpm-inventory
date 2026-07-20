@@ -1664,6 +1664,14 @@ const handleGitHubMirror = async () => {
                   }
               });
 
+              // 🚀 FIX: Mark each source ticket's transaction as credited, so it's never
+              // picked up and counted again by a future EOD (the actual cause of the 30-vs-10 bug).
+              const creditedTxIds = [...new Set(validDamagedItems.map(item => item.txId).filter(Boolean))];
+              creditedTxIds.forEach(txId => {
+                  const txRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, txId);
+                  t.update(txRef, { 'forensicData.eodCredited': true });
+              });
+
               // 2B. Update Agent Profile & Financial Wallets
               if (agentRef && agentDoc && agentDoc.exists()) {
                   let currentDebts = agentDoc.data().cukaiDebts || {};

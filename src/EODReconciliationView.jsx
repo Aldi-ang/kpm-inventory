@@ -122,20 +122,24 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const verifiedCukai = todaysReports.find(r => r.status === 'VERIFIED' && r.reportType === 'CUKAI');
         
         const legacyPending = todaysReports.find(r => r.status === 'PENDING' && !r.reportType);
-        // 🚀 NEW: Aggregate today's damaged/quarantined items so they can be handed back at EOD,
-        // instead of vanishing as a log entry that never reaches the resolvable Quarantine Vault.
-        const damagedMap = {};
+        // 🚀 FIX: One row per individual ticket (matches Agent Inventory's Quarantine Ledger),
+        // and skip any ticket already credited to the vault by a previous EOD verification —
+        // otherwise the same damaged stock gets counted and credited every time EOD runs.
+        const damagedItemsToReturn = [];
         todaysTrans.forEach(t => {
-            if (!t.forensicData || !t.forensicData.quarantineCargo) return;
-            t.forensicData.quarantineCargo.forEach(item => {
-                if (!damagedMap[item.productId]) {
-                    damagedMap[item.productId] = { productId: item.productId, name: item.itemName, unit: item.unit || 'Bks', qty: 0, reasons: new Set() };
-                }
-                damagedMap[item.productId].qty += Number(item.qty) || 0;
-                damagedMap[item.productId].reasons.add(item.returnReason || 'Unclassified');
+            if (!t.forensicData || !t.forensicData.quarantineCargo || t.forensicData.eodCredited) return;
+            t.forensicData.quarantineCargo.forEach((item, idx) => {
+                damagedItemsToReturn.push({
+                    ticketId: `${t.id}-${idx}`,
+                    txId: t.id,
+                    productId: item.productId,
+                    name: item.itemName,
+                    unit: item.unit || 'Bks',
+                    qty: Number(item.qty) || 0,
+                    reason: item.returnReason || 'Unclassified'
+                });
             });
         });
-        const damagedItemsToReturn = Object.values(damagedMap).map(d => ({ ...d, reasons: Array.from(d.reasons) }));
 
         const legacyVerified = todaysReports.find(r => r.status === 'VERIFIED' && !r.reportType);
 
@@ -387,7 +391,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 </div>
                                             </div>
 
-                                            {/* 🚀 NEW: DAMAGED GOODS TO RETURN — closes the loop into the Quarantine Vault */}
+                                            {/* 🚀 DAMAGED GOODS TO RETURN — one row per ticket, closes the loop into the Quarantine Vault */}
                                             <div>
                                                 <h4 className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={14}/> Damaged Goods to Return</h4>
                                                 <div className="bg-black/40 border border-orange-500/20 rounded-xl overflow-hidden">
@@ -396,11 +400,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     ) : (
                                                         <table className="w-full text-left text-xs">
                                                             <tbody>
-                                                                {agentData.damagedItemsToReturn.map((item, idx) => (
-                                                                    <tr key={idx} className="border-t border-orange-500/10 first:border-0">
+                                                                {agentData.damagedItemsToReturn.map((item) => (
+                                                                    <tr key={item.ticketId} className="border-t border-orange-500/10 first:border-0">
                                                                         <td className="p-2">
                                                                             <p className="font-bold text-slate-300">{item.name}</p>
-                                                                            <p className="text-[9px] text-orange-400/70">{item.reasons.join(', ')}</p>
+                                                                            <p className="text-[9px] text-orange-400/70">{item.reason}</p>
                                                                         </td>
                                                                         <td className="p-2 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
                                                                     </tr>
@@ -613,6 +617,19 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                 </span>
                                                             );
                                                         }) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
+                                                    </div>
+                                                </div>
+
+                                                {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
+                                                <div className="pt-3">
+                                                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
+                                                    <div className="space-y-1">
+                                                        {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
+                                                            <div key={item.ticketId} className="flex justify-between items-center text-[10px] bg-orange-950/20 border border-orange-500/20 px-2 py-1.5 rounded">
+                                                                <span className="text-slate-300">{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span>
+                                                                <strong className="text-orange-400">{item.qty} {item.unit}</strong>
+                                                            </div>
+                                                        )) : <span className="text-[10px] text-slate-500 italic">No damaged goods to return.</span>}
                                                     </div>
                                                 </div>
                                             </>
