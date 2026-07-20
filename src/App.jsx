@@ -1075,7 +1075,7 @@ const handleGitHubMirror = async () => {
 
   // 1. Calculate low stock items (Threshold is minStock or default to 5)
   const lowStockItems = useMemo(() => {
-      return inventory.filter(item => item.stock <= (item.minStock || 5));
+      return inventory.filter(item => item.stock <= (item.minStock || 50));
   }, [inventory]);
 
   // 2. Capybara Intercept on Login
@@ -1653,7 +1653,7 @@ const handleGitHubMirror = async () => {
                   }
 
                   // 🔔 NEW: Flag if this product is still below its minimum even after the return
-                  if (newStock <= (masterProduct?.minStock || 5)) {
+                  if (newStock <= (masterProduct?.minStock || 50)) {
                       lowStockAlerts.push(`${masterProduct?.name || item.name} (${newStock} Bks left)`);
                   }
               });
@@ -3380,7 +3380,7 @@ const handleGitHubMirror = async () => {
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-emerald-500/50 text-emerald-400 focus:border-emerald-500 outline-none"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 5} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-blue-500/50 text-blue-400 focus:border-blue-500 outline-none"/></div>
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>

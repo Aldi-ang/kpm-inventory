@@ -139,7 +139,7 @@ export default function useTransactionEngine({
                     const newStock = prodData.stock - qtyInBks;
                     updatesToPerform.push({ ref: prodRef, newStock });
                     // 🔔 NEW: Flag if this sale just pushed the product below its minimum
-                    if (newStock <= (prodData.minStock || 5)) {
+                    if (newStock <= (prodData.minStock || 50)) {
                         lowStockAlerts.push(`${prodData.name || item.name} (${newStock} Bks left)`);
                     }
                 }
