@@ -68,6 +68,15 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         
         let expectedCukai = 0;
         const agentProfile = motorists.find(m => m.id === effectiveId) || {};
+
+        // 🚀 FIX: Read the SELECTED identity's own vehicle stock, not the fixed prop.
+        // agentCanvas is the logged-in user's own canvas, so when an Admin switched
+        // identity in the dropdown, "Goods to Return" stayed empty/wrong. Fall back to
+        // the prop only when reconciling your own profile.
+        const resolvedCanvas = (agentProfile.activeCanvas && agentProfile.activeCanvas.length > 0)
+            ? agentProfile.activeCanvas
+            : ((effectiveId === agentProfileId) ? (agentCanvas || []) : []);
+
         const cDebts = agentProfile.cukaiDebts || {};
         const legacyDebt = agentProfile.cukaiDebt || 0;
         
@@ -118,8 +127,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: agentCanvas || [], todaysSamplings, cashStatus, cukaiStatus };
-    }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists]);
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, todaysSamplings, cashStatus, cukaiStatus };
+    }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     useEffect(() => {
         if (agentData && cukaiReturnedInput === "" && cukaiPaidInput === "") {
