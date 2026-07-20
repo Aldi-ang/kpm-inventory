@@ -195,7 +195,10 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
         const good = Number(entry.good || 0);
         const damaged = Number(entry.damaged || 0);
         const totalFound = good + damaged;
-        return { totalFound, variance: totalFound - (item.stock || 0) };
+        // 🚀 FIX: Compare against everything the system already expects (healthy + already-known
+        // damaged), not just healthy stock — otherwise re-counting the same known damaged units
+        // every time looks like "new" variance forever.
+        return { totalFound, variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)) };
     };
 
     const handleCommit = async () => {
@@ -221,10 +224,11 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
                         productId: item.id,
                         name: item.name || 'Unknown',
                         expectedStock: item.stock || 0,
+                        expectedDamagedStock: item.damagedStock || 0,
                         goodCount: good,
                         damagedCount: damaged,
                         totalFound: totalFound,
-                        variance: totalFound - (item.stock || 0),
+                        variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)),
                         damagedPhotoUrl: entry.photo || null
                     };
                 })
@@ -253,9 +257,12 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
             for (const item of audit.items) {
                 const itemRef = doc(db, basePath, item.productId);
                 if (audit.auditType === 'BRANCH_WAREHOUSE') {
-                    batch.set(itemRef, { stock: item.goodCount, damagedStock: increment(item.damagedCount) }, { merge: true });
+                    // 🚀 FIX: damagedStock is now SET to the physical count, matching how 'stock'
+                    // already works — a blind count replaces the system's belief with reality,
+                    // it doesn't pile on top of it.
+                    batch.set(itemRef, { stock: item.goodCount, damagedStock: item.damagedCount }, { merge: true });
                 } else {
-                    batch.update(itemRef, { stock: item.goodCount, damagedStock: increment(item.damagedCount) });
+                    batch.update(itemRef, { stock: item.goodCount, damagedStock: item.damagedCount });
                 }
             }
 

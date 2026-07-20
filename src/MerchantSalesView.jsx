@@ -571,7 +571,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
         if (isReturMode) {
             if (returType === 'EXCHANGE') {
-                dbMethod = 'Cash'; 
+                dbMethod = 'Tukar Ganti'; 
                 txType = 'SALE';   
             } else {
                 dbMethod = 'Retur/BS'; 
@@ -1447,6 +1447,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     <tr key={i}>
                                                         <td className="py-1 pr-2">
                                                             <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
+                                                            {item.condition === 'DAMAGED' && item.returnReason && (
+                                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                            )}
                                                             <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
                                                         </td>
                                                         <td className="py-1 text-right font-black whitespace-nowrap">

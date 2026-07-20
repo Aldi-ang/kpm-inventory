@@ -160,6 +160,12 @@ export default function useTransactionEngine({
             if (currentAgentProfileId) {
                 agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
                 agentDoc = await getDoc(agentRef);
+                // 🚀 FIX: Receipts were showing the logged-in Google account's own name
+                // (e.g. whoever is signed in) instead of the identity actually making the sale
+                // (e.g. "Admin (Boss Vehicle)" as registered in Fleet & Roster).
+                if (agentDoc.exists() && agentDoc.data().name) {
+                    finalAgentName = agentDoc.data().name;
+                }
             }
 
             // ✍️ PHASE 2: WRITES 
