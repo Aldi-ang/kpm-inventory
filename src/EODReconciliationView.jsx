@@ -122,12 +122,27 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const verifiedCukai = todaysReports.find(r => r.status === 'VERIFIED' && r.reportType === 'CUKAI');
         
         const legacyPending = todaysReports.find(r => r.status === 'PENDING' && !r.reportType);
+        // 🚀 NEW: Aggregate today's damaged/quarantined items so they can be handed back at EOD,
+        // instead of vanishing as a log entry that never reaches the resolvable Quarantine Vault.
+        const damagedMap = {};
+        todaysTrans.forEach(t => {
+            if (!t.forensicData || !t.forensicData.quarantineCargo) return;
+            t.forensicData.quarantineCargo.forEach(item => {
+                if (!damagedMap[item.productId]) {
+                    damagedMap[item.productId] = { productId: item.productId, name: item.itemName, unit: item.unit || 'Bks', qty: 0, reasons: new Set() };
+                }
+                damagedMap[item.productId].qty += Number(item.qty) || 0;
+                damagedMap[item.productId].reasons.add(item.returnReason || 'Unclassified');
+            });
+        });
+        const damagedItemsToReturn = Object.values(damagedMap).map(d => ({ ...d, reasons: Array.from(d.reasons) }));
+
         const legacyVerified = todaysReports.find(r => r.status === 'VERIFIED' && !r.reportType);
 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, todaysSamplings, cashStatus, cukaiStatus };
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     useEffect(() => {
@@ -371,6 +386,30 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     )}
                                                 </div>
                                             </div>
+
+                                            {/* 🚀 NEW: DAMAGED GOODS TO RETURN — closes the loop into the Quarantine Vault */}
+                                            <div>
+                                                <h4 className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={14}/> Damaged Goods to Return</h4>
+                                                <div className="bg-black/40 border border-orange-500/20 rounded-xl overflow-hidden">
+                                                    {agentData.damagedItemsToReturn.length === 0 ? (
+                                                        <p className="text-center p-4 text-slate-500 text-[10px] uppercase tracking-widest">No damaged items reported today.</p>
+                                                    ) : (
+                                                        <table className="w-full text-left text-xs">
+                                                            <tbody>
+                                                                {agentData.damagedItemsToReturn.map((item, idx) => (
+                                                                    <tr key={idx} className="border-t border-orange-500/10 first:border-0">
+                                                                        <td className="p-2">
+                                                                            <p className="font-bold text-slate-300">{item.name}</p>
+                                                                            <p className="text-[9px] text-orange-400/70">{item.reasons.join(', ')}</p>
+                                                                        </td>
+                                                                        <td className="p-2 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -382,6 +421,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             transfer: agentData.expectedTransfer, 
                                             cukai: 0, 
                                             remainingStock: agentData.activeStock, 
+                                            damagedStockToReturn: agentData.damagedItemsToReturn,
                                             deployedSamples: [], 
                                             reportType: 'CASH_STOCK',
                                             agentId: effectiveId,

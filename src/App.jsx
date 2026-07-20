@@ -91,6 +91,7 @@ import {
   runTransaction, 
   writeBatch,
   arrayUnion,                // 🚀 ADD THIS FOR THE TELEMETRY TRACKER
+  increment,                 // 🚀 ADD THIS FOR SAFE DAMAGED-STOCK CREDITING
   enableIndexedDbPersistence // <--- ADD THIS FOR OFFLINE MODE
 } from "firebase/firestore";
 
@@ -1606,6 +1607,17 @@ const handleGitHubMirror = async () => {
               }));
               const productDocs = await Promise.all(productRefs.map(p => t.get(p.ref)));
 
+              // 🚀 NEW: Damaged goods reported today — read their current damagedStock count
+              // at the same destination (branch or master), so we can safely increment it.
+              const validDamagedItems = (report.damagedStockToReturn || []).filter(item => item.qty > 0);
+              const damagedRefs = validDamagedItems.map(item => ({
+                  itemData: item,
+                  ref: useBranchWarehouse
+                      ? doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, item.productId)
+                      : doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
+              }));
+              const damagedDocs = await Promise.all(damagedRefs.map(d => t.get(d.ref)));
+
               let agentRef = null;
               let agentDoc = null;
               // 'VAULT' mode has no vehicle canvas at all, so there's genuinely nothing to look up there.
@@ -1636,6 +1648,19 @@ const handleGitHubMirror = async () => {
                       t.set(productRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, stock: currentStock + bksToReturn }, { merge: true });
                   } else {
                       t.set(productRefs[index].ref, { stock: currentStock + bksToReturn }, { merge: true });
+                  }
+              });
+
+              // 🚀 NEW: Credit damagedStock at the correct destination (branch or master) —
+              // this is the piece that got deleted earlier to fix the Tier 6 permission crash.
+              // It's safe here because it's the ADMIN's own session doing the write, not the field agent's.
+              damagedDocs.forEach((dSnap, index) => {
+                  const item = damagedRefs[index].itemData;
+                  const masterProduct = inventory.find(p => p.id === item.productId);
+                  if (useBranchWarehouse) {
+                      t.set(damagedRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, damagedStock: increment(item.qty) }, { merge: true });
+                  } else {
+                      t.set(damagedRefs[index].ref, { damagedStock: increment(item.qty) }, { merge: true });
                   }
               });
 
