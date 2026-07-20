@@ -35,13 +35,13 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
             onTouchStart={() => onInteract(true)}
             onTouchEnd={() => onInteract(false)}
             onChange={(e) => onChange(axis, parseInt(e.target.value))}
-            className="flex-1 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"
+            className="flex-1 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-amber-500"
         />
         <input 
             type="number" 
             value={val}
             onChange={(e) => onChange(axis, parseInt(e.target.value))}
-            className="w-12 h-6 text-[10px] font-mono bg-black border border-white/20 text-white text-center rounded focus:border-orange-500 outline-none"
+            className="w-12 h-6 text-[10px] font-mono bg-black border border-white/20 text-white text-center rounded focus:border-amber-500 outline-none"
         />
         <span className="text-[10px] text-slate-500">mm</span>
     </div>
@@ -99,18 +99,18 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
     const back = product.useFrontForBack ? front : images.back;
 
     return (
-        <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-slate-900/20 to-black overflow-hidden">
+        <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-purple-950/20 to-black overflow-hidden">
             {isAdmin && (
                 <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel">
-                    <button onClick={() => setShowControls(!showControls)} className={`p-2 rounded-full border border-white/20 ${showControls ? 'bg-orange-500 text-white' : 'bg-black/50 text-slate-400'}`}>
+                    <button onClick={() => setShowControls(!showControls)} className={`p-2 rounded-full border ${showControls ? 'bg-amber-500 border-amber-300 text-black shadow-[0_0_12px_rgba(217,164,65,0.6)]' : 'bg-black/50 border-amber-500/20 text-amber-200/70'}`}>
                         <Maximize2 size={16}/>
                     </button>
                     {showControls && (
-                        <div className="bg-black/90 backdrop-blur-md border border-white/20 p-4 rounded-xl w-64 shadow-2xl">
+                        <div className="bg-black/90 backdrop-blur-md border border-amber-500/30 p-4 rounded-xl w-64 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
                              <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
                              <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
                              <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                             <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 bg-emerald-600 text-white text-[10px] font-bold py-2 rounded">Save 3D Layout</button>
+                             <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 bg-gradient-to-b from-amber-500 to-amber-700 text-black text-[10px] font-bold py-2 rounded shadow-[0_0_10px_rgba(217,164,65,0.4)]">Save 3D Layout</button>
                         </div>
                     )}
                 </div>
@@ -139,43 +139,48 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                 </div>
             </div>
 
-            <div className="bg-black/90 border-t-2 border-orange-600 p-6 md:p-8 relative z-20 backdrop-blur-xl">
+            <div className="bg-black/90 border-t-2 border-amber-600/80 p-6 md:p-8 relative z-20 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
                 <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                     <div className="w-full">
-                        <h2 className="text-xl md:text-3xl text-white font-serif tracking-widest uppercase mb-2">{product.name}</h2>
-                        <div className="flex items-center gap-3">
-                            <span className="bg-emerald-900/30 px-3 py-1 rounded border border-emerald-500/50 text-emerald-400 text-sm md:text-base font-mono font-bold tracking-widest">
+                        <h2 className="text-xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-amber-500 font-serif tracking-widest uppercase mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{product.name}</h2>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <span className="bg-amber-900/20 px-3 py-1 rounded border border-amber-500/40 text-amber-300 text-sm md:text-base font-mono font-bold tracking-widest">
                                 STOCK: {isAdmin ? (() => {
                                     const info = formatAdvancedStock(product.stock, product);
                                     return `${info.bks} / ${info.slop} / ${info.bal}`;
                                 })() : "**"}
                             </span>
+                            {isAdmin && (product.damagedStock || 0) > 0 && (
+                                <span className="bg-rose-950/40 px-3 py-1 rounded border border-rose-700/60 text-rose-400 text-sm md:text-base font-mono font-bold tracking-widest">
+                                    DAMAGED: {product.damagedStock} Bks
+                                </span>
+                            )}
                             <span className="text-[10px] text-slate-500 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
                     </div>
 
                     {isAdmin && (
                         <div className="flex gap-2 w-full md:w-auto">
-                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-colors">Edit</button>
-                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 bg-red-900/30 text-red-500 border border-red-800 text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">Discard</button>
+                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 bg-gradient-to-b from-amber-400 to-amber-600 text-black text-[10px] font-bold uppercase tracking-widest hover:from-amber-300 hover:to-amber-500 transition-colors shadow-[0_0_10px_rgba(217,164,65,0.3)]">Edit</button>
+                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 bg-red-950/40 text-rose-500 border border-rose-800 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-700 hover:text-white transition-colors">Discard</button>
                         </div>
                     )}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-white/10 pt-5 mt-2">
-                    <div className="bg-white/5 p-3 border-l-4 border-red-500">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-amber-500/10 pt-5 mt-2">
+                    <div className="bg-white/5 p-3 border-l-4 border-rose-600">
                         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceDistributor)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-emerald-500">
+                    <div className="bg-white/5 p-3 border-l-4 border-amber-500">
                         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceRetail)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-blue-500">
+                    <div className="bg-white/5 p-3 border-l-4 border-purple-500">
                         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceGrosir)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-yellow-500">
+                    <div className="bg-white/5 p-3 border-l-4 border-yellow-600">
                         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ecer</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
                     </div>
@@ -210,34 +215,34 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
-        <div className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-white/10 rounded-xl shadow-2xl relative">
-            <div className="w-full lg:w-96 h-[350px] lg:h-full flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-white/10 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
-                <div className="p-4 md:p-6 border-b border-white/20">
-                    <h3 className="text-white font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
+        <div className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-amber-500/20 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.6)] relative">
+            <div className="w-full lg:w-96 h-[350px] lg:h-full flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-amber-500/20 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+                <div className="p-4 md:p-6 border-b border-amber-500/20">
+                    <h3 className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
                     <div className="relative mb-3">
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." className="w-full bg-black/50 border border-white/30 p-2 pl-8 text-white text-[10px] font-mono outline-none"/>
-                        <Search size={12} className="absolute left-2 top-2.5 text-slate-500"/>
-                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-slate-400 hover:text-white"><Plus size={16}/></button>}
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." className="w-full bg-black/50 border border-amber-500/30 p-2 pl-8 text-white text-[10px] font-mono outline-none focus:border-amber-400"/>
+                        <Search size={12} className="absolute left-2 top-2.5 text-amber-500/50"/>
+                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-amber-500/70 hover:text-amber-300"><Plus size={16}/></button>}
                     </div>
                     <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                         {sectionKeys.map(sec => (
-                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[8px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-white text-black' : 'text-slate-500 border-slate-700'}`}>{sec}</button>
+                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[8px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-white/10">
+                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
                     {currentList.map(item => {
                         const isLowStock = item.stock <= (item.minStock || 5);
                         return (
-                            <div key={item.id} onClick={() => setSelectedId(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-white/10 border-white/20 shadow-md' : 'border-transparent'}`}>
-                                {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
-                                <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-orange-500' : isLowStock && isAdmin ? 'border-red-500' : 'border-white/10'}`}>
-                                    {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover" /> : <Package size={20} className="text-slate-600"/>}
-                                    {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-red-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
+                            <div key={item.id} onClick={() => setSelectedId(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
+                                {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
+                                <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
+                                    {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
+                                    {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-rose-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-orange-400' : isLowStock && isAdmin ? 'text-red-400' : 'text-slate-300'}`}>{item.name}</h4>
+                                    <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-amber-400' : isLowStock && isAdmin ? 'text-rose-400' : 'text-slate-300'}`}>{item.name}</h4>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
@@ -253,19 +258,23 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                                 if (tItem) soldBks += convertToBks(tItem.qty, tItem.unit, item);
                                             });
                                             const startBks = item.stock + fieldBks + soldBks;
+                                            const damagedBks = item.damagedStock || 0;
 
                                             return (
                                                 <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono font-bold w-full overflow-x-auto custom-scrollbar pb-1">
-                                                    <span className={`whitespace-nowrap ${isLowStock ? 'text-red-500' : 'text-slate-300'}`}>
+                                                    <span className={`whitespace-nowrap ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>
                                                         VAULT: {formatAdvancedStock(item.stock, item).bks} ({formatAdvancedStock(item.stock, item).slop})
                                                     </span>
-                                                    <span className="text-slate-500 border-l border-white/20 pl-2 whitespace-nowrap">START: {startBks}</span>
-                                                    <span className="text-orange-400 border-l border-white/20 pl-2">FIELD: {fieldBks}</span>
-                                                    <span className="text-emerald-400 border-l border-white/20 pl-2">SOLD: {soldBks}</span>
+                                                    <span className="text-slate-500 border-l border-amber-900/40 pl-2 whitespace-nowrap">START: {startBks}</span>
+                                                    <span className="text-amber-400 border-l border-amber-900/40 pl-2">FIELD: {fieldBks}</span>
+                                                    <span className="text-emerald-400 border-l border-amber-900/40 pl-2">SOLD: {soldBks}</span>
+                                                    {damagedBks > 0 && (
+                                                        <span className="text-rose-400 border-l border-amber-900/40 pl-2">DMG: {damagedBks}</span>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
-                                        {isLowStock && isAdmin && (<span className="text-[9px] font-black bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded border border-red-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
+                                        {isLowStock && isAdmin && (<span className="text-[9px] font-black bg-rose-950/50 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
                                     </div>
                                 </div>
                             </div>
@@ -278,12 +287,12 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
             <div className="w-full h-[600px] lg:flex-1 lg:h-full relative bg-black shrink-0">
                 <div className="absolute inset-0 z-0">
                     <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-purple-950/10 to-black/80"></div>
                 </div>
                 <div className="relative z-10 h-full">
                     {isAdmin && (
                         <label className="absolute top-4 right-14 z-50 cursor-pointer"> 
-                            <div className="bg-black/50 p-2 rounded-full text-white border border-white/10"><ImageIcon size={14}/></div>
+                            <div className="bg-black/50 p-2 rounded-full text-amber-300 border border-amber-500/20"><ImageIcon size={14}/></div>
                             <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
                         </label>
                     )}
