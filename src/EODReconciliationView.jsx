@@ -24,6 +24,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const [openAgents, setOpenAgents] = useState([]);
     const [openMonths, setOpenMonths] = useState([]);
     const [openDates, setOpenDates] = useState([]);
+    const [expandedReports, setExpandedReports] = useState([]);
 
     const toggleAccordion = (setter, key) => {
         setter(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
@@ -780,8 +781,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                     {openDates.includes(dateKey) && (
                                                                                         <div className="p-3 pl-16 space-y-3 bg-black/40 shadow-inner">
                                                                                             {/* 📄 THE ACTUAL REPORTS */}
-                                                                                            {structuredHistory[location][empName][yearMonth][fullDate].map(report => (
-                                                                                                <div key={report.id} className={`bg-slate-900/80 border p-3 rounded-xl flex justify-between items-center transition-colors shadow-sm ${report.reportType === 'BOUNTY' ? 'border-red-900/50 hover:border-red-500/50' : 'border-slate-700/50 hover:border-slate-500'}`}>
+                                                                                            {structuredHistory[location][empName][yearMonth][fullDate].map(report => {
+                                                                                                const isExpanded = expandedReports.includes(report.id);
+                                                                                                const hasDamaged = report.damagedStockToReturn && report.damagedStockToReturn.length > 0;
+                                                                                                const toggleExpand = () => setExpandedReports(prev => isExpanded ? prev.filter(id => id !== report.id) : [...prev, report.id]);
+                                                                                                return (
+                                                                                                <div key={report.id} onClick={toggleExpand} className={`bg-slate-900/80 border p-3 rounded-xl transition-colors shadow-sm cursor-pointer ${report.reportType === 'BOUNTY' ? 'border-red-900/50 hover:border-red-500/50' : 'border-slate-700/50 hover:border-slate-500'}`}>
+                                                                                                    <div className="flex justify-between items-center">
                                                                                                     <div>
                                                                                                         <h4 className="font-bold text-white text-xs flex items-center gap-2">
                                                                                                             {report.reportType === 'CASH_STOCK' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
@@ -789,6 +795,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             {report.reportType === 'BOUNTY' && <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>}
                                                                                                             {!report.reportType && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
                                                                                                             {report.reportType === 'BOUNTY' ? <span className="text-red-400 tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
+                                                                                                            {/* 🚀 NEW: quick hint badge, click the row for the full breakdown */}
+                                                                                                            {hasDamaged && <span className="text-[8px] bg-orange-900/40 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
+                                                                                                            <ChevronDown size={10} className={`text-slate-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/>
                                                                                                         </h4>
                                                                                                         <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
                                                                                                             <Clock size={10}/> 
@@ -805,14 +814,58 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                         )}
                                                                                                         
                                                                                                         <button 
-                                                                                                            onClick={() => onResetEOD(report)}
+                                                                                                            onClick={(e) => { e.stopPropagation(); onResetEOD(report); }}
                                                                                                             className="text-[9px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95 uppercase font-bold mt-2"
                                                                                                         >
                                                                                                             <XCircle size={10}/> Force Reset
                                                                                                         </button>
                                                                                                     </div>
+                                                                                                    </div>
+
+                                                                                                    {/* 🚀 NEW: full breakdown, only rendered when the row is clicked open */}
+                                                                                                    {isExpanded && (
+                                                                                                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                                                                            {report.remainingStock && report.remainingStock.length > 0 && (
+                                                                                                                <div>
+                                                                                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Healthy Stock Returned</p>
+                                                                                                                    {report.remainingStock.map((item, idx) => (
+                                                                                                                        <p key={idx} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
+                                                                                                                    ))}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                            {hasDamaged && (
+                                                                                                                <div>
+                                                                                                                    <p className="text-[9px] font-bold text-orange-400 uppercase tracking-widest mb-1">Damaged Goods Returned</p>
+                                                                                                                    {report.damagedStockToReturn.map((item) => (
+                                                                                                                        <p key={item.ticketId} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span><span className="font-bold text-orange-400">{item.qty} {item.unit}</span></p>
+                                                                                                                    ))}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                            {/* 🚀 FIX: Cukai never had expand content at all - now shows the real breakdown */}
+                                                                                                            {report.reportType === 'CUKAI' && (
+                                                                                                                <div>
+                                                                                                                    <p className="text-[9px] font-bold text-orange-400 uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
+                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-orange-400">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span></p>
+                                                                                                                    {report.cukaiPaid > 0 && (
+                                                                                                                        <p className="text-[10px] text-slate-300 flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-red-400">{report.cukaiPaid} Pcs ({formatRupiah(report.cukaiFine || 0)})</span></p>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                            {/* 🚀 FIX: report.penaltyDescription never existed - real fields are penaltyKeys and cash */}
+                                                                                                            {report.reportType === 'BOUNTY' && (
+                                                                                                                <div>
+                                                                                                                    <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mb-1">Bounty Details</p>
+                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Penalty Item{report.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-red-400">{report.penaltyKeys?.length || 0}</span></p>
+                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Total Paid</span><span className="font-bold text-red-400">{formatRupiah(report.cash)}</span></p>
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                            {!report.remainingStock?.length && !hasDamaged && report.reportType !== 'CUKAI' && report.reportType !== 'BOUNTY' && (
+                                                                                                                <p className="text-[10px] text-slate-500 italic">No itemized data for this entry.</p>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    )}
                                                                                                 </div>
-                                                                                            ))}
+                                                                                            )})}
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
