@@ -146,7 +146,9 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // 🚀 NEW: EXTRACT QUARANTINED CARGO DIRECTLY FROM THE FORENSIC ROOT
     const quarantinedCargo = useMemo(() => {
         return todayTransactions
-            .filter(tx => tx.forensicData && tx.forensicData.quarantineCargo)
+            // 🚀 FIX: Once EOD has verified and credited a ticket to the vault, stop showing it
+            // here — otherwise it looks like unresolved work when it's actually already done.
+            .filter(tx => tx.forensicData && tx.forensicData.quarantineCargo && !tx.forensicData.eodCredited)
             .flatMap(tx => {
                 return tx.forensicData.quarantineCargo.map((item, index) => ({
                     id: `${tx.id || tx.transactionId || Math.random().toString()}-${index}`,
