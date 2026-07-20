@@ -1,4 +1,4 @@
-import { doc, collection, serverTimestamp, writeBatch, getDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
 import { getCurrentDate } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
 
@@ -111,6 +111,7 @@ export default function useTransactionEngine({
             const updatesToPerform = [];
             const transactionItems = []; 
             let totalProfit = 0; 
+            const lowStockAlerts = [];
 
             // 📖 PHASE 1: READS 
             for (const item of activeCart) { 
@@ -135,7 +136,12 @@ export default function useTransactionEngine({
                 // If Admin Vault is processing, deduct from Master Vault
                 if (!currentAgentProfileId && isPhysicallyGiven) {
                     if(prodData.stock < qtyInBks) throw `Not enough stock in Vault for ${item.name}`;
-                    updatesToPerform.push({ ref: prodRef, newStock: prodData.stock - qtyInBks });
+                    const newStock = prodData.stock - qtyInBks;
+                    updatesToPerform.push({ ref: prodRef, newStock });
+                    // 🔔 NEW: Flag if this sale just pushed the product below its minimum
+                    if (newStock <= (prodData.minStock || 5)) {
+                        lowStockAlerts.push(`${prodData.name || item.name} (${newStock} Bks left)`);
+                    }
                 }
 
                 // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
@@ -259,6 +265,20 @@ export default function useTransactionEngine({
             }
 
             await batch.commit();
+
+            // 🔔 NEW: One combined notification if this sale pushed anything below its minimum
+            if (lowStockAlerts.length > 0) {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                    title: "📉 Low Stock Warning",
+                    message: `Sale just pushed stock below minimum: ${lowStockAlerts.join(', ')}.`,
+                    type: "LOW_STOCK",
+                    read: false,
+                    isRead: false,
+                    timestamp: serverTimestamp(),
+                    agentId: 'ADMIN',
+                    linkToTab: 'inventory'
+                });
+            }
 
             await logAudit("SALE", `Transacted with ${customerName} via ${paymentType}`); 
             if (!manualData && setCart) setCart([]); 

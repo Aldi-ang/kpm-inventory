@@ -1631,6 +1631,7 @@ const handleGitHubMirror = async () => {
               // ==========================================
 
               // 2A. Update Products (Return Stock) — now correctly routes to branch or master vault
+              const lowStockAlerts = [];
               productDocs.forEach((pSnap, index) => {
                   const item = productRefs[index].itemData;
                   // Unit-conversion ratios (Slop/Bal/Karton → Bks) always come from the master product,
@@ -1642,12 +1643,18 @@ const handleGitHubMirror = async () => {
                   if (item.unit === 'Karton') mult = (masterProduct?.balsPerCarton || 4) * (masterProduct?.slopsPerBal || 20) * (masterProduct?.packsPerSlop || 10);
                   const bksToReturn = item.qty * mult;
                   const currentStock = pSnap.exists() ? (pSnap.data().stock || 0) : 0;
+                  const newStock = currentStock + bksToReturn;
 
                   if (useBranchWarehouse) {
                       // Branch inventory doc might not exist yet for this product — set+merge handles both cases
-                      t.set(productRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, stock: currentStock + bksToReturn }, { merge: true });
+                      t.set(productRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, stock: newStock }, { merge: true });
                   } else {
-                      t.set(productRefs[index].ref, { stock: currentStock + bksToReturn }, { merge: true });
+                      t.set(productRefs[index].ref, { stock: newStock }, { merge: true });
+                  }
+
+                  // 🔔 NEW: Flag if this product is still below its minimum even after the return
+                  if (newStock <= (masterProduct?.minStock || 5)) {
+                      lowStockAlerts.push(`${masterProduct?.name || item.name} (${newStock} Bks left)`);
                   }
               });
 
@@ -1671,6 +1678,37 @@ const handleGitHubMirror = async () => {
                   const txRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, txId);
                   t.update(txRef, { 'forensicData.eodCredited': true });
               });
+
+              // 🔔 NEW: One combined notification if anything just entered Quarantine
+              if (validDamagedItems.length > 0) {
+                  const totalDamagedQty = validDamagedItems.reduce((sum, i) => sum + i.qty, 0);
+                  const notifRef = doc(collection(db, `artifacts/${appId}/users/${userId}/notifications`));
+                  t.set(notifRef, {
+                      title: "☣️ New Quarantine Items",
+                      message: `${totalDamagedQty} Bks entered the Quarantine Vault from ${report.agentName}'s EOD. Needs resolution.`,
+                      type: "QUARANTINE_ENTRY",
+                      read: false,
+                      isRead: false,
+                      timestamp: serverTimestamp(),
+                      agentId: 'ADMIN',
+                      linkToTab: 'stock_opname'
+                  });
+              }
+
+              // 🔔 NEW: One combined notification if anything is still low after this return
+              if (lowStockAlerts.length > 0) {
+                  const notifRef = doc(collection(db, `artifacts/${appId}/users/${userId}/notifications`));
+                  t.set(notifRef, {
+                      title: "📉 Low Stock Warning",
+                      message: `Still low after EOD return: ${lowStockAlerts.join(', ')}.`,
+                      type: "LOW_STOCK",
+                      read: false,
+                      isRead: false,
+                      timestamp: serverTimestamp(),
+                      agentId: 'ADMIN',
+                      linkToTab: 'inventory'
+                  });
+              }
 
               // 2B. Update Agent Profile & Financial Wallets
               if (agentRef && agentDoc && agentDoc.exists()) {

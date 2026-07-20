@@ -236,6 +236,18 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
 
             await addDoc(collection(db, `artifacts/${appId}/users/${masterId}/pending_audits`), auditPayload);
 
+            // 🔔 NEW: Ping HQ the moment a count comes in, so it doesn't sit unnoticed
+            await addDoc(collection(db, `artifacts/${appId}/users/${masterId}/notifications`), {
+                title: "📋 New Stock Opname Submitted",
+                message: `${auditPayload.agentName} submitted a physical count for ${auditPayload.branchLocation}. Needs HQ review.`,
+                type: "AUDIT_PENDING",
+                read: false,
+                isRead: false,
+                timestamp: serverTimestamp(),
+                agentId: 'ADMIN',
+                linkToTab: 'stock_opname'
+            });
+
             if (logAudit) await logAudit("STOCK_OPNAME_SUBMITTED", `Submitted warehouse audit to HQ.`);
             if (triggerCapy) triggerCapy(`Audit Payload sent to HQ! Awaiting Commander approval. 📡`);
 
