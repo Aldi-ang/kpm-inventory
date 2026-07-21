@@ -4,6 +4,7 @@ import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getD
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -376,11 +377,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
     useEffect(() => {
         const loadBorders = async () => {
-            const CACHE_KEY = `cello_map_bnd_${appId}`;
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (cachedData) {
-                try { setBoundaries(JSON.parse(cachedData).filter(b => b && !b.isHidden)); } catch(e) {}
-            }
+            // 🗄️ IndexedDB cache paint first (localStorage quota killed the old cache)
+            try {
+                const cached = await loadBorderCache(appId);
+                if (cached.length > 0) setBoundaries(cached.filter(b => b && !b.isHidden));
+            } catch(e) {}
 
             const userId = user?.uid || user?.id || 'default';
             if (!db || !appId || !userId) return;
@@ -402,7 +403,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 if (loaded.length > 0) {
                     const activeBorders = loaded.filter(b => b && !b.isHidden);
                     setBoundaries(activeBorders);
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(loaded));
+                    saveBorderCache(appId, loaded);
                 }
             } catch(e) {}
         };

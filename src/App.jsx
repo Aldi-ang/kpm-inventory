@@ -97,7 +97,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getRandomColor, convertToBks } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getRandomColor, convertToBks, commitInChunks } from './utils/helpers';
 
 const APP_VERSION = packageJson.version;
 
@@ -2742,22 +2742,15 @@ const handleGitHubMirror = async () => {
           try {
               const data = JSON.parse(event.target.result);
               
-              // FIX: Firestore has a hard limit of 500 writes per batch. 
-              // We use chunked batches to ensure massive restores (including maps) never crash.
-              const batches = [];
-              let currentBatch = writeBatch(db);
-              let opCount = 0;
-
-              const commitBatch = () => {
-                  batches.push(currentBatch.commit());
-                  currentBatch = writeBatch(db);
-                  opCount = 0;
-              };
+              // 🚀 FIX: The old restore fired ALL chunked batch.commit() calls CONCURRENTLY
+              // (Promise.all), flooding Firestore's write stream — the exact source of the
+              // "resource-exhausted: maximum allowed queued writes" console spam and partial
+              // restores. We now queue plain operations and hand them to commitInChunks,
+              // which commits SEQUENTIALLY, size-capped (10MiB request limit) and paced.
+              const operations = [];
 
               const safeSet = (ref, itemData) => {
-                  currentBatch.set(ref, itemData);
-                  opCount++;
-                  if (opCount >= 450) commitBatch();
+                  operations.push({ type: 'set', ref, data: itemData });
               };
 
               const queueToBatch = (collectionName, items) => {
@@ -2807,11 +2800,8 @@ const handleGitHubMirror = async () => {
               if (data.appSettings) safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'general'), data.appSettings);
               if (data.tierSettings) safeSet(doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'tiers'), { list: data.tierSettings });
 
-              // 4. Commit remaining unpushed files
-              if (opCount > 0) batches.push(currentBatch.commit());
-              
-              // Wait for all batches to finish uploading concurrently
-              await Promise.all(batches);
+              // 4. Commit everything sequentially in safe, size-capped, paced chunks
+              await commitInChunks(db, writeBatch, operations);
 
               triggerCapy("System Restore Complete! Refreshing matrix... ✨");
               setTimeout(() => window.location.reload(), 2500);

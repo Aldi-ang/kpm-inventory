@@ -39,9 +39,22 @@ export const convertToBks = (qty, unit, product) => {
 //     { type: 'delete', ref: anotherDocRef },
 //   ]);
 export const commitInChunks = async (db, writeBatch, operations) => {
-    const CHUNK_SIZE = 500;
-    for (let i = 0; i < operations.length; i += CHUNK_SIZE) {
-        const chunk = operations.slice(i, i + CHUNK_SIZE);
+    const CHUNK_SIZE = 450;
+    // 🚀 FIX: Firestore ALSO hard-caps each request at 10MiB. Map borders carry huge
+    // geometryString payloads, so chunking by count alone can still overflow a request
+    // (the resource-exhausted errors during border uploads/restores). Cap by bytes too.
+    const MAX_CHUNK_BYTES = 8 * 1024 * 1024;
+
+    let chunk = [];
+    let chunkBytes = 0;
+    let committedAny = false;
+
+    const flushChunk = async () => {
+        if (chunk.length === 0) return;
+        // 🚀 FIX: A brief pause between chunks so Firestore's write stream never
+        // gets flooded with too many rapid-fire commits in a row (the resource-exhausted
+        // error we saw during testing) — matters most once datasets get genuinely large.
+        if (committedAny) await new Promise(resolve => setTimeout(resolve, 150));
         const batch = writeBatch(db);
         chunk.forEach(op => {
             if (op.type === 'set') batch.set(op.ref, op.data, op.options || {});
@@ -49,12 +62,19 @@ export const commitInChunks = async (db, writeBatch, operations) => {
             else if (op.type === 'delete') batch.delete(op.ref);
         });
         await batch.commit();
+        committedAny = true;
+        chunk = [];
+        chunkBytes = 0;
+    };
 
-        // 🚀 FIX: A brief pause between chunks so Firestore's write stream never
-        // gets flooded with too many rapid-fire commits in a row (the resource-exhausted
-        // error we saw during testing) — matters most once datasets get genuinely large.
-        if (i + CHUNK_SIZE < operations.length) {
-            await new Promise(resolve => setTimeout(resolve, 150));
+    for (const op of operations) {
+        let opBytes = 256; // rough overhead estimate per operation
+        try { if (op.data) opBytes += JSON.stringify(op.data).length; } catch (e) {}
+        if (chunk.length >= CHUNK_SIZE || (chunk.length > 0 && chunkBytes + opBytes > MAX_CHUNK_BYTES)) {
+            await flushChunk();
         }
+        chunk.push(op);
+        chunkBytes += opBytes;
     }
+    await flushChunk();
 };

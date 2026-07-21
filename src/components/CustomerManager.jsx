@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
+import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 
 // 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
 const isPointInPolygon = (point, polygon) => {
@@ -226,14 +227,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const [mapBorders, setMapBorders] = useState([]);
     useEffect(() => {
         const loadBorders = async () => {
-            const CACHE_KEY = `cello_map_bnd_${appId}`;
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            let borders = [];
-            
-            if (cachedData) { try { borders = JSON.parse(cachedData); } catch(e) {} }
-            
-            if (borders.length === 0 && db && appId && userId !== 'default') {
+            // 🗄️ Instant paint from IndexedDB cache (no localStorage quota limits)
+            try {
+                const cached = await loadBorderCache(appId);
+                if (cached.length > 0) setMapBorders(cached);
+            } catch(e) {}
+
+            // 🚀 STALE-CACHE FIX: ALWAYS refresh from Firestore afterwards (same as the map
+            // view). The old cache-first-only logic froze the CRM on an outdated border list,
+            // which is why newly uploaded borders (e.g. Kota Magelang) never reached the
+            // geospatial auto-detection and customers stayed UNMAPPED.
+            if (db && appId && userId !== 'default') {
                 try {
+                    const borders = [];
                     const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
                     snap.forEach(d => {
                         if (d.id.startsWith('bnd_')) {
@@ -243,10 +249,12 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             }
                         }
                     });
-                    if (borders.length > 0) localStorage.setItem(CACHE_KEY, JSON.stringify(borders));
+                    if (borders.length > 0) {
+                        setMapBorders(borders);
+                        saveBorderCache(appId, borders);
+                    }
                 } catch(e) {}
             }
-            setMapBorders(borders);
         };
         loadBorders();
     }, [db, appId, userId]);
@@ -309,7 +317,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             let kab = String(c.region || '').trim();
             let kec = String(c.city || '').trim();
 
-            const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('uncategorized');
+            // 🚀 FIX: also treat 'unmapped' as unknown (matches the Data Scrub's own check) —
+            // otherwise stores hard-written as "UNMAPPED KABUPATEN" are skipped by geo-detection.
+            const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
 
             // 📍 1. GEOSPATIAL AUTO-DETECTION: Checks Map Borders even if text says "Unknown"!
             if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && c.latitude && c.longitude && sortedBorders.length > 0) {
@@ -324,10 +334,12 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             }
 
             // 🧠 2. SMART TEXT DICTIONARY: Scans addresses for clues
+            // 🚀 FIX: use isUnknown() (not just falsy) so customers hard-written as
+            // "UNMAPPED KABUPATEN" by an old Data Scrub can still be rescued here.
             const searchText = `${c.address || ''} ${c.name || ''} ${kab} ${kec}`.toLowerCase();
-            if (!kec) kec = guessKecamatan(searchText);
-            if (!kab) kab = guessKabupaten(searchText);
-            if (!prov) prov = guessProvince(searchText);
+            if (isUnknown(kec)) kec = guessKecamatan(searchText) || kec;
+            if (isUnknown(kab)) kab = guessKabupaten(searchText) || kab;
+            if (isUnknown(prov)) prov = guessProvince(searchText) || prov;
 
             // 🛡️ 3. ABSOLUTE FALLBACK
             if (!prov) prov = 'Unknown Provinsi';

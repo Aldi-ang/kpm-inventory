@@ -13,6 +13,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from './utils/helpers';
+import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -481,7 +482,6 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const fileInputRef = useRef(null);
     const palette = ["#f87171", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#38bdf8", "#60a5fa", "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185"];
     const userId = user?.uid || user?.id || 'default';
-    const CACHE_KEY = `cello_map_bnd_${appId}`;
 
     const safeBoundaries = Array.isArray(boundaries) ? boundaries.filter(b => b && typeof b === 'object' && b.id) : [];
 
@@ -528,7 +528,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             const updatedBoundary = { ...targetBoundary, folderName: newFolder };
             const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
             setBoundaries(updatedList);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+            saveBorderCache(appId, updatedList);
             await saveBoundaryToFirebase(updatedBoundary);
         }
     };
@@ -586,15 +586,15 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         if(window.confirm("WARNING: This will completely delete ALL active borders from your map. Continue?")) {
             for (let b of safeBoundaries) { await deleteBoundaryFromFirebase(b.id); }
             setBoundaries([]);
-            localStorage.removeItem(CACHE_KEY);
+            clearBorderCache(appId);
         }
     };
 
     const handleDeleteBorder = async (idToRemove) => {
         if(window.confirm("Remove this specific border?")) {
             const updated = safeBoundaries.filter(b => b.id !== idToRemove);
-            setBoundaries(updated); 
-            localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+            setBoundaries(updated);
+            saveBorderCache(appId, updated);
             await deleteBoundaryFromFirebase(idToRemove);
         }
     };
@@ -620,15 +620,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 const updatedList = safeBoundaries.map(b => b.id === id ? updatedBoundary : b);
                 setBoundaries(updatedList);
                 
-                // 🚀 CRASH FIX: Protect against undefined CACHE_KEY ReferenceErrors
-                const safeCacheKey = typeof CACHE_KEY !== 'undefined' ? CACHE_KEY : `cello_map_bnd_${appId}`;
-                
-                // 🛡️ THE SHOCK ABSORBER: Catch QuotaExceededError so it doesn't kill the thread
-                try {
-                    localStorage.setItem(safeCacheKey, JSON.stringify(updatedList));
-                } catch (cacheError) {
-                    console.warn("ZACK WARNING: Browser LocalStorage is full. Bypassing local cache.", cacheError);
-                }
+                // 🛡️ SHOCK ABSORBER 2.0: IndexedDB cache — no localStorage quota, non-fatal on failure
+                saveBorderCache(appId, updatedList);
                 
                 // 📻 RADIO DISPATCH: Broadcast the signal directly to Capy!
                 window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: "Sector Configuration Saved! 🚀" }));
@@ -644,7 +637,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const toggleVisibility = async (id, currentHidden) => {
         const updatedList = safeBoundaries.map(b => b.id === id ? { ...b, isHidden: !currentHidden } : b);
         setBoundaries(updatedList);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        saveBorderCache(appId, updatedList);
         const target = updatedList.find(b => b.id === id);
         if (target) await saveBoundaryToFirebase(target);
     };
@@ -656,8 +649,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             return f === folderName ? { ...b, isHidden: hide } : b;
         });
         setBoundaries(updatedList);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
-        
+        saveBorderCache(appId, updatedList);
+
         safeBoundaries.forEach(b => {
             const f = b.folderName || b.level || 'Uncategorized';
             if (f === folderName && !!b.isHidden !== hide) {
@@ -681,7 +674,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         });
 
         setBoundaries(updatedList);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        saveBorderCache(appId, updatedList);
 
         // Save batch to Firebase silently
         for (let b of safeBoundaries) {
@@ -706,7 +699,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         
         const updatedList = safeBoundaries.filter(b => (b.folderName || b.level || 'Uncategorized') !== folderName);
         setBoundaries(updatedList);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedList));
+        saveBorderCache(appId, updatedList);
 
         for (let b of bordersInside) {
             await deleteBoundaryFromFirebase(b.id);
@@ -730,10 +723,16 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             level = "Kecamatan"; 
         } 
         // Checking for Kabupaten/Kota
-        else if (props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota) { 
-            name = `${props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota}`; 
-            level = "Kabupaten"; 
-        } 
+        else if (props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota) {
+            name = `${props.KABUPATEN || props.KOTA || props.NAME_2 || props.nm_dati2 || props.WADMKK || props.kabupaten || props.nama_kabupaten || props.nama_kota}`;
+            level = "Kabupaten";
+            // 🏙️ KOTA DISAMBIGUATION: GADM-style files name BOTH Kabupaten Magelang and
+            // Kota Magelang just "Magelang" (only TYPE_2/ENGTYPE_2 differ). Prefix "Kota"
+            // so borders/folders/geo-detection can tell them apart.
+            const t2 = String(props.TYPE_2 || props.ENGTYPE_2 || '').toLowerCase();
+            const isKota = !!(props.KOTA || props.nama_kota) || t2.includes('kota') || t2.includes('city');
+            if (isKota && !String(name).toLowerCase().startsWith('kota')) name = `Kota ${name}`;
+        }
         // Checking for Provinsi
         else if (props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi || props.nama_provinsi) { 
             name = `${props.PROVINSI || props.NAME_1 || props.nm_propinsi || props.WADMPR || props.provinsi || props.nama_provinsi}`; 
@@ -800,7 +799,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                     }
                 }
                 await saveBoundariesInChunks(boundariesToSave);
-                setBoundaries(newBoundaries); localStorage.setItem(CACHE_KEY, JSON.stringify(newBoundaries)); setShowBorders(true); 
+                setBoundaries(newBoundaries); saveBorderCache(appId, newBoundaries); setShowBorders(true);
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
                 setProgress("Success!"); setTimeout(() => setProgress(""), 3000);
                 setExpandedNodes(prev => ({ ...prev, [targetFolder]: true }));
@@ -1854,11 +1853,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     useEffect(() => {
         const loadBorders = async () => {
-            const CACHE_KEY = `cello_map_bnd_${appId}`;
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (cachedData) {
-                try { setBoundaries(JSON.parse(cachedData)); } catch(e) {}
-            }
+            // 🗄️ IndexedDB cache paint first (localStorage quota killed the old cache)
+            try {
+                const cached = await loadBorderCache(appId);
+                if (cached.length > 0) setBoundaries(cached);
+            } catch(e) {}
 
             if (db && appId && userId) {
                 try {
@@ -1877,7 +1876,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     });
                     if (loaded.length > 0) {
                         setBoundaries(loaded);
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(loaded));
+                        saveBorderCache(appId, loaded);
                     }
                 } catch(e) {}
             }
