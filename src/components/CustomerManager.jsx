@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { commitInChunks } from '../utils/helpers';
 
 // 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
 const isPointInPolygon = (point, polygon) => {
@@ -402,32 +403,18 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         if (triggerCapy) triggerCapy(`Moving ${storesToUpdate.length} stores... 🚀`);
 
         try {
-            const batches = [];
-            let currentBatch = writeBatch(db);
-            let count = 0;
-
-            storesToUpdate.forEach(store => {
+            // 🚀 FIX: Same write-stream-overload risk as handleDeleteFolder - now uses
+            // the same safe, sequential-with-pause commitInChunks helper.
+            const operations = storesToUpdate.map(store => {
                 const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id);
                 const updateData = {};
-                
-                // Route to the correct database field based on the folder level
                 if (level === 'Provinsi') updateData.province = newName;
                 if (level === 'Kabupaten') updateData.region = newName;
                 if (level === 'Kecamatan') updateData.city = newName;
-                
-                currentBatch.update(ref, updateData);
-                count++;
-
-                // Firebase batch limit is 500, we chunk at 450 to be safe
-                if (count === 450) {
-                    batches.push(currentBatch.commit());
-                    currentBatch = writeBatch(db);
-                    count = 0;
-                }
+                return { type: 'update', ref, data: updateData };
             });
 
-            if (count > 0) batches.push(currentBatch.commit());
-            await Promise.all(batches);
+            await commitInChunks(db, writeBatch, operations);
 
             if (triggerCapy) triggerCapy(`Successfully renamed to ${newName}! ✅`);
             if (logAudit) logAudit("DIRECTORY_BULK_RENAME", `Renamed ${level} from ${oldName} to ${newName} for ${storesToUpdate.length} stores`);
@@ -453,24 +440,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         if (!window.confirm(`⚠️ DANGER: Delete "${folderName}" and reset its ${storesToUpdate.length} stores to Unknown?`)) return;
         
         try {
-            const batches = [];
-            let currentBatch = writeBatch(db);
-            let count = 0;
-
-            storesToUpdate.forEach(store => {
+            // 🚀 FIX: Was firing multiple batches simultaneously (Promise.all), which risks
+            // the exact write-stream overload we saw during the restore incident. Now uses
+            // the same safe, sequential-with-pause helper as the backup restore.
+            const operations = storesToUpdate.map(store => {
                 const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id);
                 const updateData = {};
                 if (level === 'Provinsi') updateData.province = 'Unknown Provinsi';
                 if (level === 'Kabupaten') updateData.region = 'Unknown Kabupaten';
                 if (level === 'Kecamatan') updateData.city = 'Unknown Kecamatan';
-                
-                currentBatch.update(ref, updateData);
-                count++;
-                if (count === 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); count = 0; }
+                return { type: 'update', ref, data: updateData };
             });
 
-            if (count > 0) batches.push(currentBatch.commit());
-            await Promise.all(batches);
+            await commitInChunks(db, writeBatch, operations);
             
             // Remove from custom state if it's empty
             if (level === 'Provinsi') setCustomProv(prev => prev.filter(p => p !== folderName));
