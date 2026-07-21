@@ -39,8 +39,7 @@ export const convertToBks = (qty, unit, product) => {
 //     { type: 'delete', ref: anotherDocRef },
 //   ]);
 export const commitInChunks = async (db, writeBatch, operations) => {
-    const CHUNK_SIZE = 2; // 🕵️ TEMPORARY TEST VALUE — change back to 500 after verifying!
-    console.log(`🕵️ CHUNK TEST: ${operations.length} total operations, splitting into groups of ${CHUNK_SIZE}`);
+    const CHUNK_SIZE = 500;
     for (let i = 0; i < operations.length; i += CHUNK_SIZE) {
         const chunk = operations.slice(i, i + CHUNK_SIZE);
         const batch = writeBatch(db);
@@ -50,6 +49,12 @@ export const commitInChunks = async (db, writeBatch, operations) => {
             else if (op.type === 'delete') batch.delete(op.ref);
         });
         await batch.commit();
-        console.log(`🕵️ CHUNK TEST: committed batch ${Math.floor(i / CHUNK_SIZE) + 1} (${chunk.length} operations)`);
+
+        // 🚀 FIX: A brief pause between chunks so Firestore's write stream never
+        // gets flooded with too many rapid-fire commits in a row (the resource-exhausted
+        // error we saw during testing) — matters most once datasets get genuinely large.
+        if (i + CHUNK_SIZE < operations.length) {
+            await new Promise(resolve => setTimeout(resolve, 150));
+        }
     }
 };
