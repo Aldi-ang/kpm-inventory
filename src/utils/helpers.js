@@ -26,3 +26,30 @@ export const convertToBks = (qty, unit, product) => {
     if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
     return qty; 
 };
+
+// 🚀 SHARED FIX: Firestore hard-caps a single writeBatch at 500 operations.
+// This splits any list of operations into safe chunks of 500 and commits
+// them as separate sequential batches, so no caller ever has to remember
+// the limit or silently fail past it.
+//
+// Usage:
+//   await commitInChunks(db, [
+//     { type: 'set', ref: someDocRef, data: {...} },
+//     { type: 'update', ref: otherDocRef, data: {...} },
+//     { type: 'delete', ref: anotherDocRef },
+//   ]);
+export const commitInChunks = async (db, writeBatch, operations) => {
+    const CHUNK_SIZE = 2; // 🕵️ TEMPORARY TEST VALUE — change back to 500 after verifying!
+    console.log(`🕵️ CHUNK TEST: ${operations.length} total operations, splitting into groups of ${CHUNK_SIZE}`);
+    for (let i = 0; i < operations.length; i += CHUNK_SIZE) {
+        const chunk = operations.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        chunk.forEach(op => {
+            if (op.type === 'set') batch.set(op.ref, op.data, op.options || {});
+            else if (op.type === 'update') batch.update(op.ref, op.data);
+            else if (op.type === 'delete') batch.delete(op.ref);
+        });
+        await batch.commit();
+        console.log(`🕵️ CHUNK TEST: committed batch ${Math.floor(i / CHUNK_SIZE) + 1} (${chunk.length} operations)`);
+    }
+};

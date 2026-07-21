@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Folder, Calendar, RotateCcw, ShieldCheck } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
+import { commitInChunks } from '../utils/helpers';
 
 export default function AuditVaultView({ db, storage, appId, user, isAdmin, logAudit, setBackupToast, auditLogs }) {
     const [path, setPath] = useState({ year: null, month: null, day: null });
@@ -27,20 +28,22 @@ export default function AuditVaultView({ db, storage, appId, user, isAdmin, logA
 
                 await logAudit("PRE_REVERT_SAFETY", `Auto-archived before reverting to ${logEntry.action}`, true);
 
-                const batch = writeBatch(db);
-                
+                // 🚀 FIX: Build the full list of operations first, then let commitInChunks
+                // split it into safe groups of 500 — no more silent failure on a big backup.
+                const operations = [];
+
                 if (snapshot.inventory) {
                     snapshot.inventory.forEach(item => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), item);
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), data: item });
                     });
                 }
                 if (snapshot.customers) {
                     snapshot.customers.forEach(c => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), c);
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), data: c });
                     });
                 }
 
-                await batch.commit();
+                await commitInChunks(db, writeBatch, operations);
                 setBackupToast(true); 
                 setTimeout(() => window.location.reload(), 2000);
                 
