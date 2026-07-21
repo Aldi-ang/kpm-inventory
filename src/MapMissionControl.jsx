@@ -11,7 +11,8 @@ import {
 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
-import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { commitInChunks } from './utils/helpers';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -556,6 +557,27 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         }
     };
 
+    // 🚀 NEW: Bulk-save many boundaries at once (e.g. a whole KML/GeoJSON upload),
+    // using the same safe chunked-and-paced commitInChunks helper used elsewhere in
+    // the app, instead of one individual setDoc() per boundary in a tight loop.
+    const saveBoundariesInChunks = async (boundaries) => {
+        const currentUserId = user?.uid || user?.id || 'default';
+        if (!db || !appId || !currentUserId || boundaries.length === 0) return;
+        const operations = boundaries.map(boundary => {
+            const { geometry, feature, ...rawBoundaryToSave } = boundary;
+            const boundaryToSave = Object.fromEntries(
+                Object.entries(rawBoundaryToSave).filter(([_, v]) => v !== undefined)
+            );
+            boundaryToSave.geometryString = JSON.stringify(geometry || null);
+            return {
+                type: 'set',
+                ref: doc(db, `artifacts/${appId}/users/${currentUserId}/mapSettings`, `bnd_${boundary.id}`),
+                data: boundaryToSave
+            };
+        });
+        await commitInChunks(db, writeBatch, operations);
+    };
+
     const deleteBoundaryFromFirebase = async (id) => {
         if (db && appId && userId) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`)); } catch(e) {} }
     };
@@ -741,6 +763,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 let features = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
                 let newBoundaries = [...safeBoundaries];
                 let firstCoord = null;
+                // 🚀 FIX: Collect boundaries to save here, instead of writing to Firestore
+                // one at a time inside the loop (a KML with 80-100+ shapes meant 80-100
+                // separate individual writes fired back-to-back - the exact pattern that
+                // exhausts Firestore's write stream, especially on slow connections).
+                const boundariesToSave = [];
                 for (let idx = 0; idx < features.length; idx++) {
                     let feature = features[idx];
                     if(feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
@@ -768,10 +795,11 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                 isHidden: false 
                             };
                             newBoundaries.push(newBoundary);
-                            await saveBoundaryToFirebase(newBoundary);
+                            boundariesToSave.push(newBoundary);
                         }
                     }
                 }
+                await saveBoundariesInChunks(boundariesToSave);
                 setBoundaries(newBoundaries); localStorage.setItem(CACHE_KEY, JSON.stringify(newBoundaries)); setShowBorders(true); 
                 if (firstCoord && setUploadedFocus) setUploadedFocus(firstCoord);
                 setProgress("Success!"); setTimeout(() => setProgress(""), 3000);
