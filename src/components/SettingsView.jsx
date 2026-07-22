@@ -445,6 +445,13 @@ export default function SettingsView({
                           
                       
 
+                          {/* 🚀 GLOBAL PERMISSION MATRIX — now open to Tier 2 (Company Owner) as well as
+                              Tier 1, so each company can name and configure their own authority levels
+                              instead of following one fixed default. The Tier 1/Developer row itself is
+                              still protected and never appears in the editable list, regardless of who's
+                              using this screen. */}
+                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
+
                           {/* AUTOMATED PERFORMANCE TIERS (TIER 1 OVERSEER ONLY) */}
                           {isSystemOwner && (
                               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-red-500/20 mb-6 transition-all relative overflow-hidden">
@@ -739,9 +746,6 @@ export default function SettingsView({
                   {activeTab === 'architect' && isSystemOwner && (
                       <div className="animate-fade-in space-y-6">
                           
-                          {/* 🚀 THE NEW PERMISSION MATRIX EDITOR 🚀 */}
-                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
-
                           {/* LANDLORD DASHBOARD */}
                           <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
                              <LandlordDashboard db={db} appId={appId} user={user} />
@@ -788,7 +792,7 @@ export default function SettingsView({
 
 // 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR
 const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
-    if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN') return null;
+    if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN' && userRole !== 'COMPANY_OWNER') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS.filter(t => t.id !== 'DEVELOPER'));
