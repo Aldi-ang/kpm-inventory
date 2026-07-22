@@ -3467,9 +3467,10 @@ const handleGitHubMirror = async () => {
                   )}
 
                   {/* 🚀 BRANCH WAREHOUSE ENGINE */}
-                  <BranchWarehouseManager 
-                      db={db} 
-                      appId={appId} 
+                  <BranchWarehouseManager
+                      db={db}
+                      storage={storage}
+                      appId={appId}
                       user={user} 
                       userRole={userRole} 
                       userLocation={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED')} // 🚀 FIX: Read direct location
@@ -3589,10 +3590,11 @@ const handleGitHubMirror = async () => {
 
         
           {activeTab === 'stock_opname' && (
-              <StockOpnameView 
-    inventory={inventory} 
-    db={db} 
-    appId={appId} 
+              <StockOpnameView
+    inventory={inventory}
+    db={db}
+    storage={storage}
+    appId={appId}
     user={{ ...user, userRole: userRole }} 
     isAdmin={isAdmin} 
     logAudit={logAudit}

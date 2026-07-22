@@ -7,6 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
+import { uploadPhotoToStorage, deletePhotoFromStorage } from './utils/helpers';
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
@@ -33,7 +34,7 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
+const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
     
     const safeInventory = inventory || [];
     const safeTransactions = transactions || [];
@@ -184,8 +185,21 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
         if (!file) return;
         try {
             const base64 = await compressImageToBase64(file);
-            setCounts(prev => ({ ...prev, [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: base64 } }));
+            const previousUrl = counts[id]?.photo;
+            const path = `artifacts/${appId}/users/${masterId}/photos/stockopname_${id}_${Date.now()}.jpg`;
+            const photoUrl = await uploadPhotoToStorage(storage, path, base64);
+            // 🚀 Defensive cleanup: normally the retake flow already clears (and deletes)
+            // the previous photo via handleClearPhoto before this runs, but this guards
+            // against any path that lands here with a URL still attached.
+            if (previousUrl) deletePhotoFromStorage(storage, previousUrl);
+            setCounts(prev => ({ ...prev, [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: photoUrl } }));
         } catch (e) { alert("Failed to process image."); }
+    };
+
+    const handleClearPhoto = async (id) => {
+        const previousUrl = counts[id]?.photo;
+        setCounts(prev => ({ ...prev, [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: null } }));
+        if (previousUrl) await deletePhotoFromStorage(storage, previousUrl);
     };
 
     const getVariance = (item) => {
@@ -1057,7 +1071,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, appId, user, i
                                                 {Number(damagedVal) > 0 && (
                                                     <div className="w-full md:w-auto">
                                                         {entry.photo ? (
-                                                            <div className="flex items-center gap-2 bg-orange-900/20 border border-orange-500/30 px-3 py-1.5 rounded"><ImageIcon size={14} className="text-orange-400"/><span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleCountChange(item.id, 'photo', null)} className="ml-2 text-red-400 hover:text-red-300"><X size={12}/></button></div>
+                                                            <div className="flex items-center gap-2 bg-orange-900/20 border border-orange-500/30 px-3 py-1.5 rounded"><ImageIcon size={14} className="text-orange-400"/><span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-red-400 hover:text-red-300"><X size={12}/></button></div>
                                                         ) : (
                                                             <label className="cursor-pointer flex items-center gap-2 bg-black hover:bg-slate-900 border border-dashed border-orange-500/50 px-4 py-2 rounded text-[10px] font-bold text-orange-500 uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
                                                         )}

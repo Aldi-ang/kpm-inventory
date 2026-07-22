@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { uploadPhotoToStorage } from '../utils/helpers';
 
-export default function BranchWarehouseManager({ db, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
+export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
     const branchLocation = userLocation || 'UNASSIGNED';
@@ -304,7 +305,9 @@ export default function BranchWarehouseManager({ db, appId, user, userRole, user
             }
 
             triggerCapy("Compressing Photo & Syncing Database... ⏳");
-            const photoUrl = await compressImageToBase64(packagePhotoFile);
+            const base64Photo = await compressImageToBase64(packagePhotoFile);
+            const photoPath = `artifacts/${appId}/users/${masterUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
+            const photoUrl = await uploadPhotoToStorage(storage, photoPath, base64Photo);
 
             for (const item of fulfillmentCart) {
                 const hqProduct = globalInventory.find(p => p.id === item.productId);
