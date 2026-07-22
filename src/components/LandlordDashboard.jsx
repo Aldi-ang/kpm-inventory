@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
+import { commitInChunks } from '../utils/helpers';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
@@ -82,30 +83,40 @@ export default function LandlordDashboard({ db, appId, user }) {
         if (!window.confirm(confirmMsg)) return;
 
         try {
-            const batch = writeBatch(db);
+            const operations = [];
 
             // 1. Suspend the Boss (Sweep by email to catch all linked docs)
             const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', tenant.email));
             const snap = await getDocs(q);
             snap.docs.forEach(d => {
-                batch.update(d.ref, {
-                    subscriptionStatus: isSuspending ? 'SUSPENDED' : 'ACTIVE',
-                    status: isSuspending ? 'SUSPENDED' : 'Active'
+                operations.push({
+                    type: 'update',
+                    ref: d.ref,
+                    data: {
+                        subscriptionStatus: isSuspending ? 'SUSPENDED' : 'ACTIVE',
+                        status: isSuspending ? 'SUSPENDED' : 'Active'
+                    }
                 });
             });
 
             // 2. Cascade Suspend to all Salesmen
+            // 🚀 FIX: A big distributor can have hundreds of Tier 5/6 field salesmen under
+            // one boss. Looping them all into a single manual batch risked hitting
+            // Firestore's 500-write limit as the roster grows. commitInChunks splits this
+            // safely (by count AND size) and commits sequentially instead of all at once.
             const actualBossUid = tenant.bossUid;
             const salesmenQ = query(collection(db, `artifacts/${appId}/employee_directory`), where('bossUid', '==', actualBossUid));
             const salesmenSnap = await getDocs(salesmenQ);
 
             salesmenSnap.forEach(sDoc => {
-                batch.update(sDoc.ref, {
-                    status: isSuspending ? 'SUSPENDED' : 'Active'
+                operations.push({
+                    type: 'update',
+                    ref: sDoc.ref,
+                    data: { status: isSuspending ? 'SUSPENDED' : 'Active' }
                 });
             });
 
-            await batch.commit();
+            await commitInChunks(db, writeBatch, operations);
         } catch (err) {
             console.error(err);
             alert("Failed to update subscription status.");
