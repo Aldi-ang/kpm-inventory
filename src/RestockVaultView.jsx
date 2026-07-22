@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
+import { uploadPhotoToStorage, deletePhotoFromStorage } from './utils/helpers';
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
+const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedPO, setExpandedPO] = useState(null);
@@ -114,7 +115,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             let base64Receipt = null;
             if (receiptFile) {
                 if(triggerCapy) triggerCapy("Compressing Document to Database... ⏳");
-                base64Receipt = await compressImageToBase64(receiptFile);
+                const compressed = await compressImageToBase64(receiptFile);
+                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${Date.now()}.jpg`;
+                base64Receipt = await uploadPhotoToStorage(storage, receiptPath, compressed);
             }
 
             const batch = writeBatch(db);
@@ -270,10 +273,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
         try {
             let newReceiptUrl = editingPO.receiptUrl || null;
             let newHasReceipt = editingPO.hasReceipt || false;
-            
+            const oldReceiptUrl = editingPO.receiptUrl || null;
+
             if (editReceiptFile) {
                 if(triggerCapy) triggerCapy("Compressing New Document... ⏳");
-                newReceiptUrl = await compressImageToBase64(editReceiptFile);
+                const compressed = await compressImageToBase64(editReceiptFile);
+                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_edit_${editingPO.id}_${Date.now()}.jpg`;
+                newReceiptUrl = await uploadPhotoToStorage(storage, receiptPath, compressed);
                 newHasReceipt = true;
             } else if (editingPO.receiptUrl === null) {
                 newHasReceipt = false;
@@ -308,6 +314,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, appId, user, 
             });
 
             await batch.commit();
+
+            // 🚀 Only cleaned up after a successful commit — a failed save must never
+            // delete a file the (unchanged) Firestore record still points to.
+            if (editReceiptFile && oldReceiptUrl && oldReceiptUrl !== newReceiptUrl) {
+                deletePhotoFromStorage(storage, oldReceiptUrl);
+            }
+
             if (triggerCapy) triggerCapy("Production Record Updated Successfully!");
             setEditingPO(null);
             setEditReceiptFile(null);

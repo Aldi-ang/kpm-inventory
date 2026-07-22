@@ -1,3 +1,5 @@
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+
 export const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -77,4 +79,22 @@ export const commitInChunks = async (db, writeBatch, operations) => {
         chunkBytes += opBytes;
     }
     await flushChunk();
+};
+
+// 🚀 SHARED FIX: Firestore hard-caps a document at 1MB, and embedded base64 photos
+// eat that budget fast (docs with multiple photos risk silently failing). Upload the
+// photo to Storage instead and keep only the short download URL in Firestore.
+export const uploadPhotoToStorage = async (storage, path, base64) => {
+    const fileRef = ref(storage, path);
+    await uploadString(fileRef, base64, 'data_url');
+    return await getDownloadURL(fileRef);
+};
+
+// Best-effort cleanup for when a photo is replaced — deletes the previously uploaded
+// file so replacing a photo doesn't leave the old one billing storage forever. A
+// missing/already-deleted file, or a legacy base64 string that was never a real
+// Storage URL, must never block the caller's save.
+export const deletePhotoFromStorage = async (storage, url) => {
+    if (!url) return;
+    try { await deleteObject(ref(storage, url)); } catch (e) { /* ignore */ }
 };
