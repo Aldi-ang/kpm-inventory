@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
-import { uploadPhotoToStorage } from '../utils/helpers';
+import { savePhotoAndGetReference } from '../utils/helpers';
 
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -307,7 +307,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             triggerCapy("Compressing Photo & Syncing Database... ⏳");
             const base64Photo = await compressImageToBase64(packagePhotoFile);
             const photoPath = `artifacts/${appId}/users/${masterUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
-            const photoUrl = await uploadPhotoToStorage(storage, photoPath, base64Photo);
+            const photoUrl = await savePhotoAndGetReference(storage, base64Photo, photoPath, appSettings?.usePhotoStorage);
 
             for (const item of fulfillmentCart) {
                 const hqProduct = globalInventory.find(p => p.id === item.productId);

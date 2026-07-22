@@ -3595,12 +3595,13 @@ const handleGitHubMirror = async () => {
     db={db}
     storage={storage}
     appId={appId}
-    user={{ ...user, userRole: userRole }} 
-    isAdmin={isAdmin} 
+    user={{ ...user, userRole: userRole }}
+    isAdmin={isAdmin}
     logAudit={logAudit}
     triggerCapy={triggerCapy}
     motorists={motorists}
     transactions={transactions}  // 🚀 INJECT THIS LINE HERE!
+    appSettings={appSettings}
 />
           )}
           

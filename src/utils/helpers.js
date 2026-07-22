@@ -82,19 +82,27 @@ export const commitInChunks = async (db, writeBatch, operations) => {
 };
 
 // 🚀 SHARED FIX: Firestore hard-caps a document at 1MB, and embedded base64 photos
-// eat that budget fast (docs with multiple photos risk silently failing). Upload the
-// photo to Storage instead and keep only the short download URL in Firestore.
-export const uploadPhotoToStorage = async (storage, path, base64) => {
+// eat that budget fast (docs with multiple photos risk silently failing). On Blaze
+// projects, upload the photo to Storage instead and keep only the short download URL
+// in Firestore. Firebase Storage requires the Blaze (pay-as-you-go) plan though — on
+// Spark (free plan) projects, Storage calls fail. `usePhotoStorage` is the runtime
+// switch (see appSettings.usePhotoStorage, toggled in Architect Terminal) that lets
+// this behavior flip between the two without a redeploy: off = Spark-safe base64
+// straight into Firestore (today's default), on = Storage upload (once Blaze is live).
+export const savePhotoAndGetReference = async (storage, base64, path, usePhotoStorage) => {
+    if (!usePhotoStorage) return base64; // Spark-safe: skip Storage entirely
     const fileRef = ref(storage, path);
     await uploadString(fileRef, base64, 'data_url');
     return await getDownloadURL(fileRef);
 };
 
 // Best-effort cleanup for when a photo is replaced — deletes the previously uploaded
-// file so replacing a photo doesn't leave the old one billing storage forever. A
-// missing/already-deleted file, or a legacy base64 string that was never a real
-// Storage URL, must never block the caller's save.
+// file so replacing a photo doesn't leave the old one billing storage forever. Only
+// ever attempted when the previous value is actually a Storage download URL — a
+// base64 string (saved while usePhotoStorage was off) was never uploaded, so it's
+// just discarded, never passed to Storage's delete call. A missing/already-deleted
+// file must also never block the caller's save.
 export const deletePhotoFromStorage = async (storage, url) => {
-    if (!url) return;
+    if (!url || !url.startsWith('https://')) return;
     try { await deleteObject(ref(storage, url)); } catch (e) { /* ignore */ }
 };

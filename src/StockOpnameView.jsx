@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { uploadPhotoToStorage, deletePhotoFromStorage } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage } from './utils/helpers';
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
@@ -34,7 +34,7 @@ const compressImageToBase64 = (file) => {
     });
 };
 
-const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [] }) => {
+const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
     const safeInventory = inventory || [];
     const safeTransactions = transactions || [];
@@ -187,7 +187,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
             const base64 = await compressImageToBase64(file);
             const previousUrl = counts[id]?.photo;
             const path = `artifacts/${appId}/users/${masterId}/photos/stockopname_${id}_${Date.now()}.jpg`;
-            const photoUrl = await uploadPhotoToStorage(storage, path, base64);
+            const photoUrl = await savePhotoAndGetReference(storage, base64, path, appSettings?.usePhotoStorage);
             // 🚀 Defensive cleanup: normally the retake flow already clears (and deletes)
             // the previous photo via handleClearPhoto before this runs, but this guards
             // against any path that lands here with a URL still attached.

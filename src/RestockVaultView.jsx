@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { uploadPhotoToStorage, deletePhotoFromStorage } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage } from './utils/helpers';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
@@ -117,7 +117,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                 if(triggerCapy) triggerCapy("Compressing Document to Database... ⏳");
                 const compressed = await compressImageToBase64(receiptFile);
                 const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${Date.now()}.jpg`;
-                base64Receipt = await uploadPhotoToStorage(storage, receiptPath, compressed);
+                base64Receipt = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
             }
 
             const batch = writeBatch(db);
@@ -279,7 +279,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                 if(triggerCapy) triggerCapy("Compressing New Document... ⏳");
                 const compressed = await compressImageToBase64(editReceiptFile);
                 const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_edit_${editingPO.id}_${Date.now()}.jpg`;
-                newReceiptUrl = await uploadPhotoToStorage(storage, receiptPath, compressed);
+                newReceiptUrl = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
                 newHasReceipt = true;
             } else if (editingPO.receiptUrl === null) {
                 newHasReceipt = false;
