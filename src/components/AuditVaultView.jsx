@@ -4,12 +4,21 @@ import { collection, query, orderBy, onSnapshot, writeBatch, doc } from 'firebas
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { commitInChunks } from '../utils/helpers';
 
-export default function AuditVaultView({ db, storage, appId, user, isAdmin, logAudit, setBackupToast, auditLogs }) {
+export default function AuditVaultView({ db, storage, appId, user, userId, isAdmin, logAudit, setBackupToast, auditLogs }) {
     const [path, setPath] = useState({ year: null, month: null, day: null });
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const years = ["2025", "2026"];
+    // 🚀 FIX: Master-vault-scoped ID (mirrors `bossUid || user?.uid` in App.jsx) so a
+    // restore always lands in the shared company vault, never a personal path.
+    const masterUid = userId || user?.uid;
+
+    const START_YEAR = 2025;
+    const YEARS_AHEAD = 3;
+    const years = Array.from(
+        { length: (new Date().getFullYear() + YEARS_AHEAD) - START_YEAR + 1 },
+        (_, i) => (START_YEAR + i).toString()
+    );
     const months = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));
     const days = Array.from({length: 31}, (_, i) => (i + 1).toString().padStart(2, '0'));
 
@@ -34,12 +43,12 @@ export default function AuditVaultView({ db, storage, appId, user, isAdmin, logA
 
                 if (snapshot.inventory) {
                     snapshot.inventory.forEach(item => {
-                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id), data: item });
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${masterUid}/products`, item.id), data: item });
                     });
                 }
                 if (snapshot.customers) {
                     snapshot.customers.forEach(c => {
-                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${user.uid}/customers`, c.id), data: c });
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${masterUid}/customers`, c.id), data: c });
                     });
                 }
 
