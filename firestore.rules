@@ -58,6 +58,14 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN';
     }
 
+    // [ADDED — mapSettings fleet-paintbrush gap fix] Scoped narrowly to the mapSettings
+    // block below. No existing rule checked for this literal role string before; adding
+    // it here does not change behavior anywhere else in this file.
+    function isFleetCaptain(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'FLEET_CAPTAIN';
+    }
+
     // 🚀 NEW: Checks if Area Admin has explicit delegated authority
     function isAuthorizedAreaAdmin(bossUid) {
       let profile = getEmployeeProfile();
@@ -219,9 +227,22 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid);
         allow write: if false;
       }
+      // [CHANGE 2 — mapSettings fleet-paintbrush gap] The bare `allow write: if false`
+      // here looked like a hard block for everyone, but the catch-all above
+      // (isVaultOwner || isDistributorAdmin) already ORs in and grants the owner/
+      // distributor-admin write access regardless of this line — confirmed live via
+      // emulator (see rules-test/test-mapsettings.js). This change ADDS Area Admin and
+      // Fleet Captain to that same write access, matching Journey Plan's fleet
+      // paintbrush now being shown to Tier 1-4 (see JourneyView.jsx canManageFleetSettings
+      // / config/permissions.js isFleetManagementTier). isAreaAdmin() alone does NOT
+      // cover Fleet Captain — it only checks for the literal 'AREA_ADMIN' role string —
+      // so a dedicated isFleetCaptain() check was added above rather than assuming
+      // isAreaAdmin() already covered both, the way an earlier draft of this exact line
+      // incorrectly assumed. Field Operative / Rookie remain denied (isSalesman only
+      // grants them read here, same as before).
       match /mapSettings/{docId} {
         allow read: if isSalesman(bossUid);
-        allow write: if false;
+        allow write: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
       }
       match /audit_logs/{logId} {
         allow read: if isSalesman(bossUid);

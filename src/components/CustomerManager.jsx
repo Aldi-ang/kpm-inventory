@@ -606,15 +606,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                 if (importCount === 0) throw new Error("No valid GPS pins found in file.");
 
-                // Firestore batch limits us to 500 writes. We chunk it into 450s.
-                const chunkedBatches = [];
-                for (let i = 0; i < batchWrites.length; i += 450) {
-                    const batch = writeBatch(db);
-                    batchWrites.slice(i, i + 450).forEach(w => batch.set(w.ref, w.data));
-                    chunkedBatches.push(batch.commit());
-                }
-
-                await Promise.all(chunkedBatches);
+                // 🚀 Same safe sequential chunking as everywhere else in the app (see
+                // commitInChunks in utils/helpers.js) instead of firing every chunk's
+                // batch.commit() at once via Promise.all, which risks write-stream overload.
+                const operations = batchWrites.map(w => ({ type: 'set', ref: w.ref, data: w.data }));
+                await commitInChunks(db, writeBatch, operations);
                 if (logAudit) logAudit("KML_IMPORT", `Imported ${importCount} map pins from Map Marker.`);
                 if (triggerCapy) triggerCapy(`Successfully imported ${importCount} map markers! 📍`);
                 
@@ -690,15 +686,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 return;
             }
 
-            // Firebase batch limit is 500. We chunk at 450 to be safe.
-            const chunkedBatches = [];
-            for (let i = 0; i < batchWrites.length; i += 450) {
-                const batch = writeBatch(db);
-                batchWrites.slice(i, i + 450).forEach(w => batch.update(w.ref, w.data));
-                chunkedBatches.push(batch.commit());
-            }
-
-            await Promise.all(chunkedBatches);
+            // 🚀 Same safe sequential chunking as everywhere else in the app (see
+            // commitInChunks in utils/helpers.js) instead of firing every chunk's
+            // batch.commit() at once via Promise.all, which risks write-stream overload.
+            const operations = batchWrites.map(w => ({ type: 'update', ref: w.ref, data: w.data }));
+            await commitInChunks(db, writeBatch, operations);
 
             if (logAudit) logAudit("ENTERPRISE_DATA_SCRUB", `Permanently hard-mapped ${scrubCount} unmapped stores.`);
             if (triggerCapy) triggerCapy(`Great Scrub Complete! ${scrubCount} targets permanently mapped. 🚀`);

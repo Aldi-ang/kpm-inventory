@@ -3524,6 +3524,7 @@ const handleGitHubMirror = async () => {
                           logAudit={logAudit}
                           triggerCapy={triggerCapy}
                           transactions={transactions}
+                          storage={storage}
                       />
                   </div>
               </div>

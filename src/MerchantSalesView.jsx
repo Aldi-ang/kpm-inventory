@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
-import { hasClearance } from './config/permissions'; 
+import { hasClearance } from './config/permissions';
+import { savePhotoAndGetReference } from './utils/helpers';
 
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId }) => {  
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
     const [mobileTab, setMobileTab] = useState('products');
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -416,17 +417,28 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 
                 setBypassState({ status: 'uploading', id: null, photo: compressedDataUrl });
                 try {
+                    const masterUid = user?.uid || user?.id || 'default';
+
+                    // 🚀 FIX: Route this photo through the same usePhotoStorage toggle as
+                    // RestockVaultView/StockOpnameView/BranchWarehouseManager/AgentProfileView
+                    // instead of always writing raw base64. Toggle off (default) behaves
+                    // exactly as before — savePhotoAndGetReference just returns the base64
+                    // string unchanged. Unlike the sale-proof photo, this one is never
+                    // bundled into a writeBatch with other business data, so there's no
+                    // atomicity trade-off here.
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/bypass_${Date.now()}.jpg`;
+                    const photoToSave = await savePhotoAndGetReference(storage, compressedDataUrl, storagePath, appSettings?.usePhotoStorage);
+
                     const payload = {
                         storeId: String(selectedCustomerInfo?.id || 'UNKNOWN'),
                         storeName: String(selectedCustomerInfo?.name || customerName || 'Unknown Store'),
                         salesmanId: String(user?.realUid || user?.uid || user?.id || 'UNKNOWN'),
                         salesmanName: String(user?.displayName || user?.email?.split('@')[0] || 'Field Agent'),
                         latitude: Number(agentLocation?.latitude || 0), longitude: Number(agentLocation?.longitude || 0),
-                        distance: Number(distanceToStore || 0), photoData: String(compressedDataUrl),
+                        distance: Number(distanceToStore || 0), photoData: String(photoToSave),
                         status: 'PENDING', timestamp: new Date().toISOString(), createdAt: serverTimestamp()
                     };
 
-                    const masterUid = user?.uid || user?.id || 'default';
                     const dbPath = `artifacts/${appId}/users/${masterUid}/gps_bypasses`;
                     const bypassRef = await addDoc(collection(db, dbPath), payload);
                     
