@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletT
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
+import { isFleetManagementTier } from './config/permissions';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -185,7 +186,7 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode }) => {
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings }) => {
     
     // 🛡️ THE MASTER DATA SANITIZER V2
     // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
@@ -239,15 +240,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     
     const [devUnlock, setDevUnlock] = useState(false);
 
-    // 🚀 FIX: The old check searched user data for the literal text "tier4"/"level4"/
-    // "motoris" — but real role names (AREA_ADMIN, FLEET_CAPTAIN, FIELD_OPERATIVE,
-    // ROOKIE) never contain those substrings, so it defaulted to true for almost
-    // everyone. `isAdmin` is already the correct signal here: it can only become true
-    // for a userRole === 'ADMIN' account (vault owner / system owner) that has also
-    // PIN-unlocked (see App.jsx handlePinLogin/handleAdminAuthSuccess) — exactly the
-    // set of people Firestore's rules let write `mapSettings` (isVaultOwner /
-    // isDistributorAdmin). Nobody else can ever flip `isAdmin` true.
-    const canManageFleetSettings = devUnlock || isAdmin === true || user?.isAdmin === true;
+    // 🚀 CORRECTED: This is a Tier 1-4 (Developer, Company Owner, Area Admin, Fleet
+    // Captain) regional/area-management convenience, NOT an owner-exclusive feature —
+    // gated by real tier via isFleetManagementTier (same tier-translation logic as
+    // isFieldLevelTier elsewhere in config/permissions.js). `isAdmin`/PIN-unlock counts
+    // as tier-eligible too (it can only ever be true for a Tier 1/2 account), it doesn't
+    // bypass the master switch below.
+    const isFleetManagementEligible = isAdmin === true || user?.isAdmin === true || isFleetManagementTier(userRole);
+
+    // 🚀 NEW: Company-wide master switch (Settings, Tier 1/2 only) — when off, NOBODY
+    // sees the paintbrush, regardless of tier. Defaults to on (appSettings.enableFleetPaintbrush
+    // !== false) so nothing changes for anyone until an owner deliberately flips it off.
+    const fleetPaintbrushEnabled = appSettings?.enableFleetPaintbrush !== false;
+
+    // devUnlock (double-tap, dev/testing escape hatch) is the one thing that overrides
+    // both the tier check AND the master switch — everyone else needs both true.
+    const canManageFleetSettings = devUnlock || (isFleetManagementEligible && fleetPaintbrushEnabled);
 
     // Assigning a store to an agent, adjusting its pin, and overriding its routing all
     // write to `customers`, which Firestore's rules already allow for ANY authenticated

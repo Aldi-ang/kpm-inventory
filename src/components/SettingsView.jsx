@@ -452,6 +452,37 @@ export default function SettingsView({
                               using this screen. */}
                           <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
 
+                          {/* 🚀 FLEET PAINTBRUSH MASTER SWITCH (TIER 1/2 ONLY) — company-wide kill
+                              switch for Journey Plan's fleet-color/boundary paintbrush. Defaults to
+                              on (appSettings.enableFleetPaintbrush !== false) so nothing changes for
+                              anyone until an owner deliberately turns it off. Same tier gate as the
+                              Permission Matrix editor above (DEVELOPER/ADMIN/COMPANY_OWNER). */}
+                          {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                              <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 mb-6 ${appSettings.enableFleetPaintbrush !== false ? 'bg-orange-900/20 border-orange-500/50' : 'bg-black border-slate-800'}`}>
+                                  <div className="flex items-center justify-between gap-4">
+                                      <div>
+                                          <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.enableFleetPaintbrush !== false ? 'text-orange-400' : 'text-white'}`}>
+                                              🖌️ Fleet Paintbrush (Journey Plan)
+                                          </h3>
+                                          <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                              When on, Tier 1-4 (Developer, Company Owner, Area Admin, Fleet Captain) can paint squad colors and map boundaries on Journey Plan. When off, the paintbrush is hidden for everyone, regardless of tier.
+                                          </p>
+                                      </div>
+                                      <button
+                                          onClick={() => {
+                                              const newVal = !(appSettings.enableFleetPaintbrush !== false);
+                                              setAppSettings(prev => ({ ...prev, enableFleetPaintbrush: newVal }));
+                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { enableFleetPaintbrush: newVal }, { merge: true });
+                                              triggerCapy(newVal ? "Fleet Paintbrush Enabled for Tier 1-4! 🖌️" : "Fleet Paintbrush Disabled Company-Wide.");
+                                          }}
+                                          className={`shrink-0 transition-all duration-300 ${appSettings.enableFleetPaintbrush !== false ? 'text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                      >
+                                          {appSettings.enableFleetPaintbrush !== false ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                      </button>
+                                  </div>
+                              </div>
+                          )}
+
                           {/* AUTOMATED PERFORMANCE TIERS (TIER 1 OVERSEER ONLY) */}
                           {isSystemOwner && (
                               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-red-500/20 mb-6 transition-all relative overflow-hidden">

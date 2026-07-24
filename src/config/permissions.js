@@ -33,6 +33,23 @@ export const isFieldLevelTier = (userRole) => {
     return role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6;
 };
 
+// 🚀 SHARED FLEET-MANAGEMENT TIER RULE: Tier 1-4 (Developer, Company Owner, Area
+// Admin, Fleet Captain) can manage the Journey Plan fleet paintbrush (squad colors /
+// map boundaries) — a regional/area management convenience, not an owner-exclusive
+// one. Tier 5/6 (Field Operative, Rookie) cannot. Mirrors isFieldLevelTier's exact
+// translation logic so the two tier checks never drift apart.
+export const isFleetManagementTier = (userRole) => {
+    let role = userRole || CORPORATE_TIERS.TIER_5;
+    if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
+    else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
+    else if (role === 'AREA_ADMIN') role = CORPORATE_TIERS.TIER_3;
+    else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
+    else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
+    else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
+
+    return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3 || role === CORPORATE_TIERS.TIER_4;
+};
+
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 

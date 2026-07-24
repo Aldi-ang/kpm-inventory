@@ -3285,7 +3285,7 @@ const handleGitHubMirror = async () => {
           {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? customers : permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
-         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={permittedCustomers} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} />}
+         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={permittedCustomers} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} />}
           {/* 🚀 UPGRADED FLEET ROUTER: Now fully controlled by the Matrix */}
           {activeTab === 'fleet' && (
             <FleetCanvasManager 
