@@ -745,7 +745,32 @@ export default function SettingsView({
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'architect' && isSystemOwner && (
                       <div className="animate-fade-in space-y-6">
-                          
+
+                          {/* 🚀 PHOTO STORAGE MODE (SPARK vs BLAZE SWITCH) */}
+                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.usePhotoStorage ? 'bg-blue-900/20 border-blue-500/50' : 'bg-black border-slate-800'}`}>
+                              <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.usePhotoStorage ? 'text-blue-400' : 'text-white'}`}>
+                                          ☁️ Use Cloud Photo Storage (requires Blaze plan)
+                                      </h3>
+                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                          When off, photos save directly in the database (works on any plan). When on, photos upload to Firebase Storage instead (requires the Blaze plan to be active).
+                                      </p>
+                                  </div>
+                                  <button
+                                      onClick={() => {
+                                          const newVal = !appSettings.usePhotoStorage;
+                                          setAppSettings(prev => ({ ...prev, usePhotoStorage: newVal }));
+                                          if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { usePhotoStorage: newVal }, { merge: true });
+                                          triggerCapy(newVal ? "Cloud Photo Storage Enabled! Make sure the Blaze plan is active. ☁️" : "Cloud Photo Storage Disabled. Photos now save directly to the database.");
+                                      }}
+                                      className={`shrink-0 transition-all duration-300 ${appSettings.usePhotoStorage ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                  >
+                                      {appSettings.usePhotoStorage ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                  </button>
+                              </div>
+                          </div>
+
                           {/* LANDLORD DASHBOARD */}
                           <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
                              <LandlordDashboard db={db} appId={appId} user={user} />

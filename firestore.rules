@@ -1,0 +1,260 @@
+// =============================================================================
+// RECONCILED DRAFT — NOT DEPLOYED. Awaiting owner review + manual
+//   firebase deploy --only firestore:rules
+//
+// Baseline: firestore.rules.deployed-baseline (the rules currently LIVE in the
+// Firebase Console as of 2026-07-23). This file is that baseline with ONE
+// deliberate security change (marked [CHANGE 1] below) plus comments.
+//
+// Everything else is intentionally byte-for-byte the live behavior. An earlier
+// draft in this repo rewrote these rules from scratch on the false premise that
+// no rules existed; that draft has been discarded because several of its changes
+// would have broken the live app (see [WHY NOT] notes below).
+// =============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email == 'adikaryasukses99@gmail.com';
+    }
+
+    // [FLAGGED — OPTION A, not applied] Crown Transfer does not actually work at
+    // the rules level today. CrownTransferProtocol.jsx writes a system_admins_invites
+    // doc and deletes the old owner's system_admins/{uid}, and App.jsx then creates
+    // system_admins/{newUid} — but isSuperAdmin() above never reads system_admins,
+    // so a newly-crowned owner gains NO god-mode, and the hardcoded email keeps it
+    // even after "revocation". To make Crown Transfer real, append to isSuperAdmin:
+    //     || exists(/databases/$(database)/documents/system_admins/$(request.auth.uid))
+    // NOT applied here: it widens god-mode and is the owner's call to make knowingly.
+
+    match /{document=**} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    function isAuthenticated() { return request.auth != null; }
+    function isVaultOwner(bossUid) { return isAuthenticated() && request.auth.uid == bossUid; }
+
+    // Looks up the caller's EMAIL-keyed directory doc. Kept email-only, matching live.
+    // [WHY NOT] The discarded draft also checked a UID-keyed doc. Unnecessary:
+    // FleetCanvasManager.jsx:180,192 always writes the authoritative record EMAIL-keyed;
+    // the only account that ends up UID-keyed-only is a migrated COMPANY_OWNER
+    // (App.jsx:788-803), who is covered by isVaultOwner() and never needs this lookup.
+    function getEmployeeProfile() {
+      let rawEmail = request.auth.token.email;
+      let safeEmail = rawEmail != null ? rawEmail.lower() : 'unknown';
+      let empDoc = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(safeEmail));
+      return empDoc != null ? empDoc.data : null;
+    }
+
+    function isDistributorAdmin(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'ADMIN';
+    }
+
+    function isAreaAdmin(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN';
+    }
+
+    // 🚀 NEW: Checks if Area Admin has explicit delegated authority
+    function isAuthorizedAreaAdmin(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN' && profile.get('canEditRoster', false) == true;
+    }
+
+    function isSalesman(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid;
+    }
+
+    match /system_admins/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated() && request.auth.uid == uid && exists(/databases/$(database)/documents/system_admins_invites/$(request.auth.token.email));
+      allow update, delete: if false;
+    }
+
+    match /system_admins_invites/{email} {
+      allow read: if isAuthenticated();
+      allow delete: if isAuthenticated() && request.auth.token.email == email;
+      allow create, update: if false;
+    }
+
+    // =====================================================================
+    // [CHANGE 1] — THE ONLY BEHAVIOR CHANGE IN THIS FILE
+    //
+    // VULNERABILITY IN THE LIVE RULES (critical, cross-tenant privilege escalation):
+    // The live rule's first branch is a bare `email == request.auth.token.email`
+    // inside `allow write`, with NO restriction on the document contents. Because
+    // `write` covers create/update/delete, ANY authenticated Google user can write
+    // arbitrary fields to employee_directory/{their-own-email} — including
+    //     { bossUid: <any victim company's uid>, userRole: 'ADMIN' }
+    // That makes isDistributorAdmin(<victim uid>) return true, which the
+    // users/{bossUid}/{document=**} catch-all below honors as FULL read/write over
+    // that company's entire vault. No app UI is needed — a direct SDK/REST call does it.
+    //
+    // THE FIX: keep the self-service branch, but only for DELETE.
+    // Traced in App.jsx, the ONLY legitimate self-writes to one's own email-keyed doc
+    // are deletes — the migration handoff (App.jsx:802 batch.delete(oldRef)) and the
+    // Ghost Killer (App.jsx:1925 deleteDoc(emailRef)). There is no legitimate flow in
+    // which a user creates or updates their OWN email-keyed directory record; those
+    // records are always authored by an admin (FleetCanvasManager.jsx:180,192) or by
+    // Tier 1 (LandlordDashboard.jsx:55).
+    //
+    // Verified non-regressions (see emulator tests):
+    //  - Owner migration's batch.set(newRef) is UID-keyed with bossUid == own uid,
+    //    so it still passes via the create branch below.
+    //  - Ghost Killer's deleteDoc(emailRef) still passes via the self-delete branch.
+    // =====================================================================
+    match /artifacts/cello-inventory-manager/employee_directory/{email} {
+      allow read: if isAuthenticated();
+
+      allow create: if isAuthenticated() && (
+        request.resource.data.bossUid == request.auth.uid ||
+        isDistributorAdmin(request.resource.data.bossUid) ||
+        isAuthorizedAreaAdmin(request.resource.data.bossUid)
+      );
+
+      allow update: if isAuthenticated() && resource != null && (
+        resource.data.bossUid == request.auth.uid ||
+        isDistributorAdmin(resource.data.bossUid) ||
+        isAuthorizedAreaAdmin(resource.data.bossUid)
+      );
+
+      // Self-service delete (migration / ghost-killer) retained from live, plus the
+      // same admin authority live grants for deleting someone else's record.
+      allow delete: if isAuthenticated() && (
+        email == request.auth.token.email ||
+        (resource != null && (
+          resource.data.bossUid == request.auth.uid ||
+          isDistributorAdmin(resource.data.bossUid) ||
+          isAuthorizedAreaAdmin(resource.data.bossUid)
+        ))
+      );
+    }
+
+    match /artifacts/cello-inventory-manager/users/{bossUid} {
+      match /{document=**} {
+        allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
+      }
+
+      match /stock_requests/{requestId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if isSalesman(bossUid);
+        allow delete: if false;
+      }
+      match /branches/{branchLocation}/inventory/{productId} {
+        allow read: if isSalesman(bossUid);
+        allow write: if isSalesman(bossUid);
+      }
+
+      match /products/{productId} {
+        allow read: if isSalesman(bossUid);
+        allow update: if isAreaAdmin(bossUid);
+        allow create, delete: if false;
+      }
+      match /customers/{customerId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if isSalesman(bossUid);
+        allow delete: if false;
+        match /benchmarks/{benchmarkId} {
+          allow read, write: if isSalesman(bossUid);
+        }
+      }
+
+      // [WHY NOT] The discarded draft narrowed this read to a per-tier
+      // Personal/Regional/Global scope (the original task's goal). It CANNOT be done
+      // here without an app change, and deploying it would have broken the app for
+      // every non-global tier: useDatabaseSync.js:50 subscribes every logged-in user
+      // to an UNFILTERED company-wide collection query (only `where timestamp >= 7d`).
+      // Firestore rejects a `list` outright unless the QUERY itself is constrained to
+      // documents the rules allow — it does not silently filter. A scoped rule would
+      // therefore permission-deny that core listener for all of Tier 3-6. Left at live
+      // behavior; see "carried-forward gap" in the report.
+      match /transactions/{transactionId} {
+        allow read: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+
+      match /motorists/{motoristId} {
+        allow read: if isSalesman(bossUid);
+        // The second clause is load-bearing: it lets a field agent update their OWN
+        // motorist doc, which is how activeCanvas stock is deducted during a sale
+        // (useTransactionEngine.js:203).
+        allow update: if isAreaAdmin(bossUid) || (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
+        // 🚀 THE FIX: Authorized Area Admins can hire and fire!
+        allow create, delete: if isAuthorizedAreaAdmin(bossUid);
+
+        // [FLAGGED — OPTION B, not applied] The discarded draft restricted delegated
+        // Area Admins to their OWN region. FleetCanvasManager.jsx:44 already filters the
+        // roster to the admin's own location and :89 defaults new agents to it, so the
+        // UI never offers cross-region editing — meaning this tightening is probably
+        // safe. NOT applied because it would also block moving an agent to a different
+        // branch, and I could not confirm whether that transfer flow is used. To apply,
+        // replace the create/delete line above with:
+        //   allow create: if isAuthorizedAreaAdmin(bossUid) &&
+        //     request.resource.data.location == getEmployeeProfile().location;
+        //   allow delete: if isAuthorizedAreaAdmin(bossUid) &&
+        //     resource.data.location == getEmployeeProfile().location;
+      }
+
+      match /samplings/{sampleId} {
+        allow read: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+      match /eod_reports/{reportId} {
+        allow read: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+      match /account_transfers/{transferId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if isSalesman(bossUid);
+        allow delete: if false;
+      }
+      match /settings/{docId} {
+        allow read: if isSalesman(bossUid);
+        allow write: if false;
+      }
+      match /mapSettings/{docId} {
+        allow read: if isSalesman(bossUid);
+        allow write: if false;
+      }
+      match /audit_logs/{logId} {
+        allow read: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+      match /audit_vault/{dateKey}/logs/{logId} {
+        allow read: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+      match /notifications/{notificationId} {
+        allow read: if isSalesman(bossUid);
+        allow update: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid); // 🚀 THE FIX: Unlocks Bell Notifications for Hand-offs & EODs
+        allow delete: if false;
+      }
+
+      // 📡 GEOFENCE BYPASS ENGINE SECURITY OVERRIDE
+      match /gps_bypasses/{bypassId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if isSalesman(bossUid);
+        allow delete: if false;
+      }
+
+      // [NOTE — no change] These collections the app touches have NO explicit rule
+      // here, so they fall through to the users/{bossUid} catch-all above =
+      // owner/distributor-admin ONLY: procurement, appSettings, mapBorders, canvas,
+      // and the branches/{location} parent doc. That means useDatabaseSync.js:53's
+      // `procurement` listener is already permission-denied for every Tier 3-6 user
+      // on the LIVE rules today (it fails silently in the console). Left as-is —
+      // opening it up would be a loosening nobody asked for — but it is worth knowing
+      // if an agent ever reports missing procurement data.
+    }
+  }
+}

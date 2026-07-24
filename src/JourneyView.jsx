@@ -470,13 +470,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             if (!user || !appId) return;
             const userId = user?.uid || user?.id || 'default';
             try {
-                const [motoristsSnap, canvasSnap] = await Promise.all([
-                    getDocs(collection(db, `artifacts/${appId}/users/${userId}/motorists`)),
-                    getDocs(collection(db, `artifacts/${appId}/users/${userId}/canvas`))
-                ]);
-                const loadedMotorists = motoristsSnap.docs.map(doc => String(doc.data().name || '')).filter(Boolean);
-                const loadedCanvas = canvasSnap.docs.map(doc => String(doc.data().name || '')).filter(Boolean);
-                const allAgents = [...loadedMotorists, ...loadedCanvas].sort();
+                // 🚀 FIX: Dropped a second read of a 'canvas' collection that nothing in the
+                // app ever writes (vehicle stock lives in motorists/{id}.activeCanvas). Firestore
+                // rules denied it for Tier 3-6, and because it shared this Promise.all the
+                // rejection also discarded the motorists result — leaving the agent-assignment
+                // dropdown silently empty for every non-admin tier.
+                const motoristsSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/motorists`));
+                const allAgents = motoristsSnap.docs.map(doc => String(doc.data().name || '')).filter(Boolean).sort();
                 setAgentsList(allAgents);
             } catch (error) {}
         };

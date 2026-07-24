@@ -70,8 +70,6 @@ import {
   browserLocalPersistence 
 } from 'firebase/auth';
 
-// 🚀 INJECTED STORAGE ENGINE
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 // --- PINPOINT: Firestore Imports (Around Line 41) ---
 import { 
@@ -97,7 +95,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getRandomColor, convertToBks, commitInChunks } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
 
 const APP_VERSION = packageJson.version;
 
@@ -2189,16 +2187,13 @@ const handleGitHubMirror = async () => {
       let finalImageUrl = base64; // Fallback just in case
 
       // 🚀 THE STORAGE PIPELINE: Push to Cloud Bucket before saving to Database
+      // (skipped entirely when usePhotoStorage is off — same branch as StockOpnameView/
+      // RestockVaultView/BranchWarehouseManager, so it never hangs waiting on unprovisioned Storage)
       if (user && base64.startsWith('data:image')) {
           try {
-              triggerCapy("Uploading optimized asset to Cloud Storage... ⏳");
+              if (appSettings?.usePhotoStorage) triggerCapy("Uploading optimized asset to Cloud Storage... ⏳");
               const storagePath = `artifacts/${appId}/users/${user.uid}/images/${activeCropContext.type}_${Date.now()}.png`;
-              const imageRef = ref(storage, storagePath);
-              
-              // Upload the compressed Base64 string to the bucket
-              await uploadString(imageRef, base64, 'data_url');
-              // Retrieve the tiny 60-character URL
-              finalImageUrl = await getDownloadURL(imageRef);
+              finalImageUrl = await savePhotoAndGetReference(storage, base64, storagePath, appSettings?.usePhotoStorage);
           } catch (uploadErr) {
               console.error("Storage Pipeline Error:", uploadErr);
               triggerCapy("Upload failed, reverting to local cache.");
@@ -3595,12 +3590,13 @@ const handleGitHubMirror = async () => {
     db={db}
     storage={storage}
     appId={appId}
-    user={{ ...user, userRole: userRole }} 
-    isAdmin={isAdmin} 
+    user={{ ...user, userRole: userRole }}
+    isAdmin={isAdmin}
     logAudit={logAudit}
     triggerCapy={triggerCapy}
     motorists={motorists}
     transactions={transactions}  // 🚀 INJECT THIS LINE HERE!
+    appSettings={appSettings}
 />
           )}
           
@@ -3650,7 +3646,7 @@ const handleGitHubMirror = async () => {
           {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={customers} />}
           
          {activeTab === 'audit' && (
-             <AuditVaultView db={db} storage={storage} appId={appId} user={user} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />
+             <AuditVaultView db={db} storage={storage} appId={appId} user={user} userId={userId} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />
          )}
 
 

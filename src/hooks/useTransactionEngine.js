@@ -43,6 +43,20 @@ export default function useTransactionEngine({
         // 🚀 THE OFFLINE INTERCEPTOR
         if (!navigator.onLine) {
             try {
+                // 🚀 FIX: Resolve the actual registered agent name the same way the online
+                // path does (Fleet profile), instead of falling back to the signed-in
+                // Google account's displayName. Relies on Firestore's offline cache, which
+                // already has this doc since the agent's own profile loads on every session.
+                if (currentAgentProfileId) {
+                    try {
+                        const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
+                        const agentDoc = await getDoc(agentRef);
+                        if (agentDoc.exists() && agentDoc.data().name) {
+                            finalAgentName = agentDoc.data().name;
+                        }
+                    } catch (e) { /* Offline cache miss — fall back to displayName */ }
+                }
+
                 const finalTransItems = activeCart.map(item => {
                     const distPrice = item.product?.priceDistributor || 0;
                     const itemProfit = (item.calculatedPrice * item.qty) - (distPrice * item.qty);
@@ -322,6 +336,18 @@ export default function useTransactionEngine({
 
             // 🚀 OFFLINE INTERCEPTOR FOR AUDITS
             if (!isOnline) {
+                // 🚀 FIX: Same agent-name resolution as the online path below — see
+                // processTransaction's offline branch for why this works offline.
+                if (currentAgentProfileId) {
+                    try {
+                        const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
+                        const agentDoc = await getDoc(agentRef);
+                        if (agentDoc.exists() && agentDoc.data().name) {
+                            finalAgentName = agentDoc.data().name;
+                        }
+                    } catch (e) { /* Offline cache miss — fall back to displayName */ }
+                }
+
                 const auditPayload = {
                     date: getCurrentDate(), 
                     customerName, 
