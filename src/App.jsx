@@ -73,11 +73,12 @@ import {
 
 // --- PINPOINT: Firestore Imports (Around Line 41) ---
 import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocFromCache,
+  getDocs,
   addDoc, 
   setDoc, 
   updateDoc, 
@@ -98,6 +99,33 @@ import { auth, db, storage, googleProvider, appId } from './config/firebase';
 import { formatRupiah, getCurrentDate, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
 
 const APP_VERSION = packageJson.version;
+
+// 🚀 OFFLINE-SAFE DOC READ: Firestore's own docs for getDoc() say it "may return
+// cached data OR FAIL if you are offline and the server cannot be reached" — it does
+// NOT reliably fall back to the local persistent cache by itself. That's the actual
+// root cause of the offline-refresh lockout: the Traffic Cop auth handler's very
+// first employee-lookup reads throw instead of quietly reading the cached copy that
+// this same device already has from the employee's last successful online login.
+// This retries explicitly from cache (getDocFromCache) whenever the first attempt
+// fails for a network/offline reason, and throws a distinguishable 'offline-no-cache'
+// error only when there's genuinely nothing cached to fall back to (e.g. a device
+// that has never been online with this account before) — so callers can tell "I
+// couldn't check" apart from "the server said no."
+const getDocOfflineSafe = async (ref) => {
+    try {
+        return await getDoc(ref);
+    } catch (err) {
+        const looksOffline = !navigator.onLine || err.code === 'unavailable';
+        if (!looksOffline) throw err;
+        try {
+            return await getDocFromCache(ref);
+        } catch (cacheErr) {
+            const noCacheErr = new Error('No cached data available for this document while offline.');
+            noCacheErr.code = 'offline-no-cache';
+            throw noCacheErr;
+        }
+    }
+};
 
 // --- GLOBAL COMPONENTS (MOVED UP TO PREVENT CRASH) ---
 
@@ -1803,11 +1831,11 @@ const handleGitHubMirror = async () => {
             try {
                 // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? (SECURED) 🚀
                 const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
-                const sysAdminSnap = await getDoc(sysAdminRef);
-                
+                const sysAdminSnap = await getDocOfflineSafe(sysAdminRef);
+
                 // 🚀 CROWN CLAIM CHECK: Did this user just receive the Crown?
                 const inviteRef = doc(db, 'system_admins_invites', email);
-                const inviteSnap = await getDoc(inviteRef);
+                const inviteSnap = await getDocOfflineSafe(inviteRef);
 
                 // 🚀 MASTER VIP LIST: The Architect and the Owner can never be locked out
                 const masterVIPs = [
@@ -1840,8 +1868,8 @@ const handleGitHubMirror = async () => {
                 const uidRef = doc(db, `artifacts/${appId}/employee_directory`, currentUser.uid);
                 const emailRef = doc(db, `artifacts/${appId}/employee_directory`, email);
 
-                const uidSnap = await getDoc(uidRef);
-                const emailSnap = await getDoc(emailRef);
+                const uidSnap = await getDocOfflineSafe(uidRef);
+                const emailSnap = await getDocOfflineSafe(emailRef);
 
                 let activeData = null;
 
@@ -1908,7 +1936,7 @@ const handleGitHubMirror = async () => {
                                 
                                 if (trueAgentId) {
                                     const liveProfileRef = doc(db, `artifacts/${appId}/users/${trueBossUid}/motorists`, trueAgentId);
-                                    const liveProfileSnap = await getDoc(liveProfileRef);
+                                    const liveProfileSnap = await getDocOfflineSafe(liveProfileRef);
                                     
                                     if (liveProfileSnap.exists()) {
                                         isValidEmployee = true;
@@ -1978,22 +2006,44 @@ const handleGitHubMirror = async () => {
 
             } catch (error) {
                 console.error("Traffic Cop Error:", error);
-                
+
                 // 🚀 OFFLINE GOD MODE: If the DB crashes due to no internet, let VIPs in anyway
                 if (isDeveloper) {
                     console.log("OFFLINE GOD MODE ENGAGED. Bypassing network crash.");
                     setIsSystemOwner(true);
                     setBossUid(null);
-                    setUserRole('ADMIN'); 
+                    setUserRole('ADMIN');
                     setAgentProfileId(null);
                     setUser(currentUser);
-                    setIsAdmin(false); 
-                    setShowAdminLogin(true); 
+                    setIsAdmin(false);
+                    setShowAdminLogin(true);
+                    return;
+                }
+
+                // 🚀 THE FIX: This used to fall straight through to the same hard
+                // "Access Denied" lockout as a genuinely unregistered email — for EVERY
+                // tier except the VIP bypass above. But getDocOfflineSafe() already tried
+                // the local cache before throwing, so landing here means either (a) this
+                // device is genuinely offline with nothing cached for this account yet
+                // (e.g. it has never been online with this account before), or (b) some
+                // other real error occurred while offline. Either way, this is "I
+                // couldn't check" — not "the server confirmed you're not an employee" —
+                // so it gets its own honest state instead of Access Denied. A real
+                // negative result (the `else` branch above, only reached once the
+                // lookups actually resolved one way or the other) is untouched.
+                if (!navigator.onLine || error.code === 'offline-no-cache' || error.code === 'unavailable') {
+                    console.warn("Offline with no local cache to fall back on — can't verify this account on this device yet.");
+                    setIsSystemOwner(false);
+                    setBossUid(null);
+                    setUserRole('OFFLINE_UNVERIFIED');
+                    setAgentProfileId(null);
+                    setUser(currentUser);
+                    setIsAdmin(false);
                     return;
                 }
 
                 // 🚨 SECURE FALLBACK ON ERROR 🚨
-                setUserRole('UNAUTHORIZED'); 
+                setUserRole('UNAUTHORIZED');
                 setUser(currentUser);
             }
         } else {
@@ -3235,6 +3285,23 @@ const handleGitHubMirror = async () => {
                     The email <span className="text-red-500">[{user.email}]</span> is not registered in the KPM Employee Directory. Contact your System Administrator for clearance.
                 </p>
                 <button onClick={handleLogout} className="px-10 py-4 border-2 border-red-600/50 text-red-500 font-black uppercase text-xs hover:bg-red-900/30 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
+                    Disconnect Session
+                </button>
+            </div>
+        ) : userRole === 'OFFLINE_UNVERIFIED' ? (
+            // 🚀 THE FIX: An honest, DIFFERENT message from Access Denied — this fires
+            // only when we genuinely couldn't check (offline, and this device has never
+            // cached this account before), never when the server actually said no.
+            <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
+                <CloudOff size={64} className="text-amber-500 mb-6 animate-pulse" />
+                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                    We can't reach the internet right now, and this device hasn't confirmed the account <span className="text-amber-500">[{user.email}]</span> online before. Connect to the internet at least once to unlock offline access, then try again.
+                </p>
+                <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-4">
+                    Retry
+                </button>
+                <button onClick={handleLogout} className="px-10 py-4 border-2 border-slate-600/50 text-slate-400 font-black uppercase text-xs hover:bg-slate-800/30 transition-all">
                     Disconnect Session
                 </button>
             </div>
