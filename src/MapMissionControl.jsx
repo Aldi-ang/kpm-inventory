@@ -12,7 +12,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks } from './utils/helpers';
+import { commitInChunks, convertToBks } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
@@ -118,15 +118,6 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
         }
     } catch(e) { console.warn("Geofence parse error caught safely", e); }
     return false;
-};
-
-const convertToBks = (qty, unit, product) => {
-    if (!product) return qty;
-    const packsPerSlop = product.packsPerSlop || 10, slopsPerBal = product.slopsPerBal || 20, balsPerCarton = product.balsPerCarton || 4;
-    if (unit === 'Slop') return qty * packsPerSlop;
-    if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
-    if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-    return qty; 
 };
 
 // 🚀 CUSTOM CLUSTER STYLING: Matches the dark tactical UI and removes default Leaflet cluster colors

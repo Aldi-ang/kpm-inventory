@@ -5,7 +5,8 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot } from 'firebase/firestore'; 
-import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions'; 
+import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
+import { convertToBks } from './utils/helpers'; 
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
@@ -252,17 +253,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
         } catch (e) { alert("Firebase Blocked the Deletion: " + e.message); }
-    };
-
-    const convertToBks = (qty, unit, product) => {
-        if (!product) return qty;
-        const packsPerSlop = product.packsPerSlop || 10;
-        const slopsPerBal = product.slopsPerBal || 20;
-        const balsPerCarton = product.balsPerCarton || 4;
-        if (unit === 'Slop') return qty * packsPerSlop;
-        if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
-        if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
-        return qty; 
     };
 
     const handleLoadCanvas = async () => {

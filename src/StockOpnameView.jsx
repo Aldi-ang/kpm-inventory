@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks } from './utils/helpers';
 
 const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 
@@ -281,8 +281,12 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
         if (!window.confirm(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
-            const batch = writeBatch(db);
-            const basePath = audit.auditType === 'BRANCH_WAREHOUSE' 
+            // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
+            // raw writeBatch — bounded by a single audit's item count today, but the same
+            // defensive chunking used for company-wide writes elsewhere, for consistency
+            // as audits grow.
+            const operations = [];
+            const basePath = audit.auditType === 'BRANCH_WAREHOUSE'
                 ? `artifacts/${appId}/users/${masterId}/branches/${audit.branchLocation}/inventory`
                 : `artifacts/${appId}/users/${masterId}/products`;
 
@@ -292,16 +296,16 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
                     // 🚀 FIX: damagedStock is now SET to the physical count, matching how 'stock'
                     // already works — a blind count replaces the system's belief with reality,
                     // it doesn't pile on top of it.
-                    batch.set(itemRef, { stock: item.goodCount, damagedStock: item.damagedCount }, { merge: true });
+                    operations.push({ type: 'set', ref: itemRef, data: { stock: item.goodCount, damagedStock: item.damagedCount }, options: { merge: true } });
                 } else {
-                    batch.update(itemRef, { stock: item.goodCount, damagedStock: item.damagedCount });
+                    operations.push({ type: 'update', ref: itemRef, data: { stock: item.goodCount, damagedStock: item.damagedCount } });
                 }
             }
 
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            batch.update(auditRef, { status: 'APPROVED', resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] });
+            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
 
-            await batch.commit();
+            await commitInChunks(db, writeBatch, operations);
             if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}.`);
             if (triggerCapy) triggerCapy(`Audit Approved! Vault updated. 🔒`);
             

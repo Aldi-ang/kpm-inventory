@@ -162,6 +162,37 @@ service cloud.firestore {
         allow update: if isAreaAdmin(bossUid);
         allow create, delete: if false;
       }
+      // [INVESTIGATED — 2026-07-24, customer visibility gap] Every employee's browser
+      // downloads the FULL company customer list; the app's own display logic only
+      // narrows it down for 2 of 5 screens (MapMissionControl, JourneyView, via
+      // App.jsx's permittedCustomers memo). Investigated whether the `list` query
+      // itself could be narrowed so a matching rule could actually enforce a per-tier
+      // scope — same question as the transactions gap below, same conclusion:
+      //
+      // CANNOT be done safely today — parked, same category as transactions.
+      //  1. permittedCustomers filters by priceTier (Retail/Grosir/Ecer), NOT by an
+      //     assignedAgent identity. customers DO carry an `assignedAgent` field (see
+      //     JourneyView.jsx:474, MerchantSalesView.jsx:272), but it's a free-text
+      //     AGENT NAME used for a soft "you're stepping on someone's territory"
+      //     warning, matched with fuzzy .includes() — not a stable id, and not what
+      //     visibility is actually scoped by.
+      //  2. Even scoping by priceTier would break things: legacy customers missing an
+      //     explicit priceTier get classified client-side via a string-fuzzy fallback
+      //     (App.jsx ~2929-2937, matching "GROSIR"/"GOLD"/"WHOLESALE" etc. inside a
+      //     free-text `tier` field). Firestore `where` cannot run that fallback, and it
+      //     silently excludes documents missing the field rather than matching them —
+      //     so a narrowed query would make every legacy customer invisible to non-admins.
+      //  3. Bigger problem: MerchantSalesView (App.jsx:3512, the Sales Terminal every
+      //     tier uses to make a sale) and CustomerManagement (App.jsx:3576, "🚀 REQUIRED
+      //     FOR BENCHMARKS") both intentionally receive the UNFILTERED `customers` list,
+      //     not permittedCustomers — a Rookie needs to be able to sell to or look up ANY
+      //     company customer, not just their own patch. Narrowing the base query would
+      //     break the core sales workflow for every Tier 3-6 employee, not just a display
+      //     nicety.
+      // Fixing this for real needs a data-model change (a real per-customer owner id used
+      // consistently for both access control AND the sales/directory screens, plus a
+      // product decision on whether "sell to anyone" is still a requirement) — out of
+      // scope here, same as the transactions gap.
       match /customers/{customerId} {
         allow read: if isSalesman(bossUid);
         allow create, update: if isSalesman(bossUid);
@@ -254,6 +285,32 @@ service cloud.firestore {
         allow create: if isSalesman(bossUid);
         allow update, delete: if false;
       }
+      // [INVESTIGATED — 2026-07-24] Same visibility sweep as customers above, for the
+      // notification feed. App.jsx:258 subscribes to the ENTIRE notifications
+      // collection with NO query constraint at all (not even a time gate), then
+      // filters client-side in combinedNotifications (App.jsx:355-358) by `agentId`.
+      //
+      // Better-positioned than customers: `agentId` is a real per-recipient id (a
+      // motorist id, or the literal string 'ADMIN' for broadcast-to-admins), not a
+      // fuzzy name — so in principle `where('agentId','==', agentProfileId)` for a
+      // regular user, or `where('agentId','==','ADMIN')` for an admin, would reproduce
+      // today's client filter, with a matching rule read predicate keyed off the same
+      // field.
+      //
+      // NOT proposed as a ready change — one blocking gap found, and one unverifiable:
+      //  - components/CustomerManager.jsx ~line 761 (the "🏪 NOO Verification Required"
+      //    notification) writes with NO agentId field at all, relying on
+      //    combinedNotifications' `!n.agentId` fallback to route it to Admins. A
+      //    query-based scope has no equivalent for "field is absent" — it would
+      //    silently drop that notification for every admin.
+      //  - This collection is never time-gated or pruned, so older documents written
+      //    before this field convention existed may also lack agentId; confirming that
+      //    needs a live data check this investigation didn't have access to.
+      // Path to actually doing this: (a) fix the CustomerManager.jsx write to always
+      // set agentId ('ADMIN' for that notification type), (b) confirm/backfill any
+      // existing documents missing the field, THEN (c) narrow the query + tighten this
+      // rule to check agentId. (a)-(b) are a separate, small follow-up — not done here
+      // since this task was investigate-only.
       match /notifications/{notificationId} {
         allow read: if isSalesman(bossUid);
         allow update: if isSalesman(bossUid);

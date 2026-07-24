@@ -598,10 +598,28 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const isFormalNoo = selectedCustomerInfo?.isNooRegistration;
             const newStorePayload = isFormalNoo ? selectedCustomerInfo : null;
 
+            // 🚀 FIX: Route this photo through the same usePhotoStorage toggle as the
+            // GPS-bypass photo above — online path only. Unlike the bypass photo, this
+            // one IS bundled into the sale's writeBatch (useTransactionEngine.js), so a
+            // Storage failure must never block the sale: catch it and fall back to
+            // today's raw base64 behavior. The offline path never reaches here with
+            // navigator.onLine true, so it stays pure base64 with zero Storage attempt.
+            let finalPhotoData = txProofPhoto;
+            if (navigator.onLine) {
+                try {
+                    const masterUid = user?.uid || user?.id || 'default';
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${Date.now()}.jpg`;
+                    finalPhotoData = await savePhotoAndGetReference(storage, txProofPhoto, storagePath, appSettings?.usePhotoStorage);
+                } catch (photoErr) {
+                    console.warn("Sale-proof photo upload failed, falling back to base64:", photoErr);
+                    finalPhotoData = txProofPhoto;
+                }
+            }
+
             const proofPayload = {
-                photoData: txProofPhoto, latitude: agentLocation?.latitude || 0, longitude: agentLocation?.longitude || 0,
+                photoData: finalPhotoData, latitude: agentLocation?.latitude || 0, longitude: agentLocation?.longitude || 0,
                 timestamp: new Date().toISOString(), tempoDays: dbMethod === 'Titip' ? tempoDays : null,
-                isRetur: isReturMode, type: txType 
+                isRetur: isReturMode, type: txType
             };
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);

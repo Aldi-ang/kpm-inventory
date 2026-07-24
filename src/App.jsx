@@ -2181,9 +2181,13 @@ const handleGitHubMirror = async () => {
               if (isWalkIn || isEcer) cust = "Individuals (Ecer)";
 
               return cust === customerName && (t.agentName || 'Admin') === agentName;
-          }); 
-          for (const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } 
-          await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`); 
+          });
+          // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per record —
+          // same pattern used elsewhere for large writes, here bounded by a single customer's
+          // history rather than company-wide, but still worth it as that history grows.
+          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          await commitInChunks(db, writeBatch, operations);
+          await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`);
           triggerCapy(`Deleted ${targets.length} records`); 
       } catch (err) { console.error(err); alert("Error deleting history."); } 
   };
