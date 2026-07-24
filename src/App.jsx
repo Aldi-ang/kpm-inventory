@@ -510,12 +510,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
     try {
         triggerCapy(`Initiating data wipe for ${type}... 🗑️`);
-        const batch = writeBatch(db);
+        // 🚀 FIX: Wiping every product + every customer (plus each customer's benchmark
+        // sub-docs) into a single writeBatch could exceed Firestore's 500-op limit on a
+        // large vault. Queue plain operations and hand them to commitInChunks, same
+        // pattern already used for AuditVaultView restore / LandlordDashboard cascade /
+        // map boundary uploads.
+        const operations = [];
         let deleteCount = 0;
-        
+
         if (type === 'products' || type === 'both') {
             inventory.forEach(item => {
-                batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id));
+                operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id) });
                 deleteCount++;
             });
         }
@@ -525,15 +530,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 // Delete competitor benchmarks first
                 const benchSnap = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`));
                 benchSnap.forEach(b => {
-                    batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`, b.id));
+                    operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/customers/${cust.id}/benchmarks`, b.id) });
                 });
                 // Delete customer
-                batch.delete(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, cust.id));
+                operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/customers`, cust.id) });
                 deleteCount++;
             }
         }
 
-        await batch.commit();
+        await commitInChunks(db, writeBatch, operations);
         await logAudit("DATA_WIPE", `Wiped ${type} data.`);
         triggerCapy(`Data wipe complete. Clean slate! ✨`);
     } catch (err) {
@@ -605,47 +610,52 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     reader.onload = async (event) => {
         try {
             const data = JSON.parse(event.target.result);
-            const batch = writeBatch(db);
+            // 🚀 FIX: Restoring an uploaded backup file could contain more than 500
+            // combined product/customer/benchmark/boundary writes. Queue plain operations
+            // and hand them to commitInChunks, same pattern as AuditVaultView restore /
+            // LandlordDashboard cascade / map boundary uploads, instead of one unbounded
+            // writeBatch.
+            const operations = [];
 
             if ((targetType === 'products' || targetType === 'both') && data.inventory) {
                 data.inventory.forEach(item => {
                     // 🚀 THE FIX: Use userId
-                    batch.set(doc(db, `artifacts/${appId}/users/${userId}/products`, item.id), item);
+                    operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/products`, item.id), data: item });
                 });
             }
             if ((targetType === 'customers' || targetType === 'both') && data.customers) {
                 data.customers.forEach(c => {
                     const cData = { ...c };
                     const benchmarks = cData.benchmarks || [];
-                    delete cData.benchmarks; 
+                    delete cData.benchmarks;
 
-                    batch.set(doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id), cData);
+                    operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id), data: cData });
                     benchmarks.forEach(b => {
-                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/customers/${c.id}/benchmarks`, b.id), b);
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/customers/${c.id}/benchmarks`, b.id), data: b });
                     });
                 });
             }
 
             if (targetType === 'both') {
                 if (data.tierSettings) {
-                    batch.set(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'tiers'), { list: data.tierSettings });
-                    setTierSettings(data.tierSettings); 
+                    operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/settings`, 'tiers'), data: { list: data.tierSettings } });
+                    setTierSettings(data.tierSettings);
                 }
-                
+
                 // 🚀 THE FIX: Check for mapBorders (and fallback to mapSettings if older file)
                 const bordersToImport = data.mapBorders || data.mapSettings;
                 if (bordersToImport && Array.isArray(bordersToImport)) {
                     bordersToImport.forEach(mapObj => {
                         // 🚀 SCORCHED EARTH: Write boundaries to BOTH Master Vault and Personal Vault!
-                        batch.set(doc(db, `artifacts/${appId}/users/${userId}/mapBorders`, mapObj.id), mapObj);
+                        operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/mapBorders`, mapObj.id), data: mapObj });
                         if (userId !== user.uid) {
-                            batch.set(doc(db, `artifacts/${appId}/users/${user.uid}/mapBorders`, mapObj.id), mapObj);
+                            operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${user.uid}/mapBorders`, mapObj.id), data: mapObj });
                         }
                     });
                 }
             }
-            
-            await batch.commit();
+
+            await commitInChunks(db, writeBatch, operations);
             triggerCapy(`${targetType.toUpperCase()} data imported successfully! Refreshing map data...`);
             
             if (targetType === 'both') {
@@ -3294,15 +3304,17 @@ const handleGitHubMirror = async () => {
           )}
 
         {activeTab === 'agent_profile' && (
-              <AgentProfileView 
+              <AgentProfileView
                   motorists={motorists}
                   inventory={inventory}
                   userRole={userRole}
                   agentProfileId={agentProfileId}
-                  db={db}              
-                  appId={appId}        
-                  userId={user?.uid}   
-                  transactions={transactions} 
+                  db={db}
+                  appId={appId}
+                  userId={user?.uid}
+                  transactions={transactions}
+                  storage={storage}
+                  appSettings={appSettings}
               />
           )}
 

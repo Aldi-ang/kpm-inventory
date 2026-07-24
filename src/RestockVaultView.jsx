@@ -51,12 +51,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         const reqRef = collection(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`);
         const unsubReq = onSnapshot(reqRef, (snap) => {
             setStockRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
+        }, (err) => console.warn("Stock requests listener:", err.code));
 
         const tgtRef = collection(db, `artifacts/${appId}/users/${activeUserId}/production_targets`);
         const unsubTgt = onSnapshot(tgtRef, (snap) => {
             setTargets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
+        }, (err) => console.warn("Production targets listener:", err.code));
 
         return () => { unsubReq(); unsubTgt(); };
     }, [db, appId, user, isAdmin, activeUserId]);

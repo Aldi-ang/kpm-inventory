@@ -579,7 +579,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const deleteBoundaryFromFirebase = async (id) => {
-        if (db && appId && userId) { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`)); } catch(e) {} }
+        if (db && appId && userId) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`));
+            } catch (e) {
+                console.error("Failed to delete boundary:", e);
+                alert("Database error: Could not delete this boundary. Only the Company Owner can edit map boundaries.");
+            }
+        }
     };
 
     const handleWipeAll = async () => {

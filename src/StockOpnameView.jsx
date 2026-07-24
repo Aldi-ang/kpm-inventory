@@ -41,10 +41,16 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
     const safeMotorists = motorists || [];
 
     const userRole = user?.userRole || 'AGENT';
-    const isHighCommand = isAdmin || ['ADMIN', 'COMPANY_OWNER', 'DEVELOPER', 'HQ'].includes(userRole);
-    
+    // 🚀 FIX: This used to also treat 'COMPANY_OWNER', 'DEVELOPER', and 'HQ' role tags,
+    // and the bare `isAdmin` PIN-unlock flag on its own, as "high command" — broader
+    // than what Firestore's rules actually allow to read `pending_audits`/
+    // `quarantine_logs` (owner or distributor-admin only, i.e. userRole === 'ADMIN').
+    // Anyone who passed the old check but not this one would get a permission-denied
+    // from the listeners below — same bug class as the procurement listener fix.
+    const isHighCommand = userRole === 'ADMIN';
+
     // 🚀 DYNAMIC UPGRADE: Automatically adapts to any custom Tier 4/Branch Admin rank!
-    const isAreaAdmin = !isHighCommand; 
+    const isAreaAdmin = !isHighCommand;
     
     const masterId = user?.bossUid || user?.uid || user?.id;
 
@@ -99,14 +105,14 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
             const allAudits = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setPendingAudits(allAudits.filter(a => a.status === 'PENDING_HQ_APPROVAL').sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
             setAuditHistory(allAudits.filter(a => a.status === 'APPROVED' || a.status === 'REJECTED').sort((a, b) => (b.resolvedAt?.seconds || 0) - (a.resolvedAt?.seconds || 0)));
-        });
+        }, (err) => console.warn("Pending audits listener:", err.code));
 
         const logsRef = collection(db, `artifacts/${appId}/users/${masterId}/quarantine_logs`);
         const unsubLogs = onSnapshot(logsRef, (snap) => {
             const fetchedLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             fetchedLogs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
             setQuarantineLogs(fetchedLogs);
-        });
+        }, (err) => console.warn("Quarantine logs listener:", err.code));
 
         return () => { unsubAudits(); unsubLogs(); };
     }, [isHighCommand, db, appId, masterId]);

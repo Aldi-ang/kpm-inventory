@@ -13,6 +13,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
+import { savePhotoAndGetReference, deletePhotoFromStorage } from './utils/helpers';
 
 const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
 
@@ -120,7 +121,7 @@ const CrazyRankBorder = ({ index, hex }) => {
     );
 };
 
-const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId }) => {
+const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings }) => {
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
     const [locationFilter, setLocationFilter] = useState('ALL');
@@ -245,10 +246,20 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             if (!croppedImageBase64) throw new Error("Cropping failed to return data");
             
             if (cropTarget === 'avatar') {
+                // 🚀 FIX: Route avatar photos through the same usePhotoStorage toggle as
+                // RestockVaultView/StockOpnameView/BranchWarehouseManager/App.jsx mascot
+                // image, instead of always writing raw base64. Toggle off (default)
+                // behaves exactly as before — savePhotoAndGetReference just returns the
+                // base64 string unchanged.
+                const previousImage = activeAgent.profileImage;
+                const storagePath = `artifacts/${appId}/users/${userId}/photos/avatar_${activeAgent.id}_${Date.now()}.jpg`;
+                const finalImage = await savePhotoAndGetReference(storage, croppedImageBase64, storagePath, appSettings?.usePhotoStorage);
+
                 const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
-                if(activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, profileImage: croppedImageBase64 });
-                else await updateDoc(agentRef, { profileImage: croppedImageBase64 });
-                if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: croppedImageBase64}));
+                if(activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, profileImage: finalImage });
+                else await updateDoc(agentRef, { profileImage: finalImage });
+                if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, profileImage: finalImage}));
+                if (previousImage) deletePhotoFromStorage(storage, previousImage);
             } else if (typeof cropTarget === 'number') {
                 const newRanks = [...editingRpgData.ranks];
                 newRanks[cropTarget].logo = croppedImageBase64;
