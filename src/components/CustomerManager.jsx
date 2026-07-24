@@ -764,6 +764,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         type: "NOO_APPROVAL",
                         isRead: false,
                         timestamp: serverTimestamp(),
+                        // 🚀 FIX: This was missing agentId entirely, unlike every other admin-directed
+                        // notification (EOD_APPROVAL, AUDIT_PENDING, TRANSFER_APPROVAL, GPS_BYPASS, etc.
+                        // all use agentId: 'ADMIN'). It only ever "worked" by accident, via
+                        // combinedNotifications' `!n.agentId` fallback in App.jsx — which silently
+                        // routes anything missing agentId to admins. The actual approver here is
+                        // whoever can see/click the "Verify" button in handleApproveNOO below, which
+                        // is gated behind the same `isAdmin` unlock as every other approval action —
+                        // the same population 'ADMIN' already targets everywhere else.
+                        agentId: 'ADMIN',
                         linkToTab: "customers" // Clicking the bell takes you straight here!
                     });
                     triggerCapy("New Outlet submitted! Waiting for Admin verification.");
