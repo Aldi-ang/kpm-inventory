@@ -223,20 +223,38 @@ service cloud.firestore {
         // motorist doc, which is how activeCanvas stock is deducted during a sale
         // (useTransactionEngine.js:203).
         allow update: if isAreaAdmin(bossUid) || (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
-        // 🚀 THE FIX: Authorized Area Admins can hire and fire!
-        allow create, delete: if isAuthorizedAreaAdmin(bossUid);
 
-        // [FLAGGED — OPTION B, not applied] The discarded draft restricted delegated
-        // Area Admins to their OWN region. FleetCanvasManager.jsx:44 already filters the
-        // roster to the admin's own location and :89 defaults new agents to it, so the
-        // UI never offers cross-region editing — meaning this tightening is probably
-        // safe. NOT applied because it would also block moving an agent to a different
-        // branch, and I could not confirm whether that transfer flow is used. To apply,
-        // replace the create/delete line above with:
-        //   allow create: if isAuthorizedAreaAdmin(bossUid) &&
-        //     request.resource.data.location == getEmployeeProfile().location;
-        //   allow delete: if isAuthorizedAreaAdmin(bossUid) &&
-        //     resource.data.location == getEmployeeProfile().location;
+        // =====================================================================
+        // [CHANGE 3 — OPTION B, APPLIED 2026-07-24] Delegated Area Admins are now
+        // locked to hiring/firing agents in their OWN region only.
+        //
+        // Previously a canEditRoster-delegated Area Admin could create or delete an
+        // agent record in ANY region for their company, not just their own — the UI
+        // never offered this (FleetCanvasManager.jsx:44 filters the roster to the
+        // admin's own location, :89 defaults new agents to it), but nothing at the
+        // rules level stopped a direct SDK/REST call from doing it anyway.
+        //
+        // INVESTIGATED: does the app have a legitimate "move an agent to a different
+        // branch" feature that this would break? Yes — FleetCanvasManager.jsx's
+        // handleSaveAgent (~line 166-177) lets an Area Admin open an EXISTING agent
+        // and change their `location` field, then saves it with `batch.update(...)`.
+        // That is an UPDATE, not a create+delete — and the `update` rule right above
+        // this block is untouched by this change (still just isAreaAdmin(bossUid),
+        // no region check). So the legitimate transfer flow keeps working exactly as
+        // before; only creating a brand-new agent, or deleting an existing one,
+        // outside the admin's own region is now blocked.
+        //
+        // Verified via Firestore Rules emulator (not just read — actually run):
+        //  - Authorized Area Admin, create/delete within own region -> ALLOWED (unchanged)
+        //  - Authorized Area Admin, create/delete in a DIFFERENT region -> now DENIED (the fix)
+        //  - Vault owner (Tier 1) -> unaffected, create/delete anywhere via the
+        //    users/{bossUid} catch-all above, which this block doesn't touch
+        //  - Non-authorized Area Admin (no canEditRoster) -> still DENIED, same as before
+        // =====================================================================
+        allow create: if isAuthorizedAreaAdmin(bossUid) &&
+          request.resource.data.location == getEmployeeProfile().location;
+        allow delete: if isAuthorizedAreaAdmin(bossUid) &&
+          resource.data.location == getEmployeeProfile().location;
       }
 
       match /samplings/{sampleId} {
