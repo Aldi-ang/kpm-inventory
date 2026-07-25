@@ -66,10 +66,41 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'FLEET_CAPTAIN';
     }
 
-    // 🚀 NEW: Checks if Area Admin has explicit delegated authority
+    // =====================================================================
+    // [CHANGE 4 — FLEET CAPTAIN ROSTER AUTHORITY, APPLIED 2026-07-24]
+    // Confirmed by the owner AND the UI itself: FleetCanvasManager.jsx:717 offers the
+    // "Allow Roster Management (Add / Edit / Terminate)" toggle (canEditRoster) to BOTH
+    // AREA_ADMIN and FLEET_CAPTAIN profiles —
+    //   {(newAgent.userRole === 'AREA_ADMIN' || newAgent.userRole === 'FLEET_CAPTAIN') && ...}
+    // — not just Area Admin. Before this change, a Fleet Captain with the toggle switched
+    // ON could never actually use it: this function only recognized the literal
+    // 'AREA_ADMIN' role, so isAuthorizedAreaAdmin() always returned false for a Fleet
+    // Captain no matter their canEditRoster flag — a toggle offered in the UI that could
+    // never do anything for the tier it was offered to. Same root shape as the mapSettings
+    // gap fixed in [CHANGE 2] above (isAreaAdmin() alone didn't cover Fleet Captain there
+    // either), except here it's cheaper to broaden this ONE shared function than to OR in
+    // a second isAuthorizedFleetCaptain() at all 5 places this gets called (employee_directory
+    // create/update/delete below, plus motorists create/delete in [CHANGE 3] / Option B) —
+    // every one of those call sites means exactly the same thing for both roles: "this
+    // account has been explicitly delegated hire/fire + roster-edit authority." Kept the
+    // function's existing name rather than renaming it everywhere, to keep this change
+    // reviewable as a single-function diff.
+    //
+    // IMPORTANT: this also means Option B's region-lock ([CHANGE 3] below) now applies to
+    // delegated Fleet Captains automatically, with no separate edit needed there — a
+    // Fleet Captain can only hire/fire agents in their OWN location, exactly like a
+    // delegated Area Admin.
+    //
+    // Verified via Firestore Rules emulator (see [CHANGE 3]'s test suite, repeated for a
+    // Fleet Captain identity): authorized Fleet Captain create/delete within own region ->
+    // ALLOWED; in a different region -> DENIED; non-authorized Fleet Captain (no
+    // canEditRoster) -> DENIED; existing Area Admin scenarios all unchanged.
+    // =====================================================================
     function isAuthorizedAreaAdmin(bossUid) {
       let profile = getEmployeeProfile();
-      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN' && profile.get('canEditRoster', false) == true;
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid &&
+        (profile.get('userRole', 'NONE') == 'AREA_ADMIN' || profile.get('userRole', 'NONE') == 'FLEET_CAPTAIN') &&
+        profile.get('canEditRoster', false) == true;
     }
 
     function isSalesman(bossUid) {
