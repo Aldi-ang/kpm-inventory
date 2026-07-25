@@ -108,3 +108,18 @@ export const hasClearance = (userRole, requiredFeature) => {
     if (role === CORPORATE_TIERS.TIER_1 && activePerms.includes('ALL_ACCESS')) return true;
     return activePerms.includes(requiredFeature) || false;
 };
+
+// 🚀 THE 3 CUSTOMER DIRECTORY EDIT MODES (mirrors the view_reports_* pattern)
+export const CUSTOMER_EDIT_PERMS = ['customers_edit_global', 'customers_edit_own_region', 'customers_view_only'];
+
+// 🚀 CUSTOMER DIRECTORY ACCESS RESOLVER: Checks 'global' FIRST so Tier 1's ALL_ACCESS
+// god-mode bypass (see hasClearance above) always resolves to the strongest tier, never
+// to 'view_only'. Order matters here — do not flip it.
+// DEFAULT IS 'global' (today's unrestricted behavior) so nothing changes for any existing
+// company until an owner deliberately dials in a stricter option in Settings.
+export const getCustomerAccessLevel = (userRole) => {
+    if (hasClearance(userRole, 'customers_edit_global')) return 'global';
+    if (hasClearance(userRole, 'customers_edit_own_region')) return 'own_region';
+    if (hasClearance(userRole, 'customers_view_only')) return 'view_only';
+    return 'global';
+};

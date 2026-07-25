@@ -2,6 +2,31 @@
 
 Use this before every release, not just once. Check boxes as you go — if something fails, stop and fix before continuing down the list. Ordered by how much damage a bug there could cause, most dangerous first.
 
+## 🚨 Before you say "done" or commit anything — do this EVERY time
+
+This has already happened TWICE: real, correct code was written, but the commit that actually
+landed on `main` didn't contain it — only a `package.json` version bump did. The commit
+*message* said the feature was added. The commit *diff* did not. Nobody caught it until a much
+later session went looking.
+
+The fix is one boring habit, done every single time, no exceptions:
+
+- [ ] Before writing your commit message, run `git diff --cached --stat` (or `git status` +
+      `git diff --cached`) and actually read the file list it prints.
+- [ ] Take the commit message you are about to write and list every file/feature it claims to
+      touch.
+- [ ] Match those two lists side by side. Every file named in the message must actually appear
+      in the staged diff — not "should be there," actually there.
+- [ ] If they don't match: STOP. Do not commit. Figure out why (forgot to `git add` a file? in
+      the wrong worktree/folder? edited a copy that isn't the real project file?) before trying again.
+- [ ] Same rule applies to a plain-English summary you give the project owner at the end of a
+      task ("I changed X, Y, Z") — diff the real commit against that sentence before you say it,
+      not just before you type `git commit`.
+
+This is not just for big features — apply it to every commit, even a one-line fix. It costs
+30 seconds and it is the exact check that would have caught both past incidents before they
+ever reached `main`.
+
 ## 🔴 Business-critical — test every single release
 
 - [ ] EOD verify → stock routing: Salesman EOD → stock lands in their branch. Tier 1/2/3 EOD → stock lands in Master Vault. Same ticket never double-credits across 2 verifications.
@@ -19,6 +44,7 @@ Use this before every release, not just once. Check boxes as you go — if somet
 - [ ] Photo storage toggle: With the toggle off (default), photos save as base64 and display correctly. If ever switched on, confirm Storage upload + fallback-on-failure both work.
 - [ ] Region-lock roster edits: A delegated Area Admin or Fleet Captain (with roster permission on) can hire/fire within their own region, correctly blocked outside it. The Owner/Tier 1 remains unrestricted. Location-transfer of an existing agent still works.
 - [ ] Fleet paintbrush: Tier 1-4 can see and use it (if the company-wide toggle is on); Tier 5/6 never see it. Saves actually persist after a refresh, not just visually.
+- [ ] Customer Directory edit tier: View Only hides the whole Add/Edit form (directory still browsable). Own Region can edit a store whose Kabupaten matches their own branch/area name, is blocked from a different one (with a clear "Outside your region" message, not a silent failure), and CAN still edit legacy/unmapped stores. Global is unaffected. A company that never touches this setting sees zero change (default = Global).
 
 ## 🟡 Edge cases — test when touching that specific code
 

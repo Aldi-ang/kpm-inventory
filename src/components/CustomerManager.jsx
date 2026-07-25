@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
 import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
+import { getCustomerAccessLevel } from '../config/permissions';
 
 // 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
 const isPointInPolygon = (point, polygon) => {
@@ -196,9 +197,35 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
-export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
+export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+    // 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only / own_region / global.
+    // isAdmin (PIN-unlocked boss mode) is a SEPARATE, stronger override and always wins —
+    // it already has full read/write via the Firestore catch-all regardless of this tier.
+    const customerAccessLevel = useMemo(() => getCustomerAccessLevel(userRole), [userRole]);
+
+    // 🚀 Mirrors the app's own isUnknown() heuristic (see folderStructure below) so the
+    // fallback pool for own_region matches exactly what the directory itself calls "unclassified".
+    const isRegionUnclassified = (val) => {
+        const s = String(val || '').trim().toLowerCase();
+        return !s || s.includes('unknown') || s.includes('unmapped') || s.includes('uncategorized');
+    };
+
+    // 🚀 FALLBACK DECISION: a customer with no reliable region classification is editable by
+    // EVERY own_region employee (fail toward not blocking legitimate work), rather than
+    // stranding it until someone with global access happens to fix it. See PR notes.
+    const canEditCustomer = (c) => {
+        if (isAdmin) return true;
+        if (customerAccessLevel === 'view_only') return false;
+        if (customerAccessLevel === 'own_region') {
+            if (isRegionUnclassified(c.region)) return true;
+            return String(c.region || '').trim().toLowerCase() === String(employeeRegion || '').trim().toLowerCase();
+        }
+        return true; // 'global'
+    };
+    const canAddOrEditAnything = isAdmin || customerAccessLevel !== 'view_only';
     
     // 🚀 NEW: Tactical Dashboard State
     const [searchTerm, setSearchTerm] = useState('');
@@ -780,9 +807,17 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     triggerCapy("Customer added and approved!"); 
                 }
             } 
-            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '', description: '', mapFolder: '' }); 
+            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '', description: '', mapFolder: '' });
             setCoordInput("");
-        } catch (err) { console.error(err); } 
+        } catch (err) {
+            console.error(err);
+            // 🚀 Surface the region-lock instead of failing silently — this is the ONE case
+            // the UI's own canEditCustomer() gate can miss (e.g. a stale card, or the
+            // Map Mission Control edit bridge), so the server-side denial needs its own message.
+            if (err.code === 'permission-denied') {
+                alert(editingId ? "⚠️ You don't have permission to edit this customer (it's outside your assigned region)." : "⚠️ You don't have permission to add customers right now.");
+            }
+        }
     };
 
     const handleEdit = (c) => { 
@@ -845,9 +880,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 if (foundKec) setSelectedCity(foundKec);
 
                 // 3. 📝 OPEN EDITOR: 400ms delay ensures the UI has fully transitioned tabs
-                setTimeout(() => handleEdit(target), 400); 
+                // 🚀 Respect the same permission gate as the in-list Edit button — Map Mission
+                // Control's "Edit Profile" button can target ANY store regardless of region.
+                if (canEditCustomer(target)) {
+                    setTimeout(() => handleEdit(target), 400);
+                } else if (triggerCapy) {
+                    triggerCapy("This store is outside your assigned region.");
+                }
             }
-            sessionStorage.removeItem('targetEditStore'); 
+            sessionStorage.removeItem('targetEditStore');
         }
     }, [customers, folderStructure]);
 
@@ -874,6 +915,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 )}
             </div>
             
+            {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only hides Add/Edit entirely — the
+                directory stays fully browsable, but nothing here can be saved. */}
+            {!canAddOrEditAnything && (
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed dark:border-slate-700 rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <ShieldAlert size={20} className="mx-auto mb-2 text-slate-400"/>
+                    Your access level is <strong>View Only</strong> for the Customer Directory. You can browse and look up stores, but adding or editing is turned off.
+                </div>
+            )}
+            {canAddOrEditAnything && (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
@@ -1053,6 +1103,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 </form>
             </div>
+            )}
 
             {/* 🚀 GLOBAL SEARCH BAR */}
             <div className="relative mb-6">
@@ -1291,6 +1342,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                                             <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
                                             <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Del</button>
+                                        </div>
+                                    )}
+
+                                    {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: real (non-PIN-admin) Edit access,
+                                        gated by view_only / own_region / global. Delete/Verify/Move/DataScrub
+                                        stay boss-mode-only above — those are separate, stronger powers. */}
+                                    {!isAdmin && customerAccessLevel !== 'view_only' && (
+                                        <div className="flex justify-end items-center mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+                                            {canEditCustomer(c) ? (
+                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
+                                            ) : (
+                                                <span title="This store is outside your assigned region" className="text-[10px] text-slate-400 italic px-1">Outside your region</span>
+                                            )}
                                         </div>
                                     )}
                                 </div>

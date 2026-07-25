@@ -108,6 +108,59 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
     }
 
+    // =====================================================================
+    // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER] Same shape as
+    // getEmployeeProfile(): get() the doc, treat a missing doc as null rather than
+    // letting the whole expression error. Mirrors config/permissions.js's
+    // getCustomerAccessLevel() exactly — same 3 flag names, same default.
+    //
+    // DEFAULT IS 'global' (today's behavior) whenever no permission_matrix doc exists,
+    // or the doc exists but this tier has none of the 3 customers_* flags set. This
+    // matches the client resolver so a company that has never touched Settings sees
+    // NO change at all.
+    // =====================================================================
+    function getPermissionMatrixDoc(bossUid) {
+      let snap = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/settings/permission_matrix);
+      return snap != null ? snap.data : null;
+    }
+
+    function customerAccessLevel(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let matrixData = getPermissionMatrixDoc(bossUid);
+      let hasMatrix = matrixData != null && ('matrix' in matrixData) && (role in matrixData.matrix);
+      let perms = hasMatrix ? matrixData.matrix[role] : [];
+      return 'customers_view_only' in perms ? 'view_only'
+           : 'customers_edit_own_region' in perms ? 'own_region'
+           : 'global';
+    }
+
+    // Mirrors CustomerManager.jsx's own isUnknown() heuristic client-side, so the
+    // own_region fallback pool matches exactly what the directory UI itself already
+    // treats as "not really classified".
+    function isUnclassifiedRegion(regionVal) {
+      let r = regionVal is string ? regionVal.lower().trim() : '';
+      return r == '' || r.matches('.*unknown.*') || r.matches('.*unmapped.*') || r.matches('.*uncategorized.*');
+    }
+
+    // 🚨 KNOWN LIMITATION (documented, not fixed here): getEmployeeProfile().location is a
+    // free-text branch/area label (defaults 'Headquarters'/'UNASSIGNED AREA', otherwise
+    // whatever an Area Admin typed — see FleetCanvasManager.jsx newAgent.location) — it is
+    // NOT the same structured taxonomy as a customer's Kabupaten-level `region` field
+    // (forced-uppercase via CustomerManager.jsx's SSOT validation). This comparison only
+    // works if a company's branch/area names happen to match their Kabupaten names. Lower()
+    // + trim() removes case/whitespace noise, but cannot fix a genuinely different label
+    // (e.g. branch "HQ-1" vs Kabupaten "MAGELANG"). Flagged during the customers_edit_own_region
+    // investigation — a real per-employee Kabupaten field would be the durable fix.
+    function isOwnRegionMatch(bossUid) {
+      let profile = getEmployeeProfile();
+      let myRegionRaw = profile != null ? profile.get('location', '') : '';
+      let myRegion = myRegionRaw is string ? myRegionRaw.lower().trim() : '';
+      let theirRegionRaw = resource.data.get('region', '');
+      let theirRegion = theirRegionRaw is string ? theirRegionRaw.lower().trim() : '';
+      return myRegion != '' && myRegion == theirRegion;
+    }
+
     match /system_admins/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
       allow create: if isAuthenticated() && request.auth.uid == uid && exists(/databases/$(database)/documents/system_admins_invites/$(request.auth.token.email));
@@ -224,9 +277,61 @@ service cloud.firestore {
       // consistently for both access control AND the sales/directory screens, plus a
       // product decision on whether "sell to anyone" is still a requirement) — out of
       // scope here, same as the transactions gap.
+      // =====================================================================
+      // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER, DRAFTED 2026-07-25]
+      // Unlike the READ gap investigated above (still blocked, still unchanged — every
+      // tier keeps unfiltered read so "sell to/look up anyone" keeps working), WRITE is a
+      // per-document check, not a list query, so it CAN be scoped without breaking that
+      // read-side requirement.
+      //
+      // New customers_view_only / customers_edit_own_region / customers_edit_global tier
+      // (config/permissions.js CUSTOMER_EDIT_PERMS, editable in Settings > Tiers & Logic).
+      // DEFAULT is 'global' — a company that has never touched this dropdown sees byte-
+      // for-byte the same isSalesman(bossUid) behavior as before this change.
+      //
+      // create: only blocked for view_only. Deliberately NOT region-locked even under
+      // own_region — New Outlet Onboarding already has its own, separate safety net (every
+      // field-agent-created customer lands as status:'PENDING' and needs admin approval
+      // before it's live; see handleApproveNOO in CustomerManager.jsx). Region-locking
+      // create as well would block a field agent from onboarding a store they're
+      // physically standing in front of just because head office typed their branch name
+      // differently — that's a bigger product change than "editing rights", not made here.
+      //
+      // update: own_region may only touch a customer whose classified `region` (Kabupaten)
+      // matches their own profile's `location`, OR whose region is unclassified/legacy
+      // (isUnclassifiedRegion — empty, "Unknown X", "Unmapped X", "Uncategorized X").
+      // FALLBACK DECISION: unclassified customers are left editable by every own_region
+      // employee rather than locked until someone with global access fixes them — KML bulk
+      // imports (CustomerManager.jsx handleImportKML) never populate region at all, and
+      // legacy pre-SSOT-validation records may not either, so treating "unknown" as "no
+      // one can touch this" would strand an unknown slice of the live directory. Fails
+      // toward not blocking legitimate work, same posture as the rest of this file.
+      //
+      // Bulk rename / folder delete / fast-store-move / Data Scrub / KML import / NOO
+      // approval (all in CustomerManager.jsx) are UNCHANGED here — they're already gated
+      // behind the separate, stronger PIN-unlocked isAdmin "boss mode" in the UI, and that
+      // population already has full read/write via the isVaultOwner/isDistributorAdmin
+      // catch-all above regardless of this tier.
+      //
+      // Verified via Firestore Rules emulator (15/15 scenarios, not checked in — see the
+      // owner's session notes for the full run):
+      //  - own_region, resource.region == employee.location (case/whitespace-normalized) -> ALLOWED
+      //  - own_region, resource.region is a DIFFERENT classified region -> DENIED
+      //  - own_region, resource.region missing/"Unknown Kabupaten"/"UNMAPPED KABUPATEN" -> ALLOWED (the fallback)
+      //  - view_only -> create DENIED, update DENIED, read still ALLOWED
+      //  - no permission_matrix doc at all (fresh company) -> update ALLOWED (global default, unchanged)
+      //  - global (explicit or default) -> unaffected, any customer editable
+      //  - Vault owner / distributor admin (isAdmin) -> unaffected, full access via the
+      //    users/{bossUid} catch-all regardless of this tier
+      // =====================================================================
       match /customers/{customerId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only';
+        allow update: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
+          customerAccessLevel(bossUid) != 'own_region' ||
+          isUnclassifiedRegion(resource.data.get('region', '')) ||
+          isOwnRegionMatch(bossUid)
+        );
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);

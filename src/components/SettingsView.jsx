@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2 } from 'lucide-react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard'; 
 import CrownTransferProtocol from './CrownTransferProtocol';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -914,6 +914,22 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setMatrix(newMatrix);
     };
 
+    // 🚀 CUSTOMER DIRECTORY ACCESS: 'none' in this dropdown means "not explicitly set" ->
+    // config/permissions.js's getCustomerAccessLevel() defaults that to customers_edit_global
+    // (today's unrestricted behavior), NOT a locked-out state. Unlike Reporting Authority's
+    // 'none' (which really means no access), this dropdown's 'none' is a synonym for Global.
+    const changeCustomerAccess = (tierId, newAccessLevel) => {
+        const newMatrix = { ...matrix };
+        let tierPerms = (newMatrix[tierId] || []).filter(p => !CUSTOMER_EDIT_PERMS.includes(p));
+
+        if (newAccessLevel !== 'none') {
+            tierPerms.push(newAccessLevel);
+        }
+
+        newMatrix[tierId] = tierPerms;
+        setMatrix(newMatrix);
+    };
+
     // 🚀 NEW: Sets which of the 3 report modes a tier has (none/personal/regional/global)
     const changeReportAccess = (tierId, newAccessLevel) => {
         const newMatrix = { ...matrix };
@@ -1078,11 +1094,27 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                 {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
                                             </button>
                                         </div>
+                                        {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
+                                        {feature.id === 'view_customers' && (
+                                            <div className="my-2 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
+                                                <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><Store size={14}/> Customer Directory Access</label>
+                                                <select
+                                                    value={(matrix[activeTier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none'}
+                                                    onChange={(e) => changeCustomerAccess(activeTier.id, e.target.value)}
+                                                    className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                                                >
+                                                    <option value="none">Global (edit any customer — default)</option>
+                                                    <option value="customers_edit_global">Global (edit any customer — default)</option>
+                                                    <option value="customers_edit_own_region">Own Region Only</option>
+                                                    <option value="customers_view_only">View Only (no edits)</option>
+                                                </select>
+                                            </div>
+                                        )}
                                         {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
                                         {feature.id === 'view_sampling' && (
                                             <div className="my-2 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
                                                 <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><BarChart2 size={14}/> Reporting Authority</label>
-                                                <select 
+                                                <select
                                                     value={(matrix[activeTier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none'}
                                                     onChange={(e) => changeReportAccess(activeTier.id, e.target.value)}
                                                     className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-orange-500"
@@ -1148,6 +1180,29 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         );
                                     })}
                                 </tr>
+                                {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
+                                {feature.id === 'view_customers' && (
+                                    <tr className="border-t-2 border-b-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-3 text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2"><Store size={16}/> Customer Directory Access</td>
+                                        {tiers.map(tier => {
+                                            const currentCustomerAccess = (matrix[tier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none';
+                                            return (
+                                                <td key={`customer-access-${tier.id}`} className="p-2 text-center">
+                                                    <select
+                                                        value={currentCustomerAccess}
+                                                        onChange={(e) => changeCustomerAccess(tier.id, e.target.value)}
+                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[9px] font-bold text-slate-300 outline-none focus:border-emerald-500 mx-auto"
+                                                    >
+                                                        <option value="none">Global (default)</option>
+                                                        <option value="customers_edit_global">Global (default)</option>
+                                                        <option value="customers_edit_own_region">Own Region</option>
+                                                        <option value="customers_view_only">View Only</option>
+                                                    </select>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                )}
                                 {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
                                 {feature.id === 'view_sampling' && (
                                     <tr className="border-t-2 border-b-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">

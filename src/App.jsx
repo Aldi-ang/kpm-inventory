@@ -3644,14 +3644,16 @@ const handleGitHubMirror = async () => {
 
 
           {activeTab === 'customers' && (
-              <CustomerManagement 
-                  customers={customers} 
-                  db={db} 
-                  appId={appId} 
-                  user={user} 
-                  logAudit={logAudit} 
-                  triggerCapy={triggerCapy} 
-                  isAdmin={isAdmin} 
+              <CustomerManagement
+                  customers={customers}
+                  db={db}
+                  appId={appId}
+                  user={user}
+                  logAudit={logAudit}
+                  triggerCapy={triggerCapy}
+                  isAdmin={isAdmin}
+                  userRole={userRole}
+                  employeeRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}
                   tierSettings={tierSettings}
                   onNavigateToMap={() => setActiveTab('map_war_room')}
                   onRequestCrop={(file) => {
