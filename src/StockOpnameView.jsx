@@ -67,7 +67,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
             const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${user.location}/inventory`);
             const unsub = onSnapshot(branchRef, (snap) => {
                 setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            });
+            }, (err) => console.warn("Branch inventory listener:", err.code));
             return () => unsub();
         }
     }, [isAreaAdmin, user, db, appId, masterId]);
@@ -123,7 +123,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
         const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${monitorFacility}/inventory`);
         const unsub = onSnapshot(branchRef, (snap) => {
             setMonitorInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
+        }, (err) => console.warn("Monitor inventory listener:", err.code));
         return () => unsub();
     }, [viewMode, monitorFacility, db, appId, masterId]);
 
@@ -149,11 +149,11 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
                     }).filter(i => i && (i.damagedStock || 0) > 0);
 
                     allData[branch] = enriched;
-                    
+
                     const combined = [];
                     Object.values(allData).forEach(arr => combined.push(...arr));
                     setQuarantineInventory(combined);
-                });
+                }, (err) => console.warn(`Quarantine branch listener (${branch}):`, err.code));
                 unsubs.push(unsub);
             });
 
@@ -172,7 +172,7 @@ const StockOpnameView = ({ inventory = [], transactions = [], db, storage, appId
                     return { ...masterMatch, ...branchItem, damagedStock: branchItem.damagedStock || 0, facility: quarantineFacility };
                 });
                 setQuarantineInventory(enrichedData.filter(i => i && (i.damagedStock || 0) > 0));
-            });
+            }, (err) => console.warn("Quarantine facility listener:", err.code));
             return () => unsub();
         }
     }, [viewMode, quarSubTab, quarantineFacility, safeInventory, db, appId, masterId, uniqueBranches]);

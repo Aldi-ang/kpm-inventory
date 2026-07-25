@@ -148,13 +148,37 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; 
+                const MAX_WIDTH = 600;
                 const scaleSize = MAX_WIDTH / img.width;
                 canvas.width = MAX_WIDTH;
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 setTxProofPhoto(canvas.toDataURL('image/jpeg', 0.6));
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // 🚀 FIX: Storefront photo for a brand-new NOO (Register New Outlet) registration.
+    // Same client-side compress-to-base64 pattern as handleTxPhotoCapture above; feeds
+    // nooForm.photoUrl, which submitNooRegistration/submitNooOnly save as storeImage.
+    const handlePhotoCapture = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                setNooForm(prev => ({ ...prev, photoUrl: canvas.toDataURL('image/jpeg', 0.6) }));
             };
             img.src = event.target.result;
         };
@@ -505,6 +529,29 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
             setShowNooModal(false); setGpsStatus('verified'); triggerMerchantSpeak('expensive');
+        } catch (e) { alert("Failed to save NOO: " + e.message); }
+    };
+
+    // 🚀 FIX: "Register Only (No Sale)" button had no handler at all — undefined
+    // reference, second crash in this same modal. Registers the outlet exactly like
+    // submitNooRegistration, but does NOT lock cart pricing or advance into a sale.
+    const submitNooOnly = async () => {
+        if (!validateNoo()) return;
+        try {
+            const userId = user?.uid || user?.id || 'default';
+            const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+            const newStoreData = {
+                id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
+                tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
+                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString()
+            };
+            await setDoc(newRef, newStoreData);
+            if (logAudit) logAudit("NOO_REGISTERED_ONLY", `Registered new NOO outlet (no sale this visit): ${customerName}`);
+            if (triggerCapy) triggerCapy(`Outlet registered! No sale this visit. 📍`);
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
+            setShowNooModal(false);
+            setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
         } catch (e) { alert("Failed to save NOO: " + e.message); }
     };
 

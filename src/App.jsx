@@ -205,43 +205,41 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
               logSyncEvent(`Initiating Auto-Sync for ${totalItems} items...`, 'INFO');
 
               try {
-                  const batches = [];
-                  let currentBatch = writeBatch(db);
-                  let opCount = 0;
+                  // 🚀 FIX: Replaced hand-rolled batching (fixed-count only, all chunks
+                  // fired concurrently via Promise.all) with commitInChunks — same pattern
+                  // used everywhere else. Offline sales can carry photos, so the byte-size
+                  // cap matters here, and committing sequentially/paced avoids flooding
+                  // Firestore's write stream the moment signal comes back.
+                  const operations = [];
 
                   // 1. Flush Blind-Drop NOO Profiles
                   for (const noo of offlineNoo) {
                       const localId = noo.localId;
                       const payload = { ...noo };
                       delete payload.localId; // Strip the local ID before sending to cloud
-                      
+
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-                      currentBatch.set(ref, { ...payload, status: 'PENDING_OFFLINE_SYNC', syncedAt: serverTimestamp() });
-                      opCount++;
-                      
+                      operations.push({ type: 'set', ref, data: { ...payload, status: 'PENDING_OFFLINE_SYNC', syncedAt: serverTimestamp() } });
+
                       await clearProcessedItem('noo_profiles', localId);
-                      if (opCount > 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); opCount = 0; }
                   }
 
                   // 2. Flush Offline Sales Receipts
                   for (const tx of offlineTx) {
                       const localId = tx.localId;
                       const payload = { ...tx };
-                      delete payload.localId; 
-                      
+                      delete payload.localId;
+
                       // 🚀 THE FIX: Stamp the receipt with a True Server Time so it appears in Reports!
                       payload.timestamp = serverTimestamp();
-                      
+
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
-                      currentBatch.set(ref, { ...payload, syncedAt: serverTimestamp() });
-                      opCount++;
-                      
+                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
+
                       await clearProcessedItem('transactions', localId);
-                      if (opCount > 450) { batches.push(currentBatch.commit()); currentBatch = writeBatch(db); opCount = 0; }
                   }
 
-                  if (opCount > 0) batches.push(currentBatch.commit());
-                  await Promise.all(batches);
+                  await commitInChunks(db, writeBatch, operations);
 
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
                   triggerCapy(`✅ Sync Complete! ${totalItems} items secured in Master Vault.`);
@@ -2911,12 +2909,15 @@ const handleGitHubMirror = async () => {
 
             // 2. Merge/Overwrite Products
             if(data.inventory && Array.isArray(data.inventory)) {
-                const batch = writeBatch(db); 
-                data.inventory.forEach(item => {
-                    const ref = doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id);
-                    batch.set(ref, item); 
-                });
-                await batch.commit();
+                // 🚀 FIX: Chunked/paced commitInChunks instead of one giant batch — same
+                // pattern as Restore from Backup, so a large shared product list can't
+                // overflow Firestore's 500-op/10MiB request caps.
+                const operations = data.inventory.map(item => ({
+                    type: 'set',
+                    ref: doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id),
+                    data: item
+                }));
+                await commitInChunks(db, writeBatch, operations);
             }
             
             triggerCapy("Config Imported! Welcome to the team.");

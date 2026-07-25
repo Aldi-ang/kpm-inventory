@@ -374,6 +374,39 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // =====================================================================
+      // [CHANGE 5 — pending_audits gap fix] Previously had NO dedicated rule at
+      // all, so it fell through to the users/{bossUid} catch-all = owner/
+      // distributor-admin ONLY. But StockOpnameView.jsx's actual submit flow
+      // (handleCommit, ~line 224-257) is built for Area Admins: isAreaAdmin is
+      // true for anyone who is NOT userRole 'ADMIN' (the "BLIND COUNT ENFORCED"
+      // count mode, auditType 'BRANCH_WAREHOUSE'), and it's THEM who addDoc()s
+      // into pending_audits — HQ (isHighCommand/'ADMIN') only ever reads/
+      // approves/rejects. Under the live rules, every non-ADMIN submitting a
+      // stock count gets a silent permission-denied.
+      //
+      // THE FIX: add isAreaAdmin(bossUid) create+read here. ADMIN's own
+      // read/update/create/delete keep working unchanged via the catch-all
+      // above (Firestore ORs across every matching rule block, same as the
+      // `products` collection's isAreaAdmin-only `update` rule alongside it).
+      // update/delete stay closed here — HQ approve/reject
+      // (updateDoc in handleApprove/handleReject) is the ONLY code path that
+      // updates a pending_audits doc, and that's admin-only UI, already
+      // covered by the catch-all.
+      //
+      // Verified via Firestore Rules emulator:
+      //  - Area Admin, own company -> create ALLOWED, read ALLOWED (the fix)
+      //  - Area Admin, different company (bossUid mismatch) -> DENIED
+      //  - Field Operative / Rookie (no AREA_ADMIN/ADMIN tag) -> DENIED
+      //  - Vault owner (Tier 1) -> unaffected, full access via catch-all
+      //  - Area Admin -> update/delete still DENIED (admin-only, unchanged)
+      // =====================================================================
+      match /pending_audits/{auditId} {
+        allow read: if isAreaAdmin(bossUid);
+        allow create: if isAreaAdmin(bossUid);
+        allow update, delete: if false;
+      }
+
       // [NOTE — no change] These collections the app touches have NO explicit rule
       // here, so they fall through to the users/{bossUid} catch-all above =
       // owner/distributor-admin ONLY: procurement, appSettings, mapBorders, canvas,
@@ -381,7 +414,9 @@ service cloud.firestore {
       // `procurement` listener is already permission-denied for every Tier 3-6 user
       // on the LIVE rules today (it fails silently in the console). Left as-is —
       // opening it up would be a loosening nobody asked for — but it is worth knowing
-      // if an agent ever reports missing procurement data.
+      // if an agent ever reports missing procurement data. quarantine_logs is in the
+      // same boat as pending_audits (HQ-only reads it, no non-admin write path in the
+      // app) but is OUT OF SCOPE for this fix — only pending_audits was investigated.
     }
   }
 }

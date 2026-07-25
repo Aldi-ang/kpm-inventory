@@ -753,9 +753,16 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <p className="text-orange-500 font-bold tracking-widest text-[10px] uppercase mb-1">Audit Log • {selectedAgent}</p>
                                                 <h1 className="text-2xl md:text-3xl font-black">{cObj.name}</h1>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
-                                                <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
+                                            <div className="flex items-start gap-4">
+                                                <div className="text-right">
+                                                    <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
+                                                    <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
+                                                </div>
+                                                {isAdmin && (
+                                                    <button onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/50 rounded-lg transition-colors shrink-0">
+                                                        <Trash2 size={16}/>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
