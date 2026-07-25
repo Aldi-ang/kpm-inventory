@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot } from 'firebase/firestore'; 
 import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
-import { convertToBks } from './utils/helpers'; 
+import { convertToBks, isSafeDocIdEmail } from './utils/helpers';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
@@ -149,6 +149,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (newAgent.allowedTiers.length === 0) return alert("You must allow at least one Price Tier!");
 
         const emailKey = newAgent.email.toLowerCase().trim();
+
+        // 🚀 FIX: This is the exact class of input that crashed "Authorize & Register"
+        // with a raw Firestore SDK error ("Invalid document reference... must have an
+        // even number of segments") — a '/' where a '.' should be turns one document ID
+        // into two extra path segments. Catch it here with a message that actually tells
+        // the user what to fix, instead of the save silently blowing up below.
+        if (!isSafeDocIdEmail(emailKey)) return alert(`"${emailKey}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
         const isDupEmail = activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         const isDupPhone = activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);

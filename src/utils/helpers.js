@@ -17,6 +17,16 @@ export const getRandomColor = (str) => {
     return '#' + "00000".substring(0, 6 - c.length) + c;
 };
 
+// 🚀 SHARED FIX: A raw '/' in a user-typed email (a typo, or a stray character from
+// autofill/autocomplete) silently turns a single Firestore document ID into extra path
+// segments once it's interpolated into a doc() call — e.g. "name@gmail/com" instead of
+// "name@gmail.com" makes doc(db, 'artifacts/x/employee_directory', email) throw
+// "Invalid document reference... must have an even number of segments", a raw SDK crash
+// with no useful message for a non-technical user. A period is completely safe in a
+// Firestore document ID (only '/' splits it) — so this only rejects the one character
+// that actually breaks the write, rather than doing full RFC email validation.
+export const isSafeDocIdEmail = (email) => /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(String(email || ''));
+
 export const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
     const packsPerSlop = product.packsPerSlop || 10;

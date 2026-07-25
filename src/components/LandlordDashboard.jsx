@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
-import { commitInChunks } from '../utils/helpers';
+import { commitInChunks, isSafeDocIdEmail } from '../utils/helpers';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
@@ -30,6 +30,12 @@ export default function LandlordDashboard({ db, appId, user }) {
         e.preventDefault();
         const emailClean = newEmail.toLowerCase().trim();
         if (!emailClean || !newName) return;
+
+        // 🚀 FIX: Same failure mode as FleetCanvasManager.jsx's Authorize & Register —
+        // emailClean gets used directly as a Firestore document ID below (line ~55). A
+        // stray '/' in place of a '.' turns one ID into extra path segments and crashes
+        // the write with a raw SDK error. Catch it here with a message the owner can act on.
+        if (!isSafeDocIdEmail(emailClean)) return alert(`"${emailClean}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
         try {
             // 1. Search for any auto-generated Tier 4 ghost profiles
