@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { formatRupiah } from './utils/helpers';
 
-// --- FINANCIAL HELPERS ---
-const formatRupiah = (number) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(number || 0);
-};
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
 // 🚀 ACCEPT 'samplings' PROP HERE

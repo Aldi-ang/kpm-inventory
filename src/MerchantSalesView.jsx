@@ -487,6 +487,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 setBypassState({ status: 'rejected', id: null, photo: null }); alert("HQ Rejected your Bypass Request."); unsub();
                             }
                         }
+                    }, (err) => {
+                        // 🚀 FIX: Without this, a denied read left the sale screen stuck on
+                        // "Awaiting approval..." forever with no explanation.
+                        console.warn("GPS bypass approval listener:", err.code);
+                        setBypassState({ status: 'idle', id: null, photo: null });
+                        alert("Could not check bypass approval status. Please try again.");
                     });
                 } catch (err) { alert(`Failed to submit bypass request: ${err.message || "Network Error"}`); setBypassState({ status: 'idle', id: null, photo: null }); }
             };

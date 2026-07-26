@@ -17,11 +17,13 @@ export let DYNAMIC_TIERS = [
     { id: CORPORATE_TIERS.TIER_6, label: 'T6: ROOKIE', color: 'text-slate-400' }
 ];
 
-// 🚀 SHARED WAREHOUSE-ROUTING RULE: Field-level tiers (T5/T6, real salesmen) return
-// stock to their own regional branch. Tier 3 and above always return to the Master Vault.
-// Used by both EOD verification and the Fleet & Canvas "Clear Canvas" button, so the
-// two can never disagree about where an agent's stock belongs.
-export const isFieldLevelTier = (userRole) => {
+// 🚀 SHARED: normalizes legacy/old Firebase role tags (ADMIN, DEVELOPER, COMPANY_OWNER,
+// AREA_ADMIN, FLEET_CAPTAIN, ROOKIE, AGENT/Motorist/Canvas/Salesman) into the canonical
+// CORPORATE_TIERS id every tier check compares against. This exact translation block
+// used to be copy-pasted 3x (isFieldLevelTier, isFleetManagementTier, hasClearance) —
+// precisely the kind of drift that's already caused tier-check bugs in this project
+// before, so it now lives in exactly one place.
+const translateLegacyRole = (userRole) => {
     let role = userRole || CORPORATE_TIERS.TIER_5;
     if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
     else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
@@ -29,7 +31,15 @@ export const isFieldLevelTier = (userRole) => {
     else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
     else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
     else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
+    return role;
+};
 
+// 🚀 SHARED WAREHOUSE-ROUTING RULE: Field-level tiers (T5/T6, real salesmen) return
+// stock to their own regional branch. Tier 3 and above always return to the Master Vault.
+// Used by both EOD verification and the Fleet & Canvas "Clear Canvas" button, so the
+// two can never disagree about where an agent's stock belongs.
+export const isFieldLevelTier = (userRole) => {
+    const role = translateLegacyRole(userRole);
     return role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6;
 };
 
@@ -39,14 +49,7 @@ export const isFieldLevelTier = (userRole) => {
 // one. Tier 5/6 (Field Operative, Rookie) cannot. Mirrors isFieldLevelTier's exact
 // translation logic so the two tier checks never drift apart.
 export const isFleetManagementTier = (userRole) => {
-    let role = userRole || CORPORATE_TIERS.TIER_5;
-    if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
-    else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
-    else if (role === 'AREA_ADMIN') role = CORPORATE_TIERS.TIER_3;
-    else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
-    else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
-    else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
-
+    const role = translateLegacyRole(userRole);
     return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3 || role === CORPORATE_TIERS.TIER_4;
 };
 
@@ -86,15 +89,8 @@ export const injectDynamicPermissions = (firebaseMatrix, firebaseTiers) => {
 
 // 🚀 THE FIX: AGGRESSIVE TRANSLATOR AND SAFETY NET
 export const hasClearance = (userRole, requiredFeature) => {
-    let role = userRole || CORPORATE_TIERS.TIER_5; 
-    
     // 1. Aggressive Legacy Translator (Catches old Firebase tags)
-    if (role === 'ADMIN' || role === 'DEVELOPER') role = CORPORATE_TIERS.TIER_1;
-    else if (role === 'COMPANY_OWNER') role = CORPORATE_TIERS.TIER_2;
-    else if (role === 'AREA_ADMIN') role = CORPORATE_TIERS.TIER_3;
-    else if (role === 'FLEET_CAPTAIN') role = CORPORATE_TIERS.TIER_4;
-    else if (role === 'ROOKIE') role = CORPORATE_TIERS.TIER_6;
-    else if (role === 'AGENT' || role === 'Motorist' || role === 'Canvas' || role === 'Salesman') role = CORPORATE_TIERS.TIER_5;
+    const role = translateLegacyRole(userRole);
 
     // 2. The Safety Net (Prevents blank sidebars if a rank is corrupted or deleted)
     let activePerms = ROLE_PERMISSIONS[role];

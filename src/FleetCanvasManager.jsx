@@ -25,7 +25,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             const unsub = onSnapshot(fleetRef, (snap) => {
                 setLocalFleet(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 setIsFetchingFleet(false);
-            });
+            }, (err) => { console.warn("Fleet roster listener:", err.code); setIsFetchingFleet(false); });
             return () => unsub();
         }
     }, [db, collPath, isAreaAdmin]);
@@ -67,7 +67,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`);
             const unsub = onSnapshot(stockRef, (snap) => {
                 setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            });
+            }, (err) => console.warn("Branch stock listener:", err.code));
             return () => unsub();
         } else {
             setBranchStock([]);
@@ -116,7 +116,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const unsub = onSnapshot(bypassRef, (snap) => {
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             setAllBypasses(data.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)));
-        });
+        }, (err) => console.warn("GPS bypasses listener:", err.code));
         return () => unsub();
     }, [userId, db, appId]);
 

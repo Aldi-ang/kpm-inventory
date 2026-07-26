@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64 } from './utils/helpers';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
@@ -79,29 +79,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
     const totalBasePrice = cart.reduce((sum, item) => sum + (Number(item.qtyReceived || 0) * Number(item.basePrice || 0)), 0);
     const totalItemsReceived = cart.reduce((sum, item) => sum + Number(item.qtyReceived || 0), 0);
-
-    const compressImageToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; 
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6)); 
-                };
-                img.onerror = (err) => reject(err);
-            };
-            reader.onerror = (err) => reject(err);
-        });
-    };
 
     const handleProcessRestock = async () => {
         if (!user || !db || !activeUserId) return alert("System disconnected. Cannot save.");

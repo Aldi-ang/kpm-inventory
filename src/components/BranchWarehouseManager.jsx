@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
-import { savePhotoAndGetReference } from '../utils/helpers';
+import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -59,41 +59,18 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             if (isAreaAdmin) data = data.filter(r => r.branch === branchLocation);
             setRequests(data.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
             setIsLoading(false);
-        });
+        }, (err) => { console.warn("Restock requests listener:", err.code); setIsLoading(false); });
 
         let unsubStock = () => {};
         if (isAreaAdmin && branchLocation !== 'UNASSIGNED') {
             const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${branchLocation}/inventory`);
             unsubStock = onSnapshot(stockRef, (snap) => {
                 setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            });
+            }, (err) => console.warn("Branch inventory listener:", err.code));
         }
 
         return () => { unsubReq(); unsubStock(); };
     }, [db, appId, masterUserId, isAreaAdmin, branchLocation]);
-
-    const compressImageToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; 
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6)); 
-                };
-                img.onerror = (err) => reject(err);
-            };
-            reader.onerror = (err) => reject(err);
-        });
-    };
 
     const handleAddToCart = () => {
         if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return alert("Select a product and valid quantity.");

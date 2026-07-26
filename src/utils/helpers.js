@@ -5,7 +5,7 @@ export const formatRupiah = (number) => {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
-  }).format(number);
+  }).format(number || 0);
 };
 
 export const getCurrentDate = () => new Date().toISOString().split('T')[0];
@@ -115,4 +115,32 @@ export const savePhotoAndGetReference = async (storage, base64, path, usePhotoSt
 export const deletePhotoFromStorage = async (storage, url) => {
     if (!url || !url.startsWith('https://')) return;
     try { await deleteObject(ref(storage, url)); } catch (e) { /* ignore */ }
+};
+
+// 🚀 SHARED FIX: was copy-pasted identically in RestockVaultView.jsx,
+// StockOpnameView.jsx, and components/BranchWarehouseManager.jsx. Downscales an
+// uploaded image to a max width of 800px and re-encodes it as a compressed JPEG
+// data URL, so photo uploads (damaged-goods proof, receiving docs, etc.) stay small
+// enough for the 1MB Firestore document cap.
+export const compressImageToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.6));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
 };
