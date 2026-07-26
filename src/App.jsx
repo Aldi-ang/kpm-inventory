@@ -271,6 +271,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       const saved = localStorage.getItem('kpm_read_virtual_notifs');
       return saved ? JSON.parse(saved) : [];
   });
+  // 🚀 FIX: persist read-state for virtual logistics notifications back to
+  // localStorage, mirroring the initializer above that reads it — otherwise a
+  // notification marked read would show unread again after every reload.
+  useEffect(() => {
+      localStorage.setItem('kpm_read_virtual_notifs', JSON.stringify(readVirtualNotifs));
+  }, [readVirtualNotifs]);
 
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
@@ -284,7 +290,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       const notifRef = collection(db, `artifacts/${appId}/users/${userId}/notifications`);
       const unsub = onSnapshot(notifRef, (snap) => {
           setSystemNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      }, (err) => console.warn("System notifications listener:", err.code));
       return () => unsub();
   }, [db, appId, userId]);
 
@@ -330,7 +336,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       const unsub = onSnapshot(customersRef, (snap) => {
           const liveCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           setCustomers(liveCustomers);
-      });
+      }, (err) => console.warn("Customer sync listener:", err.code));
       return () => unsub();
   }, [db, appId, userId, setCustomers]);
 
@@ -371,7 +377,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           }
 
           setLogisticsNotifs(activeAlerts);
-      });
+      }, (err) => console.warn("Stock requests listener:", err.code));
 
       return () => unsub();
   }, [db, appId, userId, userRole, agentProfileId, motorists, readVirtualNotifs]);
@@ -1097,7 +1103,9 @@ const handleGitHubMirror = async () => {
 
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [darkMode, setDarkMode] = useState(true);
+  // 🚀 FIX: Read back the theme the effect below already saves to localStorage
+  // ('kpm_theme') instead of always booting into dark mode.
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('kpm_theme') !== 'light');
 
   // 🚀 LITE MODE (POTATO ENGINE) STATE
   const [isLiteMode, setIsLiteMode] = useState(() => localStorage.getItem('kpm_lite_mode') === 'true'); 
@@ -1144,7 +1152,7 @@ const handleGitHubMirror = async () => {
           if (snap.exists() && snap.data().list) {
               setTierSettings(snap.data().list);
           }
-      });
+      }, (err) => console.warn("Tier settings listener:", err.code));
       return () => unsubTiers();
   }, [user]);
 
@@ -1325,7 +1333,7 @@ const handleGitHubMirror = async () => {
                       allowRetur: data.allowRetur === true // Defaults to false
                   });
               }
-          });
+          }, (err) => console.warn("Agent canvas listener:", err.code));
           return () => unsub();
       } else {
           // ADMIN: Full access to all payments, tiers, and retur
@@ -1388,8 +1396,15 @@ const handleGitHubMirror = async () => {
 
   // 🚀 NOTIFICATION CLICK HANDLER 🚀
   const handleNotificationClick = async (notification) => {
-      // 1. Mark as Read in Database (Skip if it is a virtual logistics alert)
-      if (!notification.read && !notification.id.startsWith('logistics_')) {
+      // 1. Mark as Read (real DB notifications get updateDoc'd; virtual logistics
+      // alerts aren't real documents — they're recomputed from stock_requests every
+      // snapshot, see readVirtualNotifs above — so they're marked read locally instead)
+      if (notification.id.startsWith('logistics_')) {
+          // 🚀 FIX: this branch existed to skip the DB write, but never actually
+          // recorded the read state anywhere, so a logistics notification could
+          // never be marked read.
+          setReadVirtualNotifs(prev => prev.includes(notification.id) ? prev : [...prev, notification.id]);
+      } else if (!notification.read) {
           try {
               await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/notifications`, notification.id), { read: true });
           } catch (e) { console.error("Error marking read", e); }
@@ -2218,7 +2233,17 @@ const handleGitHubMirror = async () => {
       }
   };
 
-  const handleDeleteConsignmentData = async (customerName) => { if(!window.confirm(`Delete ALL history for ${customerName}?`)) return; try { const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN')); for(const t of targets) { await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id)); } logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`); } catch(err) {} };
+  const handleDeleteConsignmentData = async (customerName) => {
+      if(!window.confirm(`Delete ALL history for ${customerName}?`)) return;
+      try {
+          const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
+          // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per
+          // record — same pattern as its sibling handleDeleteHistory right above.
+          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          await commitInChunks(db, writeBatch, operations);
+          logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`);
+      } catch(err) { console.error(err); }
+  };
   const handleDeleteHistory = async (customerName, agentName) => { 
       if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}" handled by ${agentName}?`)) return; 
       try { 
@@ -3063,10 +3088,12 @@ const handleGitHubMirror = async () => {
             onLogin={handleLogin} 
             setShowAdminLogin={setShowAdminLogin}
             agentSettings={agentSettings}
-            notifications={combinedNotifications}                   
+            notifications={combinedNotifications}
             onNotificationClick={handleNotificationClick}
-            appVersion={APP_VERSION} 
+            appVersion={APP_VERSION}
              matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
             >
           
           {/* 🥔 POTATO ENGINE: RUTHLESS HARDWARE ACCELERATION BYPASS */}
@@ -3393,8 +3420,22 @@ const handleGitHubMirror = async () => {
           
           {activeTab === 'inventory' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
-              
-              <ResidentEvilInventory 
+
+              {/* 🚀 FIX: searchTerm/setSearchTerm existed and already filtered inventory
+                  into filteredInventory below, but the input that was supposed to drive it
+                  was missing from the UI entirely. */}
+              <div className="relative shrink-0 border-b-4 border-black bg-black/80 p-3">
+                  <Search size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search inventory by name..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-blue-500"
+                  />
+              </div>
+
+              <ResidentEvilInventory
                   inventory={filteredInventory}
                   motorists={motorists}
                   transactions={transactions}

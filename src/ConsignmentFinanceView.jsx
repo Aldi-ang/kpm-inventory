@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
-import { convertToBks } from './utils/helpers';
-
-const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+import { convertToBks, formatRupiah } from './utils/helpers';
 
 export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy } from 'lucide-react';
+import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
@@ -8,10 +8,11 @@ import MusicPlayer from '../MusicPlayer';
 // 🚀 IMPORT THE BRAIN
 import { hasClearance } from '../config/permissions'; 
 
-export default function BiohazardTheme({ 
-    activeTab, setActiveTab, children, user, appSettings, 
-    isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings, 
-    notifications, onNotificationClick, appVersion 
+export default function BiohazardTheme({
+    activeTab, setActiveTab, children, user, appSettings,
+    isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings,
+    notifications, onNotificationClick, appVersion,
+    darkMode, setDarkMode
 }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
@@ -169,10 +170,20 @@ export default function BiohazardTheme({
                     </div>
 
                     <div className="flex items-center gap-6">
+                        {setDarkMode && (
+                            <button
+                                onClick={() => setDarkMode(prev => !prev)}
+                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                                title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                            >
+                                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+                            </button>
+                        )}
+
                         <div className="z-[9999]">
                             <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
                         </div>
-                        
+
                         <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
                             <div>{new Date().toLocaleDateString()}</div>
                             <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>

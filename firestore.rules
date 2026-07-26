@@ -625,9 +625,53 @@ service cloud.firestore {
       //  - Vault owner (Tier 1) -> unaffected, full access via catch-all
       //  - Area Admin -> update/delete still DENIED (admin-only, unchanged)
       // =====================================================================
+      // =====================================================================
+      // [CHANGE 10 — PENDING_AUDITS CREATE, MATCH THE view_stock_opname TOGGLE]
+      // [CHANGE 5] above fixed this collection's total lack of a rule by adding
+      // isAreaAdmin(bossUid) create+read — matching the assumption at the time that
+      // only an Area Admin would ever reach StockOpnameView.jsx's count-submission
+      // screen.
+      //
+      // Re-investigated here: StockOpnameView.jsx's own gating is NOT actually tied
+      // to the AREA_ADMIN role. `isHighCommand = userRole === 'ADMIN'` and
+      // `isAreaAdmin = !isHighCommand` (~line 50-53) — the component treats EVERY
+      // non-ADMIN role as eligible for the "count" submission flow. Who actually
+      // REACHES this screen at all is gated purely by the `view_stock_opname`
+      // Settings toggle (config/permissions.js), a fully dynamic per-tier
+      // permission the owner can turn on for ANY tier — AREA_ADMIN, FLEET_CAPTAIN,
+      // or even FIELD_OPERATIVE/ROOKIE, not only Area Admin. So the literal-
+      // AREA_ADMIN-only create rule had the same "isAreaAdmin() doesn't cover
+      // Fleet Captain" gap as [CHANGE 4]/[CHANGE 8]/[CHANGE 9] — just one Settings
+      // toggle away from being hit for ANY tier, not only Fleet Captain.
+      //
+      // FIX: widen create to isSalesman(bossUid) — any real employee of this
+      // company — instead of adding one more named-role function. The rule's job
+      // here is company membership (this is bossUid's data, not someone else's),
+      // not re-deriving which tiers the app currently grants view_stock_opname to;
+      // that decision already lives in Settings and can change at any time without
+      // a rules redeploy. Safe to open this wide: CREATE here is low-risk — it only
+      // proposes a pending_audits doc, and nothing acts on it until an ADMIN
+      // manually reviews and approves via handleApproveAudit (viewMode
+      // 'review'/'monitor', both isHighCommand-gated) — a create here can never
+      // touch real inventory on its own.
+      //
+      // READ is intentionally left unchanged (isAreaAdmin(bossUid) only) — no code
+      // path in StockOpnameView.jsx lets a non-ADMIN submitter read back
+      // pending_audits (review/monitor are both isHighCommand-only), so there's
+      // nothing to fix on the read side, and no reason to open visibility into
+      // other agents' submitted counts beyond what's already there.
+      //
+      // Verified via Firestore Rules emulator:
+      //  - Fleet Captain (any canEditRoster standing — irrelevant here) -> create ALLOWED (the fix)
+      //  - Field Operative / Rookie -> create ALLOWED (the fix — matches the toggle's own reach)
+      //  - Area Admin -> create ALLOWED (unchanged)
+      //  - Different company (bossUid mismatch) -> create DENIED
+      //  - Area Admin -> read ALLOWED (unchanged); Fleet Captain/Field Operative -> read DENIED (unchanged)
+      //  - Vault owner / distributor admin (ADMIN) -> unaffected, full access via catch-all
+      // =====================================================================
       match /pending_audits/{auditId} {
         allow read: if isAreaAdmin(bossUid);
-        allow create: if isAreaAdmin(bossUid);
+        allow create: if isSalesman(bossUid);
         allow update, delete: if false;
       }
 

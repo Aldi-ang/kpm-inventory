@@ -12,7 +12,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks, convertToBks } from './utils/helpers';
+import { commitInChunks, convertToBks, formatRupiah } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
@@ -84,8 +84,6 @@ const userLocationIcon = L.divIcon({
     iconSize: [24, 24],
     iconAnchor: [12, 12]
 });
-
-const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
@@ -582,7 +580,18 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const handleWipeAll = async () => {
         if(window.confirm("WARNING: This will completely delete ALL active borders from your map. Continue?")) {
-            for (let b of safeBoundaries) { await deleteBoundaryFromFirebase(b.id); }
+            // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteBoundaryFromFirebase
+            // (single deleteDoc) await per border in a tight loop.
+            try {
+                const operations = safeBoundaries.map(b => ({
+                    type: 'delete',
+                    ref: doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${b.id}`)
+                }));
+                await commitInChunks(db, writeBatch, operations);
+            } catch (e) {
+                console.error("Failed to wipe all boundaries:", e);
+                alert("Database error: Could not delete all borders. Only the Company Owner can edit map boundaries.");
+            }
             setBoundaries([]);
             clearBorderCache(appId);
         }
@@ -674,15 +683,21 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setBoundaries(updatedList);
         saveBorderCache(appId, updatedList);
 
-        // Save batch to Firebase silently
-        for (let b of safeBoundaries) {
-            const f = b.folderName || b.level || 'Uncategorized';
-            if (f === oldName) {
-                const target = updatedList.find(u => u.id === b.id);
-                if (target) await saveBoundaryToFirebase(target);
-            }
+        // 🚀 FIX: Chunked/paced commitInChunks (via saveBoundariesInChunks) instead
+        // of one saveBoundaryToFirebase() (single setDoc) await per boundary in a
+        // tight loop.
+        try {
+            const changedIds = new Set(
+                safeBoundaries
+                    .filter(b => (b.folderName || b.level || 'Uncategorized') === oldName)
+                    .map(b => b.id)
+            );
+            const targets = updatedList.filter(b => changedIds.has(b.id));
+            await saveBoundariesInChunks(targets);
+        } catch (e) {
+            console.error("Failed to rename folder:", e);
         }
-        
+
         setIsLoading(false);
         // Ensure new folder is open
         setExpandedNodes(prev => ({ ...prev, [oldName]: false, [targetName]: true }));
@@ -699,10 +714,19 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
         setBoundaries(updatedList);
         saveBorderCache(appId, updatedList);
 
-        for (let b of bordersInside) {
-            await deleteBoundaryFromFirebase(b.id);
+        // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteBoundaryFromFirebase
+        // (single deleteDoc) await per border in a tight loop.
+        try {
+            const operations = bordersInside.map(b => ({
+                type: 'delete',
+                ref: doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${b.id}`)
+            }));
+            await commitInChunks(db, writeBatch, operations);
+        } catch (e) {
+            console.error("Failed to delete folder:", e);
+            alert("Database error: Could not delete this folder. Only the Company Owner can edit map boundaries.");
         }
-        
+
         setIsLoading(false);
     };
 
@@ -1534,17 +1558,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         try {
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
-            let ops = 0;
+            const safeTrans = Array.isArray(transactions) ? transactions : [];
+            const lastXPUpdate = new Date().toISOString();
 
-            for (let store of mapPoints) {
+            const operations = mapPoints.map(store => {
                 let lifetimeXP = 0;
                 let seasonXP = 0;
-                
-                const safeTrans = Array.isArray(transactions) ? transactions : [];
+
                 safeTrans.forEach(t => {
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
                     const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
-                    
+
                     if (t && isMatch && tType === 'SALE') {
                         const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
                         lifetimeXP += val;
@@ -1557,14 +1581,17 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                     }
                 });
 
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), {
-                    lifetimeXP: lifetimeXP,
-                    seasonXP: seasonXP,
-                    lastXPUpdate: new Date().toISOString()
-                });
-                ops++;
-            }
-            alert(`✅ RPG Migration Complete! ${ops} stores upgraded. You can now use the Season Rank Audit.`);
+                return {
+                    type: 'update',
+                    ref: doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id),
+                    data: { lifetimeXP, seasonXP, lastXPUpdate }
+                };
+            });
+
+            // 🚀 FIX: Chunked/paced commitInChunks instead of one updateDoc await
+            // per store in a tight loop.
+            await commitInChunks(db, writeBatch, operations);
+            alert(`✅ RPG Migration Complete! ${operations.length} stores upgraded. You can now use the Season Rank Audit.`);
             onClose();
         } catch(e) {
             console.error(e);
@@ -1651,21 +1678,30 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
         if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
         setIsApplying(true);
         try {
-            let ops = 0;
-            for (let action of simResults.actions) {
+            const operations = simResults.actions.map(action => {
                 const payload = { tier: action.new };
                 if (action.isNewSeason) {
                     payload.seasonXP = 0;
                     payload.lastXPUpdate = new Date().toISOString();
                 }
-                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId), payload);
-                
+                return {
+                    type: 'update',
+                    ref: doc(db, `artifacts/${appId}/users/${userId}/customers`, action.storeId),
+                    data: payload
+                };
+            });
+
+            // 🚀 FIX: Chunked/paced commitInChunks instead of one updateDoc await
+            // per store in a tight loop.
+            await commitInChunks(db, writeBatch, operations);
+
+            simResults.actions.forEach(action => {
                 if (setLocalTierUpdates) {
                     setLocalTierUpdates(prev => ({ ...prev, [action.storeId]: action.new }));
                 }
-                
-                ops++;
-            }
+            });
+
+            const ops = operations.length;
             if (logAudit) logAudit("SEASON_RANK_AUDIT", `Season RPG Engine adjusted ${ops} stores.`);
             if (triggerCapy) triggerCapy(`Season Update Complete! ${ops} store ranks adjusted. 📈`);
             alert(`✅ Success! ${ops} stores instantly updated on map.`);
