@@ -35,21 +35,21 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
             } else {
                 setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
             }
-        });
+        }, (err) => console.warn("Settings listener:", err.code));
 
         // 🚀 TIME-GATE ENGINE: Calculate the exact timestamp for 7 days ago
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // 2. Core Collections (Static data like Inventory and Customers load fully)
-        const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
+        const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Customers listener:", err.code));
+        const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Motorists listener:", err.code));
         
         // 🛡️ FIREWALL ACTIVE: All transaction/log data is strictly gated to the last 7 days!
-        const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Transactions listener:", err.code));
+        const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Samplings listener:", err.code));
+        const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Audit logs listener:", err.code));
         // 🚀 FIX: Procurement is HQ-only (see RestockVaultView, "HQ ONLY: FACTORY PROCUREMENT
         // ENGINE"). Firestore rules allow it for the vault owner / distributor admin only, so
         // subscribing every tier threw an uncaught permission-denied in the snapshot listener
@@ -59,8 +59,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         if (userRole === 'ADMIN') {
             unsubProc = onSnapshot(query(collection(db, basePath, 'procurement'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setProcurements(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Procurement listener:", err.code));
         }
-        const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("EOD reports listener:", err.code));
+        const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Account transfers listener:", err.code));
 
         // 3. Notifications (Filtered + Time-Gated)
         const unsubNotifs = onSnapshot(query(collection(db, basePath, 'notifications'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => {
@@ -70,7 +70,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
                 return false;
             });
             setNotifications(myNotifs);
-        });
+        }, (err) => console.warn("Notifications listener:", err.code));
 
         // 4. Admin Vehicle Canvas
         const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
@@ -87,7 +87,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
                     allowedTiers: ['Retail', 'Grosir', 'Ecer']
                 });
             }
-        });
+        }, (err) => console.warn("Admin vehicle canvas listener:", err.code));
 
         return () => { 
             unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 

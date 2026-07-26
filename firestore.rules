@@ -108,6 +108,15 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
     }
 
+    // [ADDED — rank config / achievement badges gap fix, see CHANGE 7] Checks the
+    // caller's OWN role, not tied to any one bossUid — the settings doc this guards
+    // has no bossUid of its own to check against (see CHANGE 7's note on scope).
+    function isRankConfigEditor() {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null &&
+        (profile.get('userRole', 'NONE') == 'COMPANY_OWNER' || profile.get('userRole', 'NONE') == 'ADMIN');
+    }
+
     // =====================================================================
     // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER] Same shape as
     // getEmployeeProfile(): get() the doc, treat a missing doc as null rather than
@@ -226,6 +235,48 @@ service cloud.firestore {
       );
     }
 
+    // =====================================================================
+    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix] AgentProfileView.jsx
+    // reads/writes artifacts/cello-inventory-manager/settings/{achievements,rpg_ranks}
+    // (~lines 140, 149, 208, 337) but this path never had a dedicated rule — it fell
+    // through to the top-level isSuperAdmin()-only catch-all, so no real customer
+    // could ever configure OR even READ Rank Config / Achievement Badges. The
+    // failure was silent (wrapped in try/catch), so nobody had seen an error — the
+    // feature just quietly did nothing for every company, including the
+    // COMPANY_OWNER it's built for (edit_rank_config's default tier).
+    //
+    // NOTE ON SCOPE: unlike every other settings doc in this file, this path is NOT
+    // nested under users/{bossUid} — AgentProfileView.jsx reads/writes it at
+    // artifacts/cello-inventory-manager/settings/*, the same top-level as
+    // employee_directory. That makes it a single doc SHARED BY EVERY COMPANY in this
+    // Firestore project, not scoped per tenant — a pre-existing app design choice,
+    // not something a rules-only fix can correct. Any company's COMPANY_OWNER/ADMIN
+    // can overwrite the rank ladder / badge list that every OTHER company also sees.
+    // A real per-tenant fix would mean moving this data under
+    // users/{bossUid}/settings/ in the app code — out of scope here. Flagged per
+    // this project's standing "document, don't silently half-fix" convention.
+    //
+    // READ: any authenticated employee, any tier — AgentProfileView's own
+    // useEffects fetch both docs unconditionally for whoever is viewing their
+    // profile page, so every tier (down to Rookie) needs read access to see their
+    // own rank/badges.
+    //
+    // WRITE: restricted to the same roles the UI itself gates the config modals
+    // behind (showRankConfig / showBadgeConfig both check
+    // `userRole === 'ADMIN' || userRole === 'COMPANY_OWNER'`).
+    //
+    // Verified via Firestore Rules emulator:
+    //  - COMPANY_OWNER -> read ALLOWED, write ALLOWED
+    //  - ADMIN (distributor admin) -> read ALLOWED, write ALLOWED
+    //  - AREA_ADMIN / FLEET_CAPTAIN / FIELD_OPERATIVE / ROOKIE -> read ALLOWED (so
+    //    their own profile page still renders rank/badges), write DENIED
+    //  - Unauthenticated -> read and write DENIED
+    // =====================================================================
+    match /artifacts/cello-inventory-manager/settings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isRankConfigEditor();
+    }
+
     match /artifacts/cello-inventory-manager/users/{bossUid} {
       match /{document=**} {
         allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
@@ -243,7 +294,40 @@ service cloud.firestore {
 
       match /products/{productId} {
         allow read: if isSalesman(bossUid);
-        allow update: if isAreaAdmin(bossUid);
+        // =====================================================================
+        // [CHANGE 9 — PRODUCTS UPDATE, EXTEND TO FLEET CAPTAIN] Same bug shape as
+        // [CHANGE 2]'s mapSettings gap and [CHANGE 4]/[CHANGE 8]'s motorists gap:
+        // isAreaAdmin() alone only recognizes the literal 'AREA_ADMIN' role, so it
+        // never covered FLEET_CAPTAIN.
+        //
+        // FleetCanvasManager.jsx's Load Canvas / Clear Canvas actions
+        // (handleLoadCanvas ~265, handleClearCanvas ~342) are NOT gated behind
+        // canEditFleet/canEditRoster — any account that can view the Fleet &
+        // Canvas page (view_fleet, ON BY DEFAULT for Tier 4/FLEET_CAPTAIN) can
+        // select an agent and Load/Clear their vehicle canvas. When the selected
+        // agent is office-tier or Headquarters-based (not a real field branch),
+        // that write lands on THIS collection (Master Vault), not a branch
+        // warehouse — reachable by a plain Fleet Captain with zero settings
+        // changes, including a HQ-based Fleet Captain moving stock for their own
+        // HQ-based team, which is normal day-to-day fleet operation, not an edge
+        // case.
+        //
+        // NOT gated behind canEditRoster/isAuthorizedAreaAdmin: moving
+        // vehicle-canvas stock is a routine fleet-operations action, not roster
+        // (hire/fire) management — same reasoning [CHANGE 2] already used for the
+        // mapSettings fleet-paintbrush write (isAreaAdmin(bossUid) ||
+        // isFleetCaptain(bossUid), no canEditRoster check). Area Admin's own
+        // existing `update` access here already has no canEditRoster requirement
+        // either, so Fleet Captain is added on the same terms, not stricter ones.
+        //
+        // Verified via Firestore Rules emulator:
+        //  - Fleet Captain, own company -> update ALLOWED (the fix)
+        //  - Area Admin, own company -> update ALLOWED (unchanged)
+        //  - Field Operative / Rookie -> DENIED (unchanged, no standing here)
+        //  - Different company (bossUid mismatch) -> DENIED
+        //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
+        // =====================================================================
+        allow update: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
         allow create, delete: if false;
       }
       // [INVESTIGATED — 2026-07-24, customer visibility gap] Every employee's browser
@@ -358,7 +442,42 @@ service cloud.firestore {
         // The second clause is load-bearing: it lets a field agent update their OWN
         // motorist doc, which is how activeCanvas stock is deducted during a sale
         // (useTransactionEngine.js:203).
-        allow update: if isAreaAdmin(bossUid) || (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
+        //
+        // =====================================================================
+        // [CHANGE 8 — MOTORISTS UPDATE, EXTEND TO DELEGATED FLEET CAPTAIN + REGION LOCK]
+        // Previously this was isAreaAdmin(bossUid) — the literal 'AREA_ADMIN' role
+        // only, with NO region check (any Area Admin could update ANY agent in ANY
+        // region for their company via a direct SDK call). CREATE/DELETE on this
+        // same collection were already fixed ([CHANGE 3]/[CHANGE 4]) to use
+        // isAuthorizedAreaAdmin() — covers a delegated (canEditRoster=true)
+        // AREA_ADMIN OR FLEET_CAPTAIN, region-locked to their own location. UPDATE
+        // was missed.
+        //
+        // FleetCanvasManager.jsx's canEditFleet (~line 41) gates the Edit button
+        // behind exactly that same authority (isAdmin || (isAreaAdmin &&
+        // canEditRoster===true)), so a delegated Fleet Captain saw an Edit button
+        // that always failed server-side — a live "UI says yes, server says no" gap.
+        //
+        // Uses resource.data.location (the doc's location BEFORE the write) — the
+        // same shape as the DELETE rule below, not request.resource.data.location
+        // (CREATE's shape). This only checks "is this agent currently in my own
+        // region", so the legitimate transfer-to-a-different-branch flow
+        // (handleSaveAgent editing an agent's `location` field to a NEW value)
+        // keeps working: FleetCanvasManager's own roster filter (~line 43-48)
+        // already only ever shows an Area Admin/Fleet Captain agents CURRENTLY in
+        // their own region, so any UI-reachable edit already satisfies this check
+        // regardless of what the new location becomes.
+        //
+        // Verified via Firestore Rules emulator:
+        //  - Authorized Fleet Captain, update within own region -> ALLOWED (the fix)
+        //  - Authorized Fleet Captain, update an agent in a DIFFERENT region -> DENIED
+        //  - Authorized Area Admin, own region -> ALLOWED (unchanged); different region -> DENIED
+        //  - Non-authorized Area Admin/Fleet Captain (no canEditRoster) -> DENIED
+        //  - Field agent updating their OWN doc (agentId match) -> unaffected, ALLOWED
+        //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
+        // =====================================================================
+        allow update: if (isAuthorizedAreaAdmin(bossUid) && resource.data.location == getEmployeeProfile().location) ||
+          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
 
         // =====================================================================
         // [CHANGE 3 — OPTION B, APPLIED 2026-07-24] Delegated Area Admins are now
