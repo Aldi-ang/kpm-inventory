@@ -25,5 +25,8 @@ dist-ssr
 
 .vercel
 
+# Firebase CLI's local build cache — regenerated per-machine, not meaningful to version control
+.firebase/
+
 # graphify: regenerable per-file extraction cache, not meaningful to version control
 graphify-out/cache/

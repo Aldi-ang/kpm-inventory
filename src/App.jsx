@@ -996,7 +996,6 @@ const handleGitHubMirror = async () => {
       }
   };
 
-// --- PINPOINT: Line 1830 (Add this missing function to fix the crash) ---
   const handleChangePin = () => {
       // Switches the modal to "Setup Mode" so you can overwrite the old PIN
       setIsSetupMode(true); 
@@ -1374,7 +1373,6 @@ const handleGitHubMirror = async () => {
                           name: activeTrackerId === 'master_owner' ? 'Master HQ' : (user.displayName || 'Agent')
                       }, { merge: true });
                       
-                      console.log("📍 Action detected! High-accuracy location pinned and GPS shut down.");
                   } catch (e) {
                       console.error("Telemetry push failed:", e);
                   }
@@ -1834,11 +1832,9 @@ const handleGitHubMirror = async () => {
             const email = currentUser.email.toLowerCase().trim();
             setCurrentUserEmail(email);
 
-            // 🚀 MASTER VIP LIST: Define this first so the offline crash handler can see it
-            const masterVIPs = [
-                'adikaryasukses99@gmail.com',
-                'THE_OWNER_EMAIL@gmail.com' // Replace later
-            ];
+            // 🚀 MASTER VIP LIST: the Architect can never be locked out. Defined before the
+            // try block so the offline crash handler in the catch below can see it too.
+            const masterVIPs = ['adikaryasukses99@gmail.com'];
             const isDeveloper = masterVIPs.includes(email);
 
             try {
@@ -1850,13 +1846,6 @@ const handleGitHubMirror = async () => {
                 const inviteRef = doc(db, 'system_admins_invites', email);
                 const inviteSnap = await getDocOfflineSafe(inviteRef);
 
-                // 🚀 MASTER VIP LIST: The Architect and the Owner can never be locked out
-                const masterVIPs = [
-                    'adikaryasukses99@gmail.com', 
-                    'THE_OWNER_EMAIL@gmail.com' // <-- Replace this with the actual boss's email
-                ];
-                const isDeveloper = masterVIPs.includes(email);
-
                 if (inviteSnap.exists() || (isDeveloper && !sysAdminSnap.exists())) {
                     // Claim the Crown: Promote them to System Admin and delete the invite
                     await setDoc(sysAdminRef, { email: email, claimedAt: serverTimestamp(), securityBypass: 'ARCHITECT' });
@@ -1864,7 +1853,6 @@ const handleGitHubMirror = async () => {
                 }
 
                 if (sysAdminSnap.exists() || inviteSnap.exists() || isDeveloper) {
-                    console.log("GOD MODE DETECTED: Engaging Secondary Security Lock.");
                     setIsSystemOwner(true);
                     setBossUid(null);
                     setUserRole('ADMIN'); 
@@ -2022,7 +2010,6 @@ const handleGitHubMirror = async () => {
 
                 // 🚀 OFFLINE GOD MODE: If the DB crashes due to no internet, let VIPs in anyway
                 if (isDeveloper) {
-                    console.log("OFFLINE GOD MODE ENGAGED. Bypassing network crash.");
                     setIsSystemOwner(true);
                     setBossUid(null);
                     setUserRole('ADMIN');
@@ -2109,7 +2096,6 @@ const handleGitHubMirror = async () => {
             // split-second microtask as the user's physical tap. 
             const result = await signInWithPopup(auth, googleProvider);
             
-            console.log("Login Success:", result.user);
             setUser(result.user);
             if (result.user.email) setCurrentUserEmail(result.user.email);
             
@@ -2118,7 +2104,6 @@ const handleGitHubMirror = async () => {
             
             // Smart Fallback ONLY for embedded browsers (like clicking a link inside Instagram/Line)
             if (error.code === 'auth/popup-blocked') {
-                console.log("In-app browser blocked popup. Rerouting...");
                 signInWithRedirect(auth, googleProvider);
             } else {
                 alert(`Login Failed: ${error.message}`); 
