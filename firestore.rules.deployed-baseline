@@ -1,3 +1,17 @@
+// =============================================================================
+// DEPLOYED 2026-07-28 via `firebase deploy --only firestore:rules` to
+//   cello-inventory-manager. This file IS the live rules as of that date.
+//
+// Baseline: firestore.rules.deployed-baseline is kept in sync with this file —
+// it's the instant rollback copy if a future change goes wrong.
+//
+// Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
+// intentionally byte-for-byte the rules that were live before 2026-07-23. An
+// earlier draft in this repo rewrote these rules from scratch on the false
+// premise that no rules existed; that draft was discarded because several of
+// its changes would have broken the live app (see [WHY NOT] notes below).
+// =============================================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -6,6 +20,15 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'adikaryasukses99@gmail.com';
     }
 
+    // [FLAGGED — OPTION A, not applied] Crown Transfer does not actually work at
+    // the rules level today. CrownTransferProtocol.jsx writes a system_admins_invites
+    // doc and deletes the old owner's system_admins/{uid}, and App.jsx then creates
+    // system_admins/{newUid} — but isSuperAdmin() above never reads system_admins,
+    // so a newly-crowned owner gains NO god-mode, and the hardcoded email keeps it
+    // even after "revocation". To make Crown Transfer real, append to isSuperAdmin:
+    //     || exists(/databases/$(database)/documents/system_admins/$(request.auth.uid))
+    // NOT applied here: it widens god-mode and is the owner's call to make knowingly.
+
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
@@ -13,6 +36,11 @@ service cloud.firestore {
     function isAuthenticated() { return request.auth != null; }
     function isVaultOwner(bossUid) { return isAuthenticated() && request.auth.uid == bossUid; }
 
+    // Looks up the caller's EMAIL-keyed directory doc. Kept email-only, matching live.
+    // [WHY NOT] The discarded draft also checked a UID-keyed doc. Unnecessary:
+    // FleetCanvasManager.jsx:180,192 always writes the authoritative record EMAIL-keyed;
+    // the only account that ends up UID-keyed-only is a migrated COMPANY_OWNER
+    // (App.jsx:788-803), who is covered by isVaultOwner() and never needs this lookup.
     function getEmployeeProfile() {
       let rawEmail = request.auth.token.email;
       let safeEmail = rawEmail != null ? rawEmail.lower() : 'unknown';
@@ -30,10 +58,49 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN';
     }
 
-    // 🚀 NEW: Checks if Area Admin has explicit delegated authority
+    // [ADDED — mapSettings fleet-paintbrush gap fix] Scoped narrowly to the mapSettings
+    // block below. No existing rule checked for this literal role string before; adding
+    // it here does not change behavior anywhere else in this file.
+    function isFleetCaptain(bossUid) {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'FLEET_CAPTAIN';
+    }
+
+    // =====================================================================
+    // [CHANGE 4 — FLEET CAPTAIN ROSTER AUTHORITY, APPLIED 2026-07-24]
+    // Confirmed by the owner AND the UI itself: FleetCanvasManager.jsx:717 offers the
+    // "Allow Roster Management (Add / Edit / Terminate)" toggle (canEditRoster) to BOTH
+    // AREA_ADMIN and FLEET_CAPTAIN profiles —
+    //   {(newAgent.userRole === 'AREA_ADMIN' || newAgent.userRole === 'FLEET_CAPTAIN') && ...}
+    // — not just Area Admin. Before this change, a Fleet Captain with the toggle switched
+    // ON could never actually use it: this function only recognized the literal
+    // 'AREA_ADMIN' role, so isAuthorizedAreaAdmin() always returned false for a Fleet
+    // Captain no matter their canEditRoster flag — a toggle offered in the UI that could
+    // never do anything for the tier it was offered to. Same root shape as the mapSettings
+    // gap fixed in [CHANGE 2] above (isAreaAdmin() alone didn't cover Fleet Captain there
+    // either), except here it's cheaper to broaden this ONE shared function than to OR in
+    // a second isAuthorizedFleetCaptain() at all 5 places this gets called (employee_directory
+    // create/update/delete below, plus motorists create/delete in [CHANGE 3] / Option B) —
+    // every one of those call sites means exactly the same thing for both roles: "this
+    // account has been explicitly delegated hire/fire + roster-edit authority." Kept the
+    // function's existing name rather than renaming it everywhere, to keep this change
+    // reviewable as a single-function diff.
+    //
+    // IMPORTANT: this also means Option B's region-lock ([CHANGE 3] below) now applies to
+    // delegated Fleet Captains automatically, with no separate edit needed there — a
+    // Fleet Captain can only hire/fire agents in their OWN location, exactly like a
+    // delegated Area Admin.
+    //
+    // Verified via Firestore Rules emulator (see [CHANGE 3]'s test suite, repeated for a
+    // Fleet Captain identity): authorized Fleet Captain create/delete within own region ->
+    // ALLOWED; in a different region -> DENIED; non-authorized Fleet Captain (no
+    // canEditRoster) -> DENIED; existing Area Admin scenarios all unchanged.
+    // =====================================================================
     function isAuthorizedAreaAdmin(bossUid) {
       let profile = getEmployeeProfile();
-      return isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'AREA_ADMIN' && profile.get('canEditRoster', false) == true;
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid &&
+        (profile.get('userRole', 'NONE') == 'AREA_ADMIN' || profile.get('userRole', 'NONE') == 'FLEET_CAPTAIN') &&
+        profile.get('canEditRoster', false) == true;
     }
 
     function isSalesman(bossUid) {
@@ -41,28 +108,173 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
     }
 
+    // [ADDED — rank config / achievement badges gap fix, see CHANGE 7] Checks the
+    // caller's OWN role, not tied to any one bossUid — the settings doc this guards
+    // has no bossUid of its own to check against (see CHANGE 7's note on scope).
+    function isRankConfigEditor() {
+      let profile = getEmployeeProfile();
+      return isAuthenticated() && profile != null &&
+        (profile.get('userRole', 'NONE') == 'COMPANY_OWNER' || profile.get('userRole', 'NONE') == 'ADMIN');
+    }
+
+    // =====================================================================
+    // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER] Same shape as
+    // getEmployeeProfile(): get() the doc, treat a missing doc as null rather than
+    // letting the whole expression error. Mirrors config/permissions.js's
+    // getCustomerAccessLevel() exactly — same 3 flag names, same default.
+    //
+    // DEFAULT IS 'global' (today's behavior) whenever no permission_matrix doc exists,
+    // or the doc exists but this tier has none of the 3 customers_* flags set. This
+    // matches the client resolver so a company that has never touched Settings sees
+    // NO change at all.
+    // =====================================================================
+    function getPermissionMatrixDoc(bossUid) {
+      let snap = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/settings/permission_matrix);
+      return snap != null ? snap.data : null;
+    }
+
+    function customerAccessLevel(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let matrixData = getPermissionMatrixDoc(bossUid);
+      let hasMatrix = matrixData != null && ('matrix' in matrixData) && (role in matrixData.matrix);
+      let perms = hasMatrix ? matrixData.matrix[role] : [];
+      return 'customers_view_only' in perms ? 'view_only'
+           : 'customers_edit_own_region' in perms ? 'own_region'
+           : 'global';
+    }
+
+    // Mirrors CustomerManager.jsx's own isUnknown() heuristic client-side, so the
+    // own_region fallback pool matches exactly what the directory UI itself already
+    // treats as "not really classified".
+    function isUnclassifiedRegion(regionVal) {
+      let r = regionVal is string ? regionVal.lower().trim() : '';
+      return r == '' || r.matches('.*unknown.*') || r.matches('.*unmapped.*') || r.matches('.*uncategorized.*');
+    }
+
+    // 🚨 KNOWN LIMITATION (documented, not fixed here): getEmployeeProfile().location is a
+    // free-text branch/area label (defaults 'Headquarters'/'UNASSIGNED AREA', otherwise
+    // whatever an Area Admin typed — see FleetCanvasManager.jsx newAgent.location) — it is
+    // NOT the same structured taxonomy as a customer's Kabupaten-level `region` field
+    // (forced-uppercase via CustomerManager.jsx's SSOT validation). This comparison only
+    // works if a company's branch/area names happen to match their Kabupaten names. Lower()
+    // + trim() removes case/whitespace noise, but cannot fix a genuinely different label
+    // (e.g. branch "HQ-1" vs Kabupaten "MAGELANG"). Flagged during the customers_edit_own_region
+    // investigation — a real per-employee Kabupaten field would be the durable fix.
+    function isOwnRegionMatch(bossUid) {
+      let profile = getEmployeeProfile();
+      let myRegionRaw = profile != null ? profile.get('location', '') : '';
+      let myRegion = myRegionRaw is string ? myRegionRaw.lower().trim() : '';
+      let theirRegionRaw = resource.data.get('region', '');
+      let theirRegion = theirRegionRaw is string ? theirRegionRaw.lower().trim() : '';
+      return myRegion != '' && myRegion == theirRegion;
+    }
+
     match /system_admins/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
       allow create: if isAuthenticated() && request.auth.uid == uid && exists(/databases/$(database)/documents/system_admins_invites/$(request.auth.token.email));
-      allow update, delete: if false; 
+      allow update, delete: if false;
     }
 
     match /system_admins_invites/{email} {
       allow read: if isAuthenticated();
-      allow delete: if isAuthenticated() && request.auth.token.email == email; 
+      allow delete: if isAuthenticated() && request.auth.token.email == email;
       allow create, update: if false;
     }
 
+    // =====================================================================
+    // [CHANGE 1] — THE ONLY BEHAVIOR CHANGE IN THIS FILE
+    //
+    // VULNERABILITY IN THE LIVE RULES (critical, cross-tenant privilege escalation):
+    // The live rule's first branch is a bare `email == request.auth.token.email`
+    // inside `allow write`, with NO restriction on the document contents. Because
+    // `write` covers create/update/delete, ANY authenticated Google user can write
+    // arbitrary fields to employee_directory/{their-own-email} — including
+    //     { bossUid: <any victim company's uid>, userRole: 'ADMIN' }
+    // That makes isDistributorAdmin(<victim uid>) return true, which the
+    // users/{bossUid}/{document=**} catch-all below honors as FULL read/write over
+    // that company's entire vault. No app UI is needed — a direct SDK/REST call does it.
+    //
+    // THE FIX: keep the self-service branch, but only for DELETE.
+    // Traced in App.jsx, the ONLY legitimate self-writes to one's own email-keyed doc
+    // are deletes — the migration handoff (App.jsx:802 batch.delete(oldRef)) and the
+    // Ghost Killer (App.jsx:1925 deleteDoc(emailRef)). There is no legitimate flow in
+    // which a user creates or updates their OWN email-keyed directory record; those
+    // records are always authored by an admin (FleetCanvasManager.jsx:180,192) or by
+    // Tier 1 (LandlordDashboard.jsx:55).
+    //
+    // Verified non-regressions (see emulator tests):
+    //  - Owner migration's batch.set(newRef) is UID-keyed with bossUid == own uid,
+    //    so it still passes via the create branch below.
+    //  - Ghost Killer's deleteDoc(emailRef) still passes via the self-delete branch.
+    // =====================================================================
     match /artifacts/cello-inventory-manager/employee_directory/{email} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (
-        // 🚀 THE FIX: Allows users to securely delete/claim their own pre-provisioned email ghost profile during Migration
-        email == request.auth.token.email || 
-        
-        // Existing RBAC Logic
-        (request.method == 'create' && (request.resource.data.bossUid == request.auth.uid || isDistributorAdmin(request.resource.data.bossUid) || isAuthorizedAreaAdmin(request.resource.data.bossUid))) ||
-        (resource != null && (resource.data.bossUid == request.auth.uid || isDistributorAdmin(resource.data.bossUid) || isAuthorizedAreaAdmin(resource.data.bossUid)))
+
+      allow create: if isAuthenticated() && (
+        request.resource.data.bossUid == request.auth.uid ||
+        isDistributorAdmin(request.resource.data.bossUid) ||
+        isAuthorizedAreaAdmin(request.resource.data.bossUid)
       );
+
+      allow update: if isAuthenticated() && resource != null && (
+        resource.data.bossUid == request.auth.uid ||
+        isDistributorAdmin(resource.data.bossUid) ||
+        isAuthorizedAreaAdmin(resource.data.bossUid)
+      );
+
+      // Self-service delete (migration / ghost-killer) retained from live, plus the
+      // same admin authority live grants for deleting someone else's record.
+      allow delete: if isAuthenticated() && (
+        email == request.auth.token.email ||
+        (resource != null && (
+          resource.data.bossUid == request.auth.uid ||
+          isDistributorAdmin(resource.data.bossUid) ||
+          isAuthorizedAreaAdmin(resource.data.bossUid)
+        ))
+      );
+    }
+
+    // =====================================================================
+    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix] AgentProfileView.jsx
+    // reads/writes artifacts/cello-inventory-manager/settings/{achievements,rpg_ranks}
+    // (~lines 140, 149, 208, 337) but this path never had a dedicated rule — it fell
+    // through to the top-level isSuperAdmin()-only catch-all, so no real customer
+    // could ever configure OR even READ Rank Config / Achievement Badges. The
+    // failure was silent (wrapped in try/catch), so nobody had seen an error — the
+    // feature just quietly did nothing for every company, including the
+    // COMPANY_OWNER it's built for (edit_rank_config's default tier).
+    //
+    // NOTE ON SCOPE: unlike every other settings doc in this file, this path is NOT
+    // nested under users/{bossUid} — AgentProfileView.jsx reads/writes it at
+    // artifacts/cello-inventory-manager/settings/*, the same top-level as
+    // employee_directory. That makes it a single doc SHARED BY EVERY COMPANY in this
+    // Firestore project, not scoped per tenant — a pre-existing app design choice,
+    // not something a rules-only fix can correct. Any company's COMPANY_OWNER/ADMIN
+    // can overwrite the rank ladder / badge list that every OTHER company also sees.
+    // A real per-tenant fix would mean moving this data under
+    // users/{bossUid}/settings/ in the app code — out of scope here. Flagged per
+    // this project's standing "document, don't silently half-fix" convention.
+    //
+    // READ: any authenticated employee, any tier — AgentProfileView's own
+    // useEffects fetch both docs unconditionally for whoever is viewing their
+    // profile page, so every tier (down to Rookie) needs read access to see their
+    // own rank/badges.
+    //
+    // WRITE: restricted to the same roles the UI itself gates the config modals
+    // behind (showRankConfig / showBadgeConfig both check
+    // `userRole === 'ADMIN' || userRole === 'COMPANY_OWNER'`).
+    //
+    // Verified via Firestore Rules emulator:
+    //  - COMPANY_OWNER -> read ALLOWED, write ALLOWED
+    //  - ADMIN (distributor admin) -> read ALLOWED, write ALLOWED
+    //  - AREA_ADMIN / FLEET_CAPTAIN / FIELD_OPERATIVE / ROOKIE -> read ALLOWED (so
+    //    their own profile page still renders rank/badges), write DENIED
+    //  - Unauthenticated -> read and write DENIED
+    // =====================================================================
+    match /artifacts/cello-inventory-manager/settings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isRankConfigEditor();
     }
 
     match /artifacts/cello-inventory-manager/users/{bossUid} {
@@ -72,47 +284,243 @@ service cloud.firestore {
 
       match /stock_requests/{requestId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid); 
-        allow delete: if false;       
+        allow create, update: if isSalesman(bossUid);
+        allow delete: if false;
       }
       match /branches/{branchLocation}/inventory/{productId} {
-        allow read: if isSalesman(bossUid);   
-        allow write: if isSalesman(bossUid); 
+        allow read: if isSalesman(bossUid);
+        allow write: if isSalesman(bossUid);
       }
 
       match /products/{productId} {
         allow read: if isSalesman(bossUid);
-        allow update: if isAreaAdmin(bossUid);
-        allow create, delete: if false; 
+        // =====================================================================
+        // [CHANGE 9 — PRODUCTS UPDATE, EXTEND TO FLEET CAPTAIN] Same bug shape as
+        // [CHANGE 2]'s mapSettings gap and [CHANGE 4]/[CHANGE 8]'s motorists gap:
+        // isAreaAdmin() alone only recognizes the literal 'AREA_ADMIN' role, so it
+        // never covered FLEET_CAPTAIN.
+        //
+        // FleetCanvasManager.jsx's Load Canvas / Clear Canvas actions
+        // (handleLoadCanvas ~265, handleClearCanvas ~342) are NOT gated behind
+        // canEditFleet/canEditRoster — any account that can view the Fleet &
+        // Canvas page (view_fleet, ON BY DEFAULT for Tier 4/FLEET_CAPTAIN) can
+        // select an agent and Load/Clear their vehicle canvas. When the selected
+        // agent is office-tier or Headquarters-based (not a real field branch),
+        // that write lands on THIS collection (Master Vault), not a branch
+        // warehouse — reachable by a plain Fleet Captain with zero settings
+        // changes, including a HQ-based Fleet Captain moving stock for their own
+        // HQ-based team, which is normal day-to-day fleet operation, not an edge
+        // case.
+        //
+        // NOT gated behind canEditRoster/isAuthorizedAreaAdmin: moving
+        // vehicle-canvas stock is a routine fleet-operations action, not roster
+        // (hire/fire) management — same reasoning [CHANGE 2] already used for the
+        // mapSettings fleet-paintbrush write (isAreaAdmin(bossUid) ||
+        // isFleetCaptain(bossUid), no canEditRoster check). Area Admin's own
+        // existing `update` access here already has no canEditRoster requirement
+        // either, so Fleet Captain is added on the same terms, not stricter ones.
+        //
+        // Verified via Firestore Rules emulator:
+        //  - Fleet Captain, own company -> update ALLOWED (the fix)
+        //  - Area Admin, own company -> update ALLOWED (unchanged)
+        //  - Field Operative / Rookie -> DENIED (unchanged, no standing here)
+        //  - Different company (bossUid mismatch) -> DENIED
+        //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
+        // =====================================================================
+        allow update: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
+        allow create, delete: if false;
       }
+      // [INVESTIGATED — 2026-07-24, customer visibility gap] Every employee's browser
+      // downloads the FULL company customer list; the app's own display logic only
+      // narrows it down for 2 of 5 screens (MapMissionControl, JourneyView, via
+      // App.jsx's permittedCustomers memo). Investigated whether the `list` query
+      // itself could be narrowed so a matching rule could actually enforce a per-tier
+      // scope — same question as the transactions gap below, same conclusion:
+      //
+      // CANNOT be done safely today — parked, same category as transactions.
+      //  1. permittedCustomers filters by priceTier (Retail/Grosir/Ecer), NOT by an
+      //     assignedAgent identity. customers DO carry an `assignedAgent` field (see
+      //     JourneyView.jsx:474, MerchantSalesView.jsx:272), but it's a free-text
+      //     AGENT NAME used for a soft "you're stepping on someone's territory"
+      //     warning, matched with fuzzy .includes() — not a stable id, and not what
+      //     visibility is actually scoped by.
+      //  2. Even scoping by priceTier would break things: legacy customers missing an
+      //     explicit priceTier get classified client-side via a string-fuzzy fallback
+      //     (App.jsx ~2929-2937, matching "GROSIR"/"GOLD"/"WHOLESALE" etc. inside a
+      //     free-text `tier` field). Firestore `where` cannot run that fallback, and it
+      //     silently excludes documents missing the field rather than matching them —
+      //     so a narrowed query would make every legacy customer invisible to non-admins.
+      //  3. Bigger problem: MerchantSalesView (App.jsx:3512, the Sales Terminal every
+      //     tier uses to make a sale) and CustomerManagement (App.jsx:3576, "🚀 REQUIRED
+      //     FOR BENCHMARKS") both intentionally receive the UNFILTERED `customers` list,
+      //     not permittedCustomers — a Rookie needs to be able to sell to or look up ANY
+      //     company customer, not just their own patch. Narrowing the base query would
+      //     break the core sales workflow for every Tier 3-6 employee, not just a display
+      //     nicety.
+      // Fixing this for real needs a data-model change (a real per-customer owner id used
+      // consistently for both access control AND the sales/directory screens, plus a
+      // product decision on whether "sell to anyone" is still a requirement) — out of
+      // scope here, same as the transactions gap.
+      // =====================================================================
+      // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER, DRAFTED 2026-07-25]
+      // Unlike the READ gap investigated above (still blocked, still unchanged — every
+      // tier keeps unfiltered read so "sell to/look up anyone" keeps working), WRITE is a
+      // per-document check, not a list query, so it CAN be scoped without breaking that
+      // read-side requirement.
+      //
+      // New customers_view_only / customers_edit_own_region / customers_edit_global tier
+      // (config/permissions.js CUSTOMER_EDIT_PERMS, editable in Settings > Tiers & Logic).
+      // DEFAULT is 'global' — a company that has never touched this dropdown sees byte-
+      // for-byte the same isSalesman(bossUid) behavior as before this change.
+      //
+      // create: only blocked for view_only. Deliberately NOT region-locked even under
+      // own_region — New Outlet Onboarding already has its own, separate safety net (every
+      // field-agent-created customer lands as status:'PENDING' and needs admin approval
+      // before it's live; see handleApproveNOO in CustomerManager.jsx). Region-locking
+      // create as well would block a field agent from onboarding a store they're
+      // physically standing in front of just because head office typed their branch name
+      // differently — that's a bigger product change than "editing rights", not made here.
+      //
+      // update: own_region may only touch a customer whose classified `region` (Kabupaten)
+      // matches their own profile's `location`, OR whose region is unclassified/legacy
+      // (isUnclassifiedRegion — empty, "Unknown X", "Unmapped X", "Uncategorized X").
+      // FALLBACK DECISION: unclassified customers are left editable by every own_region
+      // employee rather than locked until someone with global access fixes them — KML bulk
+      // imports (CustomerManager.jsx handleImportKML) never populate region at all, and
+      // legacy pre-SSOT-validation records may not either, so treating "unknown" as "no
+      // one can touch this" would strand an unknown slice of the live directory. Fails
+      // toward not blocking legitimate work, same posture as the rest of this file.
+      //
+      // Bulk rename / folder delete / fast-store-move / Data Scrub / KML import / NOO
+      // approval (all in CustomerManager.jsx) are UNCHANGED here — they're already gated
+      // behind the separate, stronger PIN-unlocked isAdmin "boss mode" in the UI, and that
+      // population already has full read/write via the isVaultOwner/isDistributorAdmin
+      // catch-all above regardless of this tier.
+      //
+      // Verified via Firestore Rules emulator (15/15 scenarios, not checked in — see the
+      // owner's session notes for the full run):
+      //  - own_region, resource.region == employee.location (case/whitespace-normalized) -> ALLOWED
+      //  - own_region, resource.region is a DIFFERENT classified region -> DENIED
+      //  - own_region, resource.region missing/"Unknown Kabupaten"/"UNMAPPED KABUPATEN" -> ALLOWED (the fallback)
+      //  - view_only -> create DENIED, update DENIED, read still ALLOWED
+      //  - no permission_matrix doc at all (fresh company) -> update ALLOWED (global default, unchanged)
+      //  - global (explicit or default) -> unaffected, any customer editable
+      //  - Vault owner / distributor admin (isAdmin) -> unaffected, full access via the
+      //    users/{bossUid} catch-all regardless of this tier
+      // =====================================================================
       match /customers/{customerId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid);
-        allow delete: if false; 
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only';
+        allow update: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
+          customerAccessLevel(bossUid) != 'own_region' ||
+          isUnclassifiedRegion(resource.data.get('region', '')) ||
+          isOwnRegionMatch(bossUid)
+        );
+        allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);
         }
       }
+
+      // [WHY NOT] The discarded draft narrowed this read to a per-tier
+      // Personal/Regional/Global scope (the original task's goal). It CANNOT be done
+      // here without an app change, and deploying it would have broken the app for
+      // every non-global tier: useDatabaseSync.js:50 subscribes every logged-in user
+      // to an UNFILTERED company-wide collection query (only `where timestamp >= 7d`).
+      // Firestore rejects a `list` outright unless the QUERY itself is constrained to
+      // documents the rules allow — it does not silently filter. A scoped rule would
+      // therefore permission-deny that core listener for all of Tier 3-6. Left at live
+      // behavior; see "carried-forward gap" in the report.
       match /transactions/{transactionId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false; 
+        allow update, delete: if false;
       }
+
       match /motorists/{motoristId} {
         allow read: if isSalesman(bossUid);
-        allow update: if isAreaAdmin(bossUid) || (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
-        // 🚀 THE FIX: Authorized Area Admins can hire and fire!
-        allow create, delete: if isAuthorizedAreaAdmin(bossUid);
+        // The second clause is load-bearing: it lets a field agent update their OWN
+        // motorist doc, which is how activeCanvas stock is deducted during a sale
+        // (useTransactionEngine.js:203).
+        //
+        // =====================================================================
+        // [CHANGE 8 — MOTORISTS UPDATE, EXTEND TO DELEGATED FLEET CAPTAIN + REGION LOCK]
+        // Previously this was isAreaAdmin(bossUid) — the literal 'AREA_ADMIN' role
+        // only, with NO region check (any Area Admin could update ANY agent in ANY
+        // region for their company via a direct SDK call). CREATE/DELETE on this
+        // same collection were already fixed ([CHANGE 3]/[CHANGE 4]) to use
+        // isAuthorizedAreaAdmin() — covers a delegated (canEditRoster=true)
+        // AREA_ADMIN OR FLEET_CAPTAIN, region-locked to their own location. UPDATE
+        // was missed.
+        //
+        // FleetCanvasManager.jsx's canEditFleet (~line 41) gates the Edit button
+        // behind exactly that same authority (isAdmin || (isAreaAdmin &&
+        // canEditRoster===true)), so a delegated Fleet Captain saw an Edit button
+        // that always failed server-side — a live "UI says yes, server says no" gap.
+        //
+        // Uses resource.data.location (the doc's location BEFORE the write) — the
+        // same shape as the DELETE rule below, not request.resource.data.location
+        // (CREATE's shape). This only checks "is this agent currently in my own
+        // region", so the legitimate transfer-to-a-different-branch flow
+        // (handleSaveAgent editing an agent's `location` field to a NEW value)
+        // keeps working: FleetCanvasManager's own roster filter (~line 43-48)
+        // already only ever shows an Area Admin/Fleet Captain agents CURRENTLY in
+        // their own region, so any UI-reachable edit already satisfies this check
+        // regardless of what the new location becomes.
+        //
+        // Verified via Firestore Rules emulator:
+        //  - Authorized Fleet Captain, update within own region -> ALLOWED (the fix)
+        //  - Authorized Fleet Captain, update an agent in a DIFFERENT region -> DENIED
+        //  - Authorized Area Admin, own region -> ALLOWED (unchanged); different region -> DENIED
+        //  - Non-authorized Area Admin/Fleet Captain (no canEditRoster) -> DENIED
+        //  - Field agent updating their OWN doc (agentId match) -> unaffected, ALLOWED
+        //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
+        // =====================================================================
+        allow update: if (isAuthorizedAreaAdmin(bossUid) && resource.data.location == getEmployeeProfile().location) ||
+          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
+
+        // =====================================================================
+        // [CHANGE 3 — OPTION B, APPLIED 2026-07-24] Delegated Area Admins are now
+        // locked to hiring/firing agents in their OWN region only.
+        //
+        // Previously a canEditRoster-delegated Area Admin could create or delete an
+        // agent record in ANY region for their company, not just their own — the UI
+        // never offered this (FleetCanvasManager.jsx:44 filters the roster to the
+        // admin's own location, :89 defaults new agents to it), but nothing at the
+        // rules level stopped a direct SDK/REST call from doing it anyway.
+        //
+        // INVESTIGATED: does the app have a legitimate "move an agent to a different
+        // branch" feature that this would break? Yes — FleetCanvasManager.jsx's
+        // handleSaveAgent (~line 166-177) lets an Area Admin open an EXISTING agent
+        // and change their `location` field, then saves it with `batch.update(...)`.
+        // That is an UPDATE, not a create+delete — and the `update` rule right above
+        // this block is untouched by this change (still just isAreaAdmin(bossUid),
+        // no region check). So the legitimate transfer flow keeps working exactly as
+        // before; only creating a brand-new agent, or deleting an existing one,
+        // outside the admin's own region is now blocked.
+        //
+        // Verified via Firestore Rules emulator (not just read — actually run):
+        //  - Authorized Area Admin, create/delete within own region -> ALLOWED (unchanged)
+        //  - Authorized Area Admin, create/delete in a DIFFERENT region -> now DENIED (the fix)
+        //  - Vault owner (Tier 1) -> unaffected, create/delete anywhere via the
+        //    users/{bossUid} catch-all above, which this block doesn't touch
+        //  - Non-authorized Area Admin (no canEditRoster) -> still DENIED, same as before
+        // =====================================================================
+        allow create: if isAuthorizedAreaAdmin(bossUid) &&
+          request.resource.data.location == getEmployeeProfile().location;
+        allow delete: if isAuthorizedAreaAdmin(bossUid) &&
+          resource.data.location == getEmployeeProfile().location;
       }
+
       match /samplings/{sampleId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false; 
+        allow update, delete: if false;
       }
       match /eod_reports/{reportId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false; 
+        allow update, delete: if false;
       }
       match /account_transfers/{transferId} {
         allow read: if isSalesman(bossUid);
@@ -123,23 +531,62 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid);
         allow write: if false;
       }
+      // [CHANGE 2 — mapSettings fleet-paintbrush gap] The bare `allow write: if false`
+      // here looked like a hard block for everyone, but the catch-all above
+      // (isVaultOwner || isDistributorAdmin) already ORs in and grants the owner/
+      // distributor-admin write access regardless of this line — confirmed live via
+      // emulator (see rules-test/test-mapsettings.js). This change ADDS Area Admin and
+      // Fleet Captain to that same write access, matching Journey Plan's fleet
+      // paintbrush now being shown to Tier 1-4 (see JourneyView.jsx canManageFleetSettings
+      // / config/permissions.js isFleetManagementTier). isAreaAdmin() alone does NOT
+      // cover Fleet Captain — it only checks for the literal 'AREA_ADMIN' role string —
+      // so a dedicated isFleetCaptain() check was added above rather than assuming
+      // isAreaAdmin() already covered both, the way an earlier draft of this exact line
+      // incorrectly assumed. Field Operative / Rookie remain denied (isSalesman only
+      // grants them read here, same as before).
       match /mapSettings/{docId} {
         allow read: if isSalesman(bossUid);
-        allow write: if false;
+        allow write: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
       }
       match /audit_logs/{logId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false; 
+        allow update, delete: if false;
       }
       match /audit_vault/{dateKey}/logs/{logId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false; 
+        allow update, delete: if false;
       }
+      // [INVESTIGATED — 2026-07-24] Same visibility sweep as customers above, for the
+      // notification feed. App.jsx:258 subscribes to the ENTIRE notifications
+      // collection with NO query constraint at all (not even a time gate), then
+      // filters client-side in combinedNotifications (App.jsx:355-358) by `agentId`.
+      //
+      // Better-positioned than customers: `agentId` is a real per-recipient id (a
+      // motorist id, or the literal string 'ADMIN' for broadcast-to-admins), not a
+      // fuzzy name — so in principle `where('agentId','==', agentProfileId)` for a
+      // regular user, or `where('agentId','==','ADMIN')` for an admin, would reproduce
+      // today's client filter, with a matching rule read predicate keyed off the same
+      // field.
+      //
+      // NOT proposed as a ready change — one blocking gap found, and one unverifiable:
+      //  - components/CustomerManager.jsx ~line 761 (the "🏪 NOO Verification Required"
+      //    notification) writes with NO agentId field at all, relying on
+      //    combinedNotifications' `!n.agentId` fallback to route it to Admins. A
+      //    query-based scope has no equivalent for "field is absent" — it would
+      //    silently drop that notification for every admin.
+      //  - This collection is never time-gated or pruned, so older documents written
+      //    before this field convention existed may also lack agentId; confirming that
+      //    needs a live data check this investigation didn't have access to.
+      // Path to actually doing this: (a) fix the CustomerManager.jsx write to always
+      // set agentId ('ADMIN' for that notification type), (b) confirm/backfill any
+      // existing documents missing the field, THEN (c) narrow the query + tighten this
+      // rule to check agentId. (a)-(b) are a separate, small follow-up — not done here
+      // since this task was investigate-only.
       match /notifications/{notificationId} {
         allow read: if isSalesman(bossUid);
-        allow update: if isSalesman(bossUid); 
+        allow update: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid); // 🚀 THE FIX: Unlocks Bell Notifications for Hand-offs & EODs
         allow delete: if false;
       }
@@ -150,6 +597,94 @@ service cloud.firestore {
         allow create, update: if isSalesman(bossUid);
         allow delete: if false;
       }
+
+      // =====================================================================
+      // [CHANGE 5 — pending_audits gap fix] Previously had NO dedicated rule at
+      // all, so it fell through to the users/{bossUid} catch-all = owner/
+      // distributor-admin ONLY. But StockOpnameView.jsx's actual submit flow
+      // (handleCommit, ~line 224-257) is built for Area Admins: isAreaAdmin is
+      // true for anyone who is NOT userRole 'ADMIN' (the "BLIND COUNT ENFORCED"
+      // count mode, auditType 'BRANCH_WAREHOUSE'), and it's THEM who addDoc()s
+      // into pending_audits — HQ (isHighCommand/'ADMIN') only ever reads/
+      // approves/rejects. Under the live rules, every non-ADMIN submitting a
+      // stock count gets a silent permission-denied.
+      //
+      // THE FIX: add isAreaAdmin(bossUid) create+read here. ADMIN's own
+      // read/update/create/delete keep working unchanged via the catch-all
+      // above (Firestore ORs across every matching rule block, same as the
+      // `products` collection's isAreaAdmin-only `update` rule alongside it).
+      // update/delete stay closed here — HQ approve/reject
+      // (updateDoc in handleApprove/handleReject) is the ONLY code path that
+      // updates a pending_audits doc, and that's admin-only UI, already
+      // covered by the catch-all.
+      //
+      // Verified via Firestore Rules emulator:
+      //  - Area Admin, own company -> create ALLOWED, read ALLOWED (the fix)
+      //  - Area Admin, different company (bossUid mismatch) -> DENIED
+      //  - Field Operative / Rookie (no AREA_ADMIN/ADMIN tag) -> DENIED
+      //  - Vault owner (Tier 1) -> unaffected, full access via catch-all
+      //  - Area Admin -> update/delete still DENIED (admin-only, unchanged)
+      // =====================================================================
+      // =====================================================================
+      // [CHANGE 10 — PENDING_AUDITS CREATE, MATCH THE view_stock_opname TOGGLE]
+      // [CHANGE 5] above fixed this collection's total lack of a rule by adding
+      // isAreaAdmin(bossUid) create+read — matching the assumption at the time that
+      // only an Area Admin would ever reach StockOpnameView.jsx's count-submission
+      // screen.
+      //
+      // Re-investigated here: StockOpnameView.jsx's own gating is NOT actually tied
+      // to the AREA_ADMIN role. `isHighCommand = userRole === 'ADMIN'` and
+      // `isAreaAdmin = !isHighCommand` (~line 50-53) — the component treats EVERY
+      // non-ADMIN role as eligible for the "count" submission flow. Who actually
+      // REACHES this screen at all is gated purely by the `view_stock_opname`
+      // Settings toggle (config/permissions.js), a fully dynamic per-tier
+      // permission the owner can turn on for ANY tier — AREA_ADMIN, FLEET_CAPTAIN,
+      // or even FIELD_OPERATIVE/ROOKIE, not only Area Admin. So the literal-
+      // AREA_ADMIN-only create rule had the same "isAreaAdmin() doesn't cover
+      // Fleet Captain" gap as [CHANGE 4]/[CHANGE 8]/[CHANGE 9] — just one Settings
+      // toggle away from being hit for ANY tier, not only Fleet Captain.
+      //
+      // FIX: widen create to isSalesman(bossUid) — any real employee of this
+      // company — instead of adding one more named-role function. The rule's job
+      // here is company membership (this is bossUid's data, not someone else's),
+      // not re-deriving which tiers the app currently grants view_stock_opname to;
+      // that decision already lives in Settings and can change at any time without
+      // a rules redeploy. Safe to open this wide: CREATE here is low-risk — it only
+      // proposes a pending_audits doc, and nothing acts on it until an ADMIN
+      // manually reviews and approves via handleApproveAudit (viewMode
+      // 'review'/'monitor', both isHighCommand-gated) — a create here can never
+      // touch real inventory on its own.
+      //
+      // READ is intentionally left unchanged (isAreaAdmin(bossUid) only) — no code
+      // path in StockOpnameView.jsx lets a non-ADMIN submitter read back
+      // pending_audits (review/monitor are both isHighCommand-only), so there's
+      // nothing to fix on the read side, and no reason to open visibility into
+      // other agents' submitted counts beyond what's already there.
+      //
+      // Verified via Firestore Rules emulator:
+      //  - Fleet Captain (any canEditRoster standing — irrelevant here) -> create ALLOWED (the fix)
+      //  - Field Operative / Rookie -> create ALLOWED (the fix — matches the toggle's own reach)
+      //  - Area Admin -> create ALLOWED (unchanged)
+      //  - Different company (bossUid mismatch) -> create DENIED
+      //  - Area Admin -> read ALLOWED (unchanged); Fleet Captain/Field Operative -> read DENIED (unchanged)
+      //  - Vault owner / distributor admin (ADMIN) -> unaffected, full access via catch-all
+      // =====================================================================
+      match /pending_audits/{auditId} {
+        allow read: if isAreaAdmin(bossUid);
+        allow create: if isSalesman(bossUid);
+        allow update, delete: if false;
+      }
+
+      // [NOTE — no change] These collections the app touches have NO explicit rule
+      // here, so they fall through to the users/{bossUid} catch-all above =
+      // owner/distributor-admin ONLY: procurement, appSettings, mapBorders, canvas,
+      // and the branches/{location} parent doc. That means useDatabaseSync.js:53's
+      // `procurement` listener is already permission-denied for every Tier 3-6 user
+      // on the LIVE rules today (it fails silently in the console). Left as-is —
+      // opening it up would be a loosening nobody asked for — but it is worth knowing
+      // if an agent ever reports missing procurement data. quarantine_logs is in the
+      // same boat as pending_audits (HQ-only reads it, no non-admin write path in the
+      // app) but is OUT OF SCOPE for this fix — only pending_audits was investigated.
     }
   }
 }

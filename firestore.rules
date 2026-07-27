@@ -1,15 +1,15 @@
 // =============================================================================
-// RECONCILED DRAFT — NOT DEPLOYED. Awaiting owner review + manual
-//   firebase deploy --only firestore:rules
+// DEPLOYED 2026-07-28 via `firebase deploy --only firestore:rules` to
+//   cello-inventory-manager. This file IS the live rules as of that date.
 //
-// Baseline: firestore.rules.deployed-baseline (the rules currently LIVE in the
-// Firebase Console as of 2026-07-23). This file is that baseline with ONE
-// deliberate security change (marked [CHANGE 1] below) plus comments.
+// Baseline: firestore.rules.deployed-baseline is kept in sync with this file —
+// it's the instant rollback copy if a future change goes wrong.
 //
-// Everything else is intentionally byte-for-byte the live behavior. An earlier
-// draft in this repo rewrote these rules from scratch on the false premise that
-// no rules existed; that draft has been discarded because several of its changes
-// would have broken the live app (see [WHY NOT] notes below).
+// Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
+// intentionally byte-for-byte the rules that were live before 2026-07-23. An
+// earlier draft in this repo rewrote these rules from scratch on the false
+// premise that no rules existed; that draft was discarded because several of
+// its changes would have broken the live app (see [WHY NOT] notes below).
 // =============================================================================
 
 rules_version = '2';
