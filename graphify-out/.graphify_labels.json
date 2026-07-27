@@ -1,0 +1,23 @@
+{
+  "0": "App.jsx",
+  "1": "MapMissionControl.jsx",
+  "2": "dependencies",
+  "3": "permissions.js",
+  "4": "devDependencies",
+  "5": "formatRupiah",
+  "6": "helpers.js",
+  "7": "package.json",
+  "8": "manifest.json",
+  "9": "KPM Inventory — Manual Test Checklist",
+  "10": "Firestore Security Rules — Deployment Checklist",
+  "11": "HallOfFameView.jsx",
+  "12": "test-batch1.mjs",
+  "13": "test-batch2.mjs",
+  "14": "React + Vite",
+  "15": "Duke3D.jsx",
+  "16": "CLAUDE.md",
+  "17": "eslint.config.js",
+  "18": "postcss.config.js",
+  "19": "tailwind.config.js",
+  "20": "vite.config.js"
+}

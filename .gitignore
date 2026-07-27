@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# graphify: regenerable per-file extraction cache, not meaningful to version control
+graphify-out/cache/

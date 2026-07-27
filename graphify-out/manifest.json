@@ -1,0 +1,382 @@
+{
+  ".claude/launch.json": {
+    "mtime": 1785075746.786544,
+    "ast_hash": "644474b0a788b8be2abb1e74a2671eeb",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1785137339.1124947,
+    "ast_hash": "84ad2eba286d541c2f078bf076c587d8",
+    "semantic_hash": ""
+  },
+  "eslint.config.js": {
+    "mtime": 1775260438.0,
+    "ast_hash": "49c8473bcfcec3aef596a5fb04a6df06",
+    "semantic_hash": ""
+  },
+  "firebase.json": {
+    "mtime": 1784862089.2230062,
+    "ast_hash": "c601a7bf318f185ac96b6ea9e14f1a89",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1784982180.153198,
+    "ast_hash": "2615897b8341a232593b87820b5a5a80",
+    "semantic_hash": ""
+  },
+  "postcss.config.js": {
+    "mtime": 1775260438.0,
+    "ast_hash": "470cfd3ee10fbff840b377e769485f3e",
+    "semantic_hash": ""
+  },
+  "public/manifest.json": {
+    "mtime": 1783904080.4795575,
+    "ast_hash": "67f553d2b53ac653584904c5d43e12bc",
+    "semantic_hash": ""
+  },
+  "rules-test/test-batch1.mjs": {
+    "mtime": 1785075746.7910526,
+    "ast_hash": "573e0c8ac1dd0727b88b0c84ba05e9bc",
+    "semantic_hash": ""
+  },
+  "rules-test/test-batch2.mjs": {
+    "mtime": 1785075746.792052,
+    "ast_hash": "116a3a2c6ed2d82ab40d31a73ac2f398",
+    "semantic_hash": ""
+  },
+  "src/AgentInventoryView.jsx": {
+    "mtime": 1785075746.7952523,
+    "ast_hash": "43ce3ae4282222362fa9ce46848ed788",
+    "semantic_hash": ""
+  },
+  "src/AgentProfileView.jsx": {
+    "mtime": 1784864845.3523653,
+    "ast_hash": "bb2e436b1e9b3c99d95c0ad2ed4628c2",
+    "semantic_hash": ""
+  },
+  "src/App.jsx": {
+    "mtime": 1785075746.7987566,
+    "ast_hash": "f1494e1d40b029e2135281188d7c8576",
+    "semantic_hash": ""
+  },
+  "src/ConsignmentFinanceView.jsx": {
+    "mtime": 1785075746.8007586,
+    "ast_hash": "24352d2aa44467b0eca298433980e191",
+    "semantic_hash": ""
+  },
+  "src/Duke3D.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "1b8ffb2b502a015c655fa16bad70c0c4",
+    "semantic_hash": ""
+  },
+  "src/EODReconciliationView.jsx": {
+    "mtime": 1785075746.804758,
+    "ast_hash": "460e0ffddfef8188c56faa8dbf10fc57",
+    "semantic_hash": ""
+  },
+  "src/FleetCanvasManager.jsx": {
+    "mtime": 1785075746.8067584,
+    "ast_hash": "7687be0565876aaf3da3e612c3ae33ac",
+    "semantic_hash": ""
+  },
+  "src/HallOfFameView.jsx": {
+    "mtime": 1781167177.4443436,
+    "ast_hash": "81c1632d46907a110bc883ff3a49d496",
+    "semantic_hash": ""
+  },
+  "src/JourneyView.jsx": {
+    "mtime": 1784866961.7784348,
+    "ast_hash": "65acb6aa33dfe057bd220c6ad1928526",
+    "semantic_hash": ""
+  },
+  "src/MapMissionControl.jsx": {
+    "mtime": 1785075746.8102689,
+    "ast_hash": "ad8600880bccd7bbb727aecf7a84d613",
+    "semantic_hash": ""
+  },
+  "src/MerchantSalesView.jsx": {
+    "mtime": 1785075746.813221,
+    "ast_hash": "99832ec36a85454c457a9bb23ee51f36",
+    "semantic_hash": ""
+  },
+  "src/MusicPlayer.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "706dacb434b9e87afc32c56793f4725e",
+    "semantic_hash": ""
+  },
+  "src/RestockVaultView.jsx": {
+    "mtime": 1785075746.8152213,
+    "ast_hash": "0ef484cc43e560a0cb0a8c1895bfa11e",
+    "semantic_hash": ""
+  },
+  "src/StockOpnameView.jsx": {
+    "mtime": 1785075746.8182213,
+    "ast_hash": "f5a01167b3bbba65e26b995d952790bb",
+    "semantic_hash": ""
+  },
+  "src/components/AuditVaultView.jsx": {
+    "mtime": 1784862089.2343984,
+    "ast_hash": "c3522db31e08bbc4e446b3900740e09d",
+    "semantic_hash": ""
+  },
+  "src/components/BiohazardTheme.jsx": {
+    "mtime": 1785075746.8197322,
+    "ast_hash": "75eff74b164d4ab49620bf5552456dd0",
+    "semantic_hash": ""
+  },
+  "src/components/BranchWarehouseManager.jsx": {
+    "mtime": 1785075746.8227308,
+    "ast_hash": "e58b340f60841117742bcbc8680c35d4",
+    "semantic_hash": ""
+  },
+  "src/components/CapybaraMascot.jsx": {
+    "mtime": 1782956856.8709369,
+    "ast_hash": "c679ca4a5cb5a7add0833f4c976dc34b",
+    "semantic_hash": ""
+  },
+  "src/components/CrownTransferProtocol.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "efee2561bab8c10ebd0dc7552973cf98",
+    "semantic_hash": ""
+  },
+  "src/components/CustomerManager.jsx": {
+    "mtime": 1785023349.128037,
+    "ast_hash": "ddb137e411ece64dc9c0640cd1800e0a",
+    "semantic_hash": ""
+  },
+  "src/components/DashboardBenchmarks.jsx": {
+    "mtime": 1775610009.7100692,
+    "ast_hash": "c386721d295f96415b8d3aaacf57e385",
+    "semantic_hash": ""
+  },
+  "src/components/DashboardView.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "24046b41ec25d20d5dd1ad44980a20df",
+    "semantic_hash": ""
+  },
+  "src/components/ExamineModal.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "234b64d0bd90715ad6170ce305fe061e",
+    "semantic_hash": ""
+  },
+  "src/components/HistoryReportView.jsx": {
+    "mtime": 1784976221.5791373,
+    "ast_hash": "c19953f11889dd38c69cd1952eb6c5c2",
+    "semantic_hash": ""
+  },
+  "src/components/ImageCropper.jsx": {
+    "mtime": 1782662016.3301377,
+    "ast_hash": "874c53641927f14c7e6cd4e47158d4dd",
+    "semantic_hash": ""
+  },
+  "src/components/LandlordDashboard.jsx": {
+    "mtime": 1784940781.5520635,
+    "ast_hash": "064c460b486d2b496ba3eb1428406f4d",
+    "semantic_hash": ""
+  },
+  "src/components/NotificationBell.jsx": {
+    "mtime": 1777967263.1734571,
+    "ast_hash": "f175d7455277bd08b22ac0565043f64f",
+    "semantic_hash": ""
+  },
+  "src/components/ResidentEvilInventory.jsx": {
+    "mtime": 1784552505.669849,
+    "ast_hash": "fad395f3010718b5cd7bb62e5df2e63c",
+    "semantic_hash": ""
+  },
+  "src/components/SafetyStatus.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "9bad21ba49a26dd82776d6ef3be30b26",
+    "semantic_hash": ""
+  },
+  "src/components/SamplingManager.jsx": {
+    "mtime": 1781841202.671774,
+    "ast_hash": "9122648b348ec8e7560391743a0a777c",
+    "semantic_hash": ""
+  },
+  "src/components/SettingsView.jsx": {
+    "mtime": 1785023349.128037,
+    "ast_hash": "a94352e1b724730774e0b6445afa82a6",
+    "semantic_hash": ""
+  },
+  "src/config/achievements.js": {
+    "mtime": 1781164388.2871633,
+    "ast_hash": "b8976b3ca6c2ab5226905e124c63aece",
+    "semantic_hash": ""
+  },
+  "src/config/firebase.js": {
+    "mtime": 1782961354.7332833,
+    "ast_hash": "b8d56fcc89f4bf62d8c12f3ab560be2d",
+    "semantic_hash": ""
+  },
+  "src/config/permissions.js": {
+    "mtime": 1785075746.8247318,
+    "ast_hash": "af05f4d4b79d738fbbe3e1d4fc510dc2",
+    "semantic_hash": ""
+  },
+  "src/hooks/useDatabaseSync.js": {
+    "mtime": 1785075746.8257313,
+    "ast_hash": "e1d7130945b125dbe212e9c6d91fc4f3",
+    "semantic_hash": ""
+  },
+  "src/hooks/useOfflineEngine.js": {
+    "mtime": 1783903209.6020942,
+    "ast_hash": "22ede58dffbb184b0f4b45d5b6fb74f9",
+    "semantic_hash": ""
+  },
+  "src/hooks/useTransactionEngine.js": {
+    "mtime": 1784862089.238884,
+    "ast_hash": "2971fcefd4677e0af4e573e95503c06d",
+    "semantic_hash": ""
+  },
+  "src/main.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "e13723e2574429d9a6d849727e3ff695",
+    "semantic_hash": ""
+  },
+  "src/utils/borderCache.js": {
+    "mtime": 1784646162.1337245,
+    "ast_hash": "1493bc6dabd89b6f6cbd9394a682a224",
+    "semantic_hash": ""
+  },
+  "src/utils/helpers.js": {
+    "mtime": 1785075746.8267322,
+    "ast_hash": "1621c2a4c5836834d3f32f8545b4183d",
+    "semantic_hash": ""
+  },
+  "tailwind.config.js": {
+    "mtime": 1775260438.0,
+    "ast_hash": "bdc1fb42179ecdc31cf2f9b3bbc8c30a",
+    "semantic_hash": ""
+  },
+  "vite.config.js": {
+    "mtime": 1783309425.3996155,
+    "ast_hash": "d0ac1054a5daef2a4d668cbbc6a3f5d1",
+    "semantic_hash": ""
+  },
+  ".github/workflows/build-check.yml": {
+    "mtime": 1785030100.2483897,
+    "ast_hash": "da2fad854b2856ff8d8daa9a28e47bf5",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1785137339.0984867,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "MANUAL_TEST_CHECKLIST.md": {
+    "mtime": 1785023395.8302846,
+    "ast_hash": "20507e7a3d4e9ed6a25c0fff65e44d90",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1775260438.0,
+    "ast_hash": "3f01850e9fce601d04d6dba39204c1d8",
+    "semantic_hash": ""
+  },
+  "SECURITY_RULES_DEPLOY_CHECKLIST.md": {
+    "mtime": 1784944549.2230606,
+    "ast_hash": "9fc024669ec66e8da33423459130c889",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1783904260.4097273,
+    "ast_hash": "c6749bda1380dddd4b3a30ae1c18a5d6",
+    "semantic_hash": ""
+  },
+  "public/apple-touch-icon.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "ce13f4b6f9e116aa16eb8abc276ccdac",
+    "semantic_hash": ""
+  },
+  "public/deal.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "9904882effea3ed48cb823ad6e2aca9e",
+    "semantic_hash": ""
+  },
+  "public/icon-192.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "90472c8161fef16c6796fa121c5c461f",
+    "semantic_hash": ""
+  },
+  "public/icon-512.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "364975c411f289ef052c7490a0f8ad8d",
+    "semantic_hash": ""
+  },
+  "public/idle.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "e18d3ea4dc31e98acd91c8a392a7c109",
+    "semantic_hash": ""
+  },
+  "public/kpm-final-logo.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "eea39221fec6f3dd3a80ed0e836f9862",
+    "semantic_hash": ""
+  },
+  "public/mr capy.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "e05d78cc3a3b0b331af821bbff4fb8a2",
+    "semantic_hash": ""
+  },
+  "public/talking.png": {
+    "mtime": 1775260438.0,
+    "ast_hash": "a7aab5df11163c7243cdbb73d1f1123a",
+    "semantic_hash": ""
+  },
+  "public/vite.svg": {
+    "mtime": 1775260438.0,
+    "ast_hash": "8e3a10e157f75ada21ab742c022d5430",
+    "semantic_hash": ""
+  },
+  "src/assets/react.svg": {
+    "mtime": 1775260438.0,
+    "ast_hash": "f0402b67b6ce880f65666bb49e841696",
+    "semantic_hash": ""
+  },
+  "src/monalisa.jpg": {
+    "mtime": 1766650222.228153,
+    "ast_hash": "9fc93f5e3f3b76f167443121458a678f",
+    "semantic_hash": ""
+  },
+  "public/Bit_Capybara_Fortnite_Dance_Video.mp4": {
+    "mtime": 1775260438.0,
+    "ast_hash": "28626718c61ed5e1f105fc3a2e450971",
+    "semantic_hash": ""
+  },
+  "public/disco_music.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "2ce01d84050e0e380a5b279b09e1ddde",
+    "semantic_hash": ""
+  },
+  "src/assets/music/Cult of the Lamb - Start a Cult.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "3d3d6613a717d76dbf308df4d340c6ae",
+    "semantic_hash": ""
+  },
+  "src/assets/music/God of War OST.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "c52b3bcc48471608d87c8823ef0f3041",
+    "semantic_hash": ""
+  },
+  "src/assets/music/Halo Theme - Epic Version.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "d8e5d3eccf52078b9a0d9adb4f419382",
+    "semantic_hash": ""
+  },
+  "src/assets/music/Ori and the Will of the WIsp - Kus First Flight.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "3ba3d2155dc2d28a7af24195ea0bbf88",
+    "semantic_hash": ""
+  },
+  "src/assets/music/RE 4 Saferoom Theme - Serenity.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "a17fff80db152b54e893a77474b35a56",
+    "semantic_hash": ""
+  },
+  "src/assets/music/Shadow of War - War Map.mp3": {
+    "mtime": 1775260438.0,
+    "ast_hash": "3894aaaa488d92767d5e384964b477e1",
+    "semantic_hash": ""
+  }
+}
