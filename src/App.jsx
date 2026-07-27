@@ -1510,22 +1510,22 @@ const handleGitHubMirror = async () => {
   const handleAdminApproveTransfer = async (request, isApproved) => {
       if (!window.confirm(`${isApproved ? 'Approve' : 'Reject'} the transfer of ${request.storeName} to ${request.toAgentName}?`)) return;
       try {
-          const batch = writeBatch(db);
-          
+          const operations = [];
+
           const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, request.id);
-          batch.update(reqRef, { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() });
+          operations.push({ type: 'update', ref: reqRef, data: { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() } });
 
           if (isApproved) {
               const storeTx = transactions.filter(t => (t.customerName || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
               storeTx.forEach(t => {
                   const tRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id);
-                  batch.update(tRef, { agentId: request.toAgentId, agentName: request.toAgentName });
+                  operations.push({ type: 'update', ref: tRef, data: { agentId: request.toAgentId, agentName: request.toAgentName } });
               });
 
               const targetCustomer = customers.find(c => (c.name || '').trim().toLowerCase() === request.storeName.trim().toLowerCase());
               if (targetCustomer) {
                   const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id);
-                  batch.update(custRef, { mappedBy: request.toAgentName });
+                  operations.push({ type: 'update', ref: custRef, data: { mappedBy: request.toAgentName } });
               }
 
               if (request.fromAgentId && request.fromAgentId !== 'ADMIN') {
@@ -1576,7 +1576,7 @@ const handleGitHubMirror = async () => {
               });
           }
 
-          await batch.commit();
+          await commitInChunks(db, writeBatch, operations);
           if (isApproved) await logAudit("TRANSFER_APPROVED", `Reassigned ${request.storeName} to ${request.toAgentName}`);
           triggerCapy(isApproved ? "Transfer complete! Debt reassigned." : "Transfer declined.");
       } catch(e) { console.error(e); alert("Failed: " + e.message); }

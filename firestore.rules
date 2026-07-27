@@ -675,6 +675,17 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      // [ADDED — production_targets defense-in-depth] RestockVaultView.jsx reads/
+      // writes this collection but the whole screen is gated behind the owner-only
+      // isAdmin flag at the App.jsx level — nothing reachable today actually needs
+      // rules-level protection. Was falling through to the users/{bossUid} catch-all
+      // above (isVaultOwner || isDistributorAdmin) same as procurement/appSettings/
+      // mapBorders/canvas below; this is that same behavior made explicit, in case
+      // the UI gate ever changes. No behavior change.
+      match /production_targets/{targetId} {
+        allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
+      }
+
       // [NOTE — no change] These collections the app touches have NO explicit rule
       // here, so they fall through to the users/{bossUid} catch-all above =
       // owner/distributor-admin ONLY: procurement, appSettings, mapBorders, canvas,
