@@ -11,7 +11,7 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
         const statsMap = {};
 
         motorists.forEach(m => {
-            if (m.id !== 'master_owner') {
+            if (m.id !== 'master_owner' && m.id !== 'ADMIN_VEHICLE' && m.id !== 'VAULT') {
                 statsMap[m.id] = { ...m, totalOmset: 0, totalTransactions: 0 };
             }
         });

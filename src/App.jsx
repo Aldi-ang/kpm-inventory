@@ -211,6 +211,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   // cap matters here, and committing sequentially/paced avoids flooding
                   // Firestore's write stream the moment signal comes back.
                   const operations = [];
+                  const processedNoo = [];
+                  const processedTx = [];
 
                   // 1. Flush Blind-Drop NOO Profiles
                   for (const noo of offlineNoo) {
@@ -221,7 +223,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
                       operations.push({ type: 'set', ref, data: { ...payload, status: 'PENDING_OFFLINE_SYNC', syncedAt: serverTimestamp() } });
 
-                      await clearProcessedItem('noo_profiles', localId);
+                      processedNoo.push(localId);
                   }
 
                   // 2. Flush Offline Sales Receipts
@@ -236,10 +238,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
                       operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
 
-                      await clearProcessedItem('transactions', localId);
+                      processedTx.push(localId);
                   }
 
                   await commitInChunks(db, writeBatch, operations);
+
+                  // 🚨 FIX: only clear the local queue AFTER the cloud write is confirmed — clearing
+                  // first meant a failed commit lost these sales for good, with nothing left to retry.
+                  for (const localId of processedNoo) await clearProcessedItem('noo_profiles', localId);
+                  for (const localId of processedTx) await clearProcessedItem('transactions', localId);
 
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
                   triggerCapy(`✅ Sync Complete! ${totalItems} items secured in Master Vault.`);
@@ -1673,6 +1680,14 @@ const handleGitHubMirror = async () => {
                   agentDoc = await t.get(agentRef);
               }
 
+              // 🚨 FIX: read the EOD report itself so two admins verifying the same report at once
+              // can't both succeed — without this read in the transaction's read-set, Firestore has
+              // no way to detect the conflict and stock gets double-credited.
+              const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
+              const eodSnap = await t.get(eodRef);
+              if (!eodSnap.exists()) throw new Error('Laporan EOD sudah tidak ada.');
+              if (eodSnap.data().status === 'VERIFIED') throw new Error('Laporan ini sudah diverifikasi.');
+
               // ==========================================
               // ✍️ PHASE 2: EXECUTE ALL WRITES LAST
               // ==========================================
@@ -1802,7 +1817,6 @@ const handleGitHubMirror = async () => {
               }
 
               // 2C. Update the EOD Report Status
-              const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
           
@@ -3395,7 +3409,7 @@ const handleGitHubMirror = async () => {
                   agentProfileId={agentProfileId}
                   db={db}
                   appId={appId}
-                  userId={user?.uid}
+                  userId={userId}
                   transactions={transactions}
                   storage={storage}
                   appSettings={appSettings}

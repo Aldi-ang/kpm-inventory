@@ -463,7 +463,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         let topAgentId = null;
         let maxYearOmset = 0;
         Object.keys(yearlyAgentOmset).forEach(aId => {
-            if (aId !== 'master_owner' && aId !== 'ADMIN' && yearlyAgentOmset[aId] > maxYearOmset) {
+            if (aId !== 'master_owner' && aId !== 'ADMIN' && aId !== 'ADMIN_VEHICLE' && aId !== 'VAULT' && yearlyAgentOmset[aId] > maxYearOmset) {
                 maxYearOmset = yearlyAgentOmset[aId];
                 topAgentId = aId;
             }
@@ -883,7 +883,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             
                             <div className="flex justify-between items-start mb-4 relative z-10 gap-4">
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Lifetime Career EXP</span>
+                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Omset 7 Hari</span>
                                     <span className="text-3xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight leading-none mt-1" style={{ color: safeCurrentHex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} <span className="text-lg">XP</span></span>
                                 </div>
                                 {/* 🚀 MATRIX: Override EXP access */}
@@ -1116,7 +1116,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     </div>
                                     
                                     <h4 className={`text-sm font-black uppercase tracking-widest mb-1 ${stats.isTopAgentOfYear ? 'text-yellow-400' : 'text-slate-500'}`}>Regional MVP {stats.currentYearString}</h4>
-                                    <p className="text-[10px] text-slate-400 max-w-[200px]">Highest grossing sales operative in the current fiscal year.</p>
+                                    <p className="text-[10px] text-slate-400 max-w-[200px]">Penjual terbaik 7 hari terakhir.</p>
                                     {stats.isTopAgentOfYear && <div className="mt-4 px-4 py-1.5 bg-yellow-900/50 border border-yellow-500/50 rounded-full text-[9px] font-black text-yellow-300 uppercase tracking-widest shadow-inner">Active Champion</div>}
                                 </div>
                             </div>
