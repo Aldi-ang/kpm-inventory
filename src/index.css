@@ -1,3 +1,8 @@
+/* Phase 3 — theme tokens. Must come before Tailwind so the variables exist
+   when utilities resolve. Everything it defines is additive; nothing here
+   changes existing screens until they start using the semantic classes. */
+@import './styles/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

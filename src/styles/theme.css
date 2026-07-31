@@ -1,0 +1,203 @@
+/* ============================================================================
+   KPM INVENTORY — THEME TOKENS                              Phase 3
+   ----------------------------------------------------------------------------
+   One set of token names; only the VALUES change per theme. This is what
+   removes the hand-written `dark:` variants and, more importantly, the
+   ~8.500 `slate-*` utilities — `slate` is a BLUE-tinted grey, and it was the
+   real reason the app read blue everywhere even without a blue accent.
+
+   PALETTE LAW (locked with Aldi):
+     · no blue, no green, anywhere. Purple is allowed on the Mythic rank frame only.
+     · warm neutrals + ONE gold + orange for warning + a soft red for danger
+     · gold is DECORATION (a coin, a dot, a rule) — never a text colour, because
+       gold as text on a light ground measures 1,19:1 and is unreadable
+     · light mode's ground is bench STEEL, never #FFFFFF
+     · the coin marks money coming IN; negative values use a red rail instead
+
+   THEME SWITCHING: Tailwind is set to darkMode:'class'. Dark is the app default,
+   so :root carries the dark values and .light overrides them. `.dark` is also
+   accepted so it works whichever class the toggle sets.
+   ============================================================================ */
+
+:root {
+  /* surfaces — warm near-black, never pure #000 (kills the machined look) */
+  --ground:        #0A0908;
+  --sunk:          #050403;
+  --panel:         #121110;
+  --raised:        #1B1917;
+  --inset:         #0E0D0C;
+
+  /* lines. Three weights: whisper, structure, control edge. */
+  --line:          #26231F;   /* 1,3:1 — decorative only, never a control's only edge */
+  --line-2:        #3E3A35;   /* 1,7:1 — section dividers */
+  --line-3:        #6A645C;   /* 3,2:1 — interactive control boundary, meets AA non-text */
+
+  /* ink — warm off-white. Never #FFFFFF: it glares on cheap LCDs. */
+  --ink:           #E8E4DE;   /* 14,9:1 on --panel */
+  --ink-muted:     #A39B90;   /*  6,9:1 */
+  --ink-dim:       #7A736A;   /*  4,0:1 — meta text only */
+  --ink-disabled:  #57514A;   /*  2,4:1 — never carries meaning alone */
+  --ink-inverse:   #0A0908;
+
+  /* gold — decoration only. Dots, rules, the coin. Not for text. */
+  --gold:          #D4AF37;
+  --gold-ink:      #0A0908;   /* ink to place ON gold, 8,9:1 */
+
+  /* orange — warning. Aldi asked for more of it. */
+  --orange:        #FF8C1A;
+  --orange-ink:    #0A0603;   /* 8,7:1 — needs weight 700 + a hairline stroke at small sizes */
+
+  /* danger — deliberately desaturated (59%). The sharp 85%-saturation reds
+     vibrate against white and hurt over a full working day. */
+  --danger:        #B4524A;
+  --danger-text:   #E08C82;
+  --danger-plate:  #8E4038;   /* filled chip; with --danger-plate-ink = 6,4:1 */
+  --danger-plate-ink: #F7F2EE;
+  --danger-rail:   #B4524A;   /* the 3px rail that marks a negative value */
+  --danger-badge:  #B4524A;   /* count badge; with pure #FFF = 4,95:1 */
+  --danger-well:   #1E1512;
+
+  /* verified / complete. NOT green — carried by weight and a filled plate. */
+  --verified:      #E4DFD6;
+  --verified-fill: #191713;
+
+  /* rank ladder. Note it INVERTS in light mode: on steel, authority is ink density. */
+  --tier-iron:     #4E4842;
+  --tier-steel:    #8A837A;
+  --tier-silver:   #C3BCB1;
+  --tier-gold:     #D4AF37;
+  --tier-apex:     #C0281C;
+
+  /* materials — all built from borders and gradients, so Lite Mode keeps them */
+  --hatch:      repeating-linear-gradient(135deg, #26231F 0 1px, transparent 1px 4px);
+  --hatch-gold: repeating-linear-gradient(135deg, #5A4A1E 0 1px, transparent 1px 4px);
+  --grad-panel: linear-gradient(180deg, #1B1917, #121110);
+  --grad-steel: linear-gradient(180deg, #2A2724 0%, #221F1C 47%, #171512 48%, #100F0D 100%);
+  --burn:       linear-gradient(180deg, #5E2A24, #140A08);
+
+  /* the hover wash. Neutral on purpose — gold washes out on the light ground. */
+  --sweep-hi:   rgba(232, 228, 222, .20);
+  --sweep-mid:  rgba(232, 228, 222, .07);
+
+  /* spacing — one 4px ramp */
+  --s1:4px; --s2:8px;  --s3:12px; --s4:16px;
+  --s5:20px; --s6:24px; --s8:32px; --s12:48px; --s16:64px;
+
+  /* type */
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-body:    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* ----------------------------------------------------------------------------
+   LIGHT — bench steel, not paper. Every semantic hue gets its OWN value here;
+   reusing the dark ones is what made colours "die" in the old light theme.
+   ---------------------------------------------------------------------------- */
+:root.light,
+html.light {
+  --ground:        #B4B0A9;   /* steel. #FFFFFF appears nowhere as a surface. */
+  --sunk:          #9E9A93;
+  --panel:         #C6C2BB;
+  --raised:        #D2CEC7;
+  --inset:         #ADA9A2;
+
+  --line:          #6E6A64;   /* 3,0:1 — the old value was 2,0:1 and vanished */
+  --line-2:        #5E5A55;   /* 3,9:1 */
+  --line-3:        #46423C;   /* 7,4:1 */
+
+  --ink:           #131211;   /* 10,6:1 on --panel */
+  --ink-muted:     #3A3733;   /*  6,7:1 */
+  --ink-dim:       #4E4A45;   /*  5,0:1 */
+  --ink-disabled:  #7E7A74;
+  --ink-inverse:   #F4F1EB;
+
+  /* gold stays the SAME hex — it is a plate/dot here, never text, so it never
+     has to darken. That is what stops light mode looking duller than dark. */
+  --gold:          #D4AF37;
+  --gold-ink:      #131211;
+
+  --orange:        #FF8C1A;
+  --orange-ink:    #0A0603;
+
+  --danger:        #9E4038;
+  --danger-text:   #7E2A22;
+  --danger-plate:  #8E4038;
+  --danger-plate-ink: #F7F2EE;
+  --danger-rail:   #A8443A;
+  --danger-badge:  #B4524A;
+  --danger-well:   #D8C4BF;
+
+  --verified:      #2C2A26;
+  --verified-fill: #D3D0C9;
+
+  /* the ladder runs light -> dark here: a pale "platinum" would be invisible on steel */
+  --tier-iron:     #8A857E;
+  --tier-steel:    #5F5A54;
+  --tier-silver:   #35322E;
+  --tier-gold:     #7A5A12;
+  --tier-apex:     #7E1A12;
+
+  --hatch:      repeating-linear-gradient(135deg, #8F8B84 0 1px, transparent 1px 4px);
+  --hatch-gold: repeating-linear-gradient(135deg, #B49A55 0 1px, transparent 1px 4px);
+  --grad-panel: linear-gradient(180deg, #D2CEC7, #BFBBB4);
+  --grad-steel: linear-gradient(180deg, #EFECE6 0%, #DDDAD4 47%, #C9C6C0 48%, #BAB7B1 100%);
+  --burn:       linear-gradient(180deg, #8E4038, #3A1C18);
+
+  --sweep-hi:   rgba(255, 252, 244, .62);
+  --sweep-mid:  rgba(255, 252, 244, .22);
+}
+
+/* explicit dark, for when the toggle sets .dark rather than removing .light */
+:root.dark,
+html.dark { color-scheme: dark; }
+:root.light,
+html.light { color-scheme: light; }
+
+/* ============================================================================
+   SHARED BEHAVIOUR
+   ============================================================================ */
+
+/* every figure in this app is money or a count — they must not jitter */
+.kpm-num { font-variant-numeric: tabular-nums; }
+
+/* RE-style hover: a wash enters from the left, brightest at the edge, and an
+   ink bar marks the leading edge. Press deepens it. Neutral, so it reads in
+   both themes — the gold version was invisible on steel. */
+.kpm-hot { position: relative; overflow: hidden; isolation: isolate;
+  transition-property: color, border-color, scale;
+  transition-duration: 160ms; transition-timing-function: ease-out; }
+.kpm-hot::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(90deg, var(--sweep-hi) 0%, var(--sweep-mid) 34%, transparent 78%);
+  opacity: 0; transform: translateX(-14%);
+  transition-property: opacity, transform; transition-duration: 240ms;
+  transition-timing-function: cubic-bezier(.16, 1, .3, 1); }
+.kpm-hot::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  z-index: -1; pointer-events: none; background-color: var(--ink);
+  transform: scaleY(0); transform-origin: 50% 50%;
+  transition: transform 200ms cubic-bezier(.16, 1, .3, 1); }
+.kpm-hot:hover::before, .kpm-hot:focus-visible::before { opacity: 1; transform: translateX(0); }
+.kpm-hot:hover::after,  .kpm-hot:focus-visible::after  { transform: scaleY(1); }
+.kpm-hot:active { scale: .985; }
+.kpm-hot:active::after { width: 3px; }
+
+/* press feedback. Never below .95 — lower reads as exaggerated. */
+.kpm-press { transition-property: scale; transition-duration: 150ms; transition-timing-function: ease-out; }
+.kpm-press:active { scale: .96; }
+
+/* ----------------------------------------------------------------------------
+   LITE MODE — the app's PERFORMANCE switch (not the light colour theme).
+   Rank borders are exempt and may be heavy; everything else degrades here.
+   ---------------------------------------------------------------------------- */
+.lite *, .lite *::before, .lite *::after {
+  animation: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
