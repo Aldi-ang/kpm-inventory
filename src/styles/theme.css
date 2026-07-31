@@ -160,6 +160,35 @@ html.light { color-scheme: light; }
 /* every figure in this app is money or a count — they must not jitter */
 .kpm-num { font-variant-numeric: tabular-nums; }
 
+/* ----------------------------------------------------------------------------
+   THE COIN — marks money coming IN (cash, sales). Never on a negative value:
+   the asymmetry is what makes positive vs negative readable before you read a
+   digit. 8-frame sprite, stepped in PIXELS — percentage stepping lands between
+   frames and tears. Frame 3 is the front face, which Lite Mode holds.
+   ---------------------------------------------------------------------------- */
+.kpm-coin { display: inline-block; flex: none; vertical-align: -3px;
+  width: 18px; height: 18px;
+  background-image: url('/coin-sprite.png');
+  background-size: 144px 18px;          /* 8 frames x 18px */
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  animation: kpmCoinSpin .72s steps(8, end) infinite; }
+.kpm-coin.lg { width: 24px; height: 24px; background-size: 192px 24px; vertical-align: -4px; }
+@keyframes kpmCoinSpin   { to { background-position: -144px 0; } }
+.kpm-coin.lg { animation-name: kpmCoinSpinLg; }
+@keyframes kpmCoinSpinLg { to { background-position: -192px 0; } }
+/* front face when motion is off */
+.lite .kpm-coin,      .kpm-coin.still      { animation: none; background-position: -54px 0; }
+.lite .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-coin    { animation: none; background-position: -54px 0; }
+  .kpm-coin.lg { background-position: -72px 0; }
+}
+
+/* a negative amount: red is a rail, never a fill. The number stays ink. */
+.kpm-neg { border-left: 3px solid var(--danger-rail); padding-left: 10px; }
+
 /* RE-style hover: a wash enters from the left, brightest at the edge, and an
    ink bar marks the leading edge. Press deepens it. Neutral, so it reads in
    both themes — the gold version was invisible on steel. */
