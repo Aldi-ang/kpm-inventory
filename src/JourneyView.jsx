@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -14,6 +15,47 @@ L.Icon.Default.mergeOptions({
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// 🚀 CLUSTER BUBBLE — same shape as MapMissionControl's, orange to match Journey's palette.
+// Painting ~20 bubbles at zoom 12 instead of N pins is the whole point; the count label is
+// what tells you a bubble is many stores, so it has to stay readable at a glance.
+const createJourneyClusterIcon = (cluster) => L.divIcon({
+    html: `<div style="background-color: rgba(15, 23, 42, 0.95); border: 2px solid #f97316; color: #fb923c; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); font-family: monospace; font-size: 14px;">${cluster.getChildCount()}</div>`,
+    className: 'custom-cluster-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+
+/* Store pin icons, cached by appearance.
+   react-leaflet's Marker compares `icon` by OBJECT IDENTITY, so building a fresh L.divIcon inside
+   the render loop made it call setIcon() on every marker on every render — tearing down and
+   rebuilding each pin's DOM. One keystroke in a popup input rebuilt every pin on the map, which is
+   most of why this screen felt heavy with a few hundred stores.
+   A pin's look depends only on (glyph, ring colour, editing), so cache on exactly that. Sharing one
+   L.Icon across many markers is the normal Leaflet pattern — createIcon() makes a fresh element per
+   marker, the same way every marker shares L.Icon.Default. */
+const storeIconCache = new Map();
+const getStoreIcon = (glyph, ringColor, isEditing) => {
+    const key = `${glyph}|${ringColor}|${isEditing ? 1 : 0}`;
+    let icon = storeIconCache.get(key);
+    if (!icon) {
+        const size = isEditing ? 34 : 28;
+        const glow = isEditing ? '25px' : '10px';
+        const alpha = isEditing ? 'ff' : '80';
+        icon = L.divIcon({
+            className: 'bg-transparent border-none',
+            html: `
+                                <div style="background-color: #1e293b; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${glow} ${ringColor}${alpha}; transition: all 0.2s;">
+                                    ${isEditing ? '🖐️' : glyph}
+                                </div>
+                            `,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+        });
+        storeIconCache.set(key, icon);
+    }
+    return icon;
+};
 
 // 🚀 LIVE GPS ICON
 const userLocationIcon = L.divIcon({
@@ -920,11 +962,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
                         <div className="flex flex-col text-center">
                             <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
-                            <span className="text-slate-300 text-[9px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
+                            <span className="text-slate-300 text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                         </div>
                         <div className="flex gap-2 w-full">
-                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4">Cancel</button>
-                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"><Save size={12}/> Save</button>
+                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4">Cancel</button>
+                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"><Save size={12}/> Save</button>
                         </div>
                     </div>
                 )}
@@ -946,7 +988,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
-                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:bg-slate-700'}`}
+                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
                         title="Toggle Regional Borders"
                     >
                         <Layers size={20} className="transition-transform"/>
@@ -990,22 +1032,53 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const fillColor = isSelected ? '#f97316' : boundary.color || '#38bdf8';
                         
                         return (
-                            <GeoJSON 
-                                key={`journey-bnd-${boundary.id}`}
+                            <GeoJSON
+                                /* isSelected is IN the key on purpose: react-leaflet's GeoJSON ignores
+                                   `style` changes after mount, so without it selecting a kecamatan
+                                   never actually restyled the polygon — it looked broken with no error.
+                                   Same fix MapMissionControl already uses. */
+                                key={`journey-bnd-${boundary.id}-${isSelected ? 'sel' : 'idle'}`}
                                 data={geoData}
                                 style={{ color: boundary.color || '#38bdf8', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
                                 onEachFeature={(f, layer) => {
-                                    const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, -1px 1px 0 #000; opacity: 0.8; white-space: nowrap;">${String(boundary?.name || 'UNNAMED')}</div>`;
-                                    layer.bindTooltip(ttContent, { permanent: true, direction: "center", className: "region-watermark-label" });
+                                    /* Region labels are hover/selected-only, not permanent. A typical
+                                       import is 80-100 boundaries; as permanent tooltips that was
+                                       80-100 absolutely-positioned DOM nodes, each 14px/900-weight
+                                       with a 5-layer text-shadow, all repositioned on every zoom frame
+                                       and never scaled down — so zoomed out they piled into unreadable
+                                       mush AND cost a linear repaint. 11px + one shadow + hover-only
+                                       matches MapMissionControl, which already had this right. */
+                                    const ttContent = `<div style="color: ${boundary.color || '#cbd5e1'}; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap;">${String(boundary?.name || 'UNNAMED')}</div>`;
+                                    layer.bindTooltip(ttContent, { permanent: isSelected, direction: "center", className: "region-watermark-label" });
                                 }}
                             />
                         );
                     })}
 
+                    {/* No animate-pulse: a continuously repainting dashed path spanning the whole
+                        viewport, for no information gain. Lite Mode killed it anyway. */}
                     {streetRoute && (
-                        <Polyline positions={streetRoute} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 15' }} className="animate-pulse"/>
+                        <Polyline positions={streetRoute} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 15' }}/>
                     )}
 
+                    {/* 🚀 Clustering: at zoom 12 (the default view) this paints ~20 cluster bubbles
+                        instead of one pin per store, which is what made the map crawl on phones.
+                        Off-screen markers are dropped from the DOM for free (markercluster's
+                        removeOutsideVisibleBounds defaults on). While a pin is being dragged we
+                        disable clustering entirely — a clustered marker gets swallowed into a
+                        bubble and stops being draggable, which would break "Adjust Pin Location".
+                        The `key` is load-bearing: markercluster reads disableClusteringAtZoom once
+                        at init to build its distance grids, and react-leaflet-cluster's updater only
+                        reassigns instance.options — so without a remount the toggle would silently
+                        do nothing. Remounting on a rare, deliberate action is a fair price. */}
+                    <MarkerClusterGroup
+                        key={editingStoreId ? 'journey-unclustered' : 'journey-clustered'}
+                        chunkedLoading={true}
+                        iconCreateFunction={createJourneyClusterIcon}
+                        maxClusterRadius={40}
+                        spiderfyOnMaxZoom={true}
+                        disableClusteringAtZoom={editingStoreId ? 1 : 16}
+                    >
                     {orderedRoute.map((store) => {
                         const hasLiveTxToday = !!todaysVisits[store.name.trim().toLowerCase()];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
@@ -1030,16 +1103,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
-                        const customIcon = L.divIcon({
-                            className: 'bg-transparent border-none',
-                            html: `
-                                <div style="background-color: #1e293b; width: ${isEditing ? '34px' : '28px'}; height: ${isEditing ? '34px' : '28px'}; border-radius: 50%; border: 2px solid ${finalRingColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${isEditing ? '25px' : '10px'} ${finalRingColor}${isEditing ? 'ff' : '80'}; transition: all 0.2s;">
-                                    ${isEditing ? '🖐️' : iconHtml}
-                                </div>
-                            `,
-                            iconSize: [isEditing ? 34 : 28, isEditing ? 34 : 28],
-                            iconAnchor: [isEditing ? 17 : 14, isEditing ? 17 : 14]
-                        });
+                        const customIcon = getStoreIcon(iconHtml, finalRingColor, isEditing);
 
                         return (
                             <Marker 
@@ -1065,8 +1129,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     }
                                 }}
                             >
+                                {/* hidden lg:block — hover tooltips are dead weight on touch, where there
+                                    is no hover. Matches MapMissionControl:311. */}
                                 {activePopupId !== store.id && !isEditing && (
-                                    <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip">
+                                    <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
                                         <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-emerald-900/95 border-emerald-500 text-white' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
                                             {isVisited ? (
                                                 <span className="flex items-center gap-1">
@@ -1101,10 +1167,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             {isVisited ? (
                                                 <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
                                                     <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : store.lastVisitTag}</span>
-                                                    {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
+                                                    {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
                                                 </div>
                                             ) : (
-                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
                                                     {statusBadge.text}
                                                 </div>
                                             )}
@@ -1115,22 +1181,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     {editingFolderId === store.id ? (
                                                         <div className="flex flex-col gap-1.5 animate-fade-in">
                                                             <div className="flex justify-between items-center mb-1">
-                                                                <span className="text-[9px] text-orange-400 font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
+                                                                <span className="text-[11px] text-orange-400 font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
                                                             </div>
-                                                            <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
-                                                            <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-slate-900 text-white text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
-                                                            <input value={folderEdits.kec} onChange={e=>setFolderEdits({...folderEdits, kec: e.target.value})} placeholder="Kecamatan" className="bg-slate-900 text-orange-100 text-[9px] font-bold uppercase tracking-wider p-1.5 rounded border border-orange-500/50 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.kec} onChange={e=>setFolderEdits({...folderEdits, kec: e.target.value})} placeholder="Kecamatan" className="bg-slate-900 text-orange-100 text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-orange-500/50 outline-none focus:border-orange-500 w-full transition-colors" />
                                                             
                                                             <div className="flex gap-2 mt-1">
-                                                                <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[9px] font-black p-1.5 rounded uppercase border border-slate-700 transition-colors">Abort</button>
-                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-orange-600 hover:bg-orange-500 text-white text-[9px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(249,115,22,0.4)] transition-colors"><Save size={10}/> Enforce</button>
+                                                                <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[11px] font-black p-1.5 rounded uppercase border border-slate-700 transition-colors">Abort</button>
+                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(249,115,22,0.4)] transition-colors"><Save size={10}/> Enforce</button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col gap-1 relative group">
-                                                            <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
-                                                            <div className="text-[9px] text-slate-300 font-bold leading-tight pr-8">
-                                                                {store._hierarchy?.Provinsi} <span className="text-slate-600">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-slate-600">{' > '}</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
+                                                            <span className="text-[11px] text-slate-400 uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
+                                                            <div className="text-[11px] text-slate-300 font-bold leading-tight pr-8">
+                                                                {store._hierarchy?.Provinsi} <span className="text-slate-400">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-slate-400">{' > '}</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
                                                             </div>
                                                             {canAssignAgent && (
                                                                 <button
@@ -1142,7 +1208,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                             kec: store.city || store._hierarchy?.Kecamatan || ''
                                                                         });
                                                                     }} 
-                                                                    className="absolute top-1/2 -translate-y-1/2 right-0 bg-slate-800 hover:bg-orange-600 text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-600 hover:border-orange-500 transition-all text-[8px] font-black uppercase shadow-lg"
+                                                                    className="absolute top-1/2 -translate-y-1/2 right-0 bg-slate-800 hover:bg-orange-600 text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-600 hover:border-orange-500 transition-all text-[11px] font-black uppercase shadow-lg"
                                                                 >
                                                                     Edit
                                                                 </button>
@@ -1153,10 +1219,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                                 <div className="flex gap-2">
                                                     <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center gap-0.5">
-                                                        <span className="block text-[8px] text-slate-500 uppercase font-black">Performance Rank</span>
+                                                        <span className="block text-[11px] text-slate-400 uppercase font-black">Performance Rank</span>
                                                         <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier}</span>
                                                         {store.priceTier !== store.tier && (
-                                                            <span className="text-[8px] text-blue-400 font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
+                                                            <span className="text-[11px] text-blue-400 font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
                                                         )}
                                                     </div>
                                                     {store.phone ? (
@@ -1168,12 +1234,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             className="flex-1 bg-[#25D366]/10 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-[#25D366] p-2 rounded flex flex-col items-center justify-center transition-colors shadow-inner"
                                                         >
                                                             <MessageSquare size={12} className="mb-0.5"/>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest">WhatsApp</span>
+                                                            <span className="text-[11px] font-black uppercase tracking-widest">WhatsApp</span>
                                                         </a>
                                                     ) : (
-                                                        <div className="flex-1 bg-slate-800 border border-slate-700 text-slate-500 p-2 rounded flex flex-col items-center justify-center">
+                                                        <div className="flex-1 bg-slate-800 border border-slate-700 text-slate-400 p-2 rounded flex flex-col items-center justify-center">
                                                             <Phone size={12} className="mb-0.5"/>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest">No Phone</span>
+                                                            <span className="text-[11px] font-black uppercase tracking-widest">No Phone</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1184,12 +1250,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         className="w-full bg-slate-800 hover:bg-orange-900/40 text-slate-400 hover:text-orange-400 border border-slate-600 hover:border-orange-500 p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-inner"
                                                     >
                                                         <MapPin size={14} />
-                                                        <span className="text-[9px] font-black uppercase tracking-widest">Adjust Pin Location</span>
+                                                        <span className="text-[11px] font-black uppercase tracking-widest">Adjust Pin Location</span>
                                                     </button>
                                                 )}
 
                                                 <div>
-                                                    <label className="text-[9px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
+                                                    <label className="text-[11px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                     <select
                                                         className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${canAssignAgent ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                                         value={assignments[store.id] || 'Unassigned'}
@@ -1215,6 +1281,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </Marker>
                         );
                     })}
+                    </MarkerClusterGroup>
                 </MapContainer>
             </div>
 
@@ -1233,7 +1300,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 
                                 {selectedProvinsi !== 'All' && (
                                     <>
-                                        <ChevronRight size={14} className="text-slate-600"/>
+                                        <ChevronRight size={14} className="text-slate-400"/>
                                         <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
                                             {selectedProvinsi}
                                         </button>
@@ -1242,7 +1309,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                 {selectedProvinsi !== 'All' && selectedKabupaten !== 'All' && (
                                     <>
-                                        <ChevronRight size={14} className="text-slate-600"/>
+                                        <ChevronRight size={14} className="text-slate-400"/>
                                         <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{selectedKabupaten}</span>
                                     </>
                                 )}
@@ -1263,7 +1330,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
-                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
                                                 </div>
                                             </button>
                                         );
@@ -1286,7 +1353,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
-                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
                                                 </div>
                                             </button>
                                         );
@@ -1315,13 +1382,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
                                                     >
                                                         <div className="flex justify-between items-center w-full mb-2">
-                                                            <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-500'} />
+                                                            <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-400'} />
                                                             {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
                                                         </div>
                                                         <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
                                                             {kec}
                                                         </span>
-                                                        <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-500')}`}>
+                                                        <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-400')}`}>
                                                             {completedInSector} / {sectorStores.length} Secured
                                                         </div>
                                                     </button>
@@ -1395,7 +1462,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
                                                             </div>
                                                             <select 
-                                                                className={`bg-slate-900 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-500'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                                className={`bg-slate-900 text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-400'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
                                                                 value={assignments[customer.id] || 'Unassigned'}
                                                                 onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                                 style={{ colorScheme: 'dark' }}
@@ -1412,22 +1479,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             ) : (
                                                                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
                                                                     <Store size={24} className="mb-1 opacity-50"/>
-                                                                    <span className="text-[8px] font-black tracking-widest uppercase">No Intel</span>
+                                                                    <span className="text-[11px] font-black tracking-widest uppercase">No Intel</span>
                                                                 </div>
                                                             )}
                                                             
                                                             <div className="absolute top-2 left-2 flex flex-col gap-1.5">
-                                                                <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
+                                                                <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[11px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
                                                                     <span style={{ color: ringColor }}>●</span>
                                                                     {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
                                                                     <span className="opacity-50">|</span> #{metric.stopNumber}
                                                                 </div>
                                                                 <div className="flex gap-1 flex-wrap">
-                                                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
                                                                         RANK: {customer.tier}
                                                                     </div>
                                                                     {customer.priceTier !== customer.tier && (
-                                                                        <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[8px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                        <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
                                                                             PRICE: {customer.priceTier}
                                                                         </div>
                                                                     )}
@@ -1443,10 +1510,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             {isVisited ? (
                                                                 <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
                                                                     <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : customer.lastVisitTag}</span>
-                                                                    {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[9px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
+                                                                    {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                                 </div>
                                                             ) : (
-                                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
+                                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
                                                                     {statusBadge.text}
                                                                 </div>
                                                             )}
@@ -1473,14 +1540,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                         <div className="flex gap-2">
                                                                             <button 
                                                                                 onClick={() => jumpToMap(customer.id)}
-                                                                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
+                                                                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
                                                                             >
                                                                                 <Globe size={12}/> Radar
                                                                             </button>
                                                                             
                                                                             <button 
                                                                                 onClick={() => handleOpenLocation(customer)}
-                                                                                className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
+                                                                                className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
                                                                                 title="Navigate via Google Maps"
                                                                             >
                                                                                 <Navigation size={12}/> Navigate
@@ -1488,7 +1555,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                                                             <button 
                                                                                 onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
-                                                                                className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
+                                                                                className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
                                                                             >
                                                                                 <AlertTriangle size={12}/> Log
                                                                             </button>
@@ -1501,7 +1568,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                                 handleUndoCheckIn(customer);
                                                                             }
                                                                         }}
-                                                                        className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-500 hover:text-red-400 py-3 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                                                        className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-400 hover:text-red-400 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
                                                                     >
                                                                         <RotateCcw size={14}/> Reverse Clearance
                                                                     </button>
@@ -1535,12 +1602,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 </h3>
                                 <p className="text-[10px] text-slate-400 tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
                             </div>
-                            <button onClick={() => setCheckInCustomer(null)} className="text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+                            <button onClick={() => setCheckInCustomer(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
                         </div>
 
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Exception Reason</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Exception Reason</label>
                                 <div className="flex flex-wrap gap-2">
                                     {QUICK_TAGS.map(tag => (
                                         <button 
@@ -1559,7 +1626,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
                                     <MessageSquare size={14}/> Field Intel (Notes)
                                 </label>
                                 <textarea 

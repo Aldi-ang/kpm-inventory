@@ -388,14 +388,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             {/* BREADCRUMB NAVIGATION */}
             {!reportView && (
-                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
+                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-400 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
                     {reportAccessLevel === 'global' && (
                         <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
                     {/* 🚀 UI LOCK: Field Agents cannot navigate UP to team folders */}
-                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-500'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-500'}`}><User size={14}/> {selectedAgent}</span> </>}
+                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-400'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
+                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-400'}`}><User size={14}/> {selectedAgent}</span> </>}
                     
                     {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
                     {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
@@ -425,10 +425,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {reportView && (
                 <div className="animate-fade-in relative z-10">
                      <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
+                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
                         <div className="flex items-center gap-3">
                             <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border dark:border-slate-700 shadow-sm print:hidden">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scale</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scale</span>
                                 <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
                                 <span className="text-[10px] font-mono text-slate-400 w-8 text-right">{printScale}%</span>
                             </div>
@@ -445,29 +445,29 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                  <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
                                      {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
-                                 <p className="text-slate-500 dark:print:text-slate-600 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
+                                 <p className="text-slate-400 dark:print:text-slate-400 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
                              </div>
                              <div className="text-right"><p className="text-xs print:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
                          </div>
                          
                          <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[9px] uppercase text-slate-500 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
+                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
                          </div>
 
                          <div className="mb-8 print:mb-0">
                              <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-orange-500"/> Product Performance</h3>
                              <div className="overflow-x-auto pb-2">
                                  <table className="w-full text-sm print:text-[10px] text-left border-collapse min-w-[450px]">
-                                    <thead className="text-slate-500 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
+                                    <thead className="text-slate-400 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
                                         <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
                                         {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
                                             <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                                 <td className="py-3 print:py-1.5 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black uppercase text-xs">{name}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-6 text-slate-600 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
+                                                <td className="py-3 print:py-1.5 text-right pr-6 text-slate-400 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
                                                 <td className="py-3 print:py-1.5 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
                                             </tr>
                                         ))}
@@ -503,7 +503,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                      )}
                                                      <div>
                                                          <h4 className="font-bold text-lg dark:text-white leading-none mb-1">{agent.name}</h4>
-                                                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">{agent.count} Receipts</p>
+                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest">{agent.count} Receipts</p>
                                                      </div>
                                                  </div>
                                                  <div className="flex items-center gap-6">
@@ -525,13 +525,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                      
                                                      {/* Agent's Product Breakdown */}
                                                      <div className="mb-8">
-                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
+                                                         <h5 className="font-bold text-sm text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
                                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                              {Object.entries(agent.items).sort((a,b) => b[1].val - a[1].val).map(([pName, pData]) => (
                                                                  <div key={pName} className="bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700 flex justify-between items-center shadow-sm">
                                                                      <div>
                                                                          <p className="text-xs font-bold dark:text-white uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
-                                                                         <p className="text-[10px] text-slate-500 font-mono">{pData.qty} Bks</p>
+                                                                         <p className="text-[10px] text-slate-400 font-mono">{pData.qty} Bks</p>
                                                                      </div>
                                                                      <p className="text-sm font-black text-emerald-500">{formatRupiah(pData.val)}</p>
                                                                  </div>
@@ -541,7 +541,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                                                      {/* Agent's Transaction Timeline */}
                                                      <div>
-                                                         <h5 className="font-bold text-sm text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
+                                                         <h5 className="font-bold text-sm text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
                                                              {agent.transactions.map(t => {
                                                                  // 🚀 FORENSIC BADGES
@@ -553,21 +553,21 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                  <div key={t.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                                                                      <div className="flex items-center gap-4 w-full md:w-auto">
                                                                          <div className="bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-center shrink-0">
-                                                                             <p className="text-[10px] text-slate-500 font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
+                                                                             <p className="text-[10px] text-slate-400 font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
                                                                              <p className="text-xs font-mono font-black dark:text-white">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
                                                                          </div>
                                                                          <div className="min-w-0">
                                                                              <div className="flex items-center gap-2 mb-0.5">
                                                                                 <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
                                                                                 {isRetur ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-100 text-red-600 border border-red-300">RETUR</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-100 text-red-600 border border-red-300">RETUR</span>
                                                                                 ) : isExchange ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
                                                                                 ) : isIouFulfill ? (
-                                                                                    <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
                                                                                 ) : null}
                                                                              </div>
-                                                                             <p className="text-[10px] text-slate-500 uppercase mt-0.5 truncate">
+                                                                             <p className="text-[10px] text-slate-400 uppercase mt-0.5 truncate">
                                                                                  {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
                                                                                      let lbl = `${i.qty} ${i.unit} ${i.name}`;
                                                                                      if (i.condition === 'DAMAGED') lbl += ' [DMG]';
@@ -579,7 +579,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                          </div>
                                                                      </div>
                                                                      <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
-                                                                         <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-600'}`}>{t.paymentType || 'Cash'}</span>
+                                                                         <span className={`text-[11px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-400'}`}>{t.paymentType || 'Cash'}</span>
                                                                          <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                                                                             {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
                                                                          </p>
@@ -594,7 +594,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                          </div>
                                      );
                                  })}
-                                 {stats.agentRoster.length === 0 && <p className="text-center text-slate-500 py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
+                                 {stats.agentRoster.length === 0 && <p className="text-center text-slate-400 py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
                              </div>
                          </div>
 
@@ -608,7 +608,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {!reportView && reportAccessLevel === 'global' && !selectedRegion && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData).length === 0 ? (
-                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Regions Active</p></div>
+                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-400">No Regions Active</p></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.values(reportData).sort((a,b) => b.total - a.total).map(r => (
@@ -618,8 +618,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
                                     <h3 className="font-black text-xl dark:text-white mb-2 tracking-wide">{r.name}</h3>
                                     <div className="flex justify-between items-end border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                                        <div><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-blue-600 text-xl">{formatRupiah(r.total)}</p></div>
-                                        <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-white text-xl">{r.count}</p></div>
+                                        <div><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-blue-600 text-xl">{formatRupiah(r.total)}</p></div>
+                                        <div className="text-right"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-white text-xl">{r.count}</p></div>
                                     </div>
                                 </div>
                             ))}
@@ -639,8 +639,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
                                 <h3 className="font-bold text-lg dark:text-white mb-4 truncate">{a.name}</h3>
                                 <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-emerald-600 text-lg">{formatRupiah(a.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-white text-lg">{a.count}</p></div>
+                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-emerald-600 text-lg">{formatRupiah(a.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-white text-lg">{a.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -652,7 +652,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {!reportView && selectedRegion && selectedAgent && !selectedProv && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).length === 0 ? (
-                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-purple-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-500">No Provinces Visited</p></div>
+                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-purple-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-400">No Provinces Visited</p></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).sort((a,b) => b.total - a.total).map(p => (
@@ -662,8 +662,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
                                     <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{p.name}</h3>
                                     <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-purple-500">{formatRupiah(p.total)}</p></div>
-                                        <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{p.count}</p></div>
+                                        <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-purple-500">{formatRupiah(p.total)}</p></div>
+                                        <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{p.count}</p></div>
                                     </div>
                                 </div>
                             ))}
@@ -683,8 +683,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
                                 <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{k.name}</h3>
                                 <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{k.count}</p></div>
+                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{k.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -703,8 +703,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
                                 <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{c.name}</h3>
                                 <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-red-500">{formatRupiah(c.total)}</p></div>
-                                    <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
+                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-red-500">{formatRupiah(c.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -727,8 +727,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
                                     <h3 className="font-black text-base dark:text-white mb-3 truncate">{c.name}</h3>
                                     <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
-                                        <div className="text-right"><p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
+                                        <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
+                                        <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
                                     </div>
                                 </div>
                             );
@@ -768,7 +768,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
                                     <div className="p-4 md:p-6 overflow-x-auto">
                                         <table className="w-full text-sm text-left min-w-[600px]">
-                                            <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+                                            <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-400 uppercase text-[10px] font-bold tracking-widest">
                                                 <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -780,18 +780,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                                                     return (
                                                     <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400 text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
+                                                        <td className="p-3 font-mono text-slate-400 dark:text-slate-400 text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
                                                         <td className="p-3">
                                                             {isRetur ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-red-100 text-red-700 border border-red-300">RETUR</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-red-100 text-red-700 border border-red-300">RETUR</span>
                                                             ) : isExchange ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
                                                             ) : isIouFulfill ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">IOU FULFILLED</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">IOU FULFILLED</span>
                                                             ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
                                                             ) : (
-                                                                <span className="px-2 py-1 rounded text-[9px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">SALE</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">SALE</span>
                                                             )}
                                                         </td>
                                                         <td className="p-3 text-slate-700 dark:text-slate-300 text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
@@ -810,8 +810,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                     return lbl;
                                                                 }).join(", ") : 'N/A'
                                                             )}
-                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[9px] text-orange-500 tracking-widest border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
-                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[9px] text-blue-500 tracking-widest">({t.paymentType})</span>}
+                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[11px] text-orange-500 tracking-widest border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
+                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[11px] text-blue-500 tracking-widest">({t.paymentType})</span>}
                                                         </td>
                                                         <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                                                             {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
@@ -819,9 +819,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         <td className="p-3 text-center">
                                                             <div className="flex justify-center gap-2">
                                                                 {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded-lg transition-colors"><Camera size={14}/></button>}
-                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-orange-500 rounded-lg transition-colors"><FileText size={14}/></button>
-                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-blue-500 rounded-lg transition-colors"><Pencil size={14}/></button>}
-                                                                {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
+                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-orange-500 rounded-lg transition-colors"><FileText size={14}/></button>
+                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-blue-500 rounded-lg transition-colors"><Pencil size={14}/></button>}
+                                                                {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -860,8 +860,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         <h3 className="font-black text-xl mb-4 dark:text-white flex items-center gap-2"><Pencil size={22} className="text-orange-500"/> DATA AUDIT</h3>
                         <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700">
-                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
-                                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
                                 <div>
                                     <label className="text-[10px] font-bold text-orange-500 uppercase">Pricing Tier</label>
                                     <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 font-bold text-orange-500 outline-none">
@@ -939,7 +939,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-400">
                                             {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : 
                                              isReturReceipt ? 'RETURN RECEIPT' : 
                                              viewingReceipt.paymentType === 'Tukar Ganti' ? 'EXCHANGE RECEIPT' : 'SALES RECEIPT'}
@@ -963,15 +963,15 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         <div key={i} className="mb-2">
                                                             <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
                                                                 {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                                <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                             )}
                                                             <div className="flex justify-between text-xs mt-0.5">
-                                                                <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                                                <span className="!text-slate-400">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
                                                                 <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
                                                                     {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                                 </span>
@@ -987,7 +987,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                     const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                                     if (!paidItem && !returItem && !remainItem) return null;
                                                     return (
-                                                        <div key={i} className="mb-3"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">Total Consigned: {(paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0)} Bks</div><div className="pl-2 space-y-0.5 text-[10px] !text-slate-600 font-mono">
+                                                        <div key={i} className="mb-3"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">Total Consigned: {(paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0)} Bks</div><div className="pl-2 space-y-0.5 text-[10px] !text-slate-400 font-mono">
                                                                 {paidItem && paidItem.qty > 0 && <div className="flex justify-between"><span>• Sold: {paidItem.qty}</span><span className="font-black !text-black">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span></div>}
                                                                 {returItem && returItem.qty > 0 && <div className="flex justify-between"><span>• Retur: {returItem.qty}</span><span>-</span></div>}
                                                                 {remainItem && remainItem.qty > 0 && <div className="flex justify-between"><span>• Sisa: {remainItem.qty}</span><span>-</span></div>}
@@ -1003,7 +1003,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
                                         </span>
                                     </div>
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500"><p>*** THANK YOU ***</p></div>
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-400"><p>*** THANK YOU ***</p></div>
                                 </div>
                             )}
 
@@ -1021,18 +1021,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                      isReturReceipt ? 'NOTA RETUR' : 
                                                      viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
                                                 </h2>
-                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">REPRINT COPY</p>
+                                                <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">REPRINT COPY</p>
                                             </div>
                                         </div>
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3"><tbody>
-                                                <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
-                                                {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                                {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                                <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                             </tbody></table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                                <p className="font-bold !text-slate-400 text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
                                             </div>
                                         </div>
                                         {isNormalSale ? (
@@ -1040,16 +1040,16 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
                                                 <tbody>{viewingReceipt.items?.map((item, i) => (
                                                     <tr key={i}>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td>
                                                         <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">
                                                             <div className="flex flex-wrap gap-1 items-center mb-1">
                                                                 {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">IOU FULFILLED</span>}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">IOU PENDING</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">IOU FULFILLED</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[10px] italic !text-slate-500 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                                <div className="text-[10px] italic !text-slate-400 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                             )}
                                                         </td>
                                                         <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700 align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
@@ -1068,11 +1068,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                         const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                                         if (!paidItem && !returItem && !remainItem) return null; const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
                                                         return (
-                                                            <tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
+                                                            <tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
                                                                 <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
                                                                     {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
                                                                     {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
-                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
+                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-slate-400 font-bold">• SISA: {remainItem.qty}</div>}
                                                                 </td>
                                                                 <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
                                                             </tr>
@@ -1087,7 +1087,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             )}
 
                             <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>Thermal POS (58mm)</label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-400 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>Thermal POS (58mm)</label>
                                 <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>Standard Invoice (A4)</label>
                             </div>
                             

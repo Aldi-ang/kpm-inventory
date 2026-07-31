@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { Trophy, Medal, Star, Flame, Zap, Target, Crown, ShieldCheck, User } from 'lucide-react';
-import { checkUnlockedBadges } from './config/achievements';
+import { Trophy, Medal, Star, Flame, Zap, Target, Crown, ShieldCheck, User, Calendar, PackageOpen } from 'lucide-react';
+import { careerXP, DEFAULT_XP, isUnlocked } from './config/career';
 
-const IconMap = { Flame, Zap, Target, Crown, ShieldCheck };
+const IconMap = { Flame, Zap, Target, Crown, ShieldCheck, Calendar, PackageOpen };
 
-export default function HallOfFameView({ motorists = [], transactions = [], rpgData = {} }) {
-    
+export default function HallOfFameView({ motorists = [], transactions = [], rpgData = {}, career = {}, useCareerLedger = false, badgeData = [] }) {
+
     // 🧠 UPGRADED CALCULATION ENGINE: Perfectly syncs with Agent Profile manual EXP & multipliers
     const leaderboardData = useMemo(() => {
         const statsMap = {};
@@ -16,37 +16,46 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
             }
         });
 
-        transactions.forEach(trx => {
-            if (trx.type === 'SALE' && statsMap[trx.agentId]) {
-                statsMap[trx.agentId].totalTransactions += 1;
-                statsMap[trx.agentId].totalOmset += (trx.totalAmount || trx.total || 0);
-            }
-        });
+        // 🚀 Phase 4, behind the same flag as AgentProfileView: flag OFF keeps this transaction
+        // scan byte-identical to before. Flag ON skips it entirely — career doc's `collected`
+        // already IS the sum, no scan needed.
+        if (!useCareerLedger) {
+            transactions.forEach(trx => {
+                if (trx.type === 'SALE' && statsMap[trx.agentId]) {
+                    statsMap[trx.agentId].totalTransactions += 1;
+                    statsMap[trx.agentId].totalOmset += (trx.totalAmount || trx.total || 0);
+                }
+            });
+        }
 
         const sortedRanks = [...(rpgData.ranks || [])].sort((a,b) => Number(a.min) - Number(b.min));
 
         return Object.values(statsMap).map(agent => {
-            // SYNCED EXP MATH
-            const lifetimeEXP = (agent.totalOmset * (rpgData.expMultiplier || 1)) + (agent.manualExp || 0);
-            
-            let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 }; 
+            const lifetimeEXP = useCareerLedger
+                ? careerXP(career?.[agent.id] || {}, DEFAULT_XP)
+                : (agent.totalOmset * (rpgData.expMultiplier || 1)) + (agent.manualExp || 0);
+
+            let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 };
             let nextTier = sortedRanks[1] || null;
-            
+
             for (let i = sortedRanks.length - 1; i >= 0; i--) {
-                if (lifetimeEXP >= Number(sortedRanks[i].min)) { 
-                    currentTier = sortedRanks[i]; 
-                    nextTier = sortedRanks[i + 1] || null; 
-                    break; 
+                if (lifetimeEXP >= Number(sortedRanks[i].min)) {
+                    currentTier = sortedRanks[i];
+                    nextTier = sortedRanks[i + 1] || null;
+                    break;
                 }
             }
 
-            const progress = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / (nextTier.min - currentTier.min)) * 100)) : 100;
-            const badges = checkUnlockedBadges({ totalOmset: agent.totalOmset, totalTransactions: agent.totalTransactions });
+            const progress = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / Math.max(1, nextTier.min - currentTier.min)) * 100)) : 100;
+            // 🚀 Phase 5: one badge engine — same isUnlocked() check the profile screen and
+            // handleVerifyEOD both use, not a second parallel BADGE_REGISTRY with its own ids,
+            // icons, and unlock conditions that could silently drift from the real one.
+            const badges = badgeData.filter(b => isUnlocked(b, career?.[agent.id] || {}, {}));
 
             return { ...agent, lifetimeEXP, currentTier, nextTier, progress, badges };
         }).sort((a, b) => b.lifetimeEXP - a.lifetimeEXP);
 
-    }, [motorists, transactions, rpgData]);
+    }, [motorists, transactions, rpgData, career, useCareerLedger, badgeData]);
 
     return (
         <div className="max-w-6xl mx-auto pb-10 animate-fade-in-up">
@@ -87,7 +96,7 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
                             </div>
 
                             <div className="mb-6">
-                                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">
                                     <span>{new Intl.NumberFormat('id-ID').format(agent.lifetimeEXP)} XP</span>
                                     <span>Next: {agent.nextTier ? agent.nextTier.name : 'MAXED'}</span>
                                 </div>
@@ -98,11 +107,11 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
 
                             <div className="grid grid-cols-2 gap-2 mb-4">
                                 <div className="bg-black/30 p-2 rounded border border-slate-800/50">
-                                    <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1">Total Omset</p>
+                                    <p className="text-[11px] text-slate-400 uppercase font-black tracking-widest mb-1">Total Omset</p>
                                     <p className="text-xs font-bold text-emerald-400">Rp {new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(agent.totalOmset)}</p>
                                 </div>
                                 <div className="bg-black/30 p-2 rounded border border-slate-800/50">
-                                    <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1">Transactions</p>
+                                    <p className="text-[11px] text-slate-400 uppercase font-black tracking-widest mb-1">Transactions</p>
                                     <p className="text-xs font-bold text-blue-400">{agent.totalTransactions} closed</p>
                                 </div>
                             </div>
@@ -113,12 +122,12 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
                                         agent.badges.map(badge => {
                                             const BadgeIcon = IconMap[badge.icon] || Star;
                                             return (
-                                                <div key={badge.id} className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black uppercase tracking-wider border shadow-inner ${badge.bg} ${badge.color} ${badge.border}`} title={badge.description}>
+                                                <div key={badge.id} className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-black uppercase tracking-wider border shadow-inner" style={{ color: badge.hex, borderColor: badge.hex, backgroundColor: `${badge.hex}20` }} title={badge.desc}>
                                                     <BadgeIcon size={12}/> {badge.title}
                                                 </div>
                                             );
                                         })
-                                    ) : <p className="text-[10px] text-slate-600 font-mono italic">No badges earned.</p>}
+                                    ) : <p className="text-[10px] text-slate-400 font-mono italic">No badges earned.</p>}
                                 </div>
                             </div>
                         </div>

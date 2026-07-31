@@ -104,7 +104,7 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
             <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
                 <div>
                     <h2 className="text-lg font-bold text-white uppercase tracking-widest">Executive Targets</h2>
-                    <p className="text-[10px] text-slate-500 font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
+                    <p className="text-[10px] text-slate-400 font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
                 </div>
                 {canEditGoals && (
                     <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-white/10">
@@ -121,7 +121,7 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                     <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
                         <div className="bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
+                    <div className="flex justify-between text-[11px] font-mono text-slate-400 uppercase">
                         <span>{Math.round((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100)}% to Goal</span>
                         <span>Target: {formatRupiah(TARGET_MONTHLY_REVENUE)}</span>
                     </div>
@@ -132,12 +132,12 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                     <h3 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Daily Volume (Bal)</h3>
                     <div className="flex items-baseline gap-2 mb-4">
                         <p className="text-3xl font-black text-white leading-none">{metrics.dailyBalSold}</p>
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
                     </div>
                     <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
                         <div className="bg-orange-500 h-full shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.dailyBalSold / TARGET_DAILY_BAL) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
+                    <div className="flex justify-between text-[11px] font-mono text-slate-400 uppercase">
                         <span>Pace: {metrics.dailyBalSold >= TARGET_DAILY_BAL ? 'Target Met!' : 'Behind Schedule'}</span>
                         <span>{Math.max(0, TARGET_DAILY_BAL - metrics.dailyBalSold).toFixed(1)} Bal Remaining</span>
                     </div>
@@ -155,7 +155,7 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                                 <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange-400">Kretek (SKT)</span><span className="text-white">{metrics.kretekPercent}%</span></div>
                                 <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
                             </div>
-                            <p className="text-[8px] font-mono text-slate-500 uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
+                            <p className="text-[11px] font-mono text-slate-400 uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
                         </div>
                     </div>
                     <div className="w-24 h-24 shrink-0">
@@ -175,7 +175,7 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
             {isEditing && createPortal(
                 <div className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <div className="bg-[#0a0a0a] border border-white/20 p-8 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,1)] relative font-mono">
-                        <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-slate-500 hover:text-red-500 transition-colors"><X size={24}/></button>
+                        <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-widest"><Settings className="text-orange-500"/> Edit Goals</h2>
                         <form onSubmit={handleSave} className="space-y-5">
                             <div>
@@ -189,7 +189,7 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                             <div>
                                 <label className="text-[10px] text-blue-500 font-bold block mb-2 uppercase tracking-widest">Target Filter Proportion (%)</label>
                                 <input type="text" maxLength={3} value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-blue-500/30 text-white rounded outline-none focus:border-blue-500" required/>
-                                <p className="text-[9px] text-slate-500 mt-2">Example: 60 = Aiming for 60% Filter / 40% Kretek.</p>
+                                <p className="text-[11px] text-slate-400 mt-2">Example: 60 = Aiming for 60% Filter / 40% Kretek.</p>
                             </div>
                             <button type="submit" className="w-full mt-4 bg-white/10 hover:bg-white text-white hover:text-black py-4 rounded font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
                                 <Save size={16}/> Save Master Targets

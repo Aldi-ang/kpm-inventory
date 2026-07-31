@@ -1,12 +1,12 @@
 {
   ".claude/launch.json": {
-    "mtime": 1785346389.2817988,
-    "ast_hash": "fe15566602097c7acaf4f38fa04f1e51",
+    "mtime": 1785075746.786544,
+    "ast_hash": "644474b0a788b8be2abb1e74a2671eeb",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
-    "mtime": 1785187366.9043674,
-    "ast_hash": "69e089013bd17df3898ac914a204039b",
+    "mtime": 1785137339.1124947,
+    "ast_hash": "84ad2eba286d541c2f078bf076c587d8",
     "semantic_hash": ""
   },
   "eslint.config.js": {
@@ -15,18 +15,23 @@
     "semantic_hash": ""
   },
   "firebase.json": {
-    "mtime": 1785288891.4052722,
-    "ast_hash": "44d7b4ddc7c8def249d5c8fa9ebb8705",
+    "mtime": 1784862089.2230062,
+    "ast_hash": "c601a7bf318f185ac96b6ea9e14f1a89",
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1785190244.2614574,
-    "ast_hash": "49cbee9a6a881280e90234c943c2ea09",
+    "mtime": 1784982180.153198,
+    "ast_hash": "2615897b8341a232593b87820b5a5a80",
     "semantic_hash": ""
   },
   "postcss.config.js": {
     "mtime": 1775260438.0,
     "ast_hash": "470cfd3ee10fbff840b377e769485f3e",
+    "semantic_hash": ""
+  },
+  "public/manifest.json": {
+    "mtime": 1783904080.4795575,
+    "ast_hash": "67f553d2b53ac653584904c5d43e12bc",
     "semantic_hash": ""
   },
   "rules-test/test-batch1.mjs": {
@@ -40,83 +45,88 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1785326518.2364984,
-    "ast_hash": "f4dcf32e513981fce07760e4b6eaff07",
+    "mtime": 1785075746.7952523,
+    "ast_hash": "43ce3ae4282222362fa9ce46848ed788",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
-    "mtime": 1785376984.1619637,
-    "ast_hash": "faa4fcc65def1727a143a75544f2c670",
+    "mtime": 1784864845.3523653,
+    "ast_hash": "bb2e436b1e9b3c99d95c0ad2ed4628c2",
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1785344517.197813,
-    "ast_hash": "888008e14639a8a5acc51bdd1c408307",
+    "mtime": 1785075746.7987566,
+    "ast_hash": "f1494e1d40b029e2135281188d7c8576",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
-    "mtime": 1785326525.1459785,
-    "ast_hash": "bb3bebe667887b65d652efc0fbafc98b",
+    "mtime": 1785075746.8007586,
+    "ast_hash": "24352d2aa44467b0eca298433980e191",
+    "semantic_hash": ""
+  },
+  "src/Duke3D.jsx": {
+    "mtime": 1775260438.0,
+    "ast_hash": "1b8ffb2b502a015c655fa16bad70c0c4",
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1785326525.5765772,
-    "ast_hash": "a9f004d70d485f25ad76f51b5acd6164",
+    "mtime": 1785075746.804758,
+    "ast_hash": "460e0ffddfef8188c56faa8dbf10fc57",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1785326526.0027366,
-    "ast_hash": "9968d3f8bac30a618670ea4d62bbbfc6",
+    "mtime": 1785075746.8067584,
+    "ast_hash": "7687be0565876aaf3da3e612c3ae33ac",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
-    "mtime": 1785326526.429958,
-    "ast_hash": "a9dd1ae787070571c4e2de36b97697e0",
+    "mtime": 1781167177.4443436,
+    "ast_hash": "81c1632d46907a110bc883ff3a49d496",
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1785376860.4594362,
-    "ast_hash": "3d081fed26878a839826f142530df976",
+    "mtime": 1784866961.7784348,
+    "ast_hash": "65acb6aa33dfe057bd220c6ad1928526",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
-    "mtime": 1785326527.3050232,
-    "ast_hash": "0f480f29f84a08a613771b68bb8f3399",
+    "mtime": 1785075746.8102689,
+    "ast_hash": "ad8600880bccd7bbb727aecf7a84d613",
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1785326612.5023205,
-    "ast_hash": "04238bc66c0dd769b072c3eb687d58c2",
+    "mtime": 1785075746.813221,
+    "ast_hash": "99832ec36a85454c457a9bb23ee51f36",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
-    "mtime": 1785326528.1781127,
-    "ast_hash": "b6587ba1d58d7e1dd743117f15723625",
+    "mtime": 1775260438.0,
+    "ast_hash": "706dacb434b9e87afc32c56793f4725e",
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1785327012.0461836,
-    "ast_hash": "ce1ac4c609fd6370f2f1416fbe34f870",
+    "mtime": 1785075746.8152213,
+    "ast_hash": "0ef484cc43e560a0cb0a8c1895bfa11e",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1785326529.1021845,
-    "ast_hash": "d4f5783e6a33c3186fddda0087846d77",
+    "mtime": 1785075746.8182213,
+    "ast_hash": "f5a01167b3bbba65e26b995d952790bb",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
-    "mtime": 1785326586.83748,
-    "ast_hash": "bfd7996d80ed1cc7ddedc544065b90ed",
+    "mtime": 1784862089.2343984,
+    "ast_hash": "c3522db31e08bbc4e446b3900740e09d",
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1785344498.6433764,
-    "ast_hash": "9b8ad589b31bf57c55375f2f900c3bc4",
+    "mtime": 1785075746.8197322,
+    "ast_hash": "75eff74b164d4ab49620bf5552456dd0",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
-    "mtime": 1785326520.3946457,
-    "ast_hash": "1e8bd4043f53969d73b8fe3969d3a52d",
+    "mtime": 1785075746.8227308,
+    "ast_hash": "e58b340f60841117742bcbc8680c35d4",
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
@@ -125,23 +135,23 @@
     "semantic_hash": ""
   },
   "src/components/CrownTransferProtocol.jsx": {
-    "mtime": 1785326443.8378003,
-    "ast_hash": "7a91587f3eaad1e5da28f12fbc662076",
+    "mtime": 1775260438.0,
+    "ast_hash": "efee2561bab8c10ebd0dc7552973cf98",
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1785326520.8216338,
-    "ast_hash": "982a570b0bff1dcf77c7e4b3b005a879",
+    "mtime": 1785023349.128037,
+    "ast_hash": "ddb137e411ece64dc9c0640cd1800e0a",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
-    "mtime": 1785326521.2559292,
-    "ast_hash": "e99f072569c81575c8c8a9be805e94f8",
+    "mtime": 1775610009.7100692,
+    "ast_hash": "c386721d295f96415b8d3aaacf57e385",
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
-    "mtime": 1785326521.7107952,
-    "ast_hash": "26ac68c10cde59e0df07f41d5a5b50a3",
+    "mtime": 1775260438.0,
+    "ast_hash": "24046b41ec25d20d5dd1ad44980a20df",
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
@@ -150,48 +160,53 @@
     "semantic_hash": ""
   },
   "src/components/HistoryReportView.jsx": {
-    "mtime": 1785326522.1401417,
-    "ast_hash": "b7cbd03d9d75a73f8c3bf14f58fbe030",
+    "mtime": 1784976221.5791373,
+    "ast_hash": "c19953f11889dd38c69cd1952eb6c5c2",
     "semantic_hash": ""
   },
   "src/components/ImageCropper.jsx": {
-    "mtime": 1785326446.008404,
-    "ast_hash": "c308a683dfb901cf15b3f51b034ee1db",
+    "mtime": 1782662016.3301377,
+    "ast_hash": "874c53641927f14c7e6cd4e47158d4dd",
     "semantic_hash": ""
   },
   "src/components/LandlordDashboard.jsx": {
-    "mtime": 1785326522.5838203,
-    "ast_hash": "eba80a916abdffd9115038bd2a7beaa1",
+    "mtime": 1784940781.5520635,
+    "ast_hash": "064c460b486d2b496ba3eb1428406f4d",
     "semantic_hash": ""
   },
   "src/components/NotificationBell.jsx": {
-    "mtime": 1785326523.0137472,
-    "ast_hash": "4b197513d62f17e033a2a3fb410df16e",
+    "mtime": 1777967263.1734571,
+    "ast_hash": "f175d7455277bd08b22ac0565043f64f",
     "semantic_hash": ""
   },
   "src/components/ResidentEvilInventory.jsx": {
-    "mtime": 1785326523.436532,
-    "ast_hash": "9735f0f418a619549213ffe3a5944cba",
+    "mtime": 1784552505.669849,
+    "ast_hash": "fad395f3010718b5cd7bb62e5df2e63c",
     "semantic_hash": ""
   },
   "src/components/SafetyStatus.jsx": {
-    "mtime": 1785326523.8594418,
-    "ast_hash": "80dd398be5aa90a9fb40d4c724d5cdd6",
+    "mtime": 1775260438.0,
+    "ast_hash": "9bad21ba49a26dd82776d6ef3be30b26",
     "semantic_hash": ""
   },
   "src/components/SamplingManager.jsx": {
-    "mtime": 1785326524.287962,
-    "ast_hash": "3747e2dc8810cb822dd7fb17e9c4ab27",
+    "mtime": 1781841202.671774,
+    "ast_hash": "9122648b348ec8e7560391743a0a777c",
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1785346220.2846298,
-    "ast_hash": "35e8830e32afcfeda3d50e917a4f242c",
+    "mtime": 1785023349.128037,
+    "ast_hash": "a94352e1b724730774e0b6445afa82a6",
+    "semantic_hash": ""
+  },
+  "src/config/achievements.js": {
+    "mtime": 1781164388.2871633,
+    "ast_hash": "b8976b3ca6c2ab5226905e124c63aece",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
-    "mtime": 1785305023.1206942,
-    "ast_hash": "ec28df6eb206e88c4cefe4637656c5cd",
+    "mtime": 1782961354.7332833,
+    "ast_hash": "b8d56fcc89f4bf62d8c12f3ab560be2d",
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
@@ -200,8 +215,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
-    "mtime": 1785308445.7101233,
-    "ast_hash": "57c5ca0557e9cca075f9155da4b51f59",
+    "mtime": 1785075746.8257313,
+    "ast_hash": "e1d7130945b125dbe212e9c6d91fc4f3",
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
@@ -210,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1785326170.6275203,
-    "ast_hash": "dd6577e2043356b1f2be53a2e5bab92b",
+    "mtime": 1784862089.238884,
+    "ast_hash": "2971fcefd4677e0af4e573e95503c06d",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -225,8 +240,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1785376915.4364007,
-    "ast_hash": "0e50ba2827cbd5b2bd9579478b25919a",
+    "mtime": 1785075746.8267322,
+    "ast_hash": "1621c2a4c5836834d3f32f8545b4183d",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -235,8 +250,8 @@
     "semantic_hash": ""
   },
   "vite.config.js": {
-    "mtime": 1785304957.7300472,
-    "ast_hash": "830a6fea5386221c174a4316ae625d61",
+    "mtime": 1783309425.3996155,
+    "ast_hash": "d0ac1054a5daef2a4d668cbbc6a3f5d1",
     "semantic_hash": ""
   },
   ".github/workflows/build-check.yml": {
@@ -245,13 +260,13 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785137848.67486,
-    "ast_hash": "bee4936cdb4dc3c676351705b4f7cc83",
+    "mtime": 1785137339.0984867,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
     "semantic_hash": ""
   },
   "MANUAL_TEST_CHECKLIST.md": {
-    "mtime": 1785377250.4322538,
-    "ast_hash": "cb420dd73c9e2028880658daa5140925",
+    "mtime": 1785023395.8302846,
+    "ast_hash": "20507e7a3d4e9ed6a25c0fff65e44d90",
     "semantic_hash": ""
   },
   "README.md": {
@@ -265,8 +280,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1785305012.9183211,
-    "ast_hash": "a80ddf1cd921379b8ae5eb14321fe9ae",
+    "mtime": 1783904260.4097273,
+    "ast_hash": "c6749bda1380dddd4b3a30ae1c18a5d6",
     "semantic_hash": ""
   },
   "public/apple-touch-icon.png": {
@@ -319,6 +334,11 @@
     "ast_hash": "f0402b67b6ce880f65666bb49e841696",
     "semantic_hash": ""
   },
+  "src/monalisa.jpg": {
+    "mtime": 1766650222.228153,
+    "ast_hash": "9fc93f5e3f3b76f167443121458a678f",
+    "semantic_hash": ""
+  },
   "public/Bit_Capybara_Fortnite_Dance_Video.mp4": {
     "mtime": 1775260438.0,
     "ast_hash": "28626718c61ed5e1f105fc3a2e450971",
@@ -357,46 +377,6 @@
   "src/assets/music/Shadow of War - War Map.mp3": {
     "mtime": 1775260438.0,
     "ast_hash": "3894aaaa488d92767d5e384964b477e1",
-    "semantic_hash": ""
-  },
-  ".claude/settings.local.json": {
-    "mtime": 1785303587.1672282,
-    "ast_hash": "de0d84709114efed1c90ceea07c19d9f",
-    "semantic_hash": ""
-  },
-  ".mcp.json": {
-    "mtime": 1785287383.9027214,
-    "ast_hash": "42b39f884f93213ac05ff481179f41d2",
-    "semantic_hash": ""
-  },
-  "src/.claude/settings.local.json": {
-    "mtime": 1785189751.8210573,
-    "ast_hash": "49a410df4511cffd28e8c7139a3f2683",
-    "semantic_hash": ""
-  },
-  "src/config/career.js": {
-    "mtime": 1785376575.9740117,
-    "ast_hash": "6e0ef5be7d5dcb6a4aa6e51af13f109a",
-    "semantic_hash": ""
-  },
-  ".claude/session-start-context.md": {
-    "mtime": 1785187366.9043674,
-    "ast_hash": "542be9e7dabf5279dfece1d226d345fb",
-    "semantic_hash": ""
-  },
-  "src/components/AchievementTester.jsx": {
-    "mtime": 1785376703.715409,
-    "ast_hash": "0a5400499f0959213431616e9ad53047",
-    "semantic_hash": ""
-  },
-  "src/components/CareerDevTools.jsx": {
-    "mtime": 1785377067.3287702,
-    "ast_hash": "3318904057f84e6520e64e821948b608",
-    "semantic_hash": ""
-  },
-  "src/config/rankBorders.jsx": {
-    "mtime": 1785377045.6073265,
-    "ast_hash": "b61ddd7a1ea533dcb7d73fb2fd0fd04c",
     "semantic_hash": ""
   }
 }

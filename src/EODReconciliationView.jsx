@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah } from './utils/helpers';
+import { formatRupiah, getLocalDayKey } from './utils/helpers';
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
@@ -108,6 +108,26 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             }
         });
 
+        // 🚀 CAREER LEDGER STATS (Phase 2): stamped onto the CASH_STOCK payload at submit time,
+        // read once by handleVerifyEOD into the career doc. Product Map built once, outside any loop.
+        const productMap = new Map(inventory.map(p => [p.id, p]));
+        const storesServed = new Set(
+            todaysTrans.filter(t => t.type === 'SALE').map(t => t.customerName)
+        ).size;
+        const titipCollected = todaysTrans
+            .filter(t => t.type === 'CONSIGNMENT_PAYMENT')
+            .reduce((sum, t) => sum + (t.amountPaid !== undefined ? t.amountPaid : (t.total || 0)), 0);
+        const itemsBks = todaysTrans
+            .filter(t => t.type === 'SALE')
+            .reduce((sum, t) => sum + (t.items || []).reduce((itemSum, item) => {
+                const prod = productMap.get(item.productId);
+                let mult = 1;
+                if (item.unit === 'Slop') mult = prod?.packsPerSlop || 10;
+                if (item.unit === 'Bal') mult = (prod?.slopsPerBal || 20) * (prod?.packsPerSlop || 10);
+                if (item.unit === 'Karton') mult = (prod?.balsPerCarton || 4) * (prod?.slopsPerBal || 20) * (prod?.packsPerSlop || 10);
+                return itemSum + (Number(item.qty) || 0) * mult;
+            }, 0), 0);
+
         const todaysReports = eodReports.filter(r => {
             if (r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : today);
@@ -144,7 +164,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus };
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     useEffect(() => {
@@ -215,11 +235,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                 
                 {isAdmin && (
                     <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <ShieldAlert size={14}/> HQ Verification 
-                            {pendingReports.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
+                            {pendingReports.length > 0 && <span className="bg-red-500 text-white text-[11px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <Wallet size={14}/> My Setoran
                         </button>
                     </div>
@@ -294,7 +314,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 {/* 🚀 THE RP 0 WARNING REVEAL */}
                                                 {agentBountyData.total === 0 && (
                                                     <div className="bg-red-900/40 border border-red-500/50 p-2 rounded mb-4 inline-block shadow-inner">
-                                                        <p className="text-orange-400 text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
+                                                        <p className="text-orange-400 text-[11px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
                                                             <AlertCircle size={10}/> Warning: Fine is Rp 0 (Product missing HPP)
                                                         </p>
                                                     </div>
@@ -345,11 +365,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="space-y-6">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-emerald-950/30 border border-emerald-500/50 p-4 rounded-xl shadow-inner">
-                                                    <p className="text-[9px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
+                                                    <p className="text-[11px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
                                                     <p className="text-xl md:text-2xl font-black text-emerald-500">{formatRupiah(agentData.expectedCash)}</p>
                                                 </div>
                                                 <div className="bg-blue-950/30 border border-blue-500/50 p-4 rounded-xl shadow-inner">
-                                                    <p className="text-[9px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
+                                                    <p className="text-[11px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
                                                     <p className="text-xl md:text-2xl font-black text-blue-500">{formatRupiah(agentData.expectedTransfer)}</p>
                                                 </div>
                                             </div>
@@ -358,7 +378,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Truck size={14}/> Goods to Return</h4>
                                                 <div className="bg-black/40 border border-white/5 rounded-xl overflow-hidden">
                                                     {agentData.activeStock.length === 0 ? (
-                                                        <p className="text-center p-4 text-slate-500 text-[10px] uppercase tracking-widest">Inventory is empty.</p>
+                                                        <p className="text-center p-4 text-slate-400 text-[10px] uppercase tracking-widest">Inventory is empty.</p>
                                                     ) : (
                                                         <table className="w-full text-left text-xs">
                                                             <tbody>
@@ -394,7 +414,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 <h4 className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={14}/> Damaged Goods to Return</h4>
                                                 <div className="bg-black/40 border border-orange-500/20 rounded-xl overflow-hidden">
                                                     {agentData.damagedItemsToReturn.length === 0 ? (
-                                                        <p className="text-center p-4 text-slate-500 text-[10px] uppercase tracking-widest">No damaged items reported today.</p>
+                                                        <p className="text-center p-4 text-slate-400 text-[10px] uppercase tracking-widest">No damaged items reported today.</p>
                                                     ) : (
                                                         <table className="w-full text-left text-xs">
                                                             <tbody>
@@ -402,7 +422,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                     <tr key={item.ticketId} className="border-t border-orange-500/10 first:border-0">
                                                                         <td className="p-2">
                                                                             <p className="font-bold text-slate-300">{item.name}</p>
-                                                                            <p className="text-[9px] text-orange-400/70">{item.reason}</p>
+                                                                            <p className="text-[11px] text-orange-400/70">{item.reason}</p>
                                                                         </td>
                                                                         <td className="p-2 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
                                                                     </tr>
@@ -418,16 +438,21 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                 {agentData.cashStatus === 'READY' && (
                                     <button 
-                                        onClick={() => onSubmitEOD({ 
-                                            cash: agentData.expectedCash, 
-                                            transfer: agentData.expectedTransfer, 
-                                            cukai: 0, 
-                                            remainingStock: agentData.activeStock, 
+                                        onClick={() => onSubmitEOD({
+                                            cash: agentData.expectedCash,
+                                            transfer: agentData.expectedTransfer,
+                                            cukai: 0,
+                                            remainingStock: agentData.activeStock,
                                             damagedStockToReturn: agentData.damagedItemsToReturn,
-                                            deployedSamples: [], 
+                                            deployedSamples: [],
                                             reportType: 'CASH_STOCK',
                                             agentId: effectiveId,
-                                            agentName: resolveIdentityName()
+                                            agentName: resolveIdentityName(),
+                                            dayKey: getLocalDayKey(),
+                                            storesServed: agentData.storesServed,
+                                            cukaiRemaining: agentData.cukaiRemaining,
+                                            titipCollected: agentData.titipCollected,
+                                            itemsBks: agentData.itemsBks
                                         })}
                                         className="w-full mt-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                                     >
@@ -462,7 +487,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="bg-black/60 border-b-2 border-orange-500 p-3 rounded text-center">
-                                                        <p className="text-[9px] font-bold text-orange-400 uppercase mb-2">Physical Returned</p>
+                                                        <p className="text-[11px] font-bold text-orange-400 uppercase mb-2">Physical Returned</p>
                                                         <input 
                                                             type="number" min="0" value={cukaiReturnedInput} onChange={(e) => setCukaiReturnedInput(e.target.value)}
                                                             className="w-full bg-transparent text-orange-500 font-black text-3xl text-center outline-none"
@@ -470,7 +495,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     </div>
 
                                                     <div className="bg-black/60 border-b-2 border-red-500 p-3 rounded text-center">
-                                                        <p className="text-[9px] font-bold text-red-400 uppercase mb-2">Lost (Pay Cash)</p>
+                                                        <p className="text-[11px] font-bold text-red-400 uppercase mb-2">Lost (Pay Cash)</p>
                                                         <input 
                                                             type="number" min="0" value={cukaiPaidInput} onChange={(e) => setCukaiPaidInput(e.target.value)}
                                                             className="w-full bg-transparent text-red-500 font-black text-3xl text-center outline-none"
@@ -482,7 +507,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     <div className="mt-4 p-3 bg-red-950/30 border border-red-500/30 rounded text-center animate-fade-in">
                                                         <p className="text-[10px] text-red-400 uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
                                                         <p className="text-xl font-black text-red-500 mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
-                                                        <p className="text-[8px] text-red-400/70 mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
+                                                        <p className="text-[11px] text-red-400/70 mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -529,7 +554,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             })
                                         }}
                                         disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
-                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'}`}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'}`}
                                     >
                                         <Upload size={18}/> Submit Stamps & Fines
                                     </button>
@@ -551,7 +576,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         <h3 className="font-black text-white uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-orange-500"/> Pending Verification ({pendingReports.length})</h3>
                         <div className="space-y-4">
                             {pendingReports.length === 0 ? (
-                                <div className="bg-black/20 border border-white/10 p-8 rounded-2xl text-center text-slate-500 text-xs uppercase tracking-widest">No pending reports.</div>
+                                <div className="bg-black/20 border border-white/10 p-8 rounded-2xl text-center text-slate-400 text-xs uppercase tracking-widest">No pending reports.</div>
                             ) : pendingReports.map(report => (
                                 <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-orange-500/30' : 'border-emerald-500/30'}`}>
                                     
@@ -563,10 +588,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            {report.reportType === 'CASH_STOCK' && <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
-                                            {report.reportType === 'CUKAI' && <span className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
-                                            {report.reportType === 'BOUNTY' && <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
-                                            {!report.reportType && <span className="bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
+                                            {report.reportType === 'CASH_STOCK' && <span className="bg-emerald-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
+                                            {report.reportType === 'CUKAI' && <span className="bg-orange-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
+                                            {report.reportType === 'BOUNTY' && <span className="bg-red-600 text-white text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
+                                            {!report.reportType && <span className="bg-blue-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
                                         </div>
                                     </div>
 
@@ -577,7 +602,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl text-center">
                                                 <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
                                                 <p className="text-3xl font-black text-red-500 font-mono">{formatRupiah(report.cash)}</p>
-                                                <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
+                                                <p className="text-[11px] text-slate-400 uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
                                             </div>
                                         )}
 
@@ -614,7 +639,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                     {item.name}: <strong className="text-emerald-400">{displayQty.trim() || '0 Bks'}</strong>
                                                                 </span>
                                                             );
-                                                        }) : <span className="text-[10px] text-slate-500 italic">No stock to return.</span>}
+                                                        }) : <span className="text-[10px] text-slate-400 italic">No stock to return.</span>}
                                                     </div>
                                                 </div>
 
@@ -627,7 +652,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                 <span className="text-slate-300">{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span>
                                                                 <strong className="text-orange-400">{item.qty} {item.unit}</strong>
                                                             </div>
-                                                        )) : <span className="text-[10px] text-slate-500 italic">No damaged goods to return.</span>}
+                                                        )) : <span className="text-[10px] text-slate-400 italic">No damaged goods to return.</span>}
                                                     </div>
                                                 </div>
                                             </>
@@ -645,7 +670,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     <div className="flex justify-between items-center bg-red-950/20 p-3 rounded-lg border border-red-500/30 mt-2">
                                                         <div>
                                                             <span className="text-xs font-bold text-red-400 uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
-                                                            <span className="text-[9px] text-red-500 font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
+                                                            <span className="text-[11px] text-red-500 font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
                                                         </div>
                                                         <span className="text-xl font-black text-red-500">+{formatRupiah(report.cukaiFine)}</span>
                                                     </div>
@@ -702,7 +727,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         
                         <div className="space-y-3 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
                             {Object.keys(structuredHistory).length === 0 ? (
-                                <div className="text-center p-6 text-slate-600 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No history logs found.</div>
+                                <div className="text-center p-6 text-slate-400 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No history logs found.</div>
                             ) : Object.keys(structuredHistory).map(location => (
                                 <div key={location} className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
                                     
@@ -715,7 +740,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <div className="p-1.5 bg-emerald-950/50 rounded-lg border border-emerald-900/50"><MapPin className="text-emerald-500" size={16}/></div>
                                             <span className="font-black text-white uppercase tracking-widest text-sm">{location}</span>
                                         </div>
-                                        <div className="text-slate-500">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
+                                        <div className="text-slate-400">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
                                     </button>
 
                                     {openLocations.includes(location) && (
@@ -734,7 +759,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             <User className="text-blue-400" size={14}/>
                                                             <span className="font-bold text-slate-200 text-xs uppercase tracking-wider">{empName}</span>
                                                         </div>
-                                                        <div className="text-slate-600">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
+                                                        <div className="text-slate-400">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
                                                     </button>
 
                                                     {openAgents.includes(empKey) && (
@@ -753,7 +778,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                             <Calendar className="text-orange-400" size={12}/>
                                                                             <span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">{yearMonth}</span>
                                                                         </div>
-                                                                        <div className="text-slate-600">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                        <div className="text-slate-400">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
                                                                     </button>
 
                                                                     {openMonths.includes(monthKey) && (
@@ -772,7 +797,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                             <Folder className="text-indigo-400" size={12}/>
                                                                                             <span className="font-bold text-slate-300 text-[10px] uppercase tracking-widest">{fullDate}</span>
                                                                                         </div>
-                                                                                        <div className="text-slate-600">{openDates.includes(dateKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                                        <div className="text-slate-400">{openDates.includes(dateKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
                                                                                     </button>
 
                                                                                     {openDates.includes(dateKey) && (
@@ -793,10 +818,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             {!report.reportType && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
                                                                                                             {report.reportType === 'BOUNTY' ? <span className="text-red-400 tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
                                                                                                             {/* 🚀 NEW: quick hint badge, click the row for the full breakdown */}
-                                                                                                            {hasDamaged && <span className="text-[8px] bg-orange-900/40 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
-                                                                                                            <ChevronDown size={10} className={`text-slate-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/>
+                                                                                                            {hasDamaged && <span className="text-[11px] bg-orange-900/40 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
+                                                                                                            <ChevronDown size={10} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/>
                                                                                                         </h4>
-                                                                                                        <p className="text-[9px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
+                                                                                                        <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1 font-mono">
                                                                                                             <Clock size={10}/> 
                                                                                                             {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
                                                                                                         </p>
@@ -812,7 +837,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                         
                                                                                                         <button 
                                                                                                             onClick={(e) => { e.stopPropagation(); onResetEOD(report); }}
-                                                                                                            className="text-[9px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95 uppercase font-bold mt-2"
+                                                                                                            className="text-[11px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95 uppercase font-bold mt-2"
                                                                                                         >
                                                                                                             <XCircle size={10}/> Force Reset
                                                                                                         </button>
@@ -824,7 +849,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                         <div className="mt-3 pt-3 border-t border-white/10 space-y-2" onClick={(e) => e.stopPropagation()}>
                                                                                                             {report.remainingStock && report.remainingStock.length > 0 && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Healthy Stock Returned</p>
+                                                                                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Healthy Stock Returned</p>
                                                                                                                     {report.remainingStock.map((item, idx) => (
                                                                                                                         <p key={idx} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
                                                                                                                     ))}
@@ -832,7 +857,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             )}
                                                                                                             {hasDamaged && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[9px] font-bold text-orange-400 uppercase tracking-widest mb-1">Damaged Goods Returned</p>
+                                                                                                                    <p className="text-[11px] font-bold text-orange-400 uppercase tracking-widest mb-1">Damaged Goods Returned</p>
                                                                                                                     {report.damagedStockToReturn.map((item) => (
                                                                                                                         <p key={item.ticketId} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span><span className="font-bold text-orange-400">{item.qty} {item.unit}</span></p>
                                                                                                                     ))}
@@ -841,7 +866,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             {/* 🚀 FIX: Cukai never had expand content at all - now shows the real breakdown */}
                                                                                                             {report.reportType === 'CUKAI' && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[9px] font-bold text-orange-400 uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
+                                                                                                                    <p className="text-[11px] font-bold text-orange-400 uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
                                                                                                                     <p className="text-[10px] text-slate-300 flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-orange-400">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span></p>
                                                                                                                     {report.cukaiPaid > 0 && (
                                                                                                                         <p className="text-[10px] text-slate-300 flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-red-400">{report.cukaiPaid} Pcs ({formatRupiah(report.cukaiFine || 0)})</span></p>
@@ -851,13 +876,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             {/* 🚀 FIX: report.penaltyDescription never existed - real fields are penaltyKeys and cash */}
                                                                                                             {report.reportType === 'BOUNTY' && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mb-1">Bounty Details</p>
+                                                                                                                    <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-1">Bounty Details</p>
                                                                                                                     <p className="text-[10px] text-slate-300 flex justify-between"><span>Penalty Item{report.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-red-400">{report.penaltyKeys?.length || 0}</span></p>
                                                                                                                     <p className="text-[10px] text-slate-300 flex justify-between"><span>Total Paid</span><span className="font-bold text-red-400">{formatRupiah(report.cash)}</span></p>
                                                                                                                 </div>
                                                                                                             )}
                                                                                                             {!report.remainingStock?.length && !hasDamaged && report.reportType !== 'CUKAI' && report.reportType !== 'BOUNTY' && (
-                                                                                                                <p className="text-[10px] text-slate-500 italic">No itemized data for this entry.</p>
+                                                                                                                <p className="text-[10px] text-slate-400 italic">No itemized data for this entry.</p>
                                                                                                             )}
                                                                                                         </div>
                                                                                                     )}

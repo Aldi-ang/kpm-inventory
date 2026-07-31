@@ -4,7 +4,7 @@ import {
     ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
-import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot } from 'firebase/firestore'; 
+import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail } from './utils/helpers';
 
@@ -82,15 +82,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         });
     }, [inventory, branchStock, selectedAgentUsesBranch]);
 
-    const defaultAgentState = { 
+    const defaultAgentState = {
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
-        allowedPayments: ['Cash'], 
+        allowedPayments: ['Cash'],
         allowedTiers: ['Retail', 'Ecer'],
         userRole: 'AGENT',
-        location: isAreaAdmin ? branchPathLocation : 'Headquarters', 
+        location: isAreaAdmin ? branchPathLocation : 'Headquarters',
         province: myProfile?.province || 'Central Java',
         canEditRoster: false,
-        allowRetur: false
+        allowRetur: false,
+        joinDate: ''
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
 
@@ -180,7 +181,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     allowedPayments: newAgent.allowedPayments, allowedTiers: newAgent.allowedTiers,
                     userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
                     canEditRoster: newAgent.canEditRoster || false,
-                    allowRetur: newAgent.allowRetur || false
+                    allowRetur: newAgent.allowRetur || false,
+                    joinDate: newAgent.joinDate || ''
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
@@ -193,8 +195,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
             } else {
                 const newId = `AGT_${Date.now()}`;
-                const agentData = { 
-                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: new Date().toISOString() 
+                const agentData = {
+                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: serverTimestamp()
                 };
                 batch.set(doc(db, collPath, newId), agentData);
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
@@ -474,29 +476,29 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="p-6 pb-2 shrink-0">
                                 <div className="text-center mb-6">
                                     <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                    <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
-                                    <p className="text-[9px] mt-1 uppercase tracking-widest !text-slate-500">REPRINT COPY</p>
+                                    <p className="text-[10px] font-bold mt-1 !text-slate-400">OFFICIAL SALES RECEIPT</p>
+                                    <p className="text-[11px] mt-1 uppercase tracking-widest !text-slate-400">REPRINT COPY</p>
                                 </div>
                                 <div className="!bg-slate-100 rounded-lg p-4 mb-4 text-xs border !border-slate-300 space-y-2 shadow-inner">
-                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
-                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
-                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName || 'Unknown'}</span></div>
-                                    <div className="flex justify-between items-center"><span className="!text-slate-600 font-bold">TYPE:</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>{viewingReceipt.paymentType || 'Cash'}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-400 font-bold">DATE:</span><span className="!text-black font-black">{viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds*1000).toLocaleString('id-ID') : viewingReceipt.date}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-400 font-bold">CUST:</span><span className="!text-black font-black uppercase">{viewingReceipt.customerName}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-400 font-bold">AGENT:</span><span className="!text-black font-black uppercase">{viewingReceipt.agentName || 'Unknown'}</span></div>
+                                    <div className="flex justify-between items-center"><span className="!text-slate-400 font-bold">TYPE:</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>{viewingReceipt.paymentType || 'Cash'}</span></div>
                                 </div>
                                 <div className="border-t-2 border-b-2 border-dashed !border-slate-400 py-3 mb-4 min-h-[150px]">
                                     {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
                                         <div key={i} className="mb-2">
                                             <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
                                                 {item.name}
-                                                {item.condition === 'DAMAGED' && <span className="text-[9px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                {item.fulfillment === 'IOU' && <span className="text-[9px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
-                                                {item.isIouFulfillment && <span className="text-[9px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
+                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
+                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
                                             </div>
                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                             )}
                                             <div className="flex justify-between text-xs mt-0.5">
-                                                <span className="!text-slate-600">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                                <span className="!text-slate-400">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
                                                 <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
                                                     {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                 </span>
@@ -512,7 +514,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
                                     </span>
                                 </div>
-                                <div className="text-center text-[10px] mb-4 font-bold !text-slate-500"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
+                                <div className="text-center text-[10px] mb-4 font-bold !text-slate-400"><p>*** THANK YOU FOR YOUR BUSINESS ***</p></div>
                             </div>
                             <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
                                 <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print</button>
@@ -544,19 +546,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                     <div className="text-right shrink-0">
                                         <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">SURAT JALAN</h2>
-                                        <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">OFFICIAL DELIVERY ORDER</p>
+                                        <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">OFFICIAL DELIVERY ORDER</p>
                                         <p className="text-sm font-mono font-black mt-2 !text-black">SJ-{new Date().toISOString().split('T')[0].replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
                                     </div>
                                 </div>
 
                                 <div className="px-0 mb-6 grid grid-cols-2 gap-4">
                                     <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm">
-                                        <p className="text-[10px] font-bold !text-slate-500 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
+                                        <p className="text-[10px] font-bold !text-slate-400 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
                                         <p className="font-black text-lg uppercase !text-black">{selectedAgent.name}</p>
                                         <p className="text-xs mt-1 font-bold !text-slate-700">Role: {selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</p>
                                     </div>
                                     <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm text-right">
-                                        <p className="text-[10px] font-bold !text-slate-500 uppercase mb-1">Informasi Kendaraan / Waktu</p>
+                                        <p className="text-[10px] font-bold !text-slate-400 uppercase mb-1">Informasi Kendaraan / Waktu</p>
                                         <p className="font-black text-lg uppercase !text-black">{selectedAgent.vehicle || 'TIDAK ADA DATA KENDARAAN'}</p>
                                         <p className="text-xs mt-1 font-bold !text-slate-700">Deploy: {new Date().toLocaleTimeString('id-ID')}</p>
                                     </div>
@@ -577,7 +579,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         ) : (
                                             (selectedAgent.activeCanvas || []).map((item, idx) => (
                                                 <tr key={idx}>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-600">{idx + 1}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-400">{idx + 1}</td>
                                                     <td className="border-2 !border-slate-800 p-2 font-bold uppercase !text-black">{item.name}</td>
                                                     <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-blue-700">{item.qty}</td>
                                                     <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-black">{item.unit}</td>
@@ -709,15 +711,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             </div>
 
                             <input disabled={isReadOnlyMode} type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
-                            <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
-                            
+                            <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Join Date</label>
+                            <input disabled={isReadOnlyMode} type="date" value={newAgent.joinDate || ''} onChange={e => setNewAgent({...newAgent, joinDate: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 
                                 {(newAgent.userRole === 'AREA_ADMIN' || newAgent.userRole === 'FLEET_CAPTAIN') && isAdmin && !isReadOnlyMode && (
                                     <div className="mb-4">
-                                        <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Branch Privileges</label>
-                                        <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${newAgent.canEditRoster ? 'bg-purple-900/30 border-purple-500 text-purple-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Branch Privileges</label>
+                                        <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${newAgent.canEditRoster ? 'bg-purple-900/30 border-purple-500 text-purple-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                                             <input type="checkbox" className="hidden" checked={newAgent.canEditRoster} onChange={() => setNewAgent({...newAgent, canEditRoster: !newAgent.canEditRoster})} />
                                             Allow Roster Management (Add / Edit / Terminate)
                                         </label>
@@ -725,18 +729,18 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 )}
 
                                 <div className="mb-4">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Operational Privileges</label>
-                                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}>
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Operational Privileges</label>
+                                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                                         <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowRetur} onChange={() => setNewAgent({...newAgent, allowRetur: !newAgent.allowRetur})} />
                                         Allow Tarik Barang / Retur (Return Unsold Goods)
                                     </label>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                                            <label key={method} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                                            <label key={method} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
                                                 <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedPayments.includes(method)} onChange={() => togglePayment(method)} />
                                                 {method === 'Titip' ? 'Consignment' : method}
                                             </label>
@@ -744,10 +748,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Ecer', 'Retail', 'Grosir'].map(tier => (
-                                            <label key={tier} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                                            <label key={tier} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
                                                 <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedTiers.includes(tier)} onChange={() => toggleTier(tier)} />
                                                 {tier}
                                             </label>
@@ -771,12 +775,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     {agents.length === 0 && !isAddingAgent ? (
                         <div className="text-center py-10">
                             <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
-                            <p className="text-slate-500 text-sm">No personnel found.</p>
+                            <p className="text-slate-400 text-sm">No personnel found.</p>
                         </div>
                     ) : (
                         <>
                             <div className="mb-4 relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input type="text" placeholder="Search Name, Role, Area, Email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"/>
                             </div>
 
@@ -810,8 +814,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
                                                     <MapPin size={14} className="text-orange-500"/>
                                                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
-                                                    <span className="text-[9px] text-slate-600 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
-                                                    <ChevronDown size={14} className="text-slate-500 transition-transform group-open/loc:rotate-180" />
+                                                    <span className="text-[11px] text-slate-400 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
+                                                    <ChevronDown size={14} className="text-slate-400 transition-transform group-open/loc:rotate-180" />
                                                 </summary>
 
                                                 <div className="space-y-2 pl-2 border-l-2 border-slate-800/50 mt-2 mb-4">
@@ -832,7 +836,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-col items-end gap-2 shrink-0">
-                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
                                                                     {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
                                                                 </span>
                                                                 <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
@@ -869,7 +873,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 <AlertCircle size={18} className="text-orange-500 animate-pulse"/>
                                 <h3 className="font-bold text-orange-400 uppercase tracking-widest text-xs">Active HQ Override Requests</h3>
                             </div>
-                            <span className="bg-orange-500 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                            <span className="bg-orange-500 text-black text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
                                 Action Required
                             </span>
                         </div>
@@ -885,7 +889,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="font-bold text-white text-sm uppercase">{bypass.storeName}</h4>
-                                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-orange-500 text-black">PENDING</span>
+                                                <span className="text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-orange-500 text-black">PENDING</span>
                                             </div>
                                             <p className="text-[10px] text-slate-400 font-mono mb-0.5">Agent: <span className="text-orange-300 font-bold">{bypass.salesmanName}</span> • Time: {new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
                                             <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest flex items-center gap-1">
@@ -932,13 +936,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <h2 className="text-3xl font-black text-white">{selectedAgent.name}</h2>
                                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                                         <ShieldCheck size={14} className="text-emerald-500"/>
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Permissions:</span>
+                                        <span className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Permissions:</span>
                                         {(selectedAgent.allowedPayments || ['Cash']).map(p => (
-                                            <span key={p} className="text-[9px] bg-blue-900/30 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
+                                            <span key={p} className="text-[11px] bg-blue-900/30 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
                                         ))}
-                                        <span className="text-slate-600">|</span>
+                                        <span className="text-slate-400">|</span>
                                         {(selectedAgent.allowedTiers || ['Retail', 'Ecer']).map(t => (
-                                            <span key={t} className="text-[9px] bg-emerald-900/30 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
+                                            <span key={t} className="text-[11px] bg-emerald-900/30 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -966,16 +970,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         return (
                                             <>
                                                 <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-1">Initial</p>
+                                                    <p className="text-[11px] text-slate-400 uppercase tracking-widest mb-1">Initial</p>
                                                     <p className="text-lg font-black text-slate-300">{initialLoadBks}</p>
                                                 </div>
                                                 <div className="bg-orange-900/20 p-2.5 rounded-xl border border-orange-500/30 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[8px] text-orange-400 uppercase tracking-widest mb-1">Sold</p>
+                                                    <p className="text-[11px] text-orange-400 uppercase tracking-widest mb-1">Sold</p>
                                                     <p className="text-lg font-black text-orange-500">{soldTodayBks}</p>
                                                 </div>
                                                 <div className="bg-emerald-900/20 p-2.5 rounded-xl border border-emerald-500/30 text-center min-w-[70px] shadow-inner relative overflow-hidden">
                                                     <div className="absolute inset-0 bg-emerald-500/10 animate-pulse pointer-events-none"></div>
-                                                    <p className="text-[8px] text-emerald-400 uppercase tracking-widest mb-1">Current</p>
+                                                    <p className="text-[11px] text-emerald-400 uppercase tracking-widest mb-1">Current</p>
                                                     <p className="text-lg font-black text-emerald-500 relative z-10">{currentLoadBks}</p>
                                                 </div>
                                             </>
@@ -1018,8 +1022,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[9px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
-                                        <button onClick={handleClearCanvas} className="text-[9px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
+                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[11px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
+                                        <button onClick={handleClearCanvas} className="text-[11px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
                                     </div>
                                 )}
                             </div>
@@ -1027,8 +1031,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="space-y-2">
                                 {combinedItems.length === 0 ? (
                                     <div className="text-center py-8 bg-black/20 rounded-xl border border-slate-800 border-dashed">
-                                        <Archive size={24} className="mx-auto mb-2 text-slate-600"/>
-                                        <p className="text-xs text-slate-500 uppercase tracking-widest">No Items Assigned Today</p>
+                                        <Archive size={24} className="mx-auto mb-2 text-slate-400"/>
+                                        <p className="text-xs text-slate-400 uppercase tracking-widest">No Items Assigned Today</p>
                                     </div>
                                 ) : (
                                     combinedItems.map((item, idx) => (
@@ -1087,7 +1091,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
-                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
                                                                     {bypass.status}
                                                                 </span>
                                                             </div>
@@ -1131,7 +1135,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 <div className="space-y-3">
                                                     <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Daily Transactions</h4>
                                                     {agentSales.length === 0 ? (
-                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No transactions recorded today.</p>
+                                                        <p className="text-center text-xs text-slate-400 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No transactions recorded today.</p>
                                                     ) : (
                                                         agentSales.map(tx => {
                                                             const linkedBypass = agentBypasses.find(b => {
@@ -1153,17 +1157,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                         <div className="flex items-center gap-2">
                                                                             <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
                                                                             {isRetur ? (
-                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white shadow-md">RETUR</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white shadow-md">RETUR</span>
                                                                             ) : isExchange ? (
-                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-500 text-white shadow-md">EXCHANGE</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-500 text-white shadow-md">EXCHANGE</span>
                                                                             ) : isIouFulfill ? (
-                                                                                <span className="text-[8px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">IOU FULFILLED</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">IOU FULFILLED</span>
                                                                             ) : null}
                                                                         </div>
-                                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
+                                                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
                                                                         
                                                                         {linkedBypass && (
-                                                                            <div className="mt-1.5 flex items-center gap-1 text-[8px] bg-orange-900/30 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
+                                                                            <div className="mt-1.5 flex items-center gap-1 text-[11px] bg-orange-900/30 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
                                                                                 <MapPin size={8}/> 100m Bypass Used
                                                                             </div>
                                                                         )}
@@ -1174,7 +1178,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                                 {isRetur && (tx.total || tx.amountPaid || 0) > 0 ? '-' : ''}
                                                                                 {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}
                                                                             </p>
-                                                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
+                                                                            <p className="text-[11px] text-slate-400 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
                                                                         </div>
                                                                         <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 group-hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
                                                                             <FileText size={16}/>
@@ -1190,7 +1194,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 <div className="space-y-3">
                                                     <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><MapPin size={12}/> Geofence Bypass Log</h4>
                                                     {agentBypasses.length === 0 ? (
-                                                        <p className="text-center text-xs text-slate-500 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No bypass history.</p>
+                                                        <p className="text-center text-xs text-slate-400 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No bypass history.</p>
                                                     ) : (
                                                         agentBypasses.map(bypass => (
                                                             <div key={bypass.id} className={`flex items-start gap-3 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
@@ -1202,12 +1206,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                 <div className="flex-1">
                                                                     <div className="flex items-center gap-2 mb-1">
                                                                         <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
-                                                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
                                                                             {bypass.status}
                                                                         </span>
                                                                     </div>
                                                                     <p className="text-[10px] text-slate-400 font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest">Distance: {bypass.distance}m</p>
+                                                                    <p className="text-[11px] text-slate-400 uppercase tracking-widest">Distance: {bypass.distance}m</p>
                                                                 </div>
                                                             </div>
                                                         ))
@@ -1224,7 +1228,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     </>
                 ) : (
                     <div className="flex-1 flex items-center justify-center flex-col opacity-30 select-none">
-                        <Truck size={64} className="mb-4 text-slate-500"/>
+                        <Truck size={64} className="mb-4 text-slate-400"/>
                         <h2 className="text-xl font-black uppercase tracking-[0.3em]">Standby For Deployment</h2>
                         <p className="text-xs text-slate-400 uppercase tracking-widest mt-2">Select Personnel from the Roster</p>
                     </div>

@@ -1,4 +1,8 @@
 {
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:20128/v1",
+    "ANTHROPIC_MODEL": "cc/claude-opus-5"
+  },
   "hooks": {
     "SessionStart": [
       {

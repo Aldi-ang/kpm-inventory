@@ -357,8 +357,8 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
             <div className="crt-overlay"></div>
             <div className="p-5 border-b border-slate-700 bg-black/40 relative z-10 shrink-0">
                 <div className="absolute top-4 right-4 flex gap-3">
-                    <button onClick={() => setIsMinimized(true)} className="text-slate-500 hover:text-white transition-colors"><MinusCircle size={18}/></button>
-                    <button onClick={onClose} className="text-slate-500 hover:text-red-500 transition-colors"><X size={18}/></button>
+                    <button onClick={() => setIsMinimized(true)} className="text-slate-400 hover:text-white transition-colors"><MinusCircle size={18}/></button>
+                    <button onClick={onClose} className="text-slate-400 hover:text-red-500 transition-colors"><X size={18}/></button>
                 </div>
                 <div className="flex items-center gap-3 mb-3">
                     <ShieldAlert size={24} className="text-emerald-500 animate-pulse"/>
@@ -378,14 +378,14 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                 <div className="flex justify-between items-end">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Global Revenue</p>
-                            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="bg-slate-800 text-[9px] text-emerald-400 font-bold px-1.5 py-0.5 rounded outline-none cursor-pointer border border-emerald-500/30 hover:border-emerald-500 transition-colors">
+                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Global Revenue</p>
+                            <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="bg-slate-800 text-[11px] text-emerald-400 font-bold px-1.5 py-0.5 rounded outline-none cursor-pointer border border-emerald-500/30 hover:border-emerald-500 transition-colors">
                                 <option value="Today">Today</option><option value="7 Days">7 Days</option><option value="This Month">This Month</option><option value="This Year">This Year</option><option value="All-Time">All-Time</option>
                             </select>
                         </div>
                         <p className="text-2xl font-black text-emerald-400">{formatRupiah(globalRevenue)}</p>
                     </div>
-                    <div className="text-right"><p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Active Sectors</p><p className="text-xl font-bold text-white">{rankedSectors.length}</p></div>
+                    <div className="text-right"><p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Active Sectors</p><p className="text-xl font-bold text-white">{rankedSectors.length}</p></div>
                 </div>
             </div>
 
@@ -410,17 +410,17 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                         <div key={sector.id} onClick={() => setSelectedZone(sector)} className={`p-3 rounded-xl border transition-all cursor-pointer group ${isSelected ? 'bg-white/10 border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'bg-black/40 border-slate-700 hover:border-slate-500'}`}>
                             <div className="flex justify-between items-center mb-2">
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <span className="text-[10px] font-bold text-slate-500 w-4">{index + 1}.</span>
+                                    <span className="text-[10px] font-bold text-slate-400 w-4">{index + 1}.</span>
                                     <div className="flex flex-col overflow-hidden">
                                         <span className="text-xs font-bold text-white uppercase tracking-wider truncate">
                                             {sector.name} {sector.assignedAgent && <span className="text-purple-400 ml-1" title="Agent Assigned">👤</span>}
                                         </span>
-                                        <span className="text-[8px] text-slate-500 uppercase">{sector.level}</span>
+                                        <span className="text-[11px] text-slate-400 uppercase">{sector.level}</span>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <span className={`text-xs font-black block ${textColor}`}>{formatRupiah(rev)}</span>
-                                    {hasTarget && <span className="text-[8px] text-slate-500 uppercase tracking-widest block">/ {formatRupiah(target)}</span>}
+                                    {hasTarget && <span className="text-[11px] text-slate-400 uppercase tracking-widest block">/ {formatRupiah(target)}</span>}
                                 </div>
                             </div>
                             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex"><div className={`h-full ${barColor} transition-all duration-1000`} style={{ width: `${ratio * 100}%` }}></div></div>
@@ -434,16 +434,16 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     <>
                         <div className="flex justify-between items-center mb-2.5">
                             <div className="min-w-0 pr-2">
-                                <p className="text-[8px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
+                                <p className="text-[11px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
                                 <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
                             </div>
                             <div className="text-right shrink-0"><p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p></div>
                         </div>
                         <div className="flex gap-2">
-                            <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Assets</span><span className="text-xs font-bold text-white">{activeZoneStores.length}</span></div>
+                            <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center"><span className="text-[11px] text-slate-400 uppercase tracking-widest">Assets</span><span className="text-xs font-bold text-white">{activeZoneStores.length}</span></div>
                             <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
-                                <span className={`text-[8px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-500'}`}>Threat</span>
-                                <span className={`font-bold text-[9px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>{activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}</span>
+                                <span className={`text-[11px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-400'}`}>Threat</span>
+                                <span className={`font-bold text-[11px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>{activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}</span>
                             </div>
                         </div>
                     </>
@@ -860,14 +860,14 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({safeBoundaries.length})</h4>
                     <div className="flex gap-2">
-                        <button onClick={handleCreateFolder} className="text-[9px] px-2 py-1 rounded bg-blue-900/50 text-blue-400 hover:bg-blue-500 hover:text-white font-bold uppercase transition-colors shadow-md">+ Folder</button>
-                        <button onClick={handleWipeAll} className="text-[9px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
+                        <button onClick={handleCreateFolder} className="text-[11px] px-2 py-1 rounded bg-blue-900/50 text-blue-400 hover:bg-blue-500 hover:text-white font-bold uppercase transition-colors shadow-md">+ Folder</button>
+                        <button onClick={handleWipeAll} className="text-[11px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
                     </div>
                 </div>
                 
                 {safeBoundaries.length === 0 && customFolders.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                        <Globe size={32} className="mb-2 text-slate-500" />
+                        <Globe size={32} className="mb-2 text-slate-400" />
                         <p className="text-xs text-slate-400 italic text-center">No borders saved.</p>
                     </div>
                 ) : (
@@ -882,16 +882,16 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                         <div className="flex items-center gap-2 cursor-pointer flex-1 min-w-0" onClick={() => toggleNode(folderName)}>
                                             <ChevronRight size={14} className={`text-slate-400 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}/>
                                             <span className="text-xs font-bold text-slate-200 uppercase tracking-widest truncate" title={folderName}>
-                                                {folderName} <span className="text-[9px] text-slate-500 normal-case ml-1">({folderBoundaries.length})</span>
+                                                {folderName} <span className="text-[11px] text-slate-400 normal-case ml-1">({folderBoundaries.length})</span>
                                             </span>
                                         </div>
                                         <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                                             {/* 🚀 FOLDER MANAGEMENT BUTTONS */}
-                                            <button onClick={() => triggerFolderUpload(folderName)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Upload directly to this folder">+ FILE</button>
-                                            <button onClick={() => handleDeleteFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-red-900/40 text-red-400 hover:bg-red-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Delete Folder">DEL</button>
-                                            <button onClick={() => handleRenameFolder(folderName)} className="text-[8px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
-                                            <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[8px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
-                                            <button onClick={() => toggleFolderVisibility(folderName, true)} className="text-[8px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All">HID</button>
+                                            <button onClick={() => triggerFolderUpload(folderName)} className="text-[11px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Upload directly to this folder">+ FILE</button>
+                                            <button onClick={() => handleDeleteFolder(folderName)} className="text-[11px] font-bold tracking-widest bg-red-900/40 text-red-400 hover:bg-red-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Delete Folder">DEL</button>
+                                            <button onClick={() => handleRenameFolder(folderName)} className="text-[11px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
+                                            <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[11px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
+                                            <button onClick={() => toggleFolderVisibility(folderName, true)} className="text-[11px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All">HID</button>
                                         </div>
                                     </div>
 
@@ -902,31 +902,31 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                 <div className="flex flex-col gap-3 w-full p-2">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <span className="text-[10px] uppercase font-bold text-orange-400 flex items-center gap-1"><Settings size={12}/> Sector Configuration</span>
-                                                        <button onClick={() => setEditingId(null)} className="text-slate-500 hover:text-white"><X size={14}/></button>
+                                                        <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white"><X size={14}/></button>
                                                     </div>
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Sector Name</label>
+                                                            <label className="text-[11px] text-slate-400 uppercase font-bold block mb-1">Sector Name</label>
                                                             <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
                                                         </div>
                                                         <div>
-                                                            <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Folder Group</label>
+                                                            <label className="text-[11px] text-slate-400 uppercase font-bold block mb-1">Folder Group</label>
                                                             <input type="text" list="folder-options" value={editForm.folderName} onChange={e => setEditForm({...editForm, folderName: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-blue-500"/>
                                                         </div>
                                                         <div className="flex gap-3">
                                                             <div className="flex-[0.5]">
-                                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Theme</label>
+                                                                <label className="text-[11px] text-slate-400 uppercase font-bold block mb-1">Theme</label>
                                                                 <div className="flex items-center justify-center bg-slate-800 border border-slate-600 rounded p-1 h-[32px]">
                                                                     <input type="color" value={editForm.color} onChange={e => setEditForm({...editForm, color: e.target.value})} className="w-full h-full rounded cursor-pointer bg-transparent border-none p-0"/>
                                                                 </div>
                                                             </div>
                                                             <div className="flex-[1.5]">
-                                                                <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Target Rev (Rp) <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                                <label className="text-[11px] text-slate-400 uppercase font-bold block mb-1">Target Rev (Rp) <span className="text-slate-400 normal-case">(Optional)</span></label>
                                                                 <input type="number" placeholder="e.g. 5000000" value={editForm.targetRev} onChange={e => setEditForm({...editForm, targetRev: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 h-[32px] rounded outline-none focus:border-emerald-500"/>
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <label className="text-[9px] text-slate-500 uppercase font-bold block mb-1">Assigned Agent <span className="text-slate-600 normal-case">(Optional)</span></label>
+                                                            <label className="text-[11px] text-slate-400 uppercase font-bold block mb-1">Assigned Agent <span className="text-slate-400 normal-case">(Optional)</span></label>
                                                             <select value={editForm.assignedAgent} onChange={e => setEditForm({...editForm, assignedAgent: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white text-[10px] font-bold p-1.5 rounded outline-none focus:border-purple-500 cursor-pointer">
                                                                 <option value="none">-- Unassigned Territory --</option>
                                                                 {(motorists || []).map(m => (
@@ -945,7 +945,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                     <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                                                         <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: b.level === 'Kabupaten' ? 'transparent' : b.color, border: b.level === 'Kabupaten' ? `2px solid ${b.color}` : 'none', opacity: b.isHidden ? 0.2 : 1 }}></div>
                                                         <div className="flex flex-col truncate">
-                                                            <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-500 line-through' : 'text-white'}`} title={b.name}>
+                                                            <span className={`text-xs font-medium truncate ${b.isHidden ? 'text-slate-400 line-through' : 'text-white'}`} title={b.name}>
                                                                 {b.name} {b.assignedAgent && <span className="text-purple-400 ml-1 text-[10px]" title="Agent Assigned">👤</span>}
                                                             </span>
                                                         </div>
@@ -955,7 +955,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                         <select 
                                                             value={b.folderName || b.level || 'Uncategorized'}
                                                             onChange={(e) => handleFastMove(b.id, e.target.value)}
-                                                            className="text-[8px] font-bold uppercase tracking-widest bg-slate-800 text-slate-300 border border-slate-600 rounded px-1 py-1 max-w-[80px] outline-none cursor-pointer hover:bg-slate-700"
+                                                            className="text-[11px] font-bold uppercase tracking-widest bg-slate-800 text-slate-300 border border-slate-600 rounded px-1 py-1 max-w-[80px] outline-none cursor-pointer hover:bg-slate-700"
                                                             title="Move to another folder"
                                                         >
                                                             <optgroup label="Move to...">
@@ -963,7 +963,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                                 <option value="CREATE_NEW">+ New Folder</option>
                                                             </optgroup>
                                                         </select>
-                                                        <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[8px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-500 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
+                                                        <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[11px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-400 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
                                                         <button onClick={() => { 
                                                             setEditingId(b.id); 
                                                             setEditForm({
@@ -1006,9 +1006,9 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
                 <Globe className="text-blue-500" size={20}/>
                 <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
             </div>
-            <p className="text-[9px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
+            <p className="text-[11px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
             <div className="mb-3 flex items-center gap-2">
-                <Tag size={12} className="text-slate-500" />
+                <Tag size={12} className="text-slate-400" />
                 <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">{zone.level}</span>
             </div>
             
@@ -1320,7 +1320,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                             <Phone size={14}/> WhatsApp
                         </a>
                     ) : (
-                        <div className="w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+                        <div className="w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
                             <Phone size={14}/> No Phone
                         </div>
                     )}
@@ -1372,7 +1372,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     onBlur={(e) => handleSaveVisitFreq(e.target.value)}
                                     className="w-8 text-center text-xs font-black bg-transparent text-white outline-none"
                                 />
-                                <span className="text-[9px] text-slate-400 font-bold pr-1 uppercase">Days</span>
+                                <span className="text-[11px] text-slate-400 font-bold pr-1 uppercase">Days</span>
                             </div>
                         )}
                     </div>
@@ -1382,7 +1382,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                     <>
                         <div className="flex gap-2 mb-4">
                             <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
                                 <select 
                                     value={store.tier || store.priceTier || 'Retail'} 
                                     onChange={(e) => handleSaveTier(e.target.value)} 
@@ -1391,9 +1391,9 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                     {activeTiers?.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 </select>
                             </div>
-                            <button onClick={handleDeleteStore} className="flex-[0.5] bg-slate-800 hover:bg-red-900/60 text-slate-500 hover:text-red-400 rounded-xl border border-slate-700 hover:border-red-500 transition-colors flex flex-col items-center justify-center shadow-inner active:scale-95">
+                            <button onClick={handleDeleteStore} className="flex-[0.5] bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-400 rounded-xl border border-slate-700 hover:border-red-500 transition-colors flex flex-col items-center justify-center shadow-inner active:scale-95">
                                 <Trash2 size={16} className="mb-1"/>
-                                <span className="text-[9px] font-black uppercase tracking-widest">Delete</span>
+                                <span className="text-[11px] font-black uppercase tracking-widest">Delete</span>
                             </button>
                         </div>
 
@@ -1402,7 +1402,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                 <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
                                 <div className="flex items-center gap-1">
                                     <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none" />
-                                    <span className="text-[10px] text-slate-500 font-bold">x</span>
+                                    <span className="text-[10px] text-slate-400 font-bold">x</span>
                                 </div>
                             </div>
                             <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all" />
@@ -1464,8 +1464,8 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                     <div>
                                                         <span className="text-xs font-bold text-white block">{displayDate}</span>
                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] text-slate-500">{displayTime}</span>
-                                                            <span className="text-[9px] bg-slate-800 text-blue-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                                            <span className="text-[10px] text-slate-400">{displayTime}</span>
+                                                            <span className="text-[11px] bg-slate-800 text-blue-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
                                                                 <User size={10} /> {tx.agentName === 'Admin' ? 'Admin' : (tx.agentName || 'Sales')}
                                                             </span>
                                                         </div>
@@ -1484,7 +1484,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                         )
                                     }) : (
                                         <div className="text-center py-4 opacity-50 flex flex-col items-center">
-                                            <TrendingUp size={20} className="text-slate-500 mb-1"/>
+                                            <TrendingUp size={20} className="text-slate-400 mb-1"/>
                                             <p className="text-xs text-slate-400 italic">No recent sales data.</p>
                                         </div>
                                     )}
@@ -1719,14 +1719,14 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-wider"><Settings size={20} className="text-emerald-500"/> Season Rank Engine</h2>
                         <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Option B: Monthly Reset with 1-Tier Soft Demotion</p>
                     </div>
-                    <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={24}/></button>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={24}/></button>
                 </div>
                 
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
                     <div className="bg-slate-800 border border-slate-600 p-4 rounded-xl flex items-center justify-between">
                         <div>
                             <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2 mb-1"><Globe size={14} className="text-blue-400"/> Synced to Global Logic</label>
-                            <p className="text-[10px] text-slate-500">Targets are evaluated against active Calendar Month Season XP.</p>
+                            <p className="text-[10px] text-slate-400">Targets are evaluated against active Calendar Month Season XP.</p>
                         </div>
                     </div>
 
@@ -1734,9 +1734,9 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                         <div className="bg-black/50 border-2 border-orange-500 rounded-xl p-4 animate-fade-in">
                             <h3 className="text-orange-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2"><Activity size={16}/> Season Audit Results</h3>
                             <div className="grid grid-cols-3 gap-3 mb-4">
-                                <div className="bg-slate-800 p-3 rounded-lg border border-emerald-500/30 text-center"><span className="block text-2xl font-black text-emerald-400">{simResults.promotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Promotions</span></div>
-                                <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[9px] uppercase font-bold text-slate-400">Demotions</span></div>
-                                <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 text-center"><span className="block text-2xl font-black text-slate-300">{simResults.steady}</span><span className="text-[9px] uppercase font-bold text-slate-500">Unchanged</span></div>
+                                <div className="bg-slate-800 p-3 rounded-lg border border-emerald-500/30 text-center"><span className="block text-2xl font-black text-emerald-400">{simResults.promotions.length}</span><span className="text-[11px] uppercase font-bold text-slate-400">Promotions</span></div>
+                                <div className="bg-slate-800 p-3 rounded-lg border border-red-500/30 text-center"><span className="block text-2xl font-black text-red-400">{simResults.demotions.length}</span><span className="text-[11px] uppercase font-bold text-slate-400">Demotions</span></div>
+                                <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 text-center"><span className="block text-2xl font-black text-slate-300">{simResults.steady}</span><span className="text-[11px] uppercase font-bold text-slate-400">Unchanged</span></div>
                             </div>
                             <div className="max-h-48 overflow-y-auto space-y-1 mb-4 custom-scrollbar">
                                 {simResults.all.map((act, i) => {
@@ -1747,18 +1747,18 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                                         <div key={i} className="flex justify-between items-center text-[10px] p-2 bg-slate-900 border border-slate-800 rounded">
                                             <span className="font-bold text-white truncate w-1/4">{act.name}</span>
                                             <div className="flex flex-col items-start w-2/5 font-mono">
-                                                <span className="text-orange-400 font-black text-[9px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
-                                                <span className="text-slate-500 text-[8px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
+                                                <span className="text-orange-400 font-black text-[11px]">SEASON: Rp {new Intl.NumberFormat('id-ID').format(act.rev)}</span>
+                                                <span className="text-slate-400 text-[11px]">LIFETIME: Rp {new Intl.NumberFormat('id-ID').format(act.lt)}</span>
                                             </div>
                                             <div className="flex items-center gap-1 w-1/3 justify-end font-bold uppercase">
-                                                <span className="text-slate-500 truncate" title={oldLabel}>{oldLabel}</span>
+                                                <span className="text-slate-400 truncate" title={oldLabel}>{oldLabel}</span>
                                                 {act.old !== act.new ? (
                                                     <>
                                                         {act.isPromotion ? <ArrowUpCircle size={12} className="text-emerald-500 shrink-0"/> : <ArrowDownCircle size={12} className="text-red-500 shrink-0"/>}
                                                         <span className={`truncate ${act.isPromotion ? 'text-emerald-400' : 'text-red-400'}`} title={newLabel}>{newLabel}</span>
                                                     </>
                                                 ) : (
-                                                    <span className="text-slate-600 ml-1 shrink-0">(=)</span>
+                                                    <span className="text-slate-400 ml-1 shrink-0">(=)</span>
                                                 )}
                                             </div>
                                         </div>
@@ -2120,12 +2120,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <div className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1">
                         <MapPin size={12} className="animate-bounce" /> {editingStoreId ? "Correct Location" : "Drop New Pin"}
                     </div>
-                    <span className="text-slate-300 text-[9px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
+                    <span className="text-slate-300 text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                     
                     <div className="flex gap-2 w-full mt-1">
                         <button 
                             onClick={() => { setIsAddingMode(false); setEditingStoreId(null); setDragPinCoords(null); }}
-                            className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4"
+                            className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4"
                         >
                             Cancel
                         </button>
@@ -2152,7 +2152,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
                                 }
                             }}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
                         >
                             <CheckCircle size={12} /> {editingStoreId ? "Save" : "Confirm"}
                         </button>
@@ -2164,7 +2164,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {pendingNewStore && (
                 <div className="absolute inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-slate-900 border-2 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)] rounded-2xl w-full max-w-sm p-6 animate-slide-down relative">
-                        <button onClick={() => setPendingNewStore(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
+                        <button onClick={() => setPendingNewStore(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={20}/></button>
                         
                         <div className="flex items-center gap-3 mb-6">
                             <div className="bg-orange-500/20 p-2 rounded-full"><Store className="text-orange-500" size={24}/></div>
@@ -2197,7 +2197,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             <button 
                                 onClick={handleSaveNewStore}
                                 disabled={isSavingStore}
-                                className={`w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg ${isSavingStore ? 'bg-slate-700 text-slate-500' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'}`}
+                                className={`w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg ${isSavingStore ? 'bg-slate-700 text-slate-400' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'}`}
                             >
                                 {isSavingStore ? 'Saving...' : 'Deploy Target'}
                             </button>
@@ -2236,7 +2236,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <button onClick={toggleAllTiers} className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Show All Tiers</button>
                         <div className="grid grid-cols-2 gap-1 mt-1">
                             {activeTiers.map(tier => (
-                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 rounded-lg text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-500 hover:bg-slate-800 opacity-60'}`}>
+                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 rounded-lg text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-400 hover:bg-slate-800 opacity-60'}`}>
                                     {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{String(tier.value || '')}</span>}{String(tier.label || '')}
                                 </button>
                             ))}

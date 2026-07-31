@@ -322,7 +322,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 <span className={`text-xs font-bold px-2 py-1 rounded-full border ${borderClass} ${colorClass}`}>{data.length} Accounts</span>
             </div>
             <div className="p-4 flex-1 overflow-y-auto max-h-[500px] space-y-3 custom-scrollbar">
-                {data.length === 0 ? <p className="text-center text-[10px] text-slate-500 uppercase tracking-widest py-8">No active records</p> : data.map((c, i) => (
+                {data.length === 0 ? <p className="text-center text-[10px] text-slate-400 uppercase tracking-widest py-8">No active records</p> : data.map((c, i) => (
                     <div key={i} className="bg-black/40 p-4 rounded-xl border border-white/5 relative overflow-hidden group">
                         <h4 className="font-bold text-white text-base truncate pr-8">{c.name}</h4>
                         <div className="flex justify-between items-end mt-3">
@@ -369,7 +369,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">STORE AUDIT RECEIPT</p>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-400">STORE AUDIT RECEIPT</p>
                                     </div>
                                     
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
@@ -400,7 +400,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                         <div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">
                                                             Total Consigned: {initialQty} Bks
                                                         </div>
-                                                        <div className="pl-2 space-y-0.5 text-[10px] !text-slate-600 font-mono">
+                                                        <div className="pl-2 space-y-0.5 text-[10px] !text-slate-400 font-mono">
                                                             {paidItem && paidItem.qty > 0 && (
                                                                 <div className="flex justify-between">
                                                                     <span>• Laku: {paidItem.qty} Bks</span>
@@ -430,7 +430,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                         <span>TOTAL COLLECTED</span>
                                         <span>Rp {new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}</span>
                                     </div>
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500"><p>*** THANK YOU ***</p></div>
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-400"><p>*** THANK YOU ***</p></div>
                                 </div>
                             )}
 
@@ -445,21 +445,21 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">STORE AUDIT REPORT</h2>
-                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
+                                                <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>
 
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3">
                                                 <tbody>
-                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
-                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                    <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                                <p className="font-bold !text-slate-400 text-xs mb-1">KEPADA YTH,</p>
                                                 <p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
                                             </div>
                                         </div>
@@ -487,13 +487,13 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
 
                                                     return (
                                                         <tr key={i}>
-                                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold align-top">{i+1}</td>
+                                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td>
                                                             <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td>
                                                             <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
                                                             <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
                                                                 {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
                                                                 {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
-                                                                {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
+                                                                {remainItem && remainItem.qty > 0 && <div className="!text-slate-400 font-bold">• SISA: {remainItem.qty}</div>}
                                                             </td>
                                                             <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">
                                                                 {paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}
@@ -535,7 +535,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                             )}
 
                             <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/> Thermal POS (58mm)</label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-400 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/> Thermal POS (58mm)</label>
                                 <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/> Standard Invoice (A4)</label>
                             </div>
 
@@ -679,7 +679,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                             {/* Smart Autocomplete Search */}
                             <div className="flex-1 relative">
                                 <div className="flex items-center gap-2 px-2 py-1">
-                                    <Search size={14} className="text-slate-500 shrink-0"/>
+                                    <Search size={14} className="text-slate-400 shrink-0"/>
                                     <input 
                                         type="text" 
                                         placeholder="Search Member Name..." 
@@ -691,7 +691,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                             setSelectedCustomer(null);
                                             setShowAgentDropdown(true); 
                                         }}
-                                        className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-600 font-bold uppercase tracking-widest"
+                                        className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-400 font-bold uppercase tracking-widest"
                                     />
                                     {agentSearch && (
                                         <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); setShowAgentDropdown(false); }} className="text-slate-400 hover:text-red-500 shrink-0 z-10 relative">
@@ -714,7 +714,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 className="w-full text-left px-4 py-3 hover:bg-slate-700 border-b border-slate-700/50 last:border-0 transition-colors flex flex-col group"
                                             >
                                                 <span className="text-white font-bold text-xs uppercase group-hover:text-orange-400 transition-colors">{agent.name}</span>
-                                                <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">
+                                                <span className="text-[11px] text-slate-400 uppercase tracking-widest mt-0.5">
                                                     {agent.role || 'Motorist'} • {agent.location || 'Unassigned'}
                                                 </span>
                                             </button>
@@ -773,14 +773,14 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                         <div>
                                             <h3 className="font-bold dark:text-white">{c.name}</h3>
                                             {isAdmin && (
-                                                <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[9px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
+                                                <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[11px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
                                                     <User size={10} className="text-orange-500"/> Managed by: {c.ownerName}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <div className="mt-3 flex justify-between items-center border-t border-slate-700/50 pt-2">
-                                        <span className="text-[10px] font-bold tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-1 border border-slate-700 rounded text-slate-500 uppercase">{Object.values(c.items).reduce((a,b)=>a+(b.qty||0),0)} Bks Held</span>
+                                        <span className="text-[10px] font-bold tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-1 border border-slate-700 rounded text-slate-400 uppercase">{Object.values(c.items).reduce((a,b)=>a+(b.qty||0),0)} Bks Held</span>
                                         <span className="font-mono font-bold text-emerald-500">{formatRupiah(c.balance)}</span>
                                     </div>
                                 </div>
@@ -799,7 +799,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                         <h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2>
                                         {isAdmin && <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>}
                                     </div>
-                                    <div className="text-right"><p className="text-xs text-slate-500 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
+                                    <div className="text-right"><p className="text-xs text-slate-400 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
                                 </div>
                                 
                                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-black/5">
@@ -841,7 +841,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                 </div>
                                             )}
 
-                                            <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 border-b dark:border-slate-700 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                            <div className="hidden md:grid grid-cols-12 gap-2 px-4 py-2 border-b dark:border-slate-700 text-[11px] font-black text-slate-400 uppercase tracking-widest">
                                                 <div className="col-span-4">Macam Barang</div>
                                                 <div className="col-span-2 text-center">Dititip</div>
                                                 {auditMode ? (
@@ -867,14 +867,14 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                         
                                                         <div className="col-span-12 md:col-span-4 w-full md:w-auto flex flex-col">
                                                             <p className="font-bold dark:text-white uppercase text-sm md:text-xs truncate">{item.name}</p>
-                                                            <span className="text-[9px] text-slate-500 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)} / Bks</span>
+                                                            <span className="text-[11px] text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)} / Bks</span>
                                                         </div>
                                                         
                                                         <div className="col-span-12 md:col-span-2 w-full md:w-auto flex justify-between md:justify-center items-center">
-                                                            <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Dititip:</span>
+                                                            <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Dititip:</span>
                                                             <div className="text-right md:text-center">
                                                                 <p className="text-base md:text-sm font-black dark:text-white">{item.qty}</p>
-                                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Bks</p>
+                                                                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Bks</p>
                                                             </div>
                                                         </div>
                                                         
@@ -882,11 +882,11 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                             <>
                                                                 <div className="col-span-12 md:col-span-4 w-full grid grid-cols-2 gap-2 mt-2 md:mt-0">
                                                                     <div className="relative">
-                                                                        <label className="md:hidden text-[9px] text-blue-400 font-bold uppercase block mb-1">Sisa di Rak</label>
+                                                                        <label className="md:hidden text-[11px] text-blue-400 font-bold uppercase block mb-1">Sisa di Rak</label>
                                                                         <input type="number" min="0" placeholder="Sisa" value={aData.shelf} onChange={(e) => handleAuditInput(key, 'shelf', e.target.value)} className="w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/50 rounded-lg p-2 text-center font-bold text-blue-600 dark:text-blue-400 outline-none focus:ring-2 focus:ring-blue-500"/>
                                                                     </div>
                                                                     <div className="relative">
-                                                                        <label className="md:hidden text-[9px] text-red-400 font-bold uppercase block mb-1">Retur / BS</label>
+                                                                        <label className="md:hidden text-[11px] text-red-400 font-bold uppercase block mb-1">Retur / BS</label>
                                                                         <input type="number" min="0" placeholder="Retur" value={aData.damaged} onChange={(e) => handleAuditInput(key, 'damaged', e.target.value)} className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 rounded-lg p-2 text-center font-bold text-red-600 dark:text-red-400 outline-none focus:ring-2 focus:ring-red-500"/>
                                                                     </div>
                                                                 </div>
@@ -900,7 +900,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                             </>
                                                         ) : (
                                                             <div className="col-span-12 md:col-span-6 w-full md:w-auto flex justify-between md:justify-end items-center mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
-                                                                <span className="md:hidden text-[10px] font-bold text-slate-500 uppercase">Nilai Barang:</span>
+                                                                <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Nilai Barang:</span>
                                                                 <p className="text-sm font-black text-slate-400 font-mono">Rp {new Intl.NumberFormat('id-ID').format((item.qty || 0) * (item.calculatedPrice || 0))}</p>
                                                             </div>
                                                         )}
@@ -945,7 +945,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                 <div key={r.id} className="bg-indigo-950/20 border border-indigo-500/30 p-4 rounded-xl">
                                     <div className="flex justify-between items-start mb-3">
                                         <div><p className="text-xs text-slate-400">Store Transfer</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
-                                        <span className="bg-indigo-500 text-white text-[9px] px-2 py-1 rounded uppercase font-black">Admin Pending</span>
+                                        <span className="bg-indigo-500 text-white text-[11px] px-2 py-1 rounded uppercase font-black">Admin Pending</span>
                                     </div>
                                     <p className="text-xs text-slate-300 bg-black/40 p-2 rounded mb-4 text-center"><strong>{r.fromAgentName}</strong> <ArrowRight size={12} className="inline mx-1"/> <strong>{r.toAgentName}</strong></p>
                                     <div className="flex gap-2">
@@ -965,17 +965,17 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                     </div>
                                 </div>
                             ))}
-                            {(isAdmin ? pendingAdminRequests.length === 0 : incomingRequests.length === 0) && <p className="text-center text-xs text-slate-500 py-8">No pending action required.</p>}
+                            {(isAdmin ? pendingAdminRequests.length === 0 : incomingRequests.length === 0) && <p className="text-center text-xs text-slate-400 py-8">No pending action required.</p>}
                         </div>
                     </div>
 
                     <div className="bg-black/20 border border-white/10 rounded-2xl p-6 opacity-70">
                         <h3 className="font-black text-slate-400 uppercase tracking-widest mb-4">My Outgoing Requests</h3>
                         <div className="space-y-3">
-                            {outgoingRequests.length === 0 ? <p className="text-center text-xs text-slate-500 py-4">No outgoing transfers.</p> : outgoingRequests.map(r => (
+                            {outgoingRequests.length === 0 ? <p className="text-center text-xs text-slate-400 py-4">No outgoing transfers.</p> : outgoingRequests.map(r => (
                                 <div key={r.id} className="bg-black/40 border border-white/5 p-3 rounded-lg flex justify-between items-center">
-                                    <div><p className="text-xs font-bold text-white">{r.storeName}</p><p className="text-[10px] text-slate-500">To: {r.toAgentName}</p></div>
-                                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${r.status === 'PENDING_AGENT' ? 'bg-orange-500/20 text-orange-400' : r.status === 'PENDING_ADMIN' ? 'bg-indigo-500/20 text-indigo-400' : r.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>{r.status.replace('_', ' ')}</span>
+                                    <div><p className="text-xs font-bold text-white">{r.storeName}</p><p className="text-[10px] text-slate-400">To: {r.toAgentName}</p></div>
+                                    <span className={`text-[11px] font-black uppercase px-2 py-1 rounded ${r.status === 'PENDING_AGENT' ? 'bg-orange-500/20 text-orange-400' : r.status === 'PENDING_ADMIN' ? 'bg-indigo-500/20 text-indigo-400' : r.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>{r.status.replace('_', ' ')}</span>
                                 </div>
                             ))}
                         </div>

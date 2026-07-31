@@ -148,7 +148,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
                 <div className="flex px-6 pt-6">
                     {[1, 2, 3, 4].map(num => (
                         <div key={num} className="flex-1 flex items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ${step >= num ? 'bg-red-600 border-red-500 text-white shadow-[0_0_10px_red]' : 'bg-transparent border-slate-700 text-slate-500'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ${step >= num ? 'bg-red-600 border-red-500 text-white shadow-[0_0_10px_red]' : 'bg-transparent border-slate-700 text-slate-400'}`}>
                                 {step > num ? <CheckCircle2 size={16}/> : num}
                             </div>
                             {num < 4 && <div className={`flex-1 h-1 mx-2 rounded ${step > num ? 'bg-red-600' : 'bg-slate-800'}`}></div>}
@@ -162,7 +162,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
                     {step === 1 && (
                         <form onSubmit={handleVerifyPin} className="space-y-6 animate-fade-in">
                             <div className="text-center mb-6">
-                                <Key className="mx-auto text-slate-500 mb-3" size={32} />
+                                <Key className="mx-auto text-slate-400 mb-3" size={32} />
                                 <p className="text-slate-400 font-mono text-sm">Enter Master Protocol PIN</p>
                             </div>
                             <input type="password" autoFocus value={pin} onChange={e=>setPin(e.target.value)} className="w-full bg-black border border-slate-700 text-center text-2xl tracking-[1em] p-4 rounded text-white outline-none focus:border-red-500 font-mono" required />
@@ -173,7 +173,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
                     {step === 2 && (
                         <form onSubmit={handleVerifyPhrase} className="space-y-6 animate-fade-in">
                             <div className="text-center mb-6">
-                                <Fingerprint className="mx-auto text-slate-500 mb-3" size={32} />
+                                <Fingerprint className="mx-auto text-slate-400 mb-3" size={32} />
                                 <p className="text-slate-400 font-mono text-sm">Enter Secret Recovery Phrase</p>
                             </div>
                             <input type="password" autoFocus value={phrase} onChange={e=>setPhrase(e.target.value)} className="w-full bg-black border border-slate-700 text-center text-lg tracking-widest p-4 rounded text-white outline-none focus:border-red-500 font-mono" required />
@@ -197,7 +197,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
                             <div className="text-center mb-6">
                                 <AlertTriangle className="mx-auto text-red-500 mb-3" size={40} />
                                 <p className="text-red-400 font-bold text-sm uppercase tracking-widest">Final Step: Define New Architect</p>
-                                <p className="text-slate-500 font-mono text-xs mt-2">Enter the Google Email of the new owner.</p>
+                                <p className="text-slate-400 font-mono text-xs mt-2">Enter the Google Email of the new owner.</p>
                             </div>
                             <input type="email" autoFocus value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="new.owner@gmail.com" className="w-full bg-black border border-red-500/50 text-center text-lg p-4 rounded text-white outline-none focus:border-red-500 font-mono" required />
                             <button disabled={loading} type="submit" className="w-full bg-red-700 hover:bg-red-600 text-white font-black py-4 rounded tracking-widest uppercase transition-colors shadow-[0_0_20px_rgba(220,38,38,0.5)] flex justify-center items-center gap-2">Execute Transfer <ArrowRight size={18}/></button>
@@ -206,7 +206,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
                 </div>
 
                 <div className="p-4 bg-black border-t border-slate-800 text-center">
-                    <button onClick={onClose} className="text-xs text-slate-500 hover:text-white uppercase tracking-widest font-bold">Cancel Protocol</button>
+                    <button onClick={onClose} className="text-xs text-slate-400 hover:text-white uppercase tracking-widest font-bold">Cancel Protocol</button>
                 </div>
             </div>
         </div>

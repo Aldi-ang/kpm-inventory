@@ -35,7 +35,7 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                 <Bell size={24} className={unreadCount > 0 ? "animate-pulse text-orange-500" : ""} />
                 
                 {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">
+                    <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">
                         {unreadCount}
                     </span>
                 )}
@@ -56,7 +56,7 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                     {/* Notification List */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-black/40 backdrop-blur-md">
                         {sortedNotifs.length === 0 ? (
-                            <div className="py-8 text-center text-slate-600 text-[10px] uppercase tracking-widest">
+                            <div className="py-8 text-center text-slate-400 text-[10px] uppercase tracking-widest">
                                 No new alerts
                             </div>
                         ) : (
@@ -80,7 +80,7 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                                             <h4 className={`text-[11px] font-black uppercase tracking-wider ${isUnread ? 'text-orange-400' : 'text-slate-400'}`}>
                                                 {notif.title || "Alert"}
                                             </h4>
-                                            <span className="text-[9px] text-slate-500 font-mono">
+                                            <span className="text-[11px] text-slate-400 font-mono">
                                                 {notif.timestamp?.seconds ? new Date(notif.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
                                             </span>
                                         </div>

@@ -153,21 +153,21 @@ export default function ImageCropper({ imageSrc, onCancel, onCrop, dimensions, o
         <div className="w-full md:w-80 bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 border-l dark:border-slate-700 overflow-y-auto z-40">
             <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2"><Maximize2 size={18} className="text-orange-500"/><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">3D Size</h4></div>
+                    <div className="flex items-center gap-2"><Maximize2 size={18} className="text-orange-500"/><h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">3D Size</h4></div>
                 </div>
                 <div><DimSlider label="Width" val={dimensions.w} axis="w" /><DimSlider label="Height" val={dimensions.h} axis="h" /><DimSlider label="Depth" val={dimensions.d} axis="d" /></div>
             </div>
             <div className="space-y-6">
                 <div>
-                    <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-500 block">ZOOM</label><span className="text-xs text-slate-400">{zoom.toFixed(2)}x</span></div>
+                    <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-400 block">ZOOM</label><span className="text-xs text-slate-400">{zoom.toFixed(2)}x</span></div>
                     <input type="range" min="0.1" max="5" step="0.05" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
                 </div>
                 <div>
                     <div className="flex justify-between mb-2 items-center">
-                        <label className="text-xs font-bold text-slate-500 block">ROTATE</label>
+                        <label className="text-xs font-bold text-slate-400 block">ROTATE</label>
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setRotation(r => r - 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCcw size={14} /></button>
-                            <button onClick={() => setRotation(r => r + 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCw size={14} /></button>
+                            <button onClick={() => setRotation(r => r - 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-400 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCcw size={14} /></button>
+                            <button onClick={() => setRotation(r => r + 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-400 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCw size={14} /></button>
                         </div>
                     </div>
                     <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>

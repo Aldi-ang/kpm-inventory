@@ -59,3 +59,13 @@ html.lite-mode [class*="backdrop-blur"] {
 html.lite-mode [class*="shadow-"] {
     box-shadow: none !important;
 }
+
+/* 🚀 Phase 8: icon-only buttons below the 44px touch-target minimum — one rule fixes ~20 targets
+   at once (remove-from-cart, logout, etc.) with no JSX changes needed. */
+button:has(> svg:only-child) {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

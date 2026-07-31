@@ -12,7 +12,7 @@ export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
     isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings,
     notifications, onNotificationClick, appVersion,
-    darkMode, setDarkMode
+    darkMode, setDarkMode, syncIndicator
 }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
@@ -108,7 +108,7 @@ export default function BiohazardTheme({
                     <div className="flex-1 flex flex-col items-start pt-10 opacity-50">
                         <div className="text-xs text-red-500 font-mono mb-2">ACCESS DENIED</div>
                         <div className="h-0.5 w-10 bg-red-800 mb-4"></div>
-                        <p className="text-[10px] text-slate-500">Authentication required.</p>
+                        <p className="text-[10px] text-slate-400">Authentication required.</p>
                     </div>
                 )}
 
@@ -135,7 +135,7 @@ export default function BiohazardTheme({
                                 alt="avatar"
                             />
                             <div className="flex-1 min-w-0">
-                                <p className="text-[8px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
+                                <p className="text-[11px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
                                 <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>
                             </div>
                             <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-1.5 rounded transition-colors" title="Logout">
@@ -162,7 +162,7 @@ export default function BiohazardTheme({
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
                             <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></div>
-                            <span className={`text-[9px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
+                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
                         <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
                             {activeTab.replace(/_/g, ' ')}
@@ -170,6 +170,12 @@ export default function BiohazardTheme({
                     </div>
 
                     <div className="flex items-center gap-6">
+                        {/* Sync/offline pill lives in this row on purpose. It used to be a `fixed`
+                            element with a hardcoded right offset, which drifted into the theme
+                            toggle at tablet widths because the two used different positioning
+                            systems. As a flex child it just sits next to the bell at every width. */}
+                        {syncIndicator}
+
                         {setDarkMode && (
                             <button
                                 onClick={() => setDarkMode(prev => !prev)}

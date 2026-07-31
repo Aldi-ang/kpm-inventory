@@ -9,8 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp4,mp3}'],
-        maximumFileSizeToCacheInBytes: 15000000 
+        globPatterns: ['**/*.{js,css,html,ico}']
       },
       manifest: {
         name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts

@@ -2,16 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Music, Play, Pause, SkipForward, SkipBack, Volume2, List, Repeat, Shuffle, ChevronDown, ChevronUp } from 'lucide-react';
 
 // --- DYNAMIC MUSIC LOADING ---
-const musicModules = import.meta.glob('./assets/music/*.mp3', { eager: true });
+// ponytail: eager:false so the ~9.66MB of MP3s only download when someone actually presses
+// play (admin-only player), instead of being forced into every field agent's build.
+const musicModules = import.meta.glob('./assets/music/*.mp3', { eager: false });
 
-const DETECTED_TRACKS = Object.entries(musicModules).map(([path, module]) => {
+const DETECTED_TRACKS = Object.keys(musicModules).map((path) => {
     const fileName = path.split('/').pop().replace(/\.mp3$/i, '').replace(/[_-]/g, ' ');
     const title = fileName.replace(/\b\w/g, l => l.toUpperCase());
-    return { title: title, url: module.default };
+    return { title: title, path };
 });
 
 const TRACKS = DETECTED_TRACKS.length > 0 ? DETECTED_TRACKS : [
-    { title: "No Music Found", url: "" }
+    { title: "No Music Found", path: null }
 ];
 
 const MusicPlayer = () => {
@@ -28,14 +30,23 @@ const MusicPlayer = () => {
     const audioRef = useRef(null);
 
     useEffect(() => {
-        if (audioRef.current) {
+        if (!audioRef.current) return;
+        let cancelled = false;
+        (async () => {
+            const track = TRACKS[currentTrack];
+            if (track?.path) {
+                const mod = await musicModules[track.path]();
+                if (cancelled || !audioRef.current) return;
+                audioRef.current.src = mod.default;
+            }
             audioRef.current.volume = volume;
             if (isPlaying) {
                 audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
             } else {
                 audioRef.current.pause();
             }
-        }
+        })();
+        return () => { cancelled = true; };
     }, [isPlaying, volume, currentTrack]);
 
     const handleSongEnd = () => {
@@ -61,7 +72,7 @@ const MusicPlayer = () => {
 
     return (
         <div className="w-full bg-black/40 border border-white/10 rounded-xl overflow-hidden font-mono flex flex-col mb-4 shadow-lg shrink-0">
-            <audio ref={audioRef} src={TRACKS[currentTrack].url} onEnded={handleSongEnd} />
+            <audio ref={audioRef} onEnded={handleSongEnd} />
 
             {/* ACCORDION HEADER (Always visible) */}
             <div 
@@ -90,7 +101,7 @@ const MusicPlayer = () => {
                 
                 {/* PLAYLIST TOGGLE */}
                 <div className="px-2 pt-2 flex justify-end">
-                    <button onClick={() => setShowPlaylist(!showPlaylist)} className={`text-[9px] font-bold uppercase flex items-center gap-1 transition-colors ${showPlaylist ? 'text-white' : 'text-orange-500 hover:text-orange-400'}`}>
+                    <button onClick={() => setShowPlaylist(!showPlaylist)} className={`text-[11px] font-bold uppercase flex items-center gap-1 transition-colors ${showPlaylist ? 'text-white' : 'text-orange-500 hover:text-orange-400'}`}>
                         <List size={10} /> {showPlaylist ? 'Hide Tracks' : 'Tracks'}
                     </button>
                 </div>
@@ -100,7 +111,7 @@ const MusicPlayer = () => {
                     <div className="max-h-24 overflow-y-auto mx-2 mt-2 p-1.5 bg-black/80 border border-white/10 rounded custom-scrollbar">
                         <div className="space-y-1">
                             {TRACKS.map((t, idx) => (
-                                <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left text-[9px] p-1.5 rounded truncate transition-colors ${currentTrack === idx ? 'bg-orange-500 text-white font-bold' : 'text-slate-400 hover:bg-slate-800'}`}>
+                                <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left text-[11px] p-1.5 rounded truncate transition-colors ${currentTrack === idx ? 'bg-orange-500 text-white font-bold' : 'text-slate-400 hover:bg-slate-800'}`}>
                                     {idx + 1}. {t.title}
                                 </button>
                             ))}
@@ -117,7 +128,7 @@ const MusicPlayer = () => {
                     </div>
 
                     <div className="flex items-center justify-between w-full mb-3 px-2">
-                        <button onClick={() => setIsShuffling(!isShuffling)} className={`transition-colors ${isShuffling ? 'text-orange-500' : 'text-slate-600 hover:text-white'}`}><Shuffle size={12}/></button>
+                        <button onClick={() => setIsShuffling(!isShuffling)} className={`transition-colors ${isShuffling ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}><Shuffle size={12}/></button>
                         <div className="flex items-center gap-3">
                             <button onClick={playPrev} className="text-slate-400 hover:text-white transition-colors"><SkipBack size={16} /></button>
                             <button onClick={togglePlay} className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white hover:scale-105 transition-all shadow-[0_0_10px_rgba(234,88,12,0.4)]">
@@ -125,11 +136,11 @@ const MusicPlayer = () => {
                             </button>
                             <button onClick={playNext} className="text-slate-400 hover:text-white transition-colors"><SkipForward size={16} /></button>
                         </div>
-                        <button onClick={() => setIsLooping(!isLooping)} className={`transition-colors ${isLooping ? 'text-orange-500' : 'text-slate-600 hover:text-white'}`}><Repeat size={12}/></button>
+                        <button onClick={() => setIsLooping(!isLooping)} className={`transition-colors ${isLooping ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}><Repeat size={12}/></button>
                     </div>
 
                     <div className="w-full flex items-center gap-2">
-                        <Volume2 size={12} className="text-slate-500"/>
+                        <Volume2 size={12} className="text-slate-400"/>
                         <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
                     </div>
                 </div>

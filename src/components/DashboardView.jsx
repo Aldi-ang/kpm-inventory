@@ -129,28 +129,28 @@ export default function DashboardView({
                             <Users className="text-blue-500" size={24}/>
                             <div>
                                 <h3 className="text-white font-bold uppercase tracking-widest">Agent Leaderboard</h3>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Today's Live Performance</p>
+                                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">Today's Live Performance</p>
                             </div>
                         </div>
 
                         {agentPerformance.length === 0 ? (
-                            <p className="text-slate-500 text-xs italic text-center py-10 uppercase tracking-widest">No sales recorded today.</p>
+                            <p className="text-slate-400 text-xs italic text-center py-10 uppercase tracking-widest">No sales recorded today.</p>
                         ) : (
                             <div className="space-y-4">
                                 {agentPerformance.map((agent, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-400/50' : idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/50' : 'bg-white/5 text-slate-500'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-400/50' : idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/50' : 'bg-white/5 text-slate-400'}`}>
                                                 #{idx + 1}
                                             </div>
                                             <div>
                                                 <p className="text-white font-bold text-sm">{agent.name}</p>
-                                                <p className="text-[9px] text-slate-500 font-mono uppercase">{agent.count} Invoices Processed</p>
+                                                <p className="text-[11px] text-slate-400 font-mono uppercase">{agent.count} Invoices Processed</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-emerald-400 font-bold text-sm">{formatRupiah(agent.revenue)}</p>
-                                            <p className="text-[9px] text-emerald-500/70 font-mono uppercase tracking-widest">PROFIT: {formatRupiah(agent.profit)}</p>
+                                            <p className="text-[11px] text-emerald-500/70 font-mono uppercase tracking-widest">PROFIT: {formatRupiah(agent.profit)}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -164,7 +164,7 @@ export default function DashboardView({
                             <Activity className="text-orange-500" size={24}/>
                             <div>
                                 <h3 className="text-white font-bold uppercase tracking-widest">Vault Velocity</h3>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">30-Day Product Movement</p>
+                                <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">30-Day Product Movement</p>
                             </div>
                         </div>
 
@@ -176,8 +176,8 @@ export default function DashboardView({
                                         <div key={idx} className="flex justify-between items-center bg-emerald-900/10 border border-emerald-500/20 p-2 rounded-lg">
                                             <span className="text-xs text-white truncate max-w-[120px]">{item.name}</span>
                                             <div className="text-right shrink-0">
-                                                <span className="text-xs font-bold text-emerald-400">{Math.floor(item.soldBks)} <span className="text-[8px]">BKS</span></span>
-                                                {item.isLow && <span className="block text-[8px] text-red-500 uppercase font-bold animate-pulse">Low Stock</span>}
+                                                <span className="text-xs font-bold text-emerald-400">{Math.floor(item.soldBks)} <span className="text-[11px]">BKS</span></span>
+                                                {item.isLow && <span className="block text-[11px] text-red-500 uppercase font-bold animate-pulse">Low Stock</span>}
                                             </div>
                                         </div>
                                     ))}
@@ -190,7 +190,7 @@ export default function DashboardView({
                                         <div key={idx} className="flex justify-between items-center bg-red-900/10 border border-red-500/20 p-2 rounded-lg">
                                             <span className="text-xs text-white truncate max-w-[120px]">{item.name}</span>
                                             <div className="text-right shrink-0">
-                                                <span className="text-[9px] text-slate-400 uppercase block">Sold: {Math.floor(item.soldBks)}</span>
+                                                <span className="text-[11px] text-slate-400 uppercase block">Sold: {Math.floor(item.soldBks)}</span>
                                                 <span className="text-xs font-bold text-red-400">Vault: {Math.floor(item.stock)}</span>
                                             </div>
                                         </div>

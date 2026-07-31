@@ -401,7 +401,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             'SYSTEM_EDIT': 'Sistem Edit',
         }
         return (
-            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1.5 shadow-inner ${styles[status] || 'bg-slate-700'} whitespace-nowrap`}>
+            <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1.5 shadow-inner ${styles[status] || 'bg-slate-700'} whitespace-nowrap`}>
                 {icons[status] || null} {labels[status] || status}
             </span>
         );
@@ -418,16 +418,16 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-blue-500"/></div>
                         
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
                             {isAdmin && (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED') && (
-                                <button onClick={(e) => { e.stopPropagation(); handleStartEditingOrder(order); }} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-slate-600 font-bold uppercase flex items-center gap-1 transition-colors relative z-10 shadow-lg">
+                                <button onClick={(e) => { e.stopPropagation(); handleStartEditingOrder(order); }} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-slate-600 font-bold uppercase flex items-center gap-1 transition-colors relative z-10 shadow-lg">
                                     <Pencil size={10}/> Edit Data
                                 </button>
                             )}
                         </div>
 
                         {order.status === 'PENDING' ? (
-                            <div className="text-center py-5 text-slate-600 italic text-xs relative z-10">Menunggu HQ Mempersiapkan Barang...</div>
+                            <div className="text-center py-5 text-slate-400 italic text-xs relative z-10">Menunggu HQ Mempersiapkan Barang...</div>
                         ) : order.status === 'REJECTED' ? (
                             <div className="text-center py-5 text-red-500 font-bold text-xs uppercase tracking-widest relative z-10">PERMINTAAN DITOLAK HQ</div>
                         ) : (
@@ -461,14 +461,14 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     </div>
 
                     <div className="w-full lg:w-56 shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-xl flex flex-col items-center relative z-10">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Bukti Pengiriman (HQ)</h4>
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Bukti Pengiriman (HQ)</h4>
                         {order.packagePhotoUrl ? (
                             <a href={order.packagePhotoUrl} target="_blank" rel="noreferrer" className="block group w-full">
                                 <img src={order.packagePhotoUrl} alt="Shipment Proof" className="w-full h-40 object-cover rounded-lg border-2 border-slate-700 group-hover:border-blue-500 transition-colors shadow-inner" />
-                                <span className="text-[9px] text-slate-600 mt-1 block text-center uppercase tracking-widest group-hover:text-blue-400">Click to Enlarge <Eye size={10} className="inline ml-1"/></span>
+                                <span className="text-[11px] text-slate-400 mt-1 block text-center uppercase tracking-widest group-hover:text-blue-400">Click to Enlarge <Eye size={10} className="inline ml-1"/></span>
                             </a>
                         ) : (
-                            <div className="w-full h-40 bg-black/30 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-600 text-[10px] text-center p-4">
+                            <div className="w-full h-40 bg-black/30 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[10px] text-center p-4">
                                 <Camera size={24} className="mb-2 opacity-30"/>
                                 Awaiting HQ Photo Proof
                             </div>
@@ -490,7 +490,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 <div>
                                     <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-blue-400' : 'text-slate-300'} ${ev.status === 'SYSTEM_EDIT' ? 'text-purple-400' : ''}`}>{ev.status}</p>
                                     <p className={`text-sm font-medium ${isLatest ? 'text-white' : 'text-slate-400'} mt-0.5 whitespace-pre-line`}>{ev.msg}</p>
-                                    <p className="text-[10px] text-slate-600 font-mono mt-1">
+                                    <p className="text-[10px] text-slate-400 font-mono mt-1">
                                         {ev.time ? new Date(ev.time).toLocaleString('id-ID') : 'Time data missing'}
                                     </p>
                                 </div>
@@ -528,17 +528,17 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         <details className="group" open>
                             <summary className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors flex justify-between items-center shadow-lg">
                                 <h3 className="text-base sm:text-lg font-black text-purple-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={20}/> My Current Branch Inventory</h3>
-                                <ChevronDown size={20} className="text-slate-500 group-open:rotate-180 transition-transform shrink-0"/>
+                                <ChevronDown size={20} className="text-slate-400 group-open:rotate-180 transition-transform shrink-0"/>
                             </summary>
                             <div className="p-3 sm:p-4 bg-black/30 rounded-xl mt-3 border border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-slide-down">
                                 {branchStock.length === 0 ? (
-                                    <div className="col-span-full text-center p-8 bg-black/20 rounded-xl border border-dashed border-slate-700 text-slate-500 text-xs uppercase tracking-widest">
+                                    <div className="col-span-full text-center p-8 bg-black/20 rounded-xl border border-dashed border-slate-700 text-slate-400 text-xs uppercase tracking-widest">
                                         Warehouse is empty. Request stock from HQ using the form below.
                                     </div>
                                 ) : branchStock.map(item => (
                                     <div key={item.id} className="flex justify-between items-center bg-black/40 p-3 sm:p-4 rounded-xl border border-slate-700 shadow-inner">
                                         <span className="font-bold text-white uppercase text-sm truncate pr-2">{item.name}</span>
-                                        <span className="text-lg font-black text-purple-400 shrink-0">{item.stock} <span className="text-[10px] text-slate-500 font-bold">Bks</span></span>
+                                        <span className="text-lg font-black text-purple-400 shrink-0">{item.stock} <span className="text-[10px] text-slate-400 font-bold">Bks</span></span>
                                     </div>
                                 ))}
                             </div>
@@ -548,12 +548,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><Truck size={20}/> Status Pengiriman & Reorder</h3>
                             
                             {isLoading ? (
-                                <div className="text-center p-10 text-slate-600 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
+                                <div className="text-center p-10 text-slate-400 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
                             ) : requests.length === 0 ? (
                                 <div className="flex-1 flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-slate-700 rounded-xl bg-black/20">
                                     <Package size={48} className="text-slate-700 mb-3 opacity-50"/>
-                                    <p className="text-slate-500 font-bold text-sm">No reorder history found for {branchLocation}.</p>
-                                    <p className="text-slate-600 text-[10px] mt-1 uppercase tracking-widest">Submit a new request using the form.</p>
+                                    <p className="text-slate-400 font-bold text-sm">No reorder history found for {branchLocation}.</p>
+                                    <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-widest">Submit a new request using the form.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -566,8 +566,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                 
                                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-700 pb-3 mb-3">
                                                     <div className="w-full sm:w-auto mb-2 sm:mb-0">
-                                                        <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase block truncate">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
-                                                        <p className="text-[9px] text-slate-600 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                        <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase block truncate">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
+                                                        <p className="text-[11px] text-slate-400 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                         {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
                                                         <div className="text-[10px] text-slate-300 font-medium">
                                                             <span className="font-bold text-orange-400 mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
@@ -576,7 +576,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
                                                         <StatusBadge status={req.status}/>
-                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
+                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
                                                             {isExpanded ? 'Tutup' : 'Lihat Status'}
                                                         </button>
@@ -600,7 +600,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         <div className="flex flex-col gap-4 mb-6 relative z-10">
                             {/* ITEM SELECTOR */}
                             <div className="bg-black/30 p-3 sm:p-4 rounded-xl border border-slate-700">
-                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">1. Select Items to Request</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">1. Select Items to Request</label>
                                 <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500 transition-colors mb-3">
                                     <option value="">-- Choose Product --</option>
                                     {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -615,7 +615,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
                             {/* ADDRESS INPUTS */}
                             <div className="bg-black/30 p-3 sm:p-4 rounded-xl border border-slate-700">
-                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12}/> 2. Detail Alamat Pengiriman</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12}/> 2. Detail Alamat Pengiriman</label>
                                 <div className="space-y-3">
                                     <input placeholder="Jalan / Gedung / Patokan" className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white outline-none focus:border-purple-500" value={shippingAddress.jalan} onChange={e=>setShippingAddress({...shippingAddress, jalan: e.target.value})}/>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -639,7 +639,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             <span className="text-slate-300 font-bold uppercase truncate pr-3">{item.name}</span>
                                             <div className="flex items-center gap-3">
                                                 <span className="text-purple-400 font-black shrink-0">{item.qty} Bks</span>
-                                                <button onClick={() => removeFromCart(item.productId)} className="text-slate-600 hover:text-red-500 shrink-0"><MinusCircle size={16}/></button>
+                                                <button onClick={() => removeFromCart(item.productId)} className="text-slate-400 hover:text-red-500 shrink-0"><MinusCircle size={16}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -667,15 +667,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         const activeRequests = requests.filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT');
                         
                         if (isLoading) {
-                            return <div className="text-center p-10 text-slate-600 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>;
+                            return <div className="text-center p-10 text-slate-400 animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>;
                         }
                         
                         if (activeRequests.length === 0) {
                             return (
                                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-700 rounded-xl bg-black/20">
                                     <Globe size={48} className="text-slate-700 mb-3 opacity-50"/>
-                                    <p className="text-slate-500 font-bold text-sm">No active requests nationwide.</p>
-                                    <p className="text-slate-600 text-[10px] mt-1 uppercase tracking-widest">Active logistics pipeline is clear!</p>
+                                    <p className="text-slate-400 font-bold text-sm">No active requests nationwide.</p>
+                                    <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-widest">Active logistics pipeline is clear!</p>
                                 </div>
                             );
                         }
@@ -691,7 +691,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-700 pb-3 mb-3 relative">
                                                 
-                                                <button onClick={() => handleDeleteRequest(req.id)} className="absolute -top-1 -right-1 text-slate-600 hover:text-red-500 bg-slate-900 p-1.5 rounded-lg border border-slate-700 transition-colors shadow-lg z-10" title="Delete Ghost Data Permanently">
+                                                <button onClick={() => handleDeleteRequest(req.id)} className="absolute -top-1 -right-1 text-slate-400 hover:text-red-500 bg-slate-900 p-1.5 rounded-lg border border-slate-700 transition-colors shadow-lg z-10" title="Delete Ghost Data Permanently">
                                                     <Trash2 size={16}/>
                                                 </button>
 
@@ -700,9 +700,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                         <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
                                                             <MapPin size={16} className="text-orange-400"/> {req.branch}
                                                         </h4>
-                                                        <span className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
                                                     </div>
-                                                    <p className="text-[9px] text-slate-600 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
+                                                    <p className="text-[11px] text-slate-400 font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
                                                     {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
                                                     <div className="text-[10px] text-slate-300 font-medium">
                                                         <span className="font-bold text-orange-400 mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
@@ -712,12 +712,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto pr-8 mt-2 sm:mt-0">
                                                     <StatusBadge status={req.status}/>
                                                     <div className="flex gap-2 w-full sm:w-auto">
-                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-colors shadow-sm">
+                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2 rounded-lg flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
                                                             {isExpanded ? 'Tutup Track' : 'Lacak (OMS)'}
                                                         </button>
                                                         {req.status === 'PENDING' && (
-                                                            <button onClick={() => handleStartFulfillment(req)} className="flex-1 sm:flex-none px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all animate-pop-in">
+                                                            <button onClick={() => handleStartFulfillment(req)} className="flex-1 sm:flex-none px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all animate-pop-in">
                                                                 <Truck size={14}/> Siapkan Pengiriman
                                                             </button>
                                                         )}
@@ -758,7 +758,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </h3>
                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Order ID: {isFulfilling.id}</p>
                             </div>
-                            <button onClick={cancelFulfillment} className="text-slate-600 hover:text-white shrink-0"><XCircle size={24}/></button>
+                            <button onClick={cancelFulfillment} className="text-slate-400 hover:text-white shrink-0"><XCircle size={24}/></button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar space-y-6 sm:space-y-8">
@@ -790,7 +790,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </div>
 
                                 <div className="bg-black/50 p-4 sm:p-6 rounded-xl border border-slate-700 flex flex-col items-center shadow-xl">
-                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Camera size={12}/> Wajib Upload: Foto Paket & Resi</h4>
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Camera size={12}/> Wajib Upload: Foto Paket & Resi</h4>
                                     
                                     {packagePhotoPreview ? (
                                         <div className="w-full relative">
@@ -798,10 +798,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             <button onClick={() => { setPackagePhotoFile(null); setPackagePhotoPreview(null); }} className="absolute -top-2 -right-2 bg-red-600 rounded-full p-1 text-white hover:bg-red-500"><XCircle size={16}/></button>
                                         </div>
                                     ) : (
-                                        <button onClick={() => photoInputRef.current.click()} className="w-full h-40 sm:h-56 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-500 hover:border-blue-500 hover:text-blue-400 transition-colors gap-3 p-4 sm:p-6 text-center">
+                                        <button onClick={() => photoInputRef.current.click()} className="w-full h-40 sm:h-56 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-slate-400 hover:border-blue-500 hover:text-blue-400 transition-colors gap-3 p-4 sm:p-6 text-center">
                                             <UploadCloud size={40} className="opacity-50"/>
                                             <span className="font-bold text-xs uppercase tracking-widest">Pilih Foto Bukti</span>
-                                            <span className="text-[9px] text-slate-600 hidden sm:inline">Ambil foto paket yang sudah ada resinya.</span>
+                                            <span className="text-[11px] text-slate-400 hidden sm:inline">Ambil foto paket yang sudah ada resinya.</span>
                                         </button>
                                     )}
                                     <input type="file" accept="image/*" ref={photoInputRef} onChange={handlePhotoChange} className="hidden" />
@@ -823,13 +823,13 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     <span className="font-bold text-white uppercase text-sm">{item.name}</span>
                                                     <div className="flex gap-4 text-[10px] mt-1">
                                                         <span className="text-orange-400 font-bold uppercase tracking-widest">Diminta: {requestedQty} Bks</span>
-                                                        <span className={`font-black ${hasEnough ? 'text-slate-500' : 'text-red-500'}`}>Stok HQ: {hqStock} Bks</span>
+                                                        <span className={`font-black ${hasEnough ? 'text-slate-400' : 'text-red-500'}`}>Stok HQ: {hqStock} Bks</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-700 shadow-inner w-full sm:w-44">
                                                     <label className="text-[10px] text-blue-400 font-bold uppercase tracking-widest shrink-0">Kirim:</label>
                                                     <input type="number" value={item.qty} onChange={e => updateFulfillQty(item.productId, e.target.value)} className="flex-1 min-w-0 bg-transparent text-right font-black text-blue-300 text-lg outline-none"/>
-                                                    <span className="text-[10px] text-slate-500 shrink-0">Bks</span>
+                                                    <span className="text-[10px] text-slate-400 shrink-0">Bks</span>
                                                 </div>
                                             </div>
                                         )

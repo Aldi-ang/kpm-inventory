@@ -91,13 +91,13 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                         <ShieldCheck className="text-orange-500"/> Audit Vault
                     </h2>
-                    <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">Immutable Operation Archive</p>
+                    <p className="text-slate-400 text-[10px] uppercase tracking-[0.2em]">Immutable Operation Archive</p>
                 </div>
             </div>
             
             <div className="bg-black/20 border border-white/10 rounded-2xl p-6 min-h-[400px] font-mono text-xs">
                 {/* Breadcrumbs */}
-                <div className="flex gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-6 border-b border-white/5 pb-2">
+                <div className="flex gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-white/5 pb-2">
                     <button onClick={() => setPath({year:null, month:null, day:null})} className="hover:text-white">VAULT</button>
                     {path.year && <><span>/</span><button onClick={() => setPath({...path, month:null, day:null})} className="text-orange-500">{path.year}</button></>}
                     {path.month && <><span>/</span><button onClick={() => setPath({...path, day:null})} className="text-orange-500">{formatM(path.month)}</button></>}
@@ -121,7 +121,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                     {path.month && !path.day && days.map(d => (
                         <button key={d} onClick={() => setPath({...path, day: d})} className="flex flex-col items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:border-emerald-500 group transition-all">
                             <div className="text-lg font-black text-white/20 group-hover:text-emerald-500">{d}</div>
-                            <span className="text-[8px] text-slate-500 uppercase">DAY</span>
+                            <span className="text-[11px] text-slate-400 uppercase">DAY</span>
                         </button>
                     ))}
                 </div>
@@ -135,7 +135,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                                     <p className="text-white font-bold uppercase flex items-center gap-2">
                                         {log.action}
                                         {log.snapshotId && (
-                                            <span className="text-[7px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded tracking-tighter animate-pulse">
+                                            <span className="text-[10px] bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded tracking-tighter animate-pulse">
                                                 REMOTE SNAPSHOT LOADED
                                             </span>
                                         )}
@@ -147,26 +147,26 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                                     {log.snapshotId && isAdmin && (
                                         <button 
                                             onClick={() => handleRestoreFromSnapshot(log)}
-                                            className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[9px] font-bold uppercase hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                            className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[11px] font-bold uppercase hover:bg-emerald-500 transition-colors shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                                         >
                                             <RotateCcw size={10}/> Revert
                                         </button>
                                     )}
-                                    <span className="text-slate-600 text-[9px]">{log.timeStr}</span>
+                                    <span className="text-slate-400 text-[11px]">{log.timeStr}</span>
                                 </div>
                             </div>
                         ))}
-                        {!loading && logs.length === 0 && <p className="text-slate-600 italic py-10 text-center uppercase tracking-widest">/// Sector Empty ///</p>}
+                        {!loading && logs.length === 0 && <p className="text-slate-400 italic py-10 text-center uppercase tracking-widest">/// Sector Empty ///</p>}
                     </div>
                 )}
             </div>
 
             {/* Recent System Activity Table */}
             <div className="mt-10">
-                <h3 className="text-xs font-bold text-slate-500 uppercase mb-4 opacity-50">Recent System Activity</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 opacity-50">Recent System Activity</h3>
                 <div className="bg-black/50 border border-white/10 rounded-xl overflow-hidden font-mono text-[10px]">
                     <table className="w-full text-left">
-                        <thead className="bg-white/5 text-slate-500">
+                        <thead className="bg-white/5 text-slate-400">
                             <tr><th className="p-3">Action</th><th className="p-3">Details</th><th className="p-3 text-right">Time</th></tr>
                         </thead>
                         <tbody>
@@ -174,7 +174,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                                 <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
                                     <td className="p-3 text-orange-500 font-bold">{log.action}</td>
                                     <td className="p-3 text-slate-300">{log.details}</td>
-                                    <td className="p-3 text-right text-slate-500">
+                                    <td className="p-3 text-right text-slate-400">
                                         {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : 'Just now'}
                                     </td>
                                 </tr>

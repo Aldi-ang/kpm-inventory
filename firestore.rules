@@ -531,6 +531,30 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid);
         allow write: if false;
       }
+      // [ADDED — career ledger, Phase 2] READ: every employee — profile + leaderboard need it.
+      // WRITE: deliberately nothing here. Falls through to the users/{bossUid} catch-all above
+      // (isVaultOwner || isDistributorAdmin) — same mechanic [CHANGE 2] below already documents
+      // for mapSettings. An agent can read their own XP and can never increment it themselves.
+      // Not deployed — draft only, same as every other change in this file until Aldi deploys it.
+      //
+      // [FLAGGED] awards' `allow update, delete: if false` below is NOT actually a hard block for
+      // the vault owner / distributor admin — verified live via emulator (9/9 doc-stated cases pass,
+      // plus this one extra check): the users/{bossUid} catch-all above ORs in write access to
+      // EVERY nested path including career/{agentId}/awards/{awardId}, so an owner CAN update or
+      // delete an "immutable" award despite this line. Same shape as [CHANGE 2]'s mapSettings
+      // gotcha, not fixed for the same reason — narrowing the catch-all is the owner's call to
+      // make deliberately, not a side effect of adding one new collection. If awards are ever meant
+      // to be un-editable even by the owner (e.g. so a revoked award still shows in history),
+      // that needs its own explicit rule, not an assumption that `if false` here is load-bearing.
+      match /career/{agentId} {
+        allow read: if isSalesman(bossUid);
+        allow write: if false;
+
+        match /awards/{awardId} {
+          allow read: if isSalesman(bossUid);
+          allow update, delete: if false;
+        }
+      }
       // [CHANGE 2 — mapSettings fleet-paintbrush gap] The bare `allow write: if false`
       // here looked like a hard block for everyone, but the catch-all above
       // (isVaultOwner || isDistributorAdmin) already ORs in and grants the owner/

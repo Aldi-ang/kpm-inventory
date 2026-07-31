@@ -13,10 +13,6 @@ import {
   Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database, Bell, ScanFace,
   Cloud, CloudOff, Activity
 } from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
-
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
@@ -32,8 +28,7 @@ import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
-import { SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal } from './components/SamplingManager'; 
-import { CustomerManagement, CustomerDetailView } from './components/CustomerManager'; 
+import { CustomerManagement, CustomerDetailView } from './components/CustomerManager';
 import SettingsView from './components/SettingsView'; 
 import AuditVaultView from './components/AuditVaultView'; 
 import BiohazardTheme from './components/BiohazardTheme'; 
@@ -53,12 +48,18 @@ const ResidentEvilInventory = lazy(() => import('./components/ResidentEvilInvent
 const HistoryReportView = lazy(() => import('./components/HistoryReportView')); 
 const DashboardView = lazy(() => import('./components/DashboardView')); 
 const BranchWarehouseManager = lazy(() => import('./components/BranchWarehouseManager'));
+// 🚀 recharts + @reduxjs/toolkit + d3-* only live inside SamplingManager — keep it out of the
+// eager chunk. Named exports need the .then(m => ({default: m.X})) form since lazy() only
+// accepts a default export.
+const SamplingAnalyticsView = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SamplingAnalyticsView })));
+const SamplingCartView = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SamplingCartView })));
+const SamplingFolderView = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SamplingFolderView })));
+const SampleEntryModal = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SampleEntryModal })));
 
 
 // --- FIREBASE IMPORTS ---
-import { initializeApp } from "firebase/app";        
-import { getAnalytics } from "firebase/analytics";   
-import { 
+import { initializeApp } from "firebase/app";
+import {
   getAuth, 
   onAuthStateChanged, 
   signOut, 
@@ -83,10 +84,11 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
-  onSnapshot, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy,
+  where,
   runTransaction, 
   writeBatch,
   arrayUnion,                // 🚀 ADD THIS FOR THE TELEMETRY TRACKER
@@ -96,7 +98,8 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
+import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 
 const APP_VERSION = packageJson.version;
 
@@ -294,7 +297,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   
   useEffect(() => {
       if (!db || !appId || !userId || userId === 'default') return;
-      const notifRef = collection(db, `artifacts/${appId}/users/${userId}/notifications`);
+      // ponytail: time-gated to the last 7 days like every other listener in this app, but kept
+      // permissive (no targetRole/targetId filter) — see the comment below at combinedNotifications,
+      // that filter was already tried once and dropped notifications it shouldn't have.
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const notifRef = query(collection(db, `artifacts/${appId}/users/${userId}/notifications`), where('timestamp', '>=', sevenDaysAgo));
       const unsub = onSnapshot(notifRef, (snap) => {
           setSystemNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       }, (err) => console.warn("System notifications listener:", err.code));
@@ -304,13 +312,31 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
-      inventory, setInventory, customers, setCustomers, transactions, setTransactions,
+      inventory, setInventory, customers, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests, notifications, setNotifications,
-      adminCanvas, setAdminCanvas, 
+      adminCanvas, setAdminCanvas,
+      career,
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
+
+  // 🚀 Phase 5: badge config, read once so handleVerifyEOD's checkBadges() call respects
+  // whatever targets the owner customized via the Achievement Config modal — same
+  // per-company path + one-release fallback AgentProfileView.jsx uses for badges/ranks.
+  const [progressionBadges, setProgressionBadges] = useState(DEFAULT_BADGES);
+  useEffect(() => {
+      if (!db || !appId || !userId || userId === 'default') return;
+      const fetchBadgeConfig = async () => {
+          try {
+              const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'));
+              if (snap.exists() && snap.data().badges) { setProgressionBadges(snap.data().badges); return; }
+              const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
+              if (legacySnap.exists() && legacySnap.data().badges) setProgressionBadges(legacySnap.data().badges);
+          } catch (e) { console.warn("Badge config fetch failed, using defaults:", e.code); }
+      };
+      fetchBadgeConfig();
+  }, [db, appId, userId]);
 
  // 🚀 NEW: MATRIX BOOTLOADER 🚀
   const [matrixTick, setMatrixTick] = useState(0); // 🚀 NEW: The UI Pulse State
@@ -334,24 +360,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       bootPermissions();
   }, [db, appId, userId]); // 🚀 FIX: Added userId to dependency array
 
-  // 🚀 COMMANDER FIX: REAL-TIME CUSTOMER SYNC ENGINE
-  // This completely overrides the static, stale memory. The exact millisecond you drop a pin, 
-  // delete a store, or change a tier, Firebase forces the whole app to instantly update!
-  useEffect(() => {
-      if (!db || !appId || !userId || userId === 'default') return;
-      const customersRef = collection(db, `artifacts/${appId}/users/${userId}/customers`);
-      const unsub = onSnapshot(customersRef, (snap) => {
-          const liveCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setCustomers(liveCustomers);
-      }, (err) => console.warn("Customer sync listener:", err.code));
-      return () => unsub();
-  }, [db, appId, userId, setCustomers]);
-
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
       if (!db || !appId || !userId || userId === 'default') return;
 
-      const reqRef = collection(db, `artifacts/${appId}/users/${userId}/stock_requests`);
+      // ponytail: time-gated to 7 days to bound the download. Per-role branch filtering + the
+      // top-30 slice below stay client-side on purpose — a query-level limit(30) would return the
+      // newest 30 requests company-wide, which for an AREA_ADMIN's branch-filtered view could be
+      // zero of their own branch's requests. Bound the window, not who sees what.
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const reqRef = query(collection(db, `artifacts/${appId}/users/${userId}/stock_requests`), where('timestamp', '>=', sevenDaysAgo));
       const unsub = onSnapshot(reqRef, (snap) => {
           const allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           let activeAlerts = [];
@@ -770,7 +789,7 @@ const handleGitHubMirror = async () => {
 
   const calculateStrength = (pass) => {
       let score = 0;
-      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-slate-500", bar: "bg-slate-800" };
+      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-slate-400", bar: "bg-slate-800" };
       if (pass.length >= 8) score++;
       if (/[a-z]/.test(pass)) score++;
       if (/[A-Z]/.test(pass)) score++;
@@ -1688,6 +1707,14 @@ const handleGitHubMirror = async () => {
               if (!eodSnap.exists()) throw new Error('Laporan EOD sudah tidak ada.');
               if (eodSnap.data().status === 'VERIFIED') throw new Error('Laporan ini sudah diverifikasi.');
 
+              // 🚀 CAREER LEDGER (Phase 2): read in the same transaction as everything else, so a
+              // concurrent verify can't credit the same day twice — same read-then-write shape as
+              // the eodSnap guard above. 'VAULT' has no agent to track, same exclusion as agentRef.
+              const careerRef = (lookupAgentId && lookupAgentId !== 'VAULT')
+                  ? doc(db, `artifacts/${appId}/users/${userId}/career`, lookupAgentId)
+                  : null;
+              const careerSnap = careerRef ? await t.get(careerRef) : null;
+
               // ==========================================
               // ✍️ PHASE 2: EXECUTE ALL WRITES LAST
               // ==========================================
@@ -1816,7 +1843,83 @@ const handleGitHubMirror = async () => {
                   }
               }
 
-              // 2C. Update the EOD Report Status
+              // 2C. Update the EOD Report Status + the career ledger (Phase 2)
+              // Nothing reads `career` yet (that's Phase 4) — this just accumulates silently.
+              if (careerRef && report.reportType !== 'BOUNTY') {
+                  const reportDate = report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000) : new Date();
+                  const dayKey = report.dayKey ?? getLocalDayKey(reportDate);
+                  const creditKey = `${dayKey}:${report.reportType || 'LEGACY'}`;
+                  const c = (careerSnap && careerSnap.exists()) ? careerSnap.data() : {};
+                  const alreadyCredited = (c.credited || {})[creditKey] === true;
+
+                  if (!alreadyCredited) {
+                      // ponytail: `credited` pruned to the newest 90 keys (~45 working days) on every
+                      // write so it never grows unbounded. Upgrade to a Cloud Function only if someone
+                      // actually needs to re-verify something older than that.
+                      const prunedCredited = Object.fromEntries(
+                          Object.entries({ ...(c.credited || {}), [creditKey]: true })
+                              .sort(([a], [b]) => b.localeCompare(a))
+                              .slice(0, 90)
+                      );
+                      const liveIncrements = {
+                          collected:      increment(Number(report.cash || 0) + Number(report.transfer || 0)),
+                          itemsBks:       increment(Number(report.itemsBks || 0)),
+                          titipCollected: increment(Number(report.titipCollected || 0)),
+                          storesServed:   increment(Number(report.storesServed || 0)),
+                          daysVerified:   increment(report.reportType === 'CASH_STOCK' ? 1 : 0)
+                      };
+                      const careerUpdate = { live: liveIncrements, credited: prunedCredited, updatedAt: serverTimestamp() };
+
+                      // 🚀 SCOPE: only CASH_STOCK is the "day closed" report — it's the only one that
+                      // carries a real cukaiRemaining/storesServed signal (CUKAI reports submit
+                      // cash:0/transfer:0 and no cukaiRemaining at all). Computing dayXP/streaks/
+                      // cleanCukaiDays off a CUKAI report would read an undefined cukaiRemaining as
+                      // "0 = clean" every time, and double-grant the daily "showed up" bonus alongside
+                      // the same day's CASH_STOCK report. So streaks/XP/cleanCukaiDays only move on
+                      // CASH_STOCK; CUKAI still gets its own `credited` key (blocks its own double-verify)
+                      // and its own (zero) live increments, just no XP double-count.
+                      let dayXP, xpBreakdown;
+                      if (report.reportType === 'CASH_STOCK') {
+                          liveIncrements.cleanCukaiDays = increment(Number(report.cukaiRemaining || 0) <= 0 ? 1 : 0);
+                          const computed = computeDayXP(report, c, DEFAULT_XP);
+                          dayXP = computed.total;
+                          xpBreakdown = computed.breakdown;
+
+                          const prevDay = c.lastVerifiedDay || '';
+                          const isConsecutive = prevDay && (new Date(dayKey) - new Date(prevDay)) === 86400000;
+                          const streak = prevDay === dayKey ? (c.streakCurrent || 1) : isConsecutive ? (c.streakCurrent || 0) + 1 : 1;
+                          const monthKey = dayKey.slice(0, 7);
+                          const sameSeason = c.season?.key === monthKey;
+
+                          careerUpdate.lastVerifiedDay = dayKey;
+                          careerUpdate.streakCurrent = streak;
+                          careerUpdate.streakBest = Math.max(streak, c.streakBest || 0);
+                          careerUpdate.season = { key: monthKey, score: (sameSeason ? (c.season.score || 0) : 0) + dayXP };
+                      }
+
+                      // 🚀 Phase 5: badge check — computed against what `live` WILL be after this
+                      // write (increment() sentinels can't be read back inside the same
+                      // transaction, so the post-write totals are built by hand from the same
+                      // raw numbers already used above). Guarded by .length: arrayUnion() with
+                      // zero arguments throws, which would roll back the whole stock return.
+                      const postLive = {
+                          collected:      (c.live?.collected || 0) + Number(report.cash || 0) + Number(report.transfer || 0),
+                          itemsBks:       (c.live?.itemsBks || 0) + Number(report.itemsBks || 0),
+                          titipCollected: (c.live?.titipCollected || 0) + Number(report.titipCollected || 0),
+                          storesServed:   (c.live?.storesServed || 0) + Number(report.storesServed || 0),
+                          daysVerified:   (c.live?.daysVerified || 0) + (report.reportType === 'CASH_STOCK' ? 1 : 0),
+                          cleanCukaiDays: (c.live?.cleanCukaiDays || 0) + (report.reportType === 'CASH_STOCK' ? (Number(report.cukaiRemaining || 0) <= 0 ? 1 : 0) : 0)
+                      };
+                      const freshBadges = checkBadges(progressionBadges, { base: c.base, live: postLive, joinDate: c.joinDate, bonusXP: c.bonusXP }, {});
+                      if (freshBadges.length) careerUpdate.unlocks = arrayUnion(...freshBadges);
+
+                      t.set(careerRef, careerUpdate, { merge: true });
+                      t.update(eodRef, dayXP !== undefined
+                          ? { status: 'VERIFIED', verifiedAt: serverTimestamp(), dayXP, xpBreakdown }
+                          : { status: 'VERIFIED', verifiedAt: serverTimestamp() });
+                      return;
+                  }
+              }
               t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
           
@@ -1832,6 +1935,103 @@ const handleGitHubMirror = async () => {
           await logAudit("EOD_RESET", `Admin reset EOD for ${report.agentName}`);
           triggerCapy(`EOD Reset! ${report.agentName} can now submit again.`);
       } catch(e) { console.error(e); alert("Failed to reset: " + e.message); }
+  };
+
+  // 🚀 CAREER LEDGER BACKFILL (Phase 3): one-time bulk recompute of career.base from every
+  // already-verified EOD report, so tenure/history-based badges have real data instead of
+  // starting from zero the day the ledger began. Absolute SET, safe to re-run — but a re-run
+  // also resets `live` to zero, otherwise a period that's folded into a fresh `base` would
+  // ALSO still be sitting in `live` from before, and totals() (base + live) would double-count
+  // it. handleVerifyEOD's own idempotency (the `credited` map) is untouched by this, so nothing
+  // already verified can get re-credited just because `live` was reset.
+  const handleRecalculateCareer = async () => {
+      // 🚨 DEVICE GUARD: an owner-only *permission* gate is not a *device* gate — this is a
+      // one-time full-history scan, not something to trigger by accident from a phone on 3G.
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (conn && conn.effectiveType && conn.effectiveType !== '4g') {
+          triggerCapy('📶 Koneksi lemah. Hitung Ulang Karir butuh 4G ke atas — coba pakai WiFi.');
+          return;
+      }
+      if (window.innerWidth < 1024) {
+          triggerCapy('💻 Hitung Ulang Karir hanya untuk laptop/PC, bukan HP.');
+          return;
+      }
+      if (!window.confirm('Hitung ulang riwayat karir SEMUA agen dari seluruh laporan EOD yang sudah diverifikasi? Ini akan mengatur ulang penghitung "live" tiap agen dan membangun ulang "base" dari awal. Aman dijalankan berkali-kali.')) return;
+
+      try {
+          const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`));
+          const byAgent = {};
+          let scanned = 0;
+
+          snap.docs.forEach(d => {
+              const report = d.data();
+              if (report.status !== 'VERIFIED' || report.reportType === 'BOUNTY') return;
+              const lookupAgentId = report.agentId === 'ADMIN' ? 'ADMIN_VEHICLE' : report.agentId;
+              if (!lookupAgentId || lookupAgentId === 'VAULT') return;
+
+              if (!byAgent[lookupAgentId]) {
+                  byAgent[lookupAgentId] = { collected: 0, itemsBks: 0, titipCollected: 0, storesServed: 0, daysVerified: 0, cleanCukaiDays: 0 };
+              }
+              const acc = byAgent[lookupAgentId];
+              acc.collected += Number(report.cash || 0) + Number(report.transfer || 0);
+              acc.itemsBks += Number(report.itemsBks || 0);
+              acc.titipCollected += Number(report.titipCollected || 0);
+              acc.storesServed += Number(report.storesServed || 0);
+              if (report.reportType === 'CASH_STOCK') {
+                  acc.daysVerified += 1;
+                  acc.cleanCukaiDays += Number(report.cukaiRemaining || 0) <= 0 ? 1 : 0;
+              }
+              scanned++;
+          });
+
+          // 🚀 Phase 4: fold any pre-existing manualExp into career.bonusXP so nobody loses
+          // standing when rank stops reading manualExp directly. One-time per agent, guarded
+          // by manualExpMigrated so a second backfill run doesn't add it twice. A real award
+          // record is written too — "so nobody loses standing" also means a visible reason,
+          // not just a silent number moved from one field to another.
+          let migratedCount = 0;
+          motorists.forEach(m => {
+              const manualExp = Number(m.manualExp || 0);
+              if (manualExp <= 0 || m.manualExpMigrated) return;
+              if (!byAgent[m.id]) byAgent[m.id] = { collected: 0, itemsBks: 0, titipCollected: 0, storesServed: 0, daysVerified: 0, cleanCukaiDays: 0 };
+              byAgent[m.id].__manualExpToMigrate = manualExp;
+              migratedCount++;
+          });
+
+          const cutoffDay = getLocalDayKey();
+          const operations = Object.entries(byAgent).flatMap(([agentId, base]) => {
+              const manualExpToMigrate = base.__manualExpToMigrate;
+              delete base.__manualExpToMigrate;
+              const careerOps = [{
+                  type: 'set',
+                  ref: doc(db, `artifacts/${appId}/users/${userId}/career`, agentId),
+                  data: manualExpToMigrate
+                      ? { base, baseThrough: cutoffDay, live: {}, bonusXP: increment(manualExpToMigrate) }
+                      : { base, baseThrough: cutoffDay, live: {} },
+                  options: { merge: true }
+              }];
+              if (manualExpToMigrate) {
+                  careerOps.push({
+                      type: 'set',
+                      ref: doc(collection(db, `artifacts/${appId}/users/${userId}/career/${agentId}/awards`)),
+                      data: {
+                          title: 'Penghargaan Sebelumnya', xp: manualExpToMigrate,
+                          reason: `Migrasi EXP manual lama (${manualExpToMigrate} EXP) saat sistem karir baru diaktifkan.`,
+                          grantedBy: userId, grantedAt: serverTimestamp()
+                      }
+                  });
+                  careerOps.push({ type: 'update', ref: doc(db, `artifacts/${appId}/users/${userId}/motorists`, agentId), data: { manualExpMigrated: true } });
+              }
+              return careerOps;
+          });
+
+          await commitInChunks(db, writeBatch, operations);
+          await logAudit("CAREER_RECALCULATED", `Recalculated career ledger for ${Object.keys(byAgent).length} agents from ${scanned} verified reports, migrated manualExp for ${migratedCount}.`);
+          triggerCapy(`Karir dihitung ulang! ${Object.keys(byAgent).length} agen, ${scanned} laporan diproses${migratedCount ? `, ${migratedCount} EXP lama dimigrasi` : ''}.`);
+      } catch (e) {
+          console.error(e);
+          triggerCapy("❌ Gagal menghitung ulang karir: " + e.message);
+      }
   };
 
   // --- PHASE 2: AUTHENTICATION & TRAFFIC COP ENGINE ---
@@ -3093,6 +3293,15 @@ const handleGitHubMirror = async () => {
              matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
             darkMode={darkMode}
             setDarkMode={setDarkMode}
+            syncIndicator={user && (
+                <button onClick={() => setShowFlightRecorder(true)} className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${isOnline ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 animate-pulse'}`}>
+                    {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
+                    <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
+                    {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
+                        <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
+                    )}
+                </button>
+            )}
             >
           
           {/* 🥔 POTATO ENGINE: RUTHLESS HARDWARE ACCELERATION BYPASS */}
@@ -3103,12 +3312,32 @@ const handleGitHubMirror = async () => {
                       -webkit-backdrop-filter: none !important;
                       box-shadow: none !important;
                       text-shadow: none !important;
+                      filter: none !important; /* catches blur(), the animated rank borders miss this one */
+                      /* Collapse animations to instant instead of "animation: none".
+                         "none" clears animation-NAME, which permanently strands anything that
+                         starts at opacity:0 and is revealed by a forwards-fill animation — the
+                         sidebar's own .boot-1..4 menu reveal does exactly that, so "none" made
+                         the whole nav invisible in Lite Mode. Zeroing duration/delay still kills
+                         the GPU cost (infinite animations run once for 1ms and stop) while
+                         letting forwards-fill land on its final visible state. */
+                      animation-duration: 0.001s !important;
+                      animation-delay: 0s !important;
+                      animation-iteration-count: 1 !important;
                   }
                   .lite-mode .backdrop-blur, .lite-mode .backdrop-blur-md, .lite-mode .backdrop-blur-sm, .lite-mode .backdrop-blur-\\[2px\\] {
                       background-color: #0f172a !important; /* Fast solid fallback */
                   }
-                  .lite-mode .animate-pulse, .lite-mode .animate-bounce, .lite-mode .animate-bounce-slow {
-                      animation: none !important; /* Stops CPU from constantly redrawing */
+                  .lite-mode .rank-frame {
+                      background-image: none !important;
+                  }
+                  /* Belt-and-braces for the sidebar's staggered menu reveal. The rules above
+                     already let its forwards-fill animation land on opacity:1, but Lite Mode
+                     exists for weak phones — the exact devices that drop frames — and an
+                     !important declaration beats an animation in the cascade, so the nav is
+                     pinned visible regardless of whether the animation ever gets to run. */
+                  .lite-mode .boot-1, .lite-mode .boot-2,
+                  .lite-mode .boot-3, .lite-mode .boot-4 {
+                      opacity: 1 !important;
                   }
               `}</style>
           )}
@@ -3199,10 +3428,10 @@ const handleGitHubMirror = async () => {
                         {/* 🚀 RESIDENT EVIL STRENGTH METER 🚀 */}
                         <div className="mt-3">
                             <div className="flex justify-between items-end mb-1">
-                                <span className={`text-[9px] font-black tracking-widest uppercase ${calculateStrength(setupPassword).color}`}>
+                                <span className={`text-[11px] font-black tracking-widest uppercase ${calculateStrength(setupPassword).color}`}>
                                     {calculateStrength(setupPassword).label}
                                 </span>
-                                <span className="text-[9px] text-slate-500 font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
+                                <span className="text-[11px] text-slate-400 font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
                             </div>
                             <div className="flex gap-1 h-1.5">
                                 {[1, 2, 3, 4, 5].map(level => (
@@ -3225,7 +3454,7 @@ const handleGitHubMirror = async () => {
                     
                     <button 
                         onClick={handleSetupSecurity} 
-                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-emerald-600/20 hover:bg-emerald-600 border-emerald-500/50 text-emerald-500 hover:text-white cursor-pointer' : 'bg-black border-slate-700 text-slate-600 cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-emerald-600/20 hover:bg-emerald-600 border-emerald-500/50 text-emerald-500 hover:text-white cursor-pointer' : 'bg-black border-slate-700 text-slate-400 cursor-not-allowed opacity-50'}`}
                         disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
                     >
                         Save Credentials
@@ -3288,7 +3517,7 @@ const handleGitHubMirror = async () => {
                     )}
                     
                     <div className="pt-6 border-t border-white/5 mt-6">
-                        <button onClick={() => setIsResetMode(true)} className="text-[9px] text-slate-500 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
+                        <button onClick={() => setIsResetMode(true)} className="text-[11px] text-slate-400 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
                             Lost Key? Use Recovery Protocol
                         </button>
                     </div>
@@ -3352,7 +3581,7 @@ const handleGitHubMirror = async () => {
                         </div>
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
                     <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
@@ -3413,6 +3642,8 @@ const handleGitHubMirror = async () => {
                   transactions={transactions}
                   storage={storage}
                   appSettings={appSettings}
+                  career={career}
+                  logAudit={logAudit}
               />
           )}
 
@@ -3516,20 +3747,20 @@ const handleGitHubMirror = async () => {
                                                 return (
                                                     <div 
                                                         key={face} 
-                                                        className="h-12 bg-black border border-white/10 flex items-center justify-center text-[9px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-white transition-colors relative group overflow-hidden" 
+                                                        className="h-12 bg-black border border-white/10 flex items-center justify-center text-[11px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-white transition-colors relative group overflow-hidden" 
                                                         onClick={() => document.getElementById(`file-edit-${face}`).click()}
                                                     >
                                                         {hasImg ? (
                                                             <>
                                                                 <img src={hasImg} className="w-full h-full object-cover opacity-50 group-hover:opacity-100"/>
-                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-40 group-hover:opacity-100 transition-opacity">
                                                                     <Pencil size={12} className="text-white"/>
                                                                 </div>
                                                                 {/* RESTORED: Edit from existing button */}
-                                                                <button 
+                                                                <button
                                                                     type="button"
                                                                     onClick={(e) => { e.stopPropagation(); handleEditExisting(face, hasImg); }}
-                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-white opacity-0 group-hover:opacity-100 z-20"
+                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-white opacity-100 z-20"
                                                                     title="Edit Crop"
                                                                 >
                                                                     <Crop size={8}/>
@@ -3735,8 +3966,8 @@ const handleGitHubMirror = async () => {
                           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
                               <h3 className="font-bold text-lg mb-4 dark:text-white">Rename Folder</h3>
                               <form onSubmit={processFolderEdit} className="space-y-4">
-                                  <div><label className="text-xs font-bold text-slate-500">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
-                                  <div><label className="text-xs font-bold text-slate-500">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
+                                  <div><label className="text-xs font-bold text-slate-400">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
+                                  <div><label className="text-xs font-bold text-slate-400">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
                                   <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Move</button></div>
                               </form>
                           </div>
@@ -3799,6 +4030,7 @@ const handleGitHubMirror = async () => {
                   handleMascotSelect={handleMascotSelect} newMascotMessage={newMascotMessage} setNewMascotMessage={setNewMascotMessage} handleAddMascotMessage={handleAddMascotMessage}
                   activeMessages={activeMessages} editingMsgIndex={editingMsgIndex} setEditingMsgIndex={setEditingMsgIndex} editMsgText={editMsgText} setEditMsgText={setEditMsgText} handleSaveEditedMessage={handleSaveEditedMessage} handleDeleteMascotMessage={handleDeleteMascotMessage}
                   triggerDiscoParty={triggerDiscoParty} isDiscoMode={isDiscoMode}
+                  handleRecalculateCareer={handleRecalculateCareer}
               />
           )}
             </Suspense> {/* 🚀 CLOSING SUSPENSE BOUNDARY */}
@@ -3810,17 +4042,6 @@ const handleGitHubMirror = async () => {
       {/* 🚀 THE OFFLINE FLIGHT RECORDER WIDGET */}
       {user && (
           <>
-              {/* The Floating Cloud Status Indicator */}
-              <div className="fixed top-4 right-32 md:right-48 z-[9990]">
-                  <button onClick={() => setShowFlightRecorder(true)} className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${isOnline ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 animate-pulse'}`}>
-                      {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
-                      <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
-                      {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
-                          <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
-                      )}
-                  </button>
-              </div>
-
               {/* The Flight Recorder Terminal Modal */}
               {showFlightRecorder && (
                   <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
@@ -3832,10 +4053,10 @@ const handleGitHubMirror = async () => {
                           
                           <div className="p-4 bg-slate-900/50 flex justify-between items-center border-b border-white/5 shrink-0">
                               <div className="flex gap-4">
-                                  <div className="text-center"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-orange-500">{pendingCount.transactions}</p></div>
-                                  <div className="text-center"><p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-blue-500">{pendingCount.noo}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-orange-500">{pendingCount.transactions}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-blue-500">{pendingCount.noo}</p></div>
                               </div>
-                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[9px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-white transition-colors">Clear Logs</button>
+                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-white transition-colors">Clear Logs</button>
                           </div>
 
                           <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-black font-mono">
@@ -3889,16 +4110,16 @@ const handleGitHubMirror = async () => {
                                       
                                      
 
-                              <h3 className="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+                              <h3 className="text-slate-400 font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
                                   <Activity size={12}/> System Telemetry Logs
                               </h3>
 
                               {syncLogs.length === 0 ? (
-                                  <p className="text-slate-600 text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
+                                  <p className="text-slate-400 text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
                               ) : (
                                   syncLogs.map((log) => (
                                       <div key={log.id} className={`p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-slate-900/50 border-slate-800 text-slate-300'}`}>
-                                          <div className="text-[9px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
+                                          <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>
                                   ))

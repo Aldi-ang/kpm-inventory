@@ -101,6 +101,11 @@ export default function useTransactionEngine({
                         longitude: newStoreData.longitude || null,
                         status: newStoreData.isNooRegistration ? 'NOO_ACTIVE' : 'WALK_IN',
                         mappedBy: finalAgentName,
+                        // 🚀 Phase 7: mappedById/mappedAt so the toko_baru badge (and any future
+                        // "who registered this store" query) has an actual agent id + timestamp
+                        // to read, not just a display-name snapshot that can't be joined against.
+                        mappedById: currentAgentProfileId || null,
+                        mappedAt: { seconds: Math.floor(Date.now() / 1000) },
                         hasPhotoProof: newStoreData.isNooRegistration ? true : false,
                         storeImage: newStoreData.photoUrl || ''
                     };
@@ -259,8 +264,9 @@ export default function useTransactionEngine({
                         pricingTier: newStoreData.requestedTier, 
                         latitude: newStoreData.latitude,
                         longitude: newStoreData.longitude,
-                        status: 'NOO_ACTIVE', 
+                        status: 'NOO_ACTIVE',
                         mappedBy: finalAgentName,
+                        mappedById: currentAgentProfileId || null,
                         mappedAt: serverTimestamp(),
                         hasPhotoProof: true,
                         storeImage: newStoreData.photoUrl || ''

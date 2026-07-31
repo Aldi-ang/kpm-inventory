@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from "firebase/firestore";
+import { connectAuthEmulator } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -15,8 +15,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-let analytics;
-try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics blocked"); }
 
 export const auth = getAuth(app);
 
@@ -25,6 +23,14 @@ export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
 });
+
+// ponytail: dev-only escape hatch for testing against a local Firestore/Auth emulator
+// instead of live production data. Never active in a production build (import.meta.env.DEV
+// gate) and off by default even in dev (needs VITE_USE_EMULATOR=true in .env.local).
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === 'true') {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+}
 
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();

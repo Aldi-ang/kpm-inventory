@@ -9,7 +9,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
     const [samplings, setSamplings] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
     const [procurements, setProcurements] = useState([]); 
-    const [motorists, setMotorists] = useState([]); 
+    const [motorists, setMotorists] = useState([]);
+    const [career, setCareer] = useState({});
     const [agentInventories, setAgentInventories] = useState({}); 
     const [eodReports, setEodReports] = useState([]);
     const [transferRequests, setTransferRequests] = useState([]);
@@ -45,6 +46,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
         const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Customers listener:", err.code));
         const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Motorists listener:", err.code));
+        // 🚀 CAREER LEDGER (Phase 2): no time gate — bounded by headcount, not history.
+        const unsubCareer = onSnapshot(collection(db, basePath, 'career'), (snap) => setCareer(Object.fromEntries(snap.docs.map(d => [d.id, d.data()]))), (err) => console.warn("Career listener:", err.code));
         
         // 🛡️ FIREWALL ACTIVE: All transaction/log data is strictly gated to the last 7 days!
         const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Transactions listener:", err.code));
@@ -91,8 +94,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
 
         return () => { 
             unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 
-            unsubLogs(); unsubCust(); unsubProc(); unsubMotorists(); 
-            unsubAdminVeh(); unsubEod(); unsubTransfers(); unsubNotifs(); 
+            unsubLogs(); unsubCust(); unsubProc(); unsubMotorists(); unsubCareer();
+            unsubAdminVeh(); unsubEod(); unsubTransfers(); unsubNotifs();
         };
     }, [user, db, appId, userId, userRole, agentProfileId]);
 
@@ -124,6 +127,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         auditLogs, setAuditLogs,
         procurements, setProcurements,
         motorists, setMotorists,
+        career, setCareer,
         agentInventories, setAgentInventories,
         eodReports, setEodReports,
         transferRequests, setTransferRequests,

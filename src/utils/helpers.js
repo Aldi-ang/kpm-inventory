@@ -8,7 +8,29 @@ export const formatRupiah = (number) => {
   }).format(number || 0);
 };
 
+/* Grouped digits without a currency symbol — for XP/EXP and other plain counts, where
+   `1000000` is genuinely hard to read but "Rp" would be wrong. Same id-ID grouping as
+   formatRupiah so thousands separators look consistent across the app ("1.000.000"). */
+export const formatNumber = (number) =>
+  new Intl.NumberFormat('id-ID').format(Number(number) || 0);
+
+/* Strip grouping back to a raw number. Pairs with formatNumber for "display grouped, store raw"
+   inputs: a grouped string can't go into type="number", so those fields are type="text" and
+   sanitise on change. Keeps digits only — a stray dot from typing is grouping, never a decimal,
+   because every value this is used for (XP, thresholds) is a whole number. */
+export const parseGroupedNumber = (value) => Number(String(value ?? '').replace(/\D/g, '')) || 0;
+
 export const getCurrentDate = () => new Date().toISOString().split('T')[0];
+
+// getCurrentDate() above is UTC — fine for record-keeping timestamps, wrong for "what day is it
+// for this agent right now." WIB is UTC+7, so toISOString() flips to tomorrow at 07:00 local,
+// right in the middle of a morning route. Uses local Date methods instead, no hardcoded offset.
+export const getLocalDayKey = (date = new Date()) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 export const getRandomColor = (str) => {
     let hash = 0;

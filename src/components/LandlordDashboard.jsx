@@ -214,13 +214,13 @@ export default function LandlordDashboard({ db, appId, user }) {
                     <input 
                         value={newName} onChange={e=>setNewName(e.target.value)} 
                         placeholder="TENANT DESIGNATION" 
-                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" 
+                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400" 
                         required 
                     />
                     <input 
                         type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} 
                         placeholder="ADMIN IDENTIFIER (EMAIL)" 
-                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-600" 
+                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400" 
                         required 
                     />
                     
@@ -253,7 +253,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                                     </div>
                                     <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
                                         <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-emerald-900/30 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
-                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-slate-900/30 text-slate-500 hover:bg-slate-600 hover:text-white border border-slate-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
+                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-slate-900/30 text-slate-400 hover:bg-slate-600 hover:text-white border border-slate-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
                                     </div>
                                 </div>
                             ) : (
@@ -263,7 +263,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                                         <div className="flex flex-col md:flex-row items-center gap-3">
                                             <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
                                             
-                                            <span className={`text-[9px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
+                                            <span className={`text-[11px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
                                                 t.tier === 1 
                                                 ? 'border-red-900 text-red-500 bg-red-950/20' 
                                                 : 'border-emerald-900 text-emerald-500 bg-emerald-950/20'
@@ -273,7 +273,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                                             </span>
                                         </div>
                                         
-                                        <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
+                                        <p className="text-[10px] text-slate-400 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
                                             ID: <span className="text-slate-400">{t.email}</span>
                                         </p>
                                     </div>
@@ -307,7 +307,7 @@ export default function LandlordDashboard({ db, appId, user }) {
 
                                             <button 
                                                 onClick={() => handleDelete(t)} 
-                                                className="p-2 md:px-3 bg-slate-900/20 text-slate-500 border-slate-500/50 hover:bg-red-600 hover:border-red-500 hover:text-white transition-all flex items-center justify-center"
+                                                className="p-2 md:px-3 bg-slate-900/20 text-slate-400 border-slate-500/50 hover:bg-red-600 hover:border-red-500 hover:text-white transition-all flex items-center justify-center"
                                                 title="Permanently Delete User"
                                             >
                                                 <Trash2 size={14} />

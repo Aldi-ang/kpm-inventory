@@ -86,13 +86,13 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 
     return (
         <div className="animate-fade-in space-y-6">
-            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to List</button>
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to List</button>
             
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/3 space-y-6">
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                         <h2 className="text-2xl font-bold dark:text-white mb-1">{customer.name}</h2>
-                        <div className="text-sm text-slate-500 mb-4 flex items-center gap-2"><MapPin size={14}/> {customer.city} {customer.region}</div>
+                        <div className="text-sm text-slate-400 mb-4 flex items-center gap-2"><MapPin size={14}/> {customer.city} {customer.region}</div>
                         
                         <div className="space-y-3 mb-6">
                             <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center gap-3"><Phone size={18} className="text-slate-400"/><span className="font-bold dark:text-white">{customer.phone || "-"}</span></div>
@@ -143,7 +143,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                 <div className="md:w-2/3">
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700 h-full flex flex-col">
                         <div className="flex justify-between items-center mb-6">
-                            <div><h3 className="font-bold text-lg dark:text-white flex items-center gap-2"><ShieldAlert size={20} className="text-red-500"/> Competitor Intelligence</h3><p className="text-xs text-slate-500">Track benchmark prices at this specific store.</p></div>
+                            <div><h3 className="font-bold text-lg dark:text-white flex items-center gap-2"><ShieldAlert size={20} className="text-red-500"/> Competitor Intelligence</h3><p className="text-xs text-slate-400">Track benchmark prices at this specific store.</p></div>
                         </div>
                         <form onSubmit={handleAddBenchmark} className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700 mb-6">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -156,7 +156,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                         </form>
                         <div className="flex-1 overflow-y-auto overflow-x-auto pb-2">
                             <table className="w-full text-sm text-left min-w-[600px]">
-                                <thead className="text-slate-500 font-bold border-b dark:border-slate-700">
+                                <thead className="text-slate-400 font-bold border-b dark:border-slate-700">
                                     <tr>
                                         <th className="pb-3 pl-2 w-1/3">Product</th>
                                         <th className="pb-3 w-1/6">Price</th>
@@ -170,7 +170,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                         <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                                             <td className="py-3 pl-2">
                                                 <div className="font-bold dark:text-white truncate max-w-[150px]">{b.product}</div>
-                                                <div className="text-xs text-slate-500">{b.brand}</div>
+                                                <div className="text-xs text-slate-400">{b.brand}</div>
                                             </td>
                                             <td className="py-3 font-mono text-red-500 font-bold whitespace-nowrap">
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}
@@ -180,7 +180,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                                     {b.volume}
                                                 </span>
                                             </td>
-                                            <td className="py-3 text-slate-500 text-xs italic truncate max-w-[150px]">{b.notes}</td>
+                                            <td className="py-3 text-slate-400 text-xs italic truncate max-w-[150px]">{b.notes}</td>
                                             <td className="py-3 text-right pr-2">
                                                 <button onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
                                             </td>
@@ -918,7 +918,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only hides Add/Edit entirely — the
                 directory stays fully browsable, but nothing here can be saved. */}
             {!canAddOrEditAnything && (
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed dark:border-slate-700 rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed dark:border-slate-700 rounded-2xl p-6 text-center text-sm text-slate-400 dark:text-slate-400">
                     <ShieldAlert size={20} className="mx-auto mb-2 text-slate-400"/>
                     Your access level is <strong>View Only</strong> for the Customer Directory. You can browse and look up stores, but adding or editing is turned off.
                 </div>
@@ -926,11 +926,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             {canAddOrEditAnything && (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-500 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-400 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-500 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-400 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-slate-400 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
                     </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
@@ -1082,11 +1082,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">GPS Coordinates</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">GPS Coordinates</label>
                                 <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" value={coordInput} onChange={handleCoordInputChange} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Street View Link (Iframe/URL)</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Street View Link (Iframe/URL)</label>
                                 <input 
                                     type="text" 
                                     placeholder="Paste Google Maps Link or Embed Code here..." 
@@ -1122,14 +1122,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* BREADCRUMB NAVIGATION */}
                 {(selectedProvince || selectedRegion || selectedCity) && (
                     <div className="flex flex-wrap items-center gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg w-fit">
-                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-500 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
+                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-400 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
                             <Folder size={16}/> Indonesia
                         </button>
                         
                         {selectedProvince && (
                             <>
                                 <ArrowRight size={14} className="text-slate-400"/>
-                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-slate-500 hover:text-orange-500'}`}>
+                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-slate-400 hover:text-orange-500'}`}>
                                     {selectedProvince}
                                 </button>
                             </>
@@ -1138,7 +1138,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {selectedRegion && (
                             <>
                                 <ArrowRight size={14} className="text-slate-400"/>
-                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-orange-500' : 'text-slate-500 hover:text-orange-500'}`}>
+                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-orange-500' : 'text-slate-400 hover:text-orange-500'}`}>
                                     {selectedRegion}
                                 </button>
                             </>
@@ -1184,7 +1184,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
                                 </div>
                             ))}
                             {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
@@ -1223,7 +1223,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1257,7 +1257,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1289,8 +1289,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                         <span className="text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                                         </span>
-                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-slate-100 text-slate-600 border-slate-300">{c.tier}</span> )}
-                                                    <span className={`text-[9px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-slate-100 text-slate-400 border-slate-300">{c.tier}</span> )}
+                                                    <span className={`text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
                                                         {c.priceTier || 'Retail'}
                                                     </span>
                                                 </div>
@@ -1302,11 +1302,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     {/* MIDDLE: Accountability Block */}
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
+                                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
                                             <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate">{c.picName || 'Unassigned'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">NOO By</p>
+                                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">NOO By</p>
                                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{c.nooAgentName || 'Admin'}</p>
                                         </div>
                                     </div>
@@ -1317,7 +1317,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             <select 
                                                 value={c.city || 'Unknown Kecamatan'}
                                                 onChange={(e) => handleFastStoreMove(c.id, e.target.value, selectedRegion)}
-                                                className="text-[9px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-blue-500 transition-colors shrink-0"
+                                                className="text-[11px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-blue-500 transition-colors shrink-0"
                                                 title="Move to another Kecamatan"
                                                 onClick={e => e.stopPropagation()}
                                             >
@@ -1340,7 +1340,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
                                             }} className="px-3 py-1.5 text-xs font-bold bg-orange-50 border border-orange-200 dark:border-orange-500/30 dark:bg-orange-500/10 rounded-lg hover:bg-orange-500 hover:text-white text-orange-600 dark:text-orange-400 transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
 
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-400 dark:text-slate-300 transition-colors">Edit</button>
                                             <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Del</button>
                                         </div>
                                     )}
@@ -1351,7 +1351,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     {!isAdmin && customerAccessLevel !== 'view_only' && (
                                         <div className="flex justify-end items-center mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
                                             {canEditCustomer(c) ? (
-                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-600 dark:text-slate-300 transition-colors">Edit</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-400 dark:text-slate-300 transition-colors">Edit</button>
                                             ) : (
                                                 <span title="This store is outside your assigned region" className="text-[10px] text-slate-400 italic px-1">Outside your region</span>
                                             )}

@@ -358,7 +358,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             'APPROVED': 'bg-blue-900/50 text-blue-400 border border-blue-500/50', 
         };
         return (
-            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full shadow-inner ${styles[status] || 'bg-slate-700'}`}>
+            <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-full shadow-inner ${styles[status] || 'bg-slate-700'}`}>
                 {status}
             </span>
         );
@@ -373,11 +373,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-blue-500"/></div>
                         
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
                         </div>
 
                         {order.status === 'PENDING' ? (
-                            <div className="text-center py-5 text-slate-600 italic text-xs">Menunggu HQ Mempersiapkan Barang...</div>
+                            <div className="text-center py-5 text-slate-400 italic text-xs">Menunggu HQ Mempersiapkan Barang...</div>
                         ) : order.status === 'REJECTED' ? (
                             <div className="text-center py-5 text-red-500 font-bold text-xs uppercase tracking-widest">PERMINTAAN DITOLAK HQ</div>
                         ) : (
@@ -403,13 +403,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                         )}
                     </div>
                     <div className="w-full md:w-56 shrink-0 bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-xl flex flex-col items-center">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Bukti Pengiriman (HQ)</h4>
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Bukti Pengiriman (HQ)</h4>
                         {order.packagePhotoUrl ? (
                             <a href={order.packagePhotoUrl} target="_blank" rel="noreferrer" className="block group">
                                 <img src={order.packagePhotoUrl} alt="Shipment Proof" className="w-full h-40 object-cover rounded-lg border-2 border-slate-700 group-hover:border-blue-500 transition-colors shadow-inner" />
                             </a>
                         ) : (
-                            <div className="w-full h-40 bg-black/30 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-600 text-[10px] text-center p-4">
+                            <div className="w-full h-40 bg-black/30 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[10px] text-center p-4">
                                 Awaiting Photo Proof
                             </div>
                         )}
@@ -430,7 +430,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <div>
                                     <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-blue-400' : 'text-slate-300'}`}>{ev.status}</p>
                                     <p className={`text-sm font-medium ${isLatest ? 'text-white' : 'text-slate-400'} mt-0.5 whitespace-pre-line`}>{ev.msg}</p>
-                                    <p className="text-[10px] text-slate-600 font-mono mt-1">
+                                    <p className="text-[10px] text-slate-400 font-mono mt-1">
                                         {ev.time ? new Date(ev.time).toLocaleString('id-ID') : 'Time data missing'}
                                     </p>
                                 </div>
@@ -453,7 +453,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
         if (sortedMonths.length === 0) {
             return (
-                <div className="text-center py-20 text-slate-600">
+                <div className="text-center py-20 text-slate-400">
                     <Target size={48} className="mx-auto mb-4 opacity-20"/>
                     <p className="tracking-widest uppercase text-sm font-bold opacity-50">No Active Production Targets</p>
                     <p className="text-[10px] mt-2">Click "+ Set Target" above to start tracking factory goals.</p>
@@ -500,16 +500,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                     
                                     return (
                                         <div key={target.id} className="bg-[#0f0f0f] border border-white/5 rounded-xl p-5 shadow-inner relative group">
-                                            <button onClick={() => handleDeleteTarget(target.id)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14}/></button>
+                                            <button onClick={() => handleDeleteTarget(target.id)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-opacity"><X size={14}/></button>
                                             <h4 className="text-sm font-bold text-white uppercase mb-4 pr-6 truncate">{target.name}</h4>
                                             
                                             <div className="flex justify-between items-end mb-2">
                                                 <div>
-                                                    <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Factory Progress</span>
+                                                    <span className="text-[10px] text-slate-400 uppercase block mb-0.5">Factory Progress</span>
                                                     <span className="text-xl font-black text-blue-400 font-mono">{progress}%</span>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-[10px] text-slate-500 uppercase block mb-0.5">Actual / Target</span>
+                                                    <span className="text-[10px] text-slate-400 uppercase block mb-0.5">Actual / Target</span>
                                                     <span className="text-sm font-bold text-white font-mono">{totalProduced} / {target.targetQty}</span>
                                                 </div>
                                             </div>
@@ -533,7 +533,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             const records = folderStructure[selectedYear][selectedMonth][selectedDate] || [];
             return (
                 <div className="animate-fade-in space-y-4 pr-2 custom-scrollbar overflow-y-auto">
-                    <button onClick={() => setSelectedDate(null)} className="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors mb-4"><ArrowRight className="rotate-180" size={16}/> Back to {selectedMonth}</button>
+                    <button onClick={() => setSelectedDate(null)} className="flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors mb-4"><ArrowRight className="rotate-180" size={16}/> Back to {selectedMonth}</button>
                     {records.map(record => {
                         
                         if (record.recordType === 'INBOUND') {
@@ -544,19 +544,19 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                             <div className="p-3 bg-orange-900/20 text-orange-500 rounded-xl border border-orange-500/30 shrink-0"><PackagePlus size={20}/></div>
                                             <div>
                                                 <h3 className="font-bold text-white text-base lg:text-lg tracking-wider font-mono">INBOUND: {record.poNumber}</h3>
-                                                <p className="text-[10px] lg:text-xs text-slate-500 uppercase">Source: {record.supplierName || 'Internal Factory'}</p>
+                                                <p className="text-[10px] lg:text-xs text-slate-400 uppercase">Source: {record.supplierName || 'Internal Factory'}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-6 lg:gap-8">
                                             <div className="text-left md:text-right">
-                                                <p className="text-[9px] text-slate-500 uppercase font-bold">Total Wares</p>
+                                                <p className="text-[11px] text-slate-400 uppercase font-bold">Total Wares</p>
                                                 <p className="text-xs text-emerald-400 font-bold font-mono">{record.items?.reduce((acc, i) => acc + parseInt(i.qtyReceived), 0)} Bks</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[9px] text-slate-500 uppercase font-bold">Landed Cost</p>
+                                                <p className="text-[11px] text-slate-400 uppercase font-bold">Landed Cost</p>
                                                 <p className="text-sm text-white font-black font-mono">Rp {new Intl.NumberFormat('id-ID').format(record.trueLandedTotal || record.totalBasePrice || 0)}</p>
                                             </div>
-                                            {expandedPO === record.id ? <ChevronUp size={20} className="text-slate-500"/> : <ChevronDown size={20} className="text-slate-500"/>}
+                                            {expandedPO === record.id ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
                                         </div>
                                     </div>
                                     
@@ -564,7 +564,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                         <div className="border-t border-white/10 bg-[#0f0f0f] p-4 lg:p-6 animate-fade-in">
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                                                 <div>
-                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Received</h4>
+                                                    <h4 className="text-[10px] uppercase font-bold text-slate-400 mb-3 tracking-widest border-b border-white/5 pb-1">Batches Received</h4>
                                                     <div className="space-y-2">
                                                         {record.items?.map((item, idx) => (
                                                             <div key={idx} className="flex flex-col bg-black p-3 rounded-lg border border-white/5">
@@ -574,7 +574,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                                         <span className="text-xs text-white uppercase font-bold">{item.name}</span>
                                                                     </div>
                                                                     {item.batchNo && (
-                                                                        <span className="text-[9px] text-orange-400 font-mono border border-orange-500/30 px-1 rounded bg-orange-900/10">BATCH: {item.batchNo}</span>
+                                                                        <span className="text-[11px] text-orange-400 font-mono border border-orange-500/30 px-1 rounded bg-orange-900/10">BATCH: {item.batchNo}</span>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -583,12 +583,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                 </div>
                                                 
                                                 <div>
-                                                    <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-widest border-b border-white/5 pb-1">Cost Breakdown</h4>
+                                                    <h4 className="text-[10px] uppercase font-bold text-slate-400 mb-3 tracking-widest border-b border-white/5 pb-1">Cost Breakdown</h4>
                                                     <div className="space-y-2 text-[10px] lg:text-xs font-mono bg-black p-4 rounded-xl border border-white/5">
-                                                        <div className="flex justify-between"><span className="text-slate-500">Wares Subtotal:</span><span className="text-white">Rp {new Intl.NumberFormat('id-ID').format(record.totalBasePrice || 0)}</span></div>
-                                                        <div className="flex justify-between"><span className="text-slate-500">Shipping:</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.shippingCost || 0)}</span></div>
-                                                        <div className="flex justify-between"><span className="text-slate-500">Excise Tax (Cukai):</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.exciseTax || 0)}</span></div>
-                                                        <div className="flex justify-between"><span className="text-slate-500">Labor:</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.laborCost || 0)}</span></div>
+                                                        <div className="flex justify-between"><span className="text-slate-400">Wares Subtotal:</span><span className="text-white">Rp {new Intl.NumberFormat('id-ID').format(record.totalBasePrice || 0)}</span></div>
+                                                        <div className="flex justify-between"><span className="text-slate-400">Shipping:</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.shippingCost || 0)}</span></div>
+                                                        <div className="flex justify-between"><span className="text-slate-400">Excise Tax (Cukai):</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.exciseTax || 0)}</span></div>
+                                                        <div className="flex justify-between"><span className="text-slate-400">Labor:</span><span className="text-orange-400">Rp {new Intl.NumberFormat('id-ID').format(record.laborCost || 0)}</span></div>
                                                         <div className="border-t border-white/10 pt-3 mt-1 flex justify-between font-bold"><span className="text-slate-300">True Landed Total:</span><span className="text-emerald-400 text-sm">Rp {new Intl.NumberFormat('id-ID').format(record.trueLandedTotal || 0)}</span></div>
                                                     </div>
                                                     
@@ -597,7 +597,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                         {record.receiptUrl ? (
                                                             <button onClick={() => setViewingImage(record.receiptUrl)} className="bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-colors"><ImageIcon size={12}/> View Doc</button>
                                                         ) : (
-                                                            <span className="bg-slate-900 text-slate-600 border border-white/5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2"><FileText size={12}/> No Doc</span>
+                                                            <span className="bg-slate-900 text-slate-400 border border-white/5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase flex items-center justify-center gap-2"><FileText size={12}/> No Doc</span>
                                                         )}
                                                     </div>
 
@@ -634,12 +634,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                     <h3 className="font-bold text-white text-base lg:text-lg tracking-wider font-mono">OUTBOUND: {record.branch}</h3>
                                                     <StatusBadge status={record.status} />
                                                 </div>
-                                                <p className="text-[10px] lg:text-xs text-slate-500 uppercase">{record.id} • Req By: {record.requestedByName || record.requestedBy?.split('@')[0]}</p>
+                                                <p className="text-[10px] lg:text-xs text-slate-400 uppercase">{record.id} • Req By: {record.requestedByName || record.requestedBy?.split('@')[0]}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-6 lg:gap-8">
                                             <div className="text-left md:text-right">
-                                                <p className="text-[9px] text-slate-500 uppercase font-bold">Total Wares</p>
+                                                <p className="text-[11px] text-slate-400 uppercase font-bold">Total Wares</p>
                                                 <p className="text-xs text-blue-400 font-bold font-mono">{itemsToProcess.reduce((acc, i) => acc + parseInt(i.qty), 0)} Bks</p>
                                             </div>
                                             <div className="flex gap-2 items-center">
@@ -651,7 +651,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                 <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(record.id); }} className="p-2 bg-red-900/30 text-red-500 rounded hover:bg-red-600 hover:text-white transition-colors" title="Delete Ghost Data">
                                                     <Trash2 size={14}/>
                                                 </button>
-                                                {expandedPO === record.id ? <ChevronUp size={20} className="text-slate-500"/> : <ChevronDown size={20} className="text-slate-500"/>}
+                                                {expandedPO === record.id ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
                                             </div>
                                         </div>
                                     </div>
@@ -674,13 +674,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             const dates = Object.keys(folderStructure[selectedYear][selectedMonth] || {}).sort((a,b) => new Date(b) - new Date(a));
             return (
                 <div className="animate-fade-in pr-2 custom-scrollbar overflow-y-auto">
-                    <button onClick={() => setSelectedMonth(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={16}/> Back to {selectedYear}</button>
+                    <button onClick={() => setSelectedMonth(null)} className="mb-6 flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={16}/> Back to {selectedYear}</button>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {dates.map(date => (
                             <div key={date} onClick={() => setSelectedDate(date)} className="bg-black/50 p-4 rounded-xl border border-white/10 cursor-pointer hover:border-orange-500 group transition-all text-center">
                                 <div className="w-12 h-12 mx-auto bg-orange-900/20 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors mb-3"><span className="font-bold text-lg">{new Date(date).getDate()}</span></div>
                                 <h3 className="font-bold text-sm text-white">{new Date(date).toLocaleDateString(undefined, {weekday:'short'})}</h3>
-                                <p className="text-[10px] text-slate-500 mt-1">{folderStructure[selectedYear][selectedMonth][date].length} Records</p>
+                                <p className="text-[10px] text-slate-400 mt-1">{folderStructure[selectedYear][selectedMonth][date].length} Records</p>
                             </div>
                         ))}
                     </div>
@@ -694,12 +694,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             months.sort((a, b) => monthOrder[a] - monthOrder[b]);
             return (
                 <div className="animate-fade-in pr-2 custom-scrollbar overflow-y-auto">
-                    <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
+                    <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {months.map(month => (
                             <div key={month} onClick={() => setSelectedMonth(month)} className="bg-black/50 p-6 rounded-xl border border-white/10 cursor-pointer hover:border-blue-500 group transition-all flex items-center gap-4">
                                 <div className="p-3 bg-blue-900/20 text-blue-500 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
-                                <div><h3 className="font-bold text-lg text-white">{month}</h3><p className="text-xs text-slate-500">{Object.keys(folderStructure[selectedYear][month]).length} Active Dates</p></div>
+                                <div><h3 className="font-bold text-lg text-white">{month}</h3><p className="text-xs text-slate-400">{Object.keys(folderStructure[selectedYear][month]).length} Active Dates</p></div>
                             </div>
                         ))}
                     </div>
@@ -711,7 +711,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         return (
             <div className="animate-fade-in pr-2 custom-scrollbar overflow-y-auto">
                 {years.length === 0 ? (
-                    <div className="text-center py-20 text-slate-600"><History size={48} className="mx-auto mb-4 opacity-20"/><p className="tracking-widest uppercase text-sm font-bold opacity-50">No Records Found</p></div>
+                    <div className="text-center py-20 text-slate-400"><History size={48} className="mx-auto mb-4 opacity-20"/><p className="tracking-widest uppercase text-sm font-bold opacity-50">No Records Found</p></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {years.map(year => (
@@ -744,22 +744,22 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                             <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
                                 <Target className="text-blue-500" size={18}/> Set Production Goal
                             </h3>
-                            <button onClick={() => setShowTargetModal(false)} className="text-slate-600 hover:text-white"><X size={20}/></button>
+                            <button onClick={() => setShowTargetModal(false)} className="text-slate-400 hover:text-white"><X size={20}/></button>
                         </div>
                         <form onSubmit={handleSaveTarget} className="p-6 space-y-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Select Product</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Select Product</label>
                                 <select value={targetForm.productId} onChange={e => setTargetForm({...targetForm, productId: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Target Quantity (Bks)</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Target Quantity (Bks)</label>
                                 <input type="number" min="1" value={targetForm.targetQty} onChange={e => setTargetForm({...targetForm, targetQty: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500"/>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Target Month</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Target Month</label>
                                 <input type="month" value={targetForm.month} onChange={e => setTargetForm({...targetForm, month: e.target.value})} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-blue-500"/>
                             </div>
                             <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all">
@@ -777,19 +777,19 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                             <h3 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
                                 <Pencil className="text-purple-500" size={18}/> Edit Shipping Data
                             </h3>
-                            <button onClick={() => setEditingOrder(null)} className="text-slate-600 hover:text-white"><X size={20}/></button>
+                            <button onClick={() => setEditingOrder(null)} className="text-slate-400 hover:text-white"><X size={20}/></button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Nama Pengirim (Sender Name)</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Nama Pengirim (Sender Name)</label>
                                 <input type="text" value={editSenderName} onChange={e => setEditSenderName(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500"/>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Logistic Company / Courier</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Logistic Company / Courier</label>
                                 <input type="text" value={editCourier} onChange={e => setEditCourier(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-purple-500"/>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Nomor Resi / Tracking No</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Nomor Resi / Tracking No</label>
                                 <input type="text" value={editTrackingNo} onChange={e => setEditTrackingNo(e.target.value)} className="w-full bg-black/50 border border-slate-600 rounded-lg p-3 text-sm text-blue-300 font-mono font-bold outline-none focus:border-purple-500 uppercase"/>
                             </div>
                         </div>
@@ -862,15 +862,15 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">Metadata</h3>
-                                    <div><label className="text-xs text-slate-500">Surat Jalan / Delivery No</label><input value={editingPO.poNumber} onChange={e=>setEditingPO({...editingPO, poNumber: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white" required/></div>
-                                    <div><label className="text-xs text-slate-500">Source Factory</label><input value={editingPO.supplierName} onChange={e=>setEditingPO({...editingPO, supplierName: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
-                                    <div><label className="text-xs text-slate-500">Date</label><input type="date" value={editingPO.date} onChange={e=>setEditingPO({...editingPO, date: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
+                                    <div><label className="text-xs text-slate-400">Surat Jalan / Delivery No</label><input value={editingPO.poNumber} onChange={e=>setEditingPO({...editingPO, poNumber: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white" required/></div>
+                                    <div><label className="text-xs text-slate-400">Source Factory</label><input value={editingPO.supplierName} onChange={e=>setEditingPO({...editingPO, supplierName: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
+                                    <div><label className="text-xs text-slate-400">Date</label><input type="date" value={editingPO.date} onChange={e=>setEditingPO({...editingPO, date: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">Extra Costs</h3>
-                                    <div><label className="text-xs text-slate-500">Shipping (Rp)</label><input type="number" value={editingPO.shippingCost} onChange={e=>setEditingPO({...editingPO, shippingCost: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
-                                    <div><label className="text-xs text-slate-500">Labor (Rp)</label><input type="number" value={editingPO.laborCost} onChange={e=>setEditingPO({...editingPO, laborCost: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
-                                    <div><label className="text-xs text-slate-500">Tax (Rp)</label><input type="number" value={editingPO.exciseTax} onChange={e=>setEditingPO({...editingPO, exciseTax: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
+                                    <div><label className="text-xs text-slate-400">Shipping (Rp)</label><input type="number" value={editingPO.shippingCost} onChange={e=>setEditingPO({...editingPO, shippingCost: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
+                                    <div><label className="text-xs text-slate-400">Labor (Rp)</label><input type="number" value={editingPO.laborCost} onChange={e=>setEditingPO({...editingPO, laborCost: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
+                                    <div><label className="text-xs text-slate-400">Tax (Rp)</label><input type="number" value={editingPO.exciseTax} onChange={e=>setEditingPO({...editingPO, exciseTax: e.target.value})} className="w-full p-2 bg-black border border-white/10 rounded text-white"/></div>
                                 </div>
                             </div>
 
@@ -882,7 +882,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                             <ImageIcon size={14}/> View Current
                                         </button>
                                     ) : (
-                                        <span className="text-xs text-slate-500 italic shrink-0 mt-2">No previous document.</span>
+                                        <span className="text-xs text-slate-400 italic shrink-0 mt-2">No previous document.</span>
                                     )}
                                     <div className="flex-1 w-full">
                                         {editReceiptFile ? (
@@ -906,8 +906,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                     {editingPO.items.map((item, idx) => (
                                         <div key={item.cartId || item.id} className="flex gap-4 items-center bg-black p-3 border border-white/10 rounded">
                                             <span className="text-xs text-white font-bold flex-1 truncate">{item.name}</span>
-                                            <div className="w-32"><label className="text-[8px] text-slate-500">Batch No</label><input type="text" value={item.batchNo || ''} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].batchNo = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-slate-300 text-center uppercase"/></div>
-                                            <div className="w-32"><label className="text-[8px] text-slate-500">Qty Received</label><input type="number" value={item.qtyReceived} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].qtyReceived = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-emerald-400 font-mono text-center"/></div>
+                                            <div className="w-32"><label className="text-[11px] text-slate-400">Batch No</label><input type="text" value={item.batchNo || ''} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].batchNo = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-slate-300 text-center uppercase"/></div>
+                                            <div className="w-32"><label className="text-[11px] text-slate-400">Qty Received</label><input type="number" value={item.qtyReceived} onChange={e=>{ const newItems = [...editingPO.items]; newItems[idx].qtyReceived = e.target.value; setEditingPO({...editingPO, items: newItems}); }} className="w-full p-1.5 bg-[#1a1a1a] border border-white/10 rounded text-emerald-400 font-mono text-center"/></div>
                                         </div>
                                     ))}
                                 </div>
@@ -927,7 +927,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                     <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
                         <div>
                             <h2 className="text-xl lg:text-2xl font-black text-white flex items-center gap-3"><History className="text-orange-500"/> Master Logistics Ledger</h2>
-                            <p className="text-[10px] lg:text-xs text-slate-500 uppercase tracking-widest mt-1">Unified Inbound & Outbound History</p>
+                            <p className="text-[10px] lg:text-xs text-slate-400 uppercase tracking-widest mt-1">Unified Inbound & Outbound History</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <button onClick={() => setViewMode('targets')} className="text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-white flex items-center gap-2 border border-blue-500/30 rounded-lg px-3 py-2 bg-blue-900/20 transition-colors"><Target size={14}/> Targets</button>
@@ -946,7 +946,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                     <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4 shrink-0">
                         <div>
                             <h2 className="text-xl lg:text-2xl font-black text-white flex items-center gap-3"><Target className="text-blue-500"/> Production Targets</h2>
-                            <p className="text-[10px] lg:text-xs text-slate-500 uppercase tracking-widest mt-1">Track actual factory output against targets</p>
+                            <p className="text-[10px] lg:text-xs text-slate-400 uppercase tracking-widest mt-1">Track actual factory output against targets</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <button onClick={() => setShowTargetModal(true)} className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:text-white flex items-center gap-2 border border-emerald-500/30 rounded-lg px-3 py-2 bg-emerald-900/20 transition-colors"><PlusCircle size={14}/> Set Target</button>
@@ -967,14 +967,14 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                             <div className="flex items-center gap-3"><PackagePlus className="text-orange-500" /><h2 className="text-lg font-bold text-orange-500 tracking-widest uppercase">Select Wares</h2></div>
                         </div>
                         <div className="p-4 border-b border-white/5">
-                            <div className="relative"><Search size={16} className="absolute left-3 top-3 text-slate-500" /><input type="text" placeholder="Search inventory..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:border-orange-500 outline-none text-white transition-colors" /></div>
+                            <div className="relative"><Search size={16} className="absolute left-3 top-3 text-slate-400" /><input type="text" placeholder="Search inventory..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm focus:border-orange-500 outline-none text-white transition-colors" /></div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                             {filteredInventory.map(item => {
                                 return (
                                     <div key={item.id} onClick={() => addToCart(item)} className="p-3 mb-2 rounded-xl cursor-pointer border transition-all flex items-center gap-4 bg-black/40 border-white/5 hover:border-orange-500/50">
-                                        <div className="w-12 h-12 bg-black rounded flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">{item.images?.front ? <img src={item.images.front} className="w-full h-full object-contain" alt="ware"/> : <PackagePlus size={20} className="text-slate-600"/>}</div>
-                                        <div className="flex-1 min-w-0"><h3 className="text-sm font-bold text-white truncate">{item.name}</h3><p className="text-[10px] text-slate-500 font-mono">Stock: <span className="text-emerald-400 font-bold">{item.stock}</span></p></div>
+                                        <div className="w-12 h-12 bg-black rounded flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">{item.images?.front ? <img src={item.images.front} className="w-full h-full object-contain" alt="ware"/> : <PackagePlus size={20} className="text-slate-400"/>}</div>
+                                        <div className="flex-1 min-w-0"><h3 className="text-sm font-bold text-white truncate">{item.name}</h3><p className="text-[10px] text-slate-400 font-mono">Stock: <span className="text-emerald-400 font-bold">{item.stock}</span></p></div>
                                     </div>
                                 );
                             })}
@@ -994,7 +994,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                         </div>
 
                         {cart.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-600"><ShoppingCart size={48} className="mb-4 opacity-20" /><p className="tracking-widest uppercase text-sm font-bold opacity-50">Setup is Empty</p></div>
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400"><ShoppingCart size={48} className="mb-4 opacity-20" /><p className="tracking-widest uppercase text-sm font-bold opacity-50">Setup is Empty</p></div>
                         ) : (
                             <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
                                 <div className="space-y-3 mb-8">
@@ -1005,18 +1005,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
                                         return (
                                             <div key={item.cartId} className="bg-black border border-white/10 rounded-xl p-3 flex flex-col md:flex-row gap-4 items-start md:items-center relative">
-                                                <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-600 hover:text-red-500 transition-colors"><X size={16}/></button>
+                                                <button onClick={() => removeFromCart(item.cartId)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-colors"><X size={16}/></button>
                                                 <div className="flex-1 min-w-[120px] pt-1 md:pt-0">
                                                     <h4 className="text-xs font-bold text-white uppercase truncate pr-6">{item.name}</h4>
                                                     {activeTarget ? (
-                                                        <span className="text-[9px] text-blue-400 font-mono border border-blue-500/30 px-1.5 py-0.5 rounded bg-blue-900/20 mt-1 inline-block">Monthly Goal: {activeTarget.targetQty} Bks</span>
+                                                        <span className="text-[11px] text-blue-400 font-mono border border-blue-500/30 px-1.5 py-0.5 rounded bg-blue-900/20 mt-1 inline-block">Monthly Goal: {activeTarget.targetQty} Bks</span>
                                                     ) : (
-                                                        <span className="text-[9px] text-slate-600 font-mono mt-1 inline-block">No active monthly goal</span>
+                                                        <span className="text-[11px] text-slate-400 font-mono mt-1 inline-block">No active monthly goal</span>
                                                     )}
                                                 </div>
                                                 <div className="flex flex-wrap gap-3 w-full md:w-auto items-end pr-6">
-                                                    <div className="w-32"><label className="text-[8px] text-slate-500 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
-                                                    <div className="w-32"><label className="text-[8px] text-emerald-500 font-bold uppercase block mb-1">Qty Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-2 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
+                                                    <div className="w-32"><label className="text-[11px] text-slate-400 uppercase block mb-1">Batch / Serial No.</label><input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value)} className="w-full bg-[#1a1a1a] border border-white/10 rounded p-2 text-xs text-white focus:border-blue-500 outline-none font-mono uppercase" placeholder="SN-001"/></div>
+                                                    <div className="w-32"><label className="text-[11px] text-emerald-500 font-bold uppercase block mb-1">Qty Received</label><input type="number" value={item.qtyReceived || ''} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} className="w-full bg-emerald-900/20 border border-emerald-500/30 rounded p-2 text-xs text-emerald-400 font-bold focus:border-emerald-500 outline-none font-mono" placeholder="0"/></div>
                                                 </div>
                                             </div>
                                         )
@@ -1026,18 +1026,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-white/10">
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={14}/> 1. Delivery Meta</h3>
-                                        <div><label className="text-[10px] text-slate-500 uppercase flex items-center gap-2 mb-1"><Calendar size={12}/> Arrival Date</label><input type="date" value={poData.poDate} onChange={e => setPoData({...poData, poDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" /></div>
-                                        <div><label className="text-[10px] text-slate-500 uppercase">Surat Jalan / Delivery No</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
-                                        <div><label className="text-[10px] text-slate-500 uppercase">Source (e.g., Factory Name)</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
+                                        <div><label className="text-[10px] text-slate-400 uppercase flex items-center gap-2 mb-1"><Calendar size={12}/> Arrival Date</label><input type="date" value={poData.poDate} onChange={e => setPoData({...poData, poDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" /></div>
+                                        <div><label className="text-[10px] text-slate-400 uppercase">Surat Jalan / Delivery No</label><input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-black border border-emerald-500/50 rounded-lg p-2.5 text-sm text-emerald-400 font-mono font-bold focus:border-emerald-400 outline-none" /></div>
+                                        <div><label className="text-[10px] text-slate-400 uppercase">Source (e.g., Factory Name)</label><input type="text" value={poData.supplierName} onChange={e => setPoData({...poData, supplierName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none" placeholder="e.g., KPM Malang"/></div>
                                     </div>
 
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><Calculator size={14}/> 2. Landed Costs (Rp)</h3>
                                         <div className="flex gap-4">
-                                            <div className="flex-1"><label className="text-[10px] text-slate-500 uppercase">Shipping / Freight</label><input type="number" value={poData.shippingCost || ''} onChange={e => setPoData({...poData, shippingCost: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
-                                            <div className="flex-1"><label className="text-[10px] text-slate-500 uppercase">Labor / Unloading</label><input type="number" value={poData.laborCost || ''} onChange={e => setPoData({...poData, laborCost: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
+                                            <div className="flex-1"><label className="text-[10px] text-slate-400 uppercase">Shipping / Freight</label><input type="number" value={poData.shippingCost || ''} onChange={e => setPoData({...poData, shippingCost: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
+                                            <div className="flex-1"><label className="text-[10px] text-slate-400 uppercase">Labor / Unloading</label><input type="number" value={poData.laborCost || ''} onChange={e => setPoData({...poData, laborCost: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
                                         </div>
-                                        <div><label className="text-[10px] text-slate-500 uppercase">Excise Tax / Cukai</label><input type="number" value={poData.exciseTax || ''} onChange={e => setPoData({...poData, exciseTax: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
+                                        <div><label className="text-[10px] text-slate-400 uppercase">Excise Tax / Cukai</label><input type="number" value={poData.exciseTax || ''} onChange={e => setPoData({...poData, exciseTax: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-orange-500 outline-none font-mono" placeholder="0"/></div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -1050,10 +1050,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                     <button onClick={() => setReceiptFile(null)} className="text-[10px] bg-red-900/50 text-red-400 px-3 py-1 rounded hover:bg-red-900 transition-colors uppercase font-bold">Remove File</button>
                                                 </>
                                             ) : (
-                                                <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full hover:text-orange-500 transition-colors text-slate-600">
+                                                <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full hover:text-orange-500 transition-colors text-slate-400">
                                                     <UploadCloud size={24} className="mb-1" />
                                                     <p className="text-[10px] font-bold text-white uppercase tracking-widest">Image to Database</p>
-                                                    <p className="text-[8px] text-emerald-500 font-mono mt-1">100% FREE NO STORAGE API</p>
+                                                    <p className="text-[11px] text-emerald-500 font-mono mt-1">100% FREE NO STORAGE API</p>
                                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => setReceiptFile(e.target.files[0])} />
                                                 </label>
                                             )}
@@ -1064,7 +1064,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 <div className="mt-8 flex flex-col md:flex-row items-center justify-between bg-black p-4 rounded-xl border border-white/10 gap-4">
                                     <div className="flex gap-8 w-full md:w-auto">
                                         <div>
-                                            <p className="text-[10px] text-slate-500 uppercase font-bold">Wares Base Value</p>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold">Wares Base Value</p>
                                             <p className="text-lg font-mono font-bold text-slate-300">Rp {new Intl.NumberFormat('id-ID').format(totalBasePrice)}</p>
                                         </div>
                                         <div>

@@ -169,7 +169,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-black uppercase tracking-wide text-white">{agentName}'s Manifest</h1>
-                        <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">Real-time Financial Status</p>
+                        <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase mt-0.5">Real-time Financial Status</p>
                     </div>
                 </div>
                 
@@ -179,21 +179,21 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     {/* TOP ROW: Core Metrics */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
                         <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
-                            <span className="text-base md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[9px] font-bold text-slate-600">Bks</span></span>
+                            <span className="text-[11px] md:text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
+                            <span className="text-base md:text-xl font-black text-blue-400">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[11px] font-bold text-slate-400">Bks</span></span>
                         </div>
                         
                         <div className="bg-slate-950 border border-slate-800 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Inv. Value</span>
+                            <span className="text-[11px] md:text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Inv. Value</span>
                             <span className="text-sm md:text-xl font-black text-slate-200">{formatRupiah(invValue)}</span>
                         </div>
                         
                         <div className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash Sales</span>
+                            <span className="text-[11px] md:text-xs text-orange-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash Sales</span>
                             <span className="text-sm md:text-xl font-black text-orange-400">{formatRupiah(todayRevenue)}</span>
                             {/* 🚀 NEW RETUR DEDUCTION DISPLAY */}
                             {totalRetur > 0 && (
-                                <span className="text-[9px] text-red-400 font-bold mt-1 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/50">
+                                <span className="text-[11px] text-red-400 font-bold mt-1 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/50">
                                     - {formatRupiah(totalRetur)} Retur
                                 </span>
                             )}
@@ -201,8 +201,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
                         {/* 🚀 NEW CUKAI DEBT DISPLAY */}
                         <div className="bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
-                            <span className="text-[9px] md:text-xs text-indigo-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Tag size={12}/> Cukai Debt</span>
-                            <span className="text-sm md:text-xl font-black text-indigo-400">{totalCukaiOwed} <span className="text-[9px] font-bold text-indigo-500/50">Pcs</span></span>
+                            <span className="text-[11px] md:text-xs text-indigo-500 font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Tag size={12}/> Cukai Debt</span>
+                            <span className="text-sm md:text-xl font-black text-indigo-400">{totalCukaiOwed} <span className="text-[11px] font-bold text-indigo-500/50">Pcs</span></span>
                         </div>
                     </div>
 
@@ -213,15 +213,15 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
                         <div className="grid grid-cols-3 gap-2 divide-x divide-emerald-900/50">
                             <div className="flex flex-col items-center text-center">
-                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Ecer</span>
+                                <span className="text-[11px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Ecer</span>
                                 <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revEcer)}</span>
                             </div>
                             <div className="flex flex-col items-center text-center pl-2">
-                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Retail</span>
+                                <span className="text-[11px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Retail</span>
                                 <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revRetail)}</span>
                             </div>
                             <div className="flex flex-col items-center text-center pl-2">
-                                <span className="text-[9px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Grosir</span>
+                                <span className="text-[11px] md:text-xs text-emerald-500/70 font-bold uppercase tracking-wider mb-1">Grosir</span>
                                 <span className="text-sm md:text-xl font-black text-emerald-400">{formatRupiah(revGrosir)}</span>
                             </div>
                         </div>
@@ -270,14 +270,14 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         {isLoading ? (
                             <div className="flex items-center justify-center h-40 opacity-50">
                                 <div className="text-center animate-pulse">
-                                    <AlertCircle size={32} className="mx-auto mb-3 text-slate-600"/>
-                                    <p className="text-xs font-bold tracking-widest uppercase text-slate-500">Syncing database...</p>
+                                    <AlertCircle size={32} className="mx-auto mb-3 text-slate-400"/>
+                                    <p className="text-xs font-bold tracking-widest uppercase text-slate-400">Syncing database...</p>
                                 </div>
                             </div>
                         ) : canvasItems.length === 0 ? (
                             <div className="flex items-center justify-center h-40 opacity-30 flex-col">
-                                <Package size={48} className="mb-4 text-slate-600"/>
-                                <p className="font-black text-lg tracking-widest uppercase text-slate-500">Vehicle empty</p>
+                                <Package size={48} className="mb-4 text-slate-400"/>
+                                <p className="font-black text-lg tracking-widest uppercase text-slate-400">Vehicle empty</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
@@ -297,19 +297,19 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between hover:border-slate-600 transition-colors shadow-sm group">
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-slate-600 transition-colors">
-                                                    <Package size={18} className="text-slate-500 group-hover:text-blue-400 transition-colors"/>
+                                                    <Package size={18} className="text-slate-400 group-hover:text-blue-400 transition-colors"/>
                                                 </div>
                                                 <div className="min-w-0 flex flex-col">
                                                     <div className="flex items-center gap-2">
                                                         <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide group-hover:text-white transition-colors truncate">{item.name}</h4>
                                                         {/* MISSING COST WARNING BADGE */}
                                                         {isMissingCost && (
-                                                            <span className="bg-red-500/20 border border-red-500 text-red-500 text-[8px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
+                                                            <span className="bg-red-500/20 border border-red-500 text-red-500 text-[11px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
                                                                 No Cost Data
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[10px] text-slate-600 font-mono mt-0.5 font-semibold">ID: {item.productId.slice(0,8)}</p>
+                                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 font-semibold">ID: {item.productId.slice(0,8)}</p>
                                                 </div>
                                             </div>
                                             
@@ -318,19 +318,19 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                 {physicalBks > 0 && (
                                                     <div className="flex items-baseline gap-1.5">
                                                         <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">{new Intl.NumberFormat('id-ID').format(physicalBks)}</p>
-                                                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                                        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Bks</p>
                                                     </div>
                                                 )}
                                                 {physicalBtg > 0 && (
                                                     <div className={`flex items-baseline gap-1.5 ${physicalBks > 0 ? 'mt-1' : ''}`}>
                                                         <p className="text-sm md:text-base font-black text-emerald-300 leading-none">{physicalBtg}</p>
-                                                        <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Btg</p>
+                                                        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Btg</p>
                                                     </div>
                                                 )}
                                                 {(physicalBks === 0 && physicalBtg === 0) && (
                                                     <div className="flex items-baseline gap-1.5">
                                                         <p className="text-xl md:text-2xl font-black text-emerald-400 leading-none">0</p>
-                                                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Bks</p>
+                                                        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Bks</p>
                                                     </div>
                                                 )}
                                                 <div className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider shadow-inner mt-1.5">
@@ -351,8 +351,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
                         {todayTransactions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-6">
-                                <Coins size={32} className="mb-3 text-slate-600"/>
-                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No sales recorded today</p>
+                                <Coins size={32} className="mb-3 text-slate-400"/>
+                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">No sales recorded today</p>
                             </div>
                         ) : (
                             <div className="space-y-3 mb-6">
@@ -361,17 +361,17 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         <div>
                                             <h4 className="font-bold text-slate-200 text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
                                             <div className="flex items-center gap-2 mt-1.5">
-                                                <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                                <span className="text-[11px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
                                                     {tx.paymentType || 'CASH'}
                                                 </span>
-                                                <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                                <span className="text-[10px] text-slate-400 font-mono font-semibold">
                                                     {tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-lg md:text-xl font-black text-orange-400 leading-none drop-shadow-sm">{formatRupiah(tx.total || tx.amountPaid || 0)}</p>
-                                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} Items Sold</p>
+                                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} Items Sold</p>
                                         </div>
                                     </div>
                                 ))}
@@ -386,8 +386,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
                         {todaySamplings.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-slate-800 border-dashed rounded-xl bg-slate-900/30 mb-20">
-                                <Package size={32} className="mb-3 text-slate-600"/>
-                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-500">No samples deployed today</p>
+                                <Package size={32} className="mb-3 text-slate-400"/>
+                                <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400">No samples deployed today</p>
                             </div>
                         ) : (
                             <div className="space-y-3 pb-20">
@@ -404,10 +404,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                             <div>
                                                 <h4 className="font-bold text-indigo-300 text-sm uppercase tracking-wide">{sample.reason || 'Unknown Target'}</h4>
                                                 <div className="flex items-center gap-2 mt-1.5">
-                                                    <span className="text-[9px] px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
+                                                    <span className="text-[11px] px-2 py-0.5 rounded bg-slate-950 text-indigo-400 font-bold uppercase tracking-wider border border-slate-700 shadow-inner">
                                                         {sample.productName}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-500 font-mono font-semibold">
+                                                    <span className="text-[10px] text-slate-400 font-mono font-semibold">
                                                         {sample.timestamp?.seconds ? new Date(sample.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
                                                     </span>
                                                 </div>
@@ -417,7 +417,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                 {bks > 0 && <p className="text-lg md:text-xl font-black text-indigo-400 leading-none drop-shadow-sm">-{bks} Bks</p>}
                                                 {btg > 0 && <p className={`text-xs font-black text-indigo-300 drop-shadow-sm ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
                                                 
-                                                <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
+                                                <p className="text-[11px] text-red-400 font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
                                             </div>
                                         </div>
                                     );
@@ -442,9 +442,9 @@ function QuarantineLedgerBoard({ cargo }) {
     if (!cargo || cargo.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 opacity-50">
-          <ShieldAlert className="w-12 h-12 text-slate-500 mb-3" />
+          <ShieldAlert className="w-12 h-12 text-slate-400 mb-3" />
           <p className="text-slate-400 text-sm font-medium">Quarantine sector is empty.</p>
-          <p className="text-slate-500 text-xs text-center mt-1">
+          <p className="text-slate-400 text-xs text-center mt-1">
             No damaged goods collected today.
           </p>
         </div>
@@ -481,12 +481,12 @@ function QuarantineLedgerBoard({ cargo }) {
             {/* Forensic Audit Details */}
             <div className="mt-4 pt-3 border-t border-slate-800/50 pl-2 space-y-2">
               <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                <User className="w-3 h-3 text-slate-500" />
+                <User className="w-3 h-3 text-slate-400" />
                 <span>Origin: <span className="text-slate-300">{item.customerOrigin}</span></span>
               </div>
               <div className="flex items-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                <Tag className="w-3 h-3 text-slate-500" />
-                <span>Tx ID: <span className="font-mono text-slate-500">{item.id.slice(-8)}</span></span>
+                <Tag className="w-3 h-3 text-slate-400" />
+                <span>Tx ID: <span className="font-mono text-slate-400">{item.id.slice(-8)}</span></span>
               </div>
             </div>
           </div>

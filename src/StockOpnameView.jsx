@@ -204,7 +204,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         setIsSubmitting(true);
         try {
             const auditPayload = {
-                agentId: user.uid,
+                // 🚀 Phase 7: was `user.uid` — for every employee, `user.uid` is hijacked to the
+                // BOSS's uid (see App.jsx's traffic-cop, `hijackedUser.uid = trueBossUid ||
+                // currentUser.uid`), so every stock count in the company was being recorded
+                // against the vault owner, never the agent who actually counted it.
+                // `user.agentId` is the real per-agent id that same hijack carries.
+                agentId: user.agentId || 'VAULT',
                 agentName: user.displayName || user.email?.split('@')[0] || "Branch Admin",
                 auditType: isAreaAdmin ? 'BRANCH_WAREHOUSE' : 'MASTER_VAULT',
                 branchLocation: user.location || 'HQ',
@@ -520,40 +525,40 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         </div>
                         <form onSubmit={executeResolution} className="p-6 space-y-5">
                             <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Target Asset</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Target Asset</p>
                                 <p className="font-bold text-white uppercase">{resolutionModal.item.name}</p>
                                 <p className="text-[10px] text-orange-400 font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
                             </div>
                             
                             <div>
-                                <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
+                                <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
                                 <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-black border border-white/20 p-3 rounded-lg text-white font-mono text-lg font-black focus:border-orange-500 outline-none" required/>
                             </div>
 
                             {resolutionModal.method === 'SAMPLING' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
+                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
                                     <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-purple-500 outline-none" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'RTV' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
+                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
                                     <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-blue-500 outline-none font-mono uppercase" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'PENALTY' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
+                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
                                     <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
                                         {safeMotorists.filter(m => m && m.id !== 'master_owner').map(m => (
                                             <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
                                         ))}
                                     </select>
-                                    <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[9px] text-red-400 uppercase tracking-widest leading-relaxed">
+                                    <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[11px] text-red-400 uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
                                     </div>
                                 </div>
@@ -575,27 +580,27 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {viewMode === 'quarantine' && <><Biohazard size={24} className="text-orange-500 animate-pulse"/> Quarantine Vault</>}
                         {viewMode === 'monitor' && <><BarChart size={24} className="text-blue-500 animate-pulse"/> Supply Telemetry</>}
                     </h2>
-                    <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
+                    <p className="text-[10px] text-slate-400 font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
-                        {!isHighCommand && viewMode === 'count' && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[9px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && viewMode === 'count' && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
                 {isHighCommand && (
                     <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <BarChart size={14}/> Monitor
                         </button>
-                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
-                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
+                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <Biohazard size={14}/> Quarantine
                         </button>
-                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <ClipboardList size={14}/> New Count
                         </button>
                     </div>
@@ -634,11 +639,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     {/* Header */}
                                     <div className="flex items-center p-4 border-b border-[#2a2a2a] bg-black/40 z-10">
                                         <div className="w-12 h-12 bg-black border border-[#333] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
-                                            {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-slate-600"/>}
+                                            {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-slate-400"/>}
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
                                             <h3 className="font-black text-white text-sm uppercase truncate tracking-wider drop-shadow-md">{p.name}</h3>
-                                            <p className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {p.id}</p>
+                                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {p.id}</p>
                                         </div>
                                     </div>
 
@@ -648,7 +653,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         {/* Vault vs Initial Row */}
                                         <div className="flex items-center justify-between bg-black/60 border border-blue-500/20 rounded-lg p-3 shadow-inner">
                                             <div>
-                                                <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
+                                                <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
                                                 <div className="flex items-baseline gap-1.5">
                                                     <span 
                                                         className={`text-2xl font-black text-white font-mono leading-none ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
@@ -657,15 +662,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     >
                                                         {stat.vault}
                                                     </span>
-                                                    <span className="text-sm font-bold text-slate-500 font-mono">/ {stat.initial}</span>
+                                                    <span className="text-sm font-bold text-slate-400 font-mono">/ {stat.initial}</span>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-2">Status</p>
+                                                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Status</p>
                                                 {isLowStock ? (
-                                                    <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
+                                                    <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
                                                 ) : (
-                                                    <span className="bg-emerald-900/30 text-emerald-500 border border-emerald-500/50 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest">Healthy</span>
+                                                    <span className="bg-emerald-900/30 text-emerald-500 border border-emerald-500/50 px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
                                                 )}
                                             </div>
                                         </div>
@@ -673,15 +678,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         {/* Breakdowns Row */}
                                         <div className="grid grid-cols-3 gap-2">
                                             <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-orange-500/30 transition-colors">
-                                                <span className="text-[9px] text-orange-400/70 font-bold uppercase tracking-widest mb-1 block">Field</span>
+                                                <span className="text-[11px] text-orange-400/70 font-bold uppercase tracking-widest mb-1 block">Field</span>
                                                 <span className="text-orange-500 font-black font-mono text-sm">{stat.field}</span>
                                             </div>
                                             <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-emerald-500/30 transition-colors">
-                                                <span className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-widest mb-1 block">Sold</span>
+                                                <span className="text-[11px] text-emerald-400/70 font-bold uppercase tracking-widest mb-1 block">Sold</span>
                                                 <span className="text-emerald-500 font-black font-mono text-sm">{stat.sold}</span>
                                             </div>
                                             <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-red-500/30 transition-colors">
-                                                <span className="text-[9px] text-red-400/70 font-bold uppercase tracking-widest mb-1 block">Damaged</span>
+                                                <span className="text-[11px] text-red-400/70 font-bold uppercase tracking-widest mb-1 block">Damaged</span>
                                                 <span className="text-red-500 font-black font-mono text-sm">{stat.damaged}</span>
                                             </div>
                                         </div>
@@ -743,7 +748,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         
                         {quarSubTab === 'active' && (
                             <div className="text-right w-full md:w-auto bg-orange-950/30 p-3 rounded-lg border border-orange-500/30">
-                                <p className="text-[9px] text-orange-400 uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
+                                <p className="text-[11px] text-orange-400 uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
                                 <p className="text-xl font-black text-orange-500 font-mono">
                                     {formatRupiah(quarantineInventory.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
                                 </p>
@@ -769,22 +774,22 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     <h3 className="font-bold text-white text-base uppercase tracking-wider">{item.name}</h3>
                                                     <div className="flex items-center gap-3 mt-1 text-xs font-mono">
                                                         <span className="text-orange-400 font-bold">{item.damagedStock} Bks Damaged</span>
-                                                        <span className="text-slate-600">|</span>
+                                                        <span className="text-slate-400">|</span>
                                                         <span className="text-slate-400">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
-                                                        <span className="text-slate-600">|</span>
-                                                        <span className="text-blue-400 uppercase tracking-widest text-[9px]">{item.facility}</span>
+                                                        <span className="text-slate-400">|</span>
+                                                        <span className="text-blue-400 uppercase tracking-widest text-[11px]">{item.facility}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-slate-700 xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
-                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-purple-900/30 hover:bg-purple-600 border border-purple-500/50 text-purple-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-purple-900/30 hover:bg-purple-600 border border-purple-500/50 text-purple-400 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <FlaskConical size={14}/> Convert to Sample
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-blue-900/30 hover:bg-blue-600 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-blue-900/30 hover:bg-blue-600 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <Undo2 size={14}/> RTV Factory
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-red-900/30 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-red-900/30 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                                     <BadgeDollarSign size={14}/> Penalty Charge
                                                 </button>
                                             </div>
@@ -795,7 +800,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         ) : (
                             displayedQuarantineLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
-                                    <History size={48} className="text-slate-500"/>
+                                    <History size={48} className="text-slate-400"/>
                                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No liquidation history found.</p>
                                 </div>
                             ) : (
@@ -805,13 +810,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         <div key={log.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${log.method === 'SAMPLING' ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50' : log.method === 'RTV' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/50' : 'bg-red-900/30 text-red-400 border border-red-500/50'}`}>
+                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${log.method === 'SAMPLING' ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50' : log.method === 'RTV' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/50' : 'bg-red-900/30 text-red-400 border border-red-500/50'}`}>
                                                         {log.method === 'SAMPLING' && <FlaskConical size={10}/>}
                                                         {log.method === 'RTV' && <Undo2 size={10}/>}
                                                         {log.method === 'PENALTY' && <BadgeDollarSign size={10}/>}
                                                         {log.method}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-500 font-mono">{timeStr}</span>
+                                                    <span className="text-[10px] text-slate-400 font-mono">{timeStr}</span>
                                                 </div>
                                                 <h4 className="font-bold text-white uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
                                                 <p className="text-[10px] text-slate-400 font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
@@ -823,7 +828,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Liquidated Value (HPP)</p>
+                                                <p className="text-[11px] text-slate-400 uppercase font-bold tracking-widest">Liquidated Value (HPP)</p>
                                                 <p className="font-black text-slate-300 font-mono text-sm">{formatRupiah(log.totalValueHpp)}</p>
                                             </div>
                                         </div>
@@ -863,7 +868,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {displayedAudits.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 mt-8">
-                                {auditSubTab === 'pending' ? <CheckCircle size={48} className="text-emerald-500"/> : <History size={48} className="text-slate-500"/>}
+                                {auditSubTab === 'pending' ? <CheckCircle size={48} className="text-emerald-500"/> : <History size={48} className="text-slate-400"/>}
                                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
                                     {auditSubTab === 'pending' ? 'No pending warehouse audits.' : 'No audit history found.'}
                                 </p>
@@ -899,12 +904,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                             <Database size={14} className="text-purple-500"/> {audit.branchLocation}
                                                         </h3>
                                                         {isHistory && (
-                                                            <span className={`text-[9px] border px-2 py-0.5 rounded font-black tracking-widest uppercase ${audit.status === 'APPROVED' ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50' : 'bg-red-900/30 text-red-400 border-red-500/50'}`}>
+                                                            <span className={`text-[11px] border px-2 py-0.5 rounded font-black tracking-widest uppercase ${audit.status === 'APPROVED' ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50' : 'bg-red-900/30 text-red-400 border-red-500/50'}`}>
                                                                 {audit.status}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-1">
+                                                    <p className="text-xs text-slate-400 font-mono flex items-center gap-1 mt-1">
                                                         <User size={12}/> Count By: {audit.agentName.toUpperCase()} • {displayTime}
                                                     </p>
                                                     {isHistory && audit.resolvedBy && (
@@ -920,7 +925,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     {totalDamaged > 0 && <p className="text-[10px] uppercase font-bold text-orange-500">{totalDamaged} Bks Damaged</p>}
                                                     {!hasIssues && <p className="text-sm uppercase font-black text-emerald-500">PERFECT MATCH</p>}
                                                 </div>
-                                                {isExpanded ? <ChevronUp size={20} className="text-slate-500"/> : <ChevronDown size={20} className="text-slate-500"/>}
+                                                {isExpanded ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
                                             </div>
                                         </div>
 
@@ -946,7 +951,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                     <span className="font-bold text-xs text-white uppercase">{item.name}</span>
                                                                     <div className="flex items-center gap-4 text-xs font-mono">
                                                                         <span className="text-slate-400">SYS: {item.expectedStock}</span>
-                                                                        <span className="text-slate-600">→</span>
+                                                                        <span className="text-slate-400">→</span>
                                                                         <span className="text-blue-400 font-bold">FND: {item.totalFound}</span>
                                                                         <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                                                             {item.variance > 0 ? '+' : ''}{item.variance}
@@ -956,7 +961,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 
                                                                 <div className="flex gap-4 items-center">
                                                                     <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700 flex-1 flex justify-between items-center text-[10px] font-mono">
-                                                                        <span className="text-slate-500">Good Condition:</span>
+                                                                        <span className="text-slate-400">Good Condition:</span>
                                                                         <span className="text-emerald-400 font-bold">{item.goodCount} Bks</span>
                                                                     </div>
                                                                     {item.damagedCount > 0 && (
@@ -970,11 +975,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-black/30 p-2 rounded">
                                                                         {isMissing ? (
-                                                                            <span className="text-[9px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
+                                                                            <span className="text-[11px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
                                                                         ) : <span></span>}
 
                                                                         {item.damagedPhotoUrl && (
-                                                                            <button onClick={() => setViewingImage(item.damagedPhotoUrl)} className="text-[9px] bg-blue-900/30 text-blue-400 hover:text-white border border-blue-500/50 px-2 py-1 rounded font-bold uppercase flex items-center gap-1 transition-colors">
+                                                                            <button onClick={() => setViewingImage(item.damagedPhotoUrl)} className="text-[11px] bg-blue-900/30 text-blue-400 hover:text-white border border-blue-500/50 px-2 py-1 rounded font-bold uppercase flex items-center gap-1 transition-colors">
                                                                                 <ImageIcon size={10}/> View Damage Proof
                                                                             </button>
                                                                         )}
@@ -1012,7 +1017,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     <div className="p-3 border-b border-slate-700 bg-black/50 relative">
                         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-black border border-slate-600 pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-emerald-500 outline-none text-white font-mono"/>
-                        <Search size={16} className="absolute left-6 top-6 text-slate-500"/>
+                        <Search size={16} className="absolute left-6 top-6 text-slate-400"/>
                     </div>
                     <div className="overflow-y-auto flex-1 z-10 relative custom-scrollbar p-3">
                         <div className="space-y-3">
@@ -1029,16 +1034,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         <div className="p-4 flex flex-col md:flex-row justify-between md:items-center gap-4">
                                             <div className="flex-1">
                                                 <div className="font-bold text-white text-sm uppercase tracking-wider">{item.name}</div>
-                                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {item.id}</div>
+                                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {item.id}</div>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
-                                                    <label className="text-[8px] text-emerald-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Good Stock</label>
+                                                    <label className="text-[11px] text-emerald-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Good Stock</label>
                                                     <input type="number" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-emerald-400 focus:border-emerald-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
                                                 </div>
-                                                <span className="text-slate-600 font-bold text-lg">+</span>
+                                                <span className="text-slate-400 font-bold text-lg">+</span>
                                                 <div className="relative">
-                                                    <label className="text-[8px] text-orange-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Damaged</label>
+                                                    <label className="text-[11px] text-orange-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Damaged</label>
                                                     <input type="number" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-orange-400 focus:border-orange-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
                                                 </div>
                                             </div>
@@ -1047,9 +1052,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         {isRevealed && (
                                             <div className="p-4 pt-0 border-t border-slate-700/50 mt-2 bg-black/20 rounded-b-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                                 <div className="flex items-center gap-4 text-xs font-mono">
-                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-500 mr-2">SYS EXPECTED:</span><span className="text-slate-300 font-bold">{item.stock || 0}</span></div>
-                                                    <span className="text-slate-600">vs</span>
-                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-500 mr-2">TOTAL FOUND:</span><span className="text-blue-400 font-bold">{totalFound}</span></div>
+                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-400 mr-2">SYS EXPECTED:</span><span className="text-slate-300 font-bold">{item.stock || 0}</span></div>
+                                                    <span className="text-slate-400">vs</span>
+                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-400 mr-2">TOTAL FOUND:</span><span className="text-blue-400 font-bold">{totalFound}</span></div>
                                                     <div className={`px-3 py-1.5 rounded border font-black ${variance === 0 ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-500' : 'bg-red-900/20 border-red-500/30 text-red-500'}`}>{variance > 0 ? '+' : ''}{variance}</div>
                                                 </div>
 
@@ -1071,7 +1076,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     </div>
 
                     <div className="p-4 bg-black/80 border-t border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
-                        <div className="text-xs text-slate-500 font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
+                        <div className="text-xs text-slate-400 font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
                             <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-2 transition-colors bg-slate-800 border border-slate-700 rounded-lg"><RefreshCcw size={14}/> Reset</button>
                             <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>

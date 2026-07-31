@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-import LandlordDashboard from './LandlordDashboard'; 
+import LandlordDashboard from './LandlordDashboard';
 import CrownTransferProtocol from './CrownTransferProtocol';
+import AchievementTester from './AchievementTester';
+import CareerDevTools from './CareerDevTools';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
@@ -22,7 +24,8 @@ export default function SettingsView({
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
     triggerDiscoParty, isDiscoMode,
-    isLiteMode, setIsLiteMode 
+    handleRecalculateCareer,
+    isLiteMode, setIsLiteMode
 }) {
 
     // --- TIER AUTOMATION LOGIC ---
@@ -96,7 +99,7 @@ export default function SettingsView({
                     </div>
                 </div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
                 <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
             </div>
         );
@@ -156,7 +159,7 @@ export default function SettingsView({
                   </p>
               </div>
               <div className="flex gap-2 mt-4 md:mt-0">
-                  <button onClick={handleResetIndicators} className="bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-900/50 hover:text-red-400 hover:border-red-500 transition-all">
+                  <button onClick={handleResetIndicators} className="bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-400 px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-900/50 hover:text-red-400 hover:border-red-500 transition-all">
                       Reset Indicators
                   </button>
                   <button onClick={handleAdminLogout} className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-500 px-4 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition-all">
@@ -174,7 +177,7 @@ export default function SettingsView({
                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
                               activeTab === tab.id 
                                 ? (tab.id === 'architect' ? 'bg-red-600 text-white shadow-md' : 'bg-blue-600 text-white shadow-md')
-                                : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                : 'text-slate-400 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                           }`}
                       >
                           {tab.icon}
@@ -198,7 +201,7 @@ export default function SettingsView({
                                       <h3 className={`font-bold text-lg flex items-center gap-2 ${isLiteMode ? 'text-emerald-500' : 'dark:text-white'}`}>
                                           ⚡ Cello Lite Mode
                                       </h3>
-                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
                                           Disables blur, animations, and heavy GPU effects to save battery on low-end phones.
                                       </p>
                                   </div>
@@ -219,15 +222,15 @@ export default function SettingsView({
                               <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity & Invoice Data</h3>
                               <div className="space-y-3">
                                   <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
+                                      <label className="text-xs font-bold text-slate-400 uppercase">Company Name</label>
                                       <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
                                   </div>
                                   <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase">Official Address (Used on Invoice Header)</label>
+                                      <label className="text-xs font-bold text-slate-400 uppercase">Official Address (Used on Invoice Header)</label>
                                       <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="e.g. Jl. Jendral Sudirman No.123, Jakarta"/>
                                   </div>
                                   <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase">Contact Number</label>
+                                      <label className="text-xs font-bold text-slate-400 uppercase">Contact Number</label>
                                       <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="e.g. (021) 1234567"/>
                                   </div>
 
@@ -263,7 +266,7 @@ export default function SettingsView({
                                       <div className="pt-4 border-t dark:border-slate-700">
                                           <label className="text-xs font-bold text-red-500 uppercase flex items-center gap-1"><ShieldAlert size={14}/> Lost Pita Cukai Fine (Rp)</label>
                                           <div className="flex items-center gap-2 mt-1">
-                                              <span className="text-slate-500 font-black">Rp</span>
+                                              <span className="text-slate-400 font-black">Rp</span>
                                               <input 
                                                   type="number" 
                                                   min="0"
@@ -277,7 +280,7 @@ export default function SettingsView({
                                                   placeholder="e.g. 5000"
                                               />
                                           </div>
-                                          <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-widest">Amount charged to salesmen per tax stamp lost.</p>
+                                          <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-widest">Amount charged to salesmen per tax stamp lost.</p>
                                       </div>
                                   )}
 
@@ -289,11 +292,11 @@ export default function SettingsView({
                           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
                               <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white mb-4"><MessageSquare size={20}/> Mascot Settings</h3>
                               <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
-                                  <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-500 uppercase">Mascot Size</label><span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span></div>
+                                  <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-400 uppercase">Mascot Size</label><span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span></div>
                                   <input type="range" min="0.5" max="2.0" step="0.1" value={appSettings.mascotScale || 1} onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }} className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"/>
                               </div>
                               <div className="mb-4">
-                                  <label className="text-xs font-bold text-slate-500 mb-1 block">Add New Dialogue Line</label>
+                                  <label className="text-xs font-bold text-slate-400 mb-1 block">Add New Dialogue Line</label>
                                   <div className="flex gap-2">
                                       <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Type a message..." value={newMascotMessage} onChange={(e) => setNewMascotMessage(e.target.value)}/>
                                       <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold">Add</button>
@@ -306,7 +309,7 @@ export default function SettingsView({
                                               <div className="flex gap-2 w-full animate-fade-in">
                                                   <input autoFocus className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" value={editMsgText} onChange={(e) => setEditMsgText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
                                                   <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600"><Save size={16}/></button>
-                                                  <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-500"><X size={16}/></button>
+                                                  <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-400"><X size={16}/></button>
                                               </div>
                                           ) : (
                                               <>
@@ -391,7 +394,7 @@ export default function SettingsView({
                                           <div className="flex-1">
                                               {tier.iconType === 'image' ? (
                                                   <div className="flex gap-2">
-                                                      <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
+                                                      <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-400 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
                                                           <Upload size={14}/> 
                                                           {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
                                                           
@@ -464,7 +467,7 @@ export default function SettingsView({
                                           <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.enableFleetPaintbrush !== false ? 'text-orange-400' : 'text-white'}`}>
                                               🖌️ Fleet Paintbrush (Journey Plan)
                                           </h3>
-                                          <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
                                               When on, Tier 1-4 (Developer, Company Owner, Area Admin, Fleet Captain) can paint squad colors and map boundaries on Journey Plan. When off, the paintbrush is hidden for everyone, regardless of tier.
                                           </p>
                                       </div>
@@ -494,7 +497,7 @@ export default function SettingsView({
                                               <h3 className="font-bold text-lg flex items-center gap-2 text-red-600 dark:text-red-400">
                                                   <Settings size={20}/> Performance Tier Logic (Tier 1 Only)
                                               </h3>
-                                              <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Configure automated promotion/demotion conditions</p>
+                                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Configure automated promotion/demotion conditions</p>
                                           </div>
                                           <button 
                                               onClick={handleSaveTierRules}
@@ -517,7 +520,7 @@ export default function SettingsView({
                                                           <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: tier.color }}></div>
                                                           <div>
                                                               <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{tier.label}</h4>
-                                                              <p className="text-[9px] text-slate-500 uppercase tracking-widest">Target Requirement</p>
+                                                              <p className="text-[11px] text-slate-400 uppercase tracking-widest">Target Requirement</p>
                                                           </div>
                                                       </div>
 
@@ -526,7 +529,7 @@ export default function SettingsView({
                                                       <div className="flex-1 flex flex-wrap items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
                                                           
                                                           <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
-                                                              <div className="px-2 text-slate-500 dark:text-slate-400">
+                                                              <div className="px-2 text-slate-400 dark:text-slate-400">
                                                                   {isOmset ? <TrendingUp size={14}/> : <Package size={14}/>}
                                                               </div>
                                                               <select 
@@ -606,18 +609,60 @@ export default function SettingsView({
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'security' && (
                       <div className="animate-fade-in space-y-6">
-                          
+
+                          {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                              <div className="bg-orange-950/20 border border-orange-500/30 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                  <div>
+                                      <h3 className="text-orange-500 font-black uppercase tracking-widest text-lg">Hitung Ulang Karir</h3>
+                                      <p className="text-xs font-mono text-slate-400 mt-1">One-time bulk recompute of every agent's career history from all verified EOD reports. Desktop + strong connection only. Safe to run more than once.</p>
+                                  </div>
+                                  <button onClick={handleRecalculateCareer} className="bg-orange-900/40 hover:bg-orange-600 text-orange-500 hover:text-white border border-orange-500 px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all shrink-0">
+                                      Hitung Ulang
+                                  </button>
+                              </div>
+                          )}
+
+                          {/* 🚀 CAREER LEDGER SWITCH (Phase 4) — rank reads from the permanent
+                              career ledger instead of the 7-day sales window. Off by default;
+                              turn on after running "Hitung Ulang Karir" above at least once so
+                              history isn't empty the moment this flips. */}
+                          {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                              <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.useCareerLedger ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-black border-slate-800'}`}>
+                                  <div className="flex items-center justify-between gap-4">
+                                      <div>
+                                          <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.useCareerLedger ? 'text-emerald-400' : 'text-white'}`}>
+                                              🏆 Use Career Ledger for Rank
+                                          </h3>
+                                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
+                                              When off, rank still reads the old rolling 7-day sales window. When on, rank reads permanent career history instead — a quiet week no longer drops anyone's rank. Run "Hitung Ulang Karir" above at least once before turning this on.
+                                          </p>
+                                      </div>
+                                      <button
+                                          onClick={() => {
+                                              const newVal = !appSettings.useCareerLedger;
+                                              setAppSettings(prev => ({ ...prev, useCareerLedger: newVal }));
+                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { useCareerLedger: newVal }, { merge: true });
+                                              triggerCapy(newVal ? "Rank now reads from career history! 🏆" : "Rank back to the 7-day sales window.");
+                                          }}
+                                          className={`shrink-0 transition-all duration-300 ${appSettings.useCareerLedger ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                      >
+                                          {appSettings.useCareerLedger ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                      </button>
+                                  </div>
+                              </div>
+                          )}
+
                           {/* MASTER SECURITY CARD */}
                           <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-orange-500/20 relative overflow-hidden">
                               <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck size={120} className="text-orange-500" /></div>
                               <div className="relative z-10">
                                   <h3 className="font-bold text-xl mb-1 dark:text-white flex items-center gap-3"><ShieldCheck className="text-emerald-500" size={24}/> Master Security Protocol</h3>
-                                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-8">Triple-Layer Data Redundancy</p>
+                                  <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-8">Triple-Layer Data Redundancy</p>
                                   
                                   <button onClick={handleMasterProtocol} className="w-full group relative bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-6 rounded-2xl font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 mb-6">
                                       <div className="flex flex-col items-center gap-2">
                                           <span className="text-sm">EXECUTE MASTER BACKUP</span>
-                                          <span className="text-[9px] opacity-70 font-mono tracking-normal">Generate 3 Recovery Points Now</span>
+                                          <span className="text-[11px] opacity-70 font-mono tracking-normal">Generate 3 Recovery Points Now</span>
                                       </div>
                                   </button>
 
@@ -646,13 +691,13 @@ export default function SettingsView({
                                   </div>
 
                                   <div className="grid grid-cols-3 gap-2 mb-6">
-                                      <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Recovery</button>
-                                      <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download USB</button>
-                                      <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[9px] font-bold text-slate-500 uppercase tracking-widest">Download Cloud</button>
+                                      <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download Recovery</button>
+                                      <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download USB</button>
+                                      <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download Cloud</button>
                                   </div>
 
                                   <div className="border-t border-orange-500/30 pt-6">
-                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-3">System Recovery Terminal</p>
+                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3">System Recovery Terminal</p>
                                       <label className="w-full flex items-center justify-center gap-3 py-4 border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-xl text-slate-400 hover:text-emerald-500 cursor-pointer transition-all bg-black/30 hover:bg-emerald-900/20 group">
                                           <UploadCloud size={24} className="group-hover:-translate-y-1 transition-transform" />
                                           <span className="font-bold uppercase tracking-widest text-xs">Load Backup File & Restore Data (.json)</span>
@@ -665,7 +710,7 @@ export default function SettingsView({
                           {/* USER PROFILE & PIN */}
                           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
                               <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile & Security</h3>
-                              <label className="block text-sm text-slate-500 mb-2">Google Account Email</label>
+                              <label className="block text-sm text-slate-400 mb-2">Google Account Email</label>
                               <input type="email" className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white mb-4" value={currentUserEmail || ""} disabled/>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -694,7 +739,7 @@ export default function SettingsView({
                                                   <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800/30 p-3 rounded-lg shadow-sm">
                                                       <div>
                                                           <p className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{device.name}</p>
-                                                          <p className="text-slate-500 text-[9px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
+                                                          <p className="text-slate-400 text-[11px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
                                                       </div>
                                                       <button 
                                                           onClick={() => handleRemovePasskey(device)}
@@ -706,7 +751,7 @@ export default function SettingsView({
                                                   </div>
                                               ))
                                           ) : (
-                                              <p className="text-slate-500 text-[10px] uppercase tracking-widest text-center py-4 bg-white/50 dark:bg-slate-900/50 rounded border border-dashed border-slate-300 dark:border-slate-700">
+                                              <p className="text-slate-400 text-[10px] uppercase tracking-widest text-center py-4 bg-white/50 dark:bg-slate-900/50 rounded border border-dashed border-slate-300 dark:border-slate-700">
                                                   No devices authorized yet.
                                               </p>
                                           )}
@@ -726,7 +771,7 @@ export default function SettingsView({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
                                   <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
-                                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-4">Export specific datasets</p>
+                                  <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-4">Export specific datasets</p>
                                   <div className="space-y-4">
                                       {[
                                           { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
@@ -777,6 +822,15 @@ export default function SettingsView({
                   {activeTab === 'architect' && isSystemOwner && (
                       <div className="animate-fade-in space-y-6">
 
+                          {/* 🧪 ACHIEVEMENT TESTER — dev tool, correctly Tier-1-only (unlike the
+                              career-ledger toggle and the recalculate button, which are business
+                              features and live under Security so Tier 2 owners can reach them). */}
+                          <AchievementTester db={db} appId={appId} userId={userId} />
+
+                          {/* 🔧 Writes real career docs — Tier 1 only, and every grant is
+                              reversible via its own Undo. */}
+                          <CareerDevTools db={db} appId={appId} userId={userId} triggerCapy={triggerCapy} />
+
                           {/* 🚀 PHOTO STORAGE MODE (SPARK vs BLAZE SWITCH) */}
                           <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.usePhotoStorage ? 'bg-blue-900/20 border-blue-500/50' : 'bg-black border-slate-800'}`}>
                               <div className="flex items-center justify-between gap-4">
@@ -784,7 +838,7 @@ export default function SettingsView({
                                       <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.usePhotoStorage ? 'text-blue-400' : 'text-white'}`}>
                                           ☁️ Use Cloud Photo Storage (requires Blaze plan)
                                       </h3>
-                                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
                                           When off, photos save directly in the database (works on any plan). When on, photos upload to Firebase Storage instead (requires the Blaze plan to be active).
                                       </p>
                                   </div>
@@ -1058,7 +1112,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                         <button 
                             key={t.id} 
                             onClick={() => setActiveMobileTierId(t.id)}
-                            className={`snap-start whitespace-nowrap px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMobileTierId === t.id ? 'bg-slate-800 text-white border border-emerald-500 shadow-inner' : 'bg-slate-950/50 text-slate-500 border border-slate-800 hover:text-slate-300'}`}
+                            className={`snap-start whitespace-nowrap px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMobileTierId === t.id ? 'bg-slate-800 text-white border border-emerald-500 shadow-inner' : 'bg-slate-950/50 text-slate-400 border border-slate-800 hover:text-slate-300'}`}
                         >
                             {t.label}
                         </button>
@@ -1070,9 +1124,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                     <div className="bg-slate-950/50 rounded-xl border border-slate-800 p-4">
                         <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-4">
                             <div className="flex items-center gap-2">
-                                <button onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronLeft size={18}/></button>
+                                <button onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0} className="p-1 text-slate-400 hover:text-white disabled:opacity-30"><ChevronLeft size={18}/></button>
                                 <span className={`text-xs font-black uppercase tracking-widest ${activeTier.color}`}>{activeTier.label}</span>
-                                <button onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ChevronRight size={18}/></button>
+                                <button onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1} className="p-1 text-slate-400 hover:text-white disabled:opacity-30"><ChevronRight size={18}/></button>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => handleRenameTier(activeTier.id)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><Edit size={14}/></button>
@@ -1090,7 +1144,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                     <React.Fragment key={feature.id}>
                                         <div className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
                                             <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
-                                            <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600'}`}>
+                                            <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-400'}`}>
                                                 {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
                                             </button>
                                         </div>
@@ -1141,7 +1195,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                 <table className="w-full text-left border-collapse min-w-[800px] select-none">
                     <thead>
                         <tr>
-                            <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
+                            <th className="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
                             {tiers.map((tier, idx) => {
                                 const cleanName = tier.label.replace(/^T\d+:\s*/, '');
                                 return (
@@ -1151,10 +1205,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         title="Drag to adjust Rank Hierarchy"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-[8px] text-slate-500 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
+                                            <span className="text-[11px] text-slate-400 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
                                             <div className="flex items-center gap-1">
                                                 <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
-                                                    {cleanName} <Edit size={10} className="inline opacity-0 group-hover:opacity-100"/>
+                                                    {cleanName} <Edit size={10} className="inline opacity-50 group-hover:opacity-100"/>
                                                 </button>
                                                 {tier.id.startsWith('CUSTOM_') && <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
                                             </div>
@@ -1173,7 +1227,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         const hasAccess = (matrix[tier.id] || []).includes(feature.id);
                                         return (
                                             <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
-                                                <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-600 hover:text-slate-400'}`}>
+                                                <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-400'}`}>
                                                     {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
                                                 </button>
                                             </td>
@@ -1191,7 +1245,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                     <select
                                                         value={currentCustomerAccess}
                                                         onChange={(e) => changeCustomerAccess(tier.id, e.target.value)}
-                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[9px] font-bold text-slate-300 outline-none focus:border-emerald-500 mx-auto"
+                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[11px] font-bold text-slate-300 outline-none focus:border-emerald-500 mx-auto"
                                                     >
                                                         <option value="none">Global (default)</option>
                                                         <option value="customers_edit_global">Global (default)</option>
@@ -1214,7 +1268,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                     <select 
                                                         value={currentReportAccess}
                                                         onChange={(e) => changeReportAccess(tier.id, e.target.value)}
-                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[9px] font-bold text-slate-300 outline-none focus:border-orange-500 mx-auto"
+                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[11px] font-bold text-slate-300 outline-none focus:border-orange-500 mx-auto"
                                                     >
                                                         <option value="none">No Access</option>
                                                         <option value="view_reports_personal">Personal Only</option>

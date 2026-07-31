@@ -229,7 +229,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     else setGpsStatus('idle');
                 },
                 (error) => setGpsStatus('error'),
-                { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 0 }
+                // 🚀 Phase 8: maximumAge 0 forced a fresh satellite lock on every call — reusing a
+                // fix from the last minute is exactly right for someone standing still at a shop.
+                { enableHighAccuracy: !useLowAccuracy, timeout: 10000, maximumAge: 60000 }
             );
         } else setGpsStatus('error');
     };
@@ -922,8 +924,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
                 {isReturMode && (
                     <div className="flex bg-[#2a2520] rounded border border-[#5c4b3a] p-1 mb-2 shadow-inner">
-                        <button onClick={() => setReturType('BUYBACK')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'BUYBACK' ? 'bg-orange-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>💵 Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[9px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-blue-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
+                        <button onClick={() => setReturType('BUYBACK')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'BUYBACK' ? 'bg-orange-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>💵 Buyback (Refund)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-blue-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
                     </div>
                 )}
 
@@ -934,8 +936,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
                             const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
                             return (
-                                <div key={i} className="flex justify-between items-center text-[9px] text-blue-200 mb-1 border-b border-blue-800/50 pb-1">
-                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-slate-500 font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
+                                <div key={i} className="flex justify-between items-center text-[11px] text-blue-200 mb-1 border-b border-blue-800/50 pb-1">
+                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-slate-400 font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
                                     {!isAlreadyInCart ? (
                                         <button onClick={() => handleFulfillIOU(iou)} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
                                     ) : (
@@ -953,10 +955,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <AlertCircle className="text-red-500 shrink-0" size={16}/>
                                 <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
                             </div>
-                            <p className="text-[#d4c5a3] text-[9px] leading-relaxed uppercase tracking-widest mt-1">
+                            <p className="text-[#d4c5a3] text-[11px] leading-relaxed uppercase tracking-widest mt-1">
                                 {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
                             </p>
-                            <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[8px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
+                            <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
                         </div>
                     )}
 
@@ -982,7 +984,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
                                                 <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[9px] ml-2">PC Fast Scan</button>
+                                                <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
                                         
@@ -1005,19 +1007,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                 {!canOverrideGps && distanceToStore <= 100 && (
                                                     <div className="mt-1">
                                                         {bypassState.status === 'idle' || bypassState.status === 'rejected' ? (
-                                                            <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[9px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                                                            <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[11px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
                                                                 <Camera size={10}/> Request 100m HQ Bypass
                                                             </button>
                                                         ) : bypassState.status === 'uploading' ? (
-                                                            <span className="text-[9px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                            <span className="text-[11px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
                                                         ) : bypassState.status === 'pending' ? (
-                                                            <span className="text-[9px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
+                                                            <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
                                                         ) : null}
                                                         <input type="file" accept="image/*" capture="environment" id="bypassPhotoCapture" className="hidden" onChange={handleBypassPhotoCapture} />
                                                     </div>
                                                 )}
                                                 {!canOverrideGps && distanceToStore > 100 && (
-                                                    <span className="text-[8px] text-slate-500 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                                    <span className="text-[11px] text-slate-400 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
                                                 )}
                                             </div>
                                         )}
@@ -1027,7 +1029,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                     
                                     {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
-                                        <button disabled className="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-500 text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <button disabled className="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-400 text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
                                     ) : (
@@ -1056,7 +1058,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
                                 {suggestedCustomers.map(c => (
                                     <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
-                                        <span>{c.name}</span><span className="opacity-50 text-[8px]">PROFILED</span>
+                                        <span>{c.name}</span><span className="opacity-50 text-[11px]">PROFILED</span>
                                     </div>
                                 ))}
                             </div>
@@ -1087,7 +1089,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className={`mt-3 p-2 rounded border flex items-start gap-2 animate-fade-in shadow-md ${selectedCustomerDebts.isOverdue ? 'bg-red-900/20 border-red-500/50' : 'bg-orange-900/20 border-orange-500/50'}`}>
                         <AlertCircle className={`shrink-0 mt-0.5 ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`} size={16}/>
                         <div>
-                            <h4 className={`font-black text-[9px] uppercase tracking-[0.1em] ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
+                            <h4 className={`font-black text-[11px] uppercase tracking-[0.1em] ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
                                 {selectedCustomerDebts.isOverdue ? '⚠️ OVERDUE TITIP DETECTED' : 'Active Titip Balance'}
                             </h4>
                             <p className="text-[10px] text-[#5c4b3a] mt-0.5 leading-tight font-bold">
@@ -1116,8 +1118,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                             <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200/50 border-blue-300' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-[9px] md:text-[10px] font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                                {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
+                                    bumped to text-sm specifically, not just the general 11px pass, since
+                                    these two decide the price, not just describe something. */}
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
@@ -1129,7 +1134,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <select 
                                             value={item.condition || 'GOOD'} 
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
-                                            className={`text-[9px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
+                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
                                         >
                                             <option value="GOOD">🟢 Good (Resellable)</option>
                                             <option value="DAMAGED">🔴 Damaged (Quarantine)</option>
@@ -1139,7 +1144,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             <select 
                                                 value={item.returnReason || ''}
                                                 onChange={(e) => updateCartItem(item.productId, 'returnReason', e.target.value)}
-                                                className="text-[9px] font-bold uppercase p-1.5 rounded outline-none border bg-white border-red-400 text-red-800 flex-1"
+                                                className="text-[11px] font-bold uppercase p-1.5 rounded outline-none border bg-white border-red-400 text-red-800 flex-1"
                                             >
                                                 <option value="">-- Select Reason --</option>
                                                 <option value="Expired / Out of Date">Expired</option>
@@ -1165,8 +1170,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>✅ Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[9px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>⏳ Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>✅ Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>⏳ Hutang Barang (IOU)</button>
                                         </div>
                                     )}
                                 </div>
@@ -1282,7 +1287,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <div className="h-32 md:h-44 lg:h-48 p-3 md:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
-                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[8px] md:text-[10px] font-black px-2 py-0.5 md:px-2 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[11px] md:text-[10px] font-black px-2 py-0.5 md:px-2 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                             </div>
@@ -1290,11 +1295,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <h4 className="text-[#d4c5a3] text-[11px] md:text-sm font-black uppercase mb-3 line-clamp-2 h-[32px] md:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
                                 <div className="mt-auto flex flex-col items-start md:flex-row md:justify-between md:items-end w-full gap-2 md:gap-0">
                                     <div className="flex flex-col gap-0.5 md:gap-1">
-                                        <span className="text-[8px] md:text-[9px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
+                                        <span className="text-[11px] md:text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
                                         <span className={`text-[10px] md:text-xs font-black px-1.5 py-0.5 md:px-2 md:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>{item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}</span>
                                     </div>
                                     <div className="text-left md:text-right w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-[#3e3226] md:border-none">
-                                        <span className="text-[8px] md:text-[9px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
+                                        <span className="text-[11px] md:text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
                                         <span className="text-[16px] md:text-2xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
                                     </div>
                                 </div>
@@ -1314,7 +1319,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
                             </div>
-                            <button onClick={() => setShowNooModal(false)} className="text-slate-500 hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowNooModal(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
@@ -1347,7 +1352,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-slate-600 hover:border-orange-500 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
                                         <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
-                                        <span className="text-[9px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
+                                        <span className="text-[11px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
                                     </button>
                                 )}
                             </div>
@@ -1361,7 +1366,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                 </div>
                                 {!agentLocation && (
-                                    <button onClick={() => verifyLocation(true)} className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
+                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
                                         Force GPS Lock
                                     </button>
                                 )}
@@ -1369,10 +1374,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
 
                         <div className="p-5 border-t border-slate-700 bg-black/40 flex flex-col gap-3">
-                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}>
                                 {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
                             </button>
-                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-slate-800 border-slate-600 hover:border-emerald-500 hover:text-emerald-400 text-slate-300' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}`}>
+                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-slate-800 border-slate-600 hover:border-emerald-500 hover:text-emerald-400 text-slate-300' : 'bg-slate-800 border-slate-700 text-slate-400 cursor-not-allowed'}`}>
                                 Register Only (No Sale)
                             </button>
                         </div>
@@ -1389,7 +1394,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-indigo-500"/> Deploy Marketing Sample</h2>
                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Target: {customerName}</p>
                             </div>
-                            <button onClick={() => setShowSampleModal(false)} className="text-slate-500 hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowSampleModal(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 space-y-5">
@@ -1412,11 +1417,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             <div className="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
                                     <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block text-center">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block text-center">
                                         Batang {sampleForm.productId && `(Max: ${(inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1})`}
                                     </label>
                                     <input 
@@ -1443,7 +1448,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
 
                         <div className="p-5 border-t border-slate-700 bg-black/40">
-                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}>
                                 {isProcessingSale ? 'Deploying...' : 'Confirm & Deploy Sample'}
                             </button>
                         </div>
@@ -1506,7 +1511,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
                                         <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-600">OFFICIAL SALES RECEIPT</p>
+                                        <p className="text-[10px] font-bold mt-1 !text-slate-400">OFFICIAL SALES RECEIPT</p>
                                     </div>
                                     
                                     <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
@@ -1531,9 +1536,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                         <td className="py-1 pr-2">
                                                             <div className="font-bold uppercase break-words leading-tight">{item.name}</div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[9px] italic !text-slate-500 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                                <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                             )}
-                                                            <div className="text-[10px] !text-slate-600 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
+                                                            <div className="text-[10px] !text-slate-400 mt-0.5">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</div>
                                                         </td>
                                                         <td className="py-1 text-right font-black whitespace-nowrap">
                                                             {receiptData.method === 'Retur/BS' ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
@@ -1549,7 +1554,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <span>{receiptData.method === 'Retur/BS' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}</span>
                                     </div>
                                     
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-500">
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-400">
                                         <p>*** THANK YOU ***</p>
                                     </div>
                                 </div>
@@ -1565,23 +1570,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">NOTA {receiptData.method === 'Retur/BS' ? 'RETUR' : 'PENJUALAN'}</h2>
-                                                <p className="text-[10px] uppercase font-bold !text-slate-500 tracking-widest mt-1">CUSTOMER COPY</p>
+                                                <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>
 
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3">
                                                 <tbody>
-                                                    <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
-                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-600 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                                    <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
                                                     
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Tipe Harga</td><td className="font-bold py-1 !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
-                                                    <tr><td className="font-bold py-1 !text-slate-600 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Tipe Harga</td><td className="font-bold py-1 !text-slate-900">: <span className="uppercase !bg-blue-100 !text-blue-800 px-2 py-0.5 rounded text-xs border !border-blue-200">{activeTier}</span></td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (receiptData.agentName || 'Sales')}</td></tr>
+                                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {receiptData.method || 'Cash'}</td></tr>
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                                <p className="font-bold !text-slate-500 text-xs mb-1">KEPADA YTH,</p>
+                                                <p className="font-bold !text-slate-400 text-xs mb-1">KEPADA YTH,</p>
                                                 <p className="text-xl font-black uppercase !text-slate-900">{receiptData.customer}</p>
                                             </div>
                                         </div>
@@ -1599,7 +1604,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             <tbody>
                                                 {catalogRows.map((item, i) => (
                                                     <tr key={i} className={item.isBought ? '!bg-blue-50/40' : ''}>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-600 font-bold">{i+1}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold">{i+1}</td>
                                                         <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{item.name}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
@@ -1643,7 +1648,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             )}
 
                             <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-600 cursor-pointer hover:!text-black">
+                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-400 cursor-pointer hover:!text-black">
                                     <input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>
                                     Thermal POS (58mm)
                                 </label>

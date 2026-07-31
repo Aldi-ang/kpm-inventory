@@ -43,7 +43,7 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
             onChange={(e) => onChange(axis, parseInt(e.target.value))}
             className="w-12 h-6 text-[10px] font-mono bg-black border border-white/20 text-white text-center rounded focus:border-amber-500 outline-none"
         />
-        <span className="text-[10px] text-slate-500">mm</span>
+        <span className="text-[10px] text-slate-400">mm</span>
     </div>
 );
 
@@ -155,7 +155,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                                     DAMAGED: {product.damagedStock} Bks
                                 </span>
                             )}
-                            <span className="text-[10px] text-slate-500 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
+                            <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
                     </div>
 
@@ -169,19 +169,19 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-amber-500/10 pt-5 mt-2">
                     <div className="bg-white/5 p-3 border-l-4 border-rose-600">
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceDistributor)}</p>
                     </div>
                     <div className="bg-white/5 p-3 border-l-4 border-amber-500">
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceRetail)}</p>
                     </div>
                     <div className="bg-white/5 p-3 border-l-4 border-purple-500">
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceGrosir)}</p>
                     </div>
                     <div className="bg-white/5 p-3 border-l-4 border-yellow-600">
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ecer</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Ecer</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
                     </div>
                 </div>
@@ -226,7 +226,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                     </div>
                     <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                         {sectionKeys.map(sec => (
-                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[8px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
+                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
                         ))}
                     </div>
                 </div>
@@ -265,7 +265,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                                     <span className={`whitespace-nowrap ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>
                                                         VAULT: {formatAdvancedStock(item.stock, item).bks} ({formatAdvancedStock(item.stock, item).slop})
                                                     </span>
-                                                    <span className="text-slate-500 border-l border-amber-900/40 pl-2 whitespace-nowrap">START: {startBks}</span>
+                                                    <span className="text-slate-400 border-l border-amber-900/40 pl-2 whitespace-nowrap">START: {startBks}</span>
                                                     <span className="text-amber-400 border-l border-amber-900/40 pl-2">FIELD: {fieldBks}</span>
                                                     <span className="text-emerald-400 border-l border-amber-900/40 pl-2">SOLD: {soldBks}</span>
                                                     {damagedBks > 0 && (
@@ -274,13 +274,13 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                                 </div>
                                             );
                                         })()}
-                                        {isLowStock && isAdmin && (<span className="text-[9px] font-black bg-rose-950/50 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
+                                        {isLowStock && isAdmin && (<span className="text-[11px] font-black bg-rose-950/50 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
                                     </div>
                                 </div>
                             </div>
                         );
                     })}
-                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-600 mt-10">NO ITEMS FOUND</p>}
+                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-400 mt-10">NO ITEMS FOUND</p>}
                 </div>
             </div>
 
