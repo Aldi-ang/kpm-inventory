@@ -1,16 +1,16 @@
-# Graph Report - kpm-inventory-main  (2026-07-30)
+# Graph Report - kpm-inventory-main  (2026-08-01)
 
 ## Corpus Check
-- 60 files · ~455,622 words
+- 60 files · ~457,706 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 327 nodes · 610 edges · 21 communities (19 shown, 2 thin omitted)
+- 328 nodes · 612 edges · 21 communities (19 shown, 2 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 7 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dc6561a9`
+- Built from commit: `24206d76`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -37,8 +37,8 @@
 1. `formatRupiah()` - 23 edges
 2. `KPMInventoryApp()` - 15 edges
 3. `commitInChunks()` - 14 edges
-4. `savePhotoAndGetReference()` - 13 edges
-5. `AgentProfileView()` - 12 edges
+4. `AgentProfileView()` - 13 edges
+5. `savePhotoAndGetReference()` - 13 edges
 6. `convertToBks()` - 12 edges
 7. `hasClearance()` - 11 edges
 8. `saveBorderCache()` - 10 edges
@@ -64,7 +64,7 @@
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.06
-Nodes (39): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, getDocOfflineSafe() (+31 more)
+Nodes (38): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, getDocOfflineSafe() (+30 more)
 
 ### Community 1 - "MapMissionControl.jsx"
 Cohesion: 0.11
@@ -83,8 +83,8 @@ Cohesion: 0.07
 Nodes (29): autoprefixer, cross-env, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, devDependencies (+21 more)
 
 ### Community 5 - "formatRupiah"
-Cohesion: 0.14
-Nodes (22): AgentInventoryView(), getCurrentDate(), BranchWarehouseManager(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), HistoryReportView(), formatAdvancedStock() (+14 more)
+Cohesion: 0.13
+Nodes (23): AgentInventoryView(), getCurrentDate(), BranchWarehouseManager(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), HistoryReportView(), formatAdvancedStock() (+15 more)
 
 ### Community 6 - "helpers.js"
 Cohesion: 0.43
@@ -139,7 +139,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `agent-browser`, `name`, `private` to the rest of the system?**
   _92 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06033182503770739 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06285714285714286 - nodes in this community are weakly interconnected._
 - **Should `MapMissionControl.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.10756302521008404 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**

@@ -90,6 +90,30 @@ const CrazyRankBorder = ({ index, hex, styleId }) => (
     <RankBorder styleId={styleId} index={index} hex={hex} />
 );
 
+// The rank frame + photo stack. One definition, two call sites — the profile header and the
+// Customize Avatar modal — because Phase 5 turns these rings square, and a second copy of this
+// markup would be a second place to miss it. Sizing comes from the parent's box, so callers stay
+// in control of how big it renders. `scrim` is the header-only darkening gradient; `children` is
+// where the header hangs its camera badge and hidden file input.
+const AgentAvatar = ({ tier, tierIndex, hex, photo, styleId, iconSize, scrim = false, children }) => (
+    <>
+        {tier?.borderImage ? (
+            <img src={tier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none drop-shadow-[0_0_15px_currentColor]" style={{ color: hex }} alt="" />
+        ) : (
+            <CrazyRankBorder index={tierIndex} hex={hex} styleId={styleId ?? tier?.borderStyle} />
+        )}
+        <div className="absolute inset-[4px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: hex, boxShadow: `0 0 15px ${hex}` }}>
+            {scrim && <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>}
+            {photo ? (
+                <img src={photo} className="w-full h-full object-cover z-0" alt="Profile" />
+            ) : (
+                <div className="flex h-full items-center justify-center"><User size={iconSize} className="z-0 opacity-50" style={{ color: hex }}/></div>
+            )}
+        </div>
+        {children}
+    </>
+);
+
 const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings, career, logAudit }) => {
     const useCareerLedger = !!appSettings?.useCareerLedger;
     
@@ -215,6 +239,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [showAvatarCustomizer, setShowAvatarCustomizer] = useState(false);
 
     const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => { setCroppedAreaPixels(croppedAreaPixels); }, []);
 
@@ -342,6 +367,27 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             setRpgData(finalData);
             setShowRankConfig(false);
         } catch (error) { alert("Failed to save Rank Configuration."); }
+    };
+
+    // The frame each agent wears is THEIRS — stored on their own motorist doc, not on the rank.
+    // The rank's own `borderStyle` (set in Rank Config) is what a rank *grants*: it is the frame
+    // an agent is switched to when they reach that rank, and it is what they wear until they pick
+    // something else. Field agents are already allowed to write their own motorist doc
+    // (firestore.rules:480, the same clause activeCanvas stock deduction relies on), so this needs
+    // no rules change.
+    const writeAgentBorder = async (patch) => {
+        const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);
+        if (activeAgent.id === 'master_owner') await setDoc(agentRef, { ...activeAgent, ...patch });
+        else await updateDoc(agentRef, patch);
+        if (activeAgent.id === 'master_owner') setOwnerProfile(prev => ({ ...prev, ...patch }));
+    };
+
+    const handleSaveBorderStyle = async (styleId) => {
+        // borderTier is stamped alongside the pick so the rank-up effect below does not immediately
+        // overwrite a deliberate choice made at the rank the agent is already standing on.
+        try {
+            await writeAgentBorder({ borderStyle: styleId, borderTier: stats.currentTier?.id || null });
+        } catch (e) { alert("Failed to save frame: " + e.message); }
     };
 
     const toggleWorkingDay = (dayIndex) => {
@@ -536,6 +582,41 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         };
     }, [activeAgent, transactions, inventory, rpgData]);
 
+    // How far up the ladder you are, scaled onto the frame shelf — bottom rank owns 1 frame, top
+    // rank owns all of them, whatever the rank count happens to be.
+    //
+    // The obvious rule — "you own the borderStyle of every rank you passed" — was tried first and
+    // is useless in practice: Rank Config leaves Border unset on most tiers, every unset tier reads
+    // as 'classic', and a Mythic agent ended up owning 2 frames out of 7. Unlocks are now driven by
+    // POSITION on the ladder, not by what each tier happens to have configured, so they can never
+    // collapse like that again. The rank's own granted frame is unioned in regardless, so a frame
+    // an agent is actually wearing is never missing from their own picker.
+    const unlockedBorders = useMemo(() => {
+        const sorted = [...(rpgData.ranks || [])].sort((a, b) => Number(a.min) - Number(b.min));
+        const reached = (stats?.tierIndex ?? 0) + 1;
+        const count = sorted.length
+            ? Math.ceil((reached / sorted.length) * RANK_BORDERS.length)
+            : 1;
+        const earned = new Set(RANK_BORDERS.slice(0, count).map(b => b.id));
+        sorted.slice(0, reached).forEach(r => { if (r.borderStyle) earned.add(r.borderStyle); });
+        const list = RANK_BORDERS.filter(b => earned.has(b.id));
+        return list.length ? list : [RANK_BORDERS[0]];
+    }, [rpgData, stats?.tierIndex]);
+
+    // Rank-up auto-switch. Reaching a new rank hands the agent that rank's frame — once. The stamp
+    // is `borderTier`: while it matches the current rank nothing is written, so a frame the agent
+    // picks afterwards is never clobbered on a later render. Runs on the client and lands the next
+    // time the profile is opened, because the project is on the Spark plan — no Cloud Functions to
+    // do it the moment the XP crosses the threshold.
+    useEffect(() => {
+        if (!activeAgent || !stats?.currentTier?.id || !canEditProfile) return;
+        if (activeAgent.borderTier === stats.currentTier.id) return;
+        writeAgentBorder({
+            borderStyle: stats.currentTier.borderStyle || 'classic',
+            borderTier: stats.currentTier.id,
+        }).catch(e => console.warn("Rank-up frame switch skipped:", e.message));
+    }, [activeAgent?.id, activeAgent?.borderTier, stats?.currentTier?.id, canEditProfile]);
+
     if (!activeAgent || !stats) return <div className="p-8 text-white">No Agent Data Found.</div>;
 
     const formatRp = (num) => new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(num);
@@ -554,6 +635,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     };
     
     const safeCurrentHex = stats.currentTier.hex || '#64748b';
+
+    // The agent's own pick wins, but only while it is still unlocked — an admin reshuffling the
+    // rank ladder can strip a frame out from under someone, and a `value` with no matching option
+    // renders the select blank. Falling back to the current rank's frame is always safe: that rank
+    // is inside the unlocked slice by definition.
+    const activeBorderStyle = unlockedBorders.some(b => b.id === activeAgent.borderStyle)
+        ? activeAgent.borderStyle
+        : (stats.currentTier.borderStyle || 'classic');
 
     return (
         <div className="flex h-full min-h-screen bg-[#050505] font-sans relative overflow-hidden">
@@ -577,6 +666,43 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             )}
 
 
+
+            {/* 🚀 Phase 5: Customize Avatar — photo and frame in one place. Sits one z-index below
+                the cropper above, so picking a photo from in here stacks the cropper on top and
+                drops back to this modal (with the new photo already in the preview) when done. */}
+            {showAvatarCustomizer && canEditProfile && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999998] flex items-center justify-center p-6" onClick={() => setShowAvatarCustomizer(false)}>
+                    <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-2xl p-6 relative" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowAvatarCustomizer(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"><X size={20}/></button>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-white mb-6">Customize Avatar</h3>
+
+                        <div className="flex justify-center mb-6">
+                            <div className="relative w-32 h-32">
+                                <AgentAvatar tier={stats.currentTier} tierIndex={stats.tierIndex} hex={safeCurrentHex} photo={activeAgent.profileImage} styleId={activeBorderStyle} iconSize={48} />
+                            </div>
+                        </div>
+
+                        <button onClick={() => document.getElementById('avatar-input').click()} className="w-full py-3 mb-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                            <Camera size={16}/> {activeAgent.profileImage ? 'Replace Photo' : 'Upload Photo'}
+                        </button>
+
+                        <label className="text-[11px] text-slate-400 uppercase tracking-widest font-bold block mb-1">Frame</label>
+                        <select
+                            value={activeBorderStyle}
+                            onChange={(e) => handleSaveBorderStyle(e.target.value)}
+                            className="w-full bg-black border border-slate-800 text-white px-3 py-2 rounded text-xs outline-none focus:border-slate-500 transition-colors"
+                        >
+                            {unlockedBorders.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                        <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                            {unlockedBorders.length} of {RANK_BORDERS.length} frames unlocked — one for every rank reached. Ranking up switches you to the new rank's frame; you can change it back to any unlocked one.
+                        </p>
+                        {stats.currentTier.borderImage && (
+                            <p className="text-[10px] text-amber-500 mt-2 leading-relaxed">This rank has a custom border image uploaded, which is drawn instead of any frame picked here. Clear it in Rank Config to see these frames.</p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* 🚀 NEW: HALL OF FAME OVERLAY MODAL */}
             {showHallOfFame && (
@@ -840,6 +966,13 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <Settings size={16}/> Rank Config
                         </button>
                     )}
+                    {/* 🚀 Phase 5: Customize Avatar — same modal the avatar itself opens, given a
+                        labelled entry point so it's findable without guessing the avatar is a button. */}
+                    {canEditProfile && (
+                        <button onClick={() => setShowAvatarCustomizer(true)} className="bg-black/80 backdrop-blur-md border border-slate-700 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:border-slate-500 transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                            <ImageIcon size={16}/> Avatar
+                        </button>
+                    )}
                     {/* 🚀 NEW: HALL OF FAME MODAL BUTTON */}
                     <button onClick={() => setShowHallOfFame(true)} className="bg-gradient-to-r from-amber-600 to-amber-500 text-white border border-amber-400/50 px-4 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg">
                         <Trophy size={16} className="animate-bounce-slow"/> Leaderboard
@@ -854,31 +987,18 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         
                         <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 lg:gap-10 min-w-[350px]">
                             
-                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32 md:w-40 md:h-40" onClick={() => canEditProfile && document.getElementById('avatar-input').click()}>
+                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32 md:w-40 md:h-40" onClick={() => canEditProfile && setShowAvatarCustomizer(true)}>
                                 
-                                {stats.currentTier.borderImage ? (
-                                    <img src={stats.currentTier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none drop-shadow-[0_0_15px_currentColor]" style={{ color: safeCurrentHex }} />
-                                ) : (
-                                    <CrazyRankBorder index={stats.tierIndex} hex={safeCurrentHex} styleId={stats.currentTier?.borderStyle} />
-                                )}
-
-                                <div className="absolute inset-[4px] bg-slate-900 rounded-full z-10 overflow-hidden border-[3px]" style={{ borderColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
-                                    {activeAgent.profileImage ? (
-                                        <img src={activeAgent.profileImage} className="w-full h-full object-cover z-0" alt="Profile" />
-                                    ) : (
-                                        <div className="flex h-full items-center justify-center"><User size={64} className="z-0 opacity-50" style={{ color: safeCurrentHex }}/></div>
+                                <AgentAvatar tier={stats.currentTier} tierIndex={stats.tierIndex} hex={safeCurrentHex} photo={activeAgent.profileImage} styleId={activeBorderStyle} iconSize={64} scrim>
+                                    {canEditProfile && (
+                                        // 🚀 Phase 6: always-visible badge, not a hover-only overlay — touch screens
+                                        // have no hover, so this was invisible on every phone until now.
+                                        <div className="absolute bottom-0 right-0 z-30 w-9 h-9 rounded-full bg-black/80 border-2 border-white/70 flex items-center justify-center shadow-lg">
+                                            <Camera size={16} className="text-white" />
+                                        </div>
                                     )}
-                                </div>
-
-                                {canEditProfile && (
-                                    // 🚀 Phase 6: always-visible badge, not a hover-only overlay — touch screens
-                                    // have no hover, so this was invisible on every phone until now.
-                                    <div className="absolute bottom-0 right-0 z-30 w-9 h-9 rounded-full bg-black/80 border-2 border-white/70 flex items-center justify-center shadow-lg">
-                                        <Camera size={16} className="text-white" />
-                                    </div>
-                                )}
-                                <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar')} />
+                                    <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar')} />
+                                </AgentAvatar>
                             </div>
                             
                             <div className="mt-4 md:mt-0">
