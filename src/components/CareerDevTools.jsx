@@ -166,18 +166,23 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                 <h4 className="text-[11px] font-black text-amber-400 uppercase tracking-widest mb-1">Galeri Border Rank</h4>
                 <p className="text-[11px] text-slate-400 font-mono mb-3">
                     Pilih border tiap rank di Agent Profile → Rank Config → Border.
-                    Warna mengikuti warna rank; di bawah ini pakai warna rank yang kamu punya.
+                    Tiap frame punya bahannya sendiri (kayu, baja, emas, marmer), jadi warnanya
+                    tidak lagi ikut warna rank.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {RANK_BORDERS.map((b, n) => {
                         const previewHex = sortedRanks[n % sortedRanks.length]?.hex || '#f97316';
                         return (
                             <div key={b.id} className="flex flex-col items-center text-center">
-                                <div className="relative w-20 h-20 mb-2 shrink-0">
-                                    <RankBorder styleId={b.id} index={n} hex={previewHex} />
-                                    <div className="absolute inset-[4px] bg-slate-900 rounded-full z-10 overflow-hidden border-2 flex items-center justify-center" style={{ borderColor: previewHex }}>
+                                {/* 128px and square to match the frames themselves — Diamond and
+                                    Mythic position their blocks at absolute pixel offsets, so a
+                                    smaller box tears them off the frame edge. Well sits under the
+                                    frame (z-0) because these are frames with a photo inside. */}
+                                <div className="relative w-32 h-32 mb-2 shrink-0">
+                                    <div className="absolute inset-[14px] bg-sunk z-0 overflow-hidden flex items-center justify-center">
                                         <User size={26} style={{ color: previewHex, opacity: 0.6 }} />
                                     </div>
+                                    <RankBorder styleId={b.id} index={n} hex={previewHex} />
                                 </div>
                                 <span className="text-[11px] font-bold text-white leading-tight">{b.name}</span>
                                 <span className="text-[10px] text-slate-400 font-mono">Beban: {BORDER_LOAD[b.cost] || b.cost}</span>
