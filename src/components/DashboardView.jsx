@@ -106,11 +106,11 @@ export default function DashboardView({
             {/* --- ROW 2: TOTAL ASSET CARDS --- */}
             <div key={`cards-${isAdmin}`} className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-2">
                 <div className="border-l-4 border-white bg-white/5 p-6 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Vault Assets</h3>
+                    <h3 className="text-ink-muted text-xs font-bold uppercase tracking-widest mb-1">Total Vault Assets</h3>
                     <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
                 </div>
-                <div className="border-l-4 border-orange-500 bg-white/5 p-6 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-1">Global Revenue (All Time)</h3>
+                <div className="border-l-4 border-orange bg-white/5 p-6 backdrop-blur-sm shadow-lg">
+                    <h3 className="text-orange text-xs font-bold uppercase tracking-widest mb-1">Global Revenue (All Time)</h3>
                     <p className="text-4xl font-bold text-white">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').reduce((acc, t) => acc + (t.total || 0), 0)) : "****"}</p>
                 </div>
                 <div className="border-l-4 border-verified bg-white/5 p-6 backdrop-blur-sm shadow-lg">
@@ -140,7 +140,7 @@ export default function DashboardView({
                                 {agentPerformance.map((agent, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : idx === 1 ? 'bg-inset/20 text-ink border border-line-3/50' : idx === 2 ? 'bg-gold/20 text-gold border border-gold/50' : 'bg-white/5 text-ink-muted'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-gold/20 text-gold border border-gold/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : idx === 1 ? 'bg-inset/20 text-ink border border-line-3/50' : idx === 2 ? 'bg-gold/20 text-gold border border-gold/50' : 'bg-white/5 text-ink-muted'}`}>
                                                 #{idx + 1}
                                             </div>
                                             <div>
@@ -161,7 +161,7 @@ export default function DashboardView({
                     {/* VAULT VELOCITY WIDGET */}
                     <div className="bg-black/50 border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
-                            <Activity className="text-orange-500" size={24}/>
+                            <Activity className="text-orange" size={24}/>
                             <div>
                                 <h3 className="text-white font-bold uppercase tracking-widest">Vault Velocity</h3>
                                 <p className="text-[10px] text-ink-muted font-mono uppercase tracking-widest">30-Day Product Movement</p>
@@ -234,11 +234,11 @@ export default function DashboardView({
                 )}
 
                 {isAdmin && !isUsbSecure && (
-                    <div className="bg-orange-500/10 border border-orange-500/30 p-6 rounded-2xl flex flex-col justify-center items-center text-center animate-pulse h-full">
-                        <ShieldAlert className="text-orange-500 mb-3" size={32}/>
-                        <h3 className="text-sm text-orange-200 font-bold uppercase tracking-wider mb-1">Physical Security Protocol Required</h3>
-                        <p className="text-[10px] text-orange-400/70 uppercase tracking-widest mb-4">No offline backup detected in last 7 days.</p>
-                        <button onClick={handleBackupData} className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95">
+                    <div className="bg-orange/10 border border-orange/30 p-6 rounded-2xl flex flex-col justify-center items-center text-center animate-pulse h-full">
+                        <ShieldAlert className="text-orange mb-3" size={32}/>
+                        <h3 className="text-sm text-orange font-bold uppercase tracking-wider mb-1">Physical Security Protocol Required</h3>
+                        <p className="text-[10px] text-orange/70 uppercase tracking-widest mb-4">No offline backup detected in last 7 days.</p>
+                        <button onClick={handleBackupData} className="bg-orange hover:bg-orange text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95">
                             Run USB Safe Backup
                         </button>
                     </div>

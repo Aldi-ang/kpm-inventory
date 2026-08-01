@@ -732,7 +732,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[999999] flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar lg:pl-[17rem]">
                     <div className="max-w-4xl w-full bg-sunk border border-line-2 rounded-2xl p-6 md:p-8 shadow-2xl relative mt-10 md:mt-0">
                         <button onClick={() => setShowBadgeConfig(false)} className="absolute top-6 right-6 text-ink-muted hover:text-white"><X size={24}/></button>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Award className="text-yellow-500"/> Achievement Config</h2>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3"><Award className="text-gold"/> Achievement Config</h2>
                         
                         <div className="space-y-4 mb-8">
                             {editingBadges.map((badge, idx) => (
@@ -794,7 +794,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 permanently locked. */}
                             <button onClick={() => setEditingBadges([...editingBadges, { id: Date.now().toString(), cat: 'jual', source: 'itemsBks', fmt: STAT_LABELS.itemsBks.fmt, target: 1000, title: 'New Badge', desc: 'Reached {val} / {max}', icon: 'Star', hex: '#ffffff' }])} className="w-full py-4 border-2 border-dashed border-line-2 text-ink-muted hover:text-white hover:border-line-3 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Badge</button>
                         </div>
-                        <button onClick={handleSaveBadgeConfig} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(202,138,4,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Achievements</button>
+                        <button onClick={handleSaveBadgeConfig} className="w-full bg-gold hover:bg-gold text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(202,138,4,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Achievements</button>
                     </div>
                 </div>
             )}
@@ -951,7 +951,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
                                         </div>
                                         <div className="overflow-hidden">
-                                            <p className={`font-bold text-sm truncate transition-colors flex items-center gap-1 ${selectedId === agent.id ? 'text-white' : 'text-ink-muted group-hover:text-ink'}`}>{agent.name} {agent.id === 'master_owner' && <ShieldCheck size={12} className="text-yellow-500"/>}</p>
+                                            <p className={`font-bold text-sm truncate transition-colors flex items-center gap-1 ${selectedId === agent.id ? 'text-white' : 'text-ink-muted group-hover:text-ink'}`}>{agent.name} {agent.id === 'master_owner' && <ShieldCheck size={12} className="text-gold"/>}</p>
                                             <p className="text-[11px] text-ink-muted uppercase tracking-widest truncate">{agent.location || 'Field'}</p>
                                         </div>
                                         {selectedId === agent.id && <ChevronRight size={14} className="text-ink-muted absolute right-3 opacity-50"/>}
@@ -1050,7 +1050,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     <ShieldCheck size={16} className="text-ink-muted"/>
                                     <span className="text-[10px] text-ink-muted font-mono tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
                                     <span className="text-ink-muted">|</span>
-                                    <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest"><MapPin size={10} className="inline mr-1 text-orange-500"/>{activeAgent.location || 'Field'}</span>
+                                    <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest"><MapPin size={10} className="inline mr-1 text-orange"/>{activeAgent.location || 'Field'}</span>
                                 </div>
                             </div>
                         </div>
@@ -1146,13 +1146,13 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                             
                             <div className="bg-sunk/80 border border-line-2/80 rounded-2xl shadow-lg relative overflow-hidden flex flex-col">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                                <div className="absolute top-0 left-0 w-1 h-full bg-orange"></div>
                                 <div className="p-6 flex items-center justify-between group hover:bg-panel transition-colors cursor-pointer" onClick={() => setShowTitipBreakdown(!showTitipBreakdown)}>
                                     <div>
-                                        <p className="text-[11px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5"><AlertCircle size={12}/> Consignment Risk (Titip)</p>
-                                        <p className="text-2xl font-black text-orange-500 font-mono drop-shadow-[0_0_10px_rgba(249,115,22,0.3)] tracking-tight">Rp {formatRp(stats.activeTitipResponsibility)}</p>
+                                        <p className="text-[11px] text-orange/80 font-bold uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5"><AlertCircle size={12}/> Consignment Risk (Titip)</p>
+                                        <p className="text-2xl font-black text-orange font-mono drop-shadow-[0_0_10px_rgba(249,115,22,0.3)] tracking-tight">Rp {formatRp(stats.activeTitipResponsibility)}</p>
                                     </div>
-                                    <div className="flex items-center gap-2 text-ink-muted group-hover:text-orange-400 transition-colors">
+                                    <div className="flex items-center gap-2 text-ink-muted group-hover:text-orange transition-colors">
                                         <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">View Targets</span>
                                         <List size={20} />
                                     </div>
@@ -1164,7 +1164,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                                 <thead><tr className="text-ink-muted border-b border-line"><th className="pb-2">Target Store</th><th className="pb-2 text-right">Debt Float (Rp)</th></tr></thead>
                                                 <tbody>
                                                     {stats.activeDebtList.map((debt, i) => (
-                                                        <tr key={i} className="border-b border-line/50 hover:bg-panel/50"><td className="py-2 text-orange-400 truncate max-w-[150px]">{debt.store}</td><td className="py-2 text-right text-orange-300 font-bold">{formatFullRp(debt.amount)}</td></tr>
+                                                        <tr key={i} className="border-b border-line/50 hover:bg-panel/50"><td className="py-2 text-orange truncate max-w-[150px]">{debt.store}</td><td className="py-2 text-right text-orange font-bold">{formatFullRp(debt.amount)}</td></tr>
                                                     ))}
                                                 </tbody>
                                             </table>
@@ -1194,7 +1194,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <div className="bg-black/40 p-2 rounded-xl border border-line/50 backdrop-blur-sm flex flex-col items-center justify-center relative overflow-hidden group-hover:border-line-3 transition-colors">
                                     <p className="text-[10px] text-ink-muted font-black uppercase tracking-widest mb-1 absolute top-1 left-2">Mount</p>
                                     {activeAgent.id === 'master_owner' ? (
-                                        <div className="mt-3 text-sm font-black text-yellow-500 uppercase tracking-[0.3em] font-mono bg-yellow-900/20 px-3 py-1 border border-yellow-500/50 rounded shadow-[0_0_10px_rgba(234,179,8,0.2)]">HQ Override</div>
+                                        <div className="mt-3 text-sm font-black text-gold uppercase tracking-[0.3em] font-mono bg-raised/20 px-3 py-1 border border-gold/50 rounded shadow-[0_0_10px_rgba(234,179,8,0.2)]">HQ Override</div>
                                     ) : (
                                         <div className="relative border-[3px] border-line-3 bg-gradient-to-b from-ink-inverse to-ink rounded shadow-[inset_0_0_15px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center w-[90%] h-12 overflow-hidden mt-2">
                                             <div className="absolute top-0 w-full h-2.5 bg-panel border-b border-line flex items-center justify-center">
@@ -1211,7 +1211,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <div className="bg-black/40 p-4 rounded-xl border border-line/50 backdrop-blur-sm relative z-10">
                                 <p className="text-[11px] text-ink-muted font-black uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Lock size={10} className="text-ink-muted"/> System Clearance</p>
                                 <div className="flex flex-wrap gap-2">
-                                    <span className={`text-[11px] border px-2 py-1 rounded shadow-inner uppercase font-black tracking-widest ${activeAgent.canEditRoster ? 'bg-purple-900/30 text-purple-400 border-purple-500/30' : 'bg-panel text-ink-muted border-line-2'}`}>Roster Control: {activeAgent.canEditRoster ? 'GRANTED' : 'DENIED'}</span>
+                                    <span className={`text-[11px] border px-2 py-1 rounded shadow-inner uppercase font-black tracking-widest ${activeAgent.canEditRoster ? 'bg-raised/30 text-gold border-gold/30' : 'bg-panel text-ink-muted border-line-2'}`}>Roster Control: {activeAgent.canEditRoster ? 'GRANTED' : 'DENIED'}</span>
                                     <span className={`text-[11px] border px-2 py-1 rounded shadow-inner uppercase font-black tracking-widest ${activeAgent.allowRetur ? 'bg-danger-well/30 text-danger-text border-danger/30' : 'bg-panel text-ink-muted border-line-2'}`}>Tarik Barang: {activeAgent.allowRetur ? 'GRANTED' : 'DENIED'}</span>
                                 </div>
                             </div>
@@ -1222,7 +1222,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         <div className="bg-sunk border border-line rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col group hover:border-line-2 transition-colors">
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Calendar size={100}/></div>
                             <div className="flex justify-between items-center mb-5 relative z-10">
-                                <h3 className="text-[10px] font-black text-ink-muted uppercase tracking-[0.2em] flex items-center gap-2"><Calendar size={14} className="text-orange-500"/> Service Record</h3>
+                                <h3 className="text-[10px] font-black text-ink-muted uppercase tracking-[0.2em] flex items-center gap-2"><Calendar size={14} className="text-orange"/> Service Record</h3>
                                 {canEditProfile && !isEditingBio && (
                                     <button onClick={() => setIsEditingBio(true)} className="text-ink-muted hover:text-white transition-colors bg-panel p-1.5 rounded-md border border-line-2"><Edit3 size={12}/></button>
                                 )}
@@ -1275,7 +1275,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             </div>
                             <div className="flex justify-center gap-6 mt-4">
                                 <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-sm bg-verified shadow-[0_0_5px_#10b981]"></div> Cash Flow</span>
-                                <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-sm bg-orange-500 shadow-[0_0_5px_#f59e0b]"></div> Consignment</span>
+                                <span className="text-[11px] text-ink-muted font-bold uppercase tracking-widest flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-sm bg-orange shadow-[0_0_5px_#f59e0b]"></div> Consignment</span>
                             </div>
                         </div>
 
@@ -1301,17 +1301,17 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             
                             {/* 🚀 THE MCL REGIONAL MVP TROPHY 🚀 */}
                             <div className="mb-8 flex justify-center">
-                                <div className={`relative w-full max-w-md p-6 rounded-2xl border-2 flex flex-col items-center text-center overflow-hidden transition-all duration-700 ${stats.isTopAgentOfYear ? 'bg-gradient-to-b from-yellow-900/40 to-sunk border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-[1.02]' : 'bg-ground/50 border-line/50 grayscale opacity-40'}`}>
+                                <div className={`relative w-full max-w-md p-6 rounded-2xl border-2 flex flex-col items-center text-center overflow-hidden transition-all duration-700 ${stats.isTopAgentOfYear ? 'bg-gradient-to-b from-raised/40 to-sunk border-gold/50 shadow-[0_0_30px_rgba(234,179,8,0.2)] scale-[1.02]' : 'bg-ground/50 border-line/50 grayscale opacity-40'}`}>
                                     {stats.isTopAgentOfYear && <div className="absolute top-0 w-full h-full bg-[conic-gradient(from_0deg,transparent,#facc15,transparent)] animate-[spin_4s_linear_infinite] opacity-10"></div>}
                                     
                                     <div className="relative z-10 mb-4">
-                                        <Trophy size={64} className={stats.isTopAgentOfYear ? 'text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]' : 'text-ink-muted'} />
-                                        {stats.isTopAgentOfYear && <Sparkles size={24} className="absolute -top-2 -right-2 text-yellow-200 animate-ping"/>}
+                                        <Trophy size={64} className={stats.isTopAgentOfYear ? 'text-gold drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]' : 'text-ink-muted'} />
+                                        {stats.isTopAgentOfYear && <Sparkles size={24} className="absolute -top-2 -right-2 text-gold animate-ping"/>}
                                     </div>
                                     
-                                    <h4 className={`text-sm font-black uppercase tracking-widest mb-1 ${stats.isTopAgentOfYear ? 'text-yellow-400' : 'text-ink-muted'}`}>Regional MVP {stats.currentYearString}</h4>
+                                    <h4 className={`text-sm font-black uppercase tracking-widest mb-1 ${stats.isTopAgentOfYear ? 'text-gold' : 'text-ink-muted'}`}>Regional MVP {stats.currentYearString}</h4>
                                     <p className="text-[10px] text-ink-muted max-w-[200px]">Penjual terbaik 7 hari terakhir.</p>
-                                    {stats.isTopAgentOfYear && <div className="mt-4 px-4 py-1.5 bg-yellow-900/50 border border-yellow-500/50 rounded-full text-[11px] font-black text-yellow-300 uppercase tracking-widest shadow-inner">Active Champion</div>}
+                                    {stats.isTopAgentOfYear && <div className="mt-4 px-4 py-1.5 bg-raised/50 border border-gold/50 rounded-full text-[11px] font-black text-gold uppercase tracking-widest shadow-inner">Active Champion</div>}
                                 </div>
                             </div>
 
