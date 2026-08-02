@@ -223,23 +223,26 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    Stepped in PIXELS like every other sheet here. */
 .kpm-merch-hold { position: absolute; inset: 0; pointer-events: none; }
 .kpm-merch-hold::after {
-  content: ""; position: absolute; left: 61%; top: 44%;
-  width: 34px; height: 34px;
+  /* Position measured, not eyeballed: the open palm's centre sits at 81% across and
+     46% down in the sprite, so the coin hovers just above it at 72,5% / 30%.
+     32px is the coin sheet's native frame size, so it renders 1:1 with no resampling. */
+  content: ""; position: absolute; left: 72.5%; top: 30%;
+  width: 32px; height: 32px;
   background-image: url('/coin-sprite.png');
-  background-size: 272px 34px;          /* 8 frames x 34px */
+  background-size: 256px 32px;          /* 8 frames x 32px, native */
   background-repeat: no-repeat;
   image-rendering: pixelated;
   animation: kpmMerchCoin .8s steps(8, end) infinite,
              kpmMerchCoinFloat 2.8s ease-in-out infinite;
 }
-@keyframes kpmMerchCoin      { to { background-position: -272px 0; } }
+@keyframes kpmMerchCoin      { to { background-position: -256px 0; } }
 @keyframes kpmMerchCoinFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
 
 /* Lite Mode holds the coin's front face, frame 3 — the same frame the inline
    .kpm-coin holds, so money reads identically everywhere in the app. */
-html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -102px 0; }
+html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -96px 0; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-hold::after { animation: none; background-position: -102px 0; }
+  .kpm-merch-hold::after { animation: none; background-position: -96px 0; }
 }
 
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
