@@ -305,6 +305,62 @@ Verified by me: build clean (`EXIT=0`), `career.js` self-check passing, and the 
 class-strings only — no calculation, no Firestore call, no handler was touched. **Not** verified by
 me: how it actually looks. These screens need a real login, so the eyeballing is yours.
 
+### Round 6 — the capybara merchant, sounds, and the desktop grid
+
+All of this is MerchantSalesView. Nothing here touches money or stock **except one thing**,
+which is first on the list because it is the only item that can cost you real inventory.
+
+**🔴 Test this one first — it moves stock**
+
+- [ ] **Sell 1 `Karton` of something.** Check the stock drops by `balsPerCarton × slopsPerBal ×
+      packsPerPack` — with your defaults that's about **800 Bks**, not 1. The `Karton` option was
+      missing from the dropdown even though the pricing maths already handled it, so this path has
+      never been used in the real app. If the number looks wrong, stop and tell me.
+
+**The merchant**
+
+- [ ] Complete a sale. The capybara **shows up in the bottom-right corner**, says a line, and
+      **leaves on his own** after about 8 seconds. He does *not* sit permanently on the left
+      any more — that whole panel is gone and the space belongs to the wares now.
+- [ ] He appears **only when the sale commits**. Add ten items to the cart — he should stay
+      away the entire time. If he pops up while you're building a basket, that's a bug.
+- [ ] The **coin spins above his open palm**, and he's giving a thumbs up with the other hand.
+- [ ] The **speech bubble sits above his hat**, not across it.
+- [ ] Tap him — he goes away early.
+
+**Sound** (needs volume up)
+
+- [ ] You hear a short **mumble** when he speaks — a few blips, not a voice. It should stop
+      after about a second even on a longer line.
+- [ ] **Lite Mode ON → completely silent**, and he holds still instead of animating.
+
+**Desktop, on a laptop or PC**
+
+- [ ] At a normal laptop width, the wares **fill the screen in rows** instead of scrolling
+      sideways. This is the change most worth your eye — I can't reach that screen without a
+      login, so it's verified as CSS but not as pixels.
+- [ ] On a **phone, nothing changed**: the wares still swipe sideways as before. If your phone
+      layout looks different, that's a bug, not a feature.
+- [ ] On a big monitor the cart panel is wider and the grid still fills the rest.
+
+**Regression checks — these are the ones I'd worry about**
+
+- [ ] **Retur still works**, both BUYBACK and EXCHANGE, with the damage reason and the IOU
+      switch. I didn't touch that code, but it lives in the file I edited most.
+- [ ] **Printing a receipt** still comes out right, thermal and A4.
+- [ ] Turn WiFi off and open the app: the **merchant still appears**, the **coin still spins**,
+      and the **mumble still plays**. All three used to fail offline — none of them were in the
+      service worker.
+
+Verified by me: build clean every commit, `useSound` self-check 6/6, sprite transparency
+measured at 69,5% after cleaning (the art arrives with a white background painted in), coin
+position measured against the palm rather than eyeballed, and the desktop rule confirmed inside
+a 1280px media query in the built CSS. **Not** verified by me: anything that needs a login —
+so the merchant appearing on a real sale, the sound, and the desktop grid are all yours to see.
+
+Also removed along the way, worth knowing: **five verbatim Resident Evil 4 merchant lines** were
+shipping inside your app's JavaScript. They're gone, replaced with original English lines.
+
 ## ⚪ Skip entirely
 
 - Pure UI styling/color changes (unless they hide a real state, like a badge that should show a warning).
