@@ -1286,7 +1286,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 ref={gripRef}
                 style={{ '--drawer-h': `${drawerH}px` }}
                 className={`hide-on-print fixed bottom-0 inset-x-0 z-[150] h-[var(--drawer-h)] overflow-hidden border-t-4 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]
-                            lg:static lg:z-10 lg:h-auto lg:w-[420px] 2xl:w-[520px] lg:border-t-0 lg:border-r-4 lg:shadow-none
+                            lg:static lg:z-10 lg:h-auto lg:w-[420px] lg:border-t-0 lg:border-r-4 lg:shadow-none
                             flex flex-col border-[#3e3226] bg-[#0f0e0d] shrink-0
                             ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
             >
@@ -1397,7 +1397,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:flex-row lg:flex-wrap lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
