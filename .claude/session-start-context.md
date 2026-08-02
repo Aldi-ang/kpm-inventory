@@ -52,3 +52,46 @@ should I work on":
 
 If asked "what's my to-do list" or similar, check `Backlog/` first — don't answer purely
 from this repo's own memory folder without also checking there.
+
+### Before you tell Aldi that nothing was done on something
+
+Design work does NOT land in the repo. Plans, prototypes and research live outside it, so
+file timestamps and `git log` will say "nothing happened" while a finished design exists.
+
+When he says "we did X yesterday" and you cannot see it, run these two BEFORE answering:
+
+```bash
+ls -t ~/.claude/plans/ | head -5
+ls -t ~/.claude/projects/D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main/*.jsonl | head -3
+```
+
+The plan file is the design record. The repo only shows shipped code. Checking mtimes and
+`git log --all` first — and concluding nothing happened — cost ~30% of a session's usage on
+2026-08-02 and produced a confident wrong answer.
+
+### Put what Aldi has to DO at the very top
+
+He does not read the whole message. Stated by him 2026-08-02, and again after it was missed:
+*"always highlight your question or job that i need to do for u because i wont read your whole
+thinking message."*
+
+Every reply that needs anything from him opens with a single bold line naming it — a question
+to answer, a command to run, a thing to test, a decision to make. One line, first thing, before
+any explanation. If nothing is needed from him, say that in one line instead. Reasoning,
+verification and detail go underneath, where he can ignore them safely.
+
+A question buried in paragraph six is a question that was never asked.
+
+### Showing Aldi an HTML prototype — never the file
+
+Prototypes here build their DOM in JavaScript. The render panel shows a static snapshot and
+does **not** run scripts, so the file renders as a black frame with nothing pressable — which
+reads as "the prototype lost everything" when the file is perfectly intact.
+
+Always give the **published artifact URL** (claude.ai runs the JS). Never `SendUserFile` an
+HTML prototype with `display: "render"`. Promoted to a standing rule 2026-08-02 after this
+failed twice — `phase2-design.html`, then `dukes-ledger-v2.html`.
+
+A memory note that describes a session's *starting intent* goes stale the moment that session
+finishes. When a session produces a plan file or an artifact, the memory for that topic must
+name the path. If it doesn't, fix the memory before doing anything else.

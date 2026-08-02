@@ -41,19 +41,27 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
     const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
 
     const [isPeeking, setIsPeeking] = useState(false);
-    const [isHiding, setIsHiding] = useState(false); 
-    const [internalMsg, setInternalMsg] = useState(""); 
+    const [isHiding, setIsHiding] = useState(false);
+    const [internalMsg, setInternalMsg] = useState("");
+    // art for THIS appearance only. Lets the merchant borrow the mascot's whole
+    // show-up-and-go behaviour without a second component being written.
+    const [radioImage, setRadioImage] = useState(null);
     const msgIndexRef = useRef(0);
 
     // 📻 THE RADIO RECEIVER: Listens for signals from anywhere in the app
     useEffect(() => {
         const handleRadioComms = (event) => {
-            const incomingMessage = event.detail;
+            // detail is either a plain string (original callers) or
+            // { message, image } so a caller can bring its own character.
+            const d = event.detail;
+            const incomingMessage = typeof d === 'string' ? d : d?.message;
+            const incomingImage   = typeof d === 'string' ? null : d?.image;
             if (incomingMessage) {
                 setInternalMsg(incomingMessage);
+                setRadioImage(incomingImage || null);
                 setIsPeeking(true);
                 setIsHiding(false);
-                
+
                 // Auto-dismiss after 8 seconds
                 setTimeout(() => {
                     setIsHiding(true);
@@ -61,6 +69,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                         setIsPeeking(false);
                         setIsHiding(false);
                         setInternalMsg("");
+                        setRadioImage(null);
                     }, 1000); // Wait for the slide-out animation to finish
                 }, 8000);
             }
@@ -173,7 +182,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                         </div>
                     </div>
                 )}
-                <img src={NORMAL_IMAGE_URL} alt="Mascot" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}/>
+                <img src={radioImage || staticImageSrc || NORMAL_IMAGE_URL} alt="Mascot" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}/>
             </div>
             <style>{`
                 @keyframes pop-in { 0% { transform: scale(0) translateY(20px); opacity: 0; } 80% { transform: scale(1.1) translateY(-5px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }

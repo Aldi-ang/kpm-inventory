@@ -179,8 +179,8 @@ html.light { color-scheme: light; }
 .kpm-coin.lg { animation-name: kpmCoinSpinLg; }
 @keyframes kpmCoinSpinLg { to { background-position: -192px 0; } }
 /* front face when motion is off */
-.lite .kpm-coin,      .kpm-coin.still      { animation: none; background-position: -54px 0; }
-.lite .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px 0; }
+html.lite-mode .kpm-coin,      .kpm-coin.still      { animation: none; background-position: -54px 0; }
+html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px 0; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-coin    { animation: none; background-position: -54px 0; }
   .kpm-coin.lg { background-position: -72px 0; }
@@ -209,6 +209,20 @@ html.light { color-scheme: light; }
 .kpm-hot:active { scale: .985; }
 .kpm-hot:active::after { width: 3px; }
 
+/* A line entering the cart, and a panel sliding back into place. Aldi 2026-08-02: it
+   "snapped when we press it" — snapping is correct ONLY under the performance switch.
+   Nothing here needs a lite-mode guard: `html.lite-mode *` below kills animation and
+   transition outright, so Lite Mode gets the instant snap for free. transform and
+   opacity only, so neither can cause layout shift. */
+.kpm-row-in { animation: kpmRowIn 200ms cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes kpmRowIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* a panel returning to rest — used when a drawer or tab is released */
+.kpm-settle { transition: transform 220ms cubic-bezier(.16, 1, .3, 1), opacity 180ms ease-out; }
+
 /* press feedback. Never below .95 — lower reads as exaggerated. */
 .kpm-press { transition-property: scale; transition-duration: 150ms; transition-timing-function: ease-out; }
 .kpm-press:active { scale: .96; }
@@ -217,7 +231,7 @@ html.light { color-scheme: light; }
    LITE MODE — the app's PERFORMANCE switch (not the light colour theme).
    Rank borders are exempt and may be heavy; everything else degrades here.
    ---------------------------------------------------------------------------- */
-.lite *, .lite *::before, .lite *::after {
+html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
   animation: none !important;
   transition: none !important;
   box-shadow: none !important;

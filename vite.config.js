@@ -9,7 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico}']
+        /* sprites/ only - the full-size masters in public/ are megabytes each and
+           must never enter the precache. Add new art under sprites/, resized. */
+        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3']
       },
       manifest: {
         name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts
