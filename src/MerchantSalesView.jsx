@@ -11,9 +11,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [activeCategory, setActiveCategory] = useState("ALL");
     
     // --- MERCHANT STATE ---
-    const [merchantMsg, setMerchantMsg] = useState("What're ya buyin'?");
     const [merchantMood, setMerchantMood] = useState("idle");
-    const [doorsOpen, setDoorsOpen] = useState(false);
 
     // 🚀 DUAL RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(false);
@@ -253,11 +251,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     }, [customers.length]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setDoorsOpen(true), 500);
         const handleClickOutside = (e) => { if (!e.target.closest('.manifest-dropdown-area')) setShowCustomerDropdown(false); };
         document.addEventListener("mousedown", handleClickOutside);
         document.addEventListener("touchstart", handleClickOutside, { passive: true }); 
-        return () => { clearTimeout(timer); document.removeEventListener("mousedown", handleClickOutside); document.removeEventListener("touchstart", handleClickOutside); };
+        return () => { document.removeEventListener("mousedown", handleClickOutside); document.removeEventListener("touchstart", handleClickOutside); };
     }, []);
 
     useEffect(() => { if (!allowedPayments.includes(paymentMethod)) setPaymentMethod(allowedPayments[0] || 'Cash'); }, [allowedPayments]);
@@ -272,17 +269,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         return allowedTiers.includes(mappedTier);
     }).slice(0, 5);
 
+    /* The merchant no longer speaks on add-to-cart - Aldi's call 2026-08-02, he appears on
+       deal commit ONLY, so a 15-line basket stays silent until it is paid. The dialogue table
+       this used to hold was verbatim Resident Evil 4 merchant lines and has been deleted.
+       Callers are left in place: they sit on transaction paths and changing them buys nothing. */
     const triggerMerchantSpeak = (type) => {
-        const lines = {
-            welcome: ["What're ya buyin'?", "Stranger...", "Got some rare things on sale!"],
-            add: ["Heh heh heh... Thank you!", "A wise choice.", "Is that all?"],
-            expensive: ["Ooh! I'll buy it at a high price!", "Ah... rare things on sale, stranger!"],
-            checkout: ["Heh heh heh... Thank you!", "Come back anytime.", "Pleasure doing business."]
-        };
-        const selectedSet = lines[type] || lines.welcome;
-        setMerchantMsg(selectedSet[Math.floor(Math.random() * selectedSet.length)]);
-        setMerchantMood("talking");
-        setTimeout(() => setMerchantMood("idle"), 2500);
+        setMerchantMood(type === 'expensive' ? 'talking' : 'idle');
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
@@ -866,7 +858,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null); 
             setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-            setMerchantMood("deal"); setMerchantMsg("Heh heh heh... Thank you, stranger!");
+            // The merchant has no permanent space on screen - he shows up on a committed
+            // deal and leaves, borrowing CapybaraMascot's slide-in/out. Deal commit ONLY:
+            // never on add-to-cart, so a 15-line basket stays silent until it is paid.
+            // Line is original writing; the old one was a direct Resident Evil 4 quote.
+            const DEAL_LINES = [
+                "Deal's done. Good haul.",
+                "Stock's moving. I like that.",
+                "Clean trade. Next route?",
+                "Counted and paid. We're square.",
+            ];
+            const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
+            setMerchantMood("deal");
+            window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
+                detail: { message: line, sprite: 'kpm-merch-deal' }
+            }));
             setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) { alert("Transaction Failed! Please try again."); } 
         finally { setIsProcessingSale(false); }
@@ -1197,21 +1203,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             </div>
 
             <div className={`hide-on-print w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
-                <div className="h-40 md:h-48 lg:h-auto lg:flex-1 relative overflow-hidden bg-black shrink-0 min-h-[200px] lg:min-h-[250px]">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#5c4b3a_0%,#000000_90%)] opacity-50"></div>
-                    <div className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${merchantMood === 'talking' ? 'scale-105' : 'scale-100'}`}>
-                        <div className="w-40 h-40 md:w-48 md:h-48 lg:w-72 lg:h-72 relative">
-                            {/* 200px versions - the 1000px masters are 4,5 MB total and were never
-                                precached, so the merchant simply did not render offline. */}
-                            <img src={merchantMood === 'deal' ? "/sprites/deal.png" : merchantMood === 'talking' ? "/sprites/talking.png" : "/sprites/idle.png"} className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,157,0,0.5)]" alt="Merchant" />
-                        </div>
-                    </div>
-                    <div className={`absolute inset-y-0 left-0 w-1/2 bg-[#1a1815] border-r-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? '-translate-x-full' : ''}`} style={{ backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 2px, transparent 2px 14px), repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 7px)' }}></div>
-                    <div className={`absolute inset-y-0 right-0 w-1/2 bg-[#1a1815] border-l-4 border-[#2a2520] z-20 transition-transform duration-[1200ms] ease-in-out ${doorsOpen ? 'translate-x-full' : ''}`} style={{ backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 2px, transparent 2px 14px), repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 7px)' }}></div>
-                    <div className="absolute bottom-3 md:bottom-4 inset-x-4 md:inset-x-6 z-30">
-                        <div className="bg-black/90 border-2 border-[#8b7256] p-2 md:p-3 text-center uppercase tracking-widest text-[10px] md:text-sm lg:text-base italic animate-pulse shadow-lg rounded-lg text-[#ff9d00] font-bold"> "{merchantMsg}" </div>
-                    </div>
-                </div>
+                {/* Merchant portrait removed 2026-08-02 - Aldi: he must take no permanent
+                    space. He now appears via CapybaraMascot on deal commit and leaves. */}
                 {/* lg:hidden, not md:hidden - the desktop copy below is `hidden lg:flex`, so
                     md: left 768-1023px with NEITHER manifest rendered. That band is large
                     phones in landscape, which Aldi confirmed is supported. */}

@@ -186,6 +186,39 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
   .kpm-coin.lg { background-position: -72px 0; }
 }
 
+/* ----------------------------------------------------------------------------
+   MERCHANT SPRITE SHEETS — Pip-Boy style, Aldi's own capybara.
+   Same technique as the coin above: step in PIXELS, never percentages, because
+   percentage stepping lands between frames and tears. Lite Mode holds frame 1,
+   which is why every sheet's frame 1 is the neutral pose.
+   ---------------------------------------------------------------------------- */
+.kpm-merch { width: 100%; height: 100%; background-repeat: no-repeat;
+  background-position: 0 0; image-rendering: auto; }
+
+/* 4 frames, 200px each -> 800px sheet */
+.kpm-merch-idle { background-image: url('/sprites/merchant-idle.png');
+  background-size: 800px 200px;
+  animation: kpmMerchIdle 1.6s steps(4, end) infinite; }
+@keyframes kpmMerchIdle { to { background-position: -800px 0; } }
+
+/* 8 frames, 200px each -> 1600px sheet */
+.kpm-merch-talk { background-image: url('/sprites/merchant-talk.png');
+  background-size: 1600px 200px;
+  animation: kpmMerchTalk 1.1s steps(8, end) infinite; }
+@keyframes kpmMerchTalk { to { background-position: -1600px 0; } }
+
+/* deal is a single pose - the generated deal strip loses the hat mid-loop */
+.kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
+  background-size: 200px 200px; }
+
+/* Lite Mode and reduced motion hold frame 1. The blanket rule below kills the
+   animation; these keep the frame explicitly so it cannot land mid-sheet. */
+html.lite-mode .kpm-merch-idle,
+html.lite-mode .kpm-merch-talk { background-position: 0 0; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-merch-idle, .kpm-merch-talk { animation: none; background-position: 0 0; }
+}
+
 /* a negative amount: red is a rail, never a fill. The number stays ink. */
 .kpm-neg { border-left: 3px solid var(--danger-rail); padding-left: 10px; }
 
