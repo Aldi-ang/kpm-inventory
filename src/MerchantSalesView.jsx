@@ -3,7 +3,7 @@ import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSqu
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference } from './utils/helpers';
-import { unlockSounds, speakMumble } from './hooks/useSound';
+import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
@@ -1432,12 +1432,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <div className="lg:hidden flex items-center gap-1 shrink-0">
                                             <button
                                                 disabled={!line}
-                                                onClick={(e) => { e.stopPropagation(); if (!line) return; qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id)); }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (!line) return;
+                                                    // a tap on the way down, a distinct tone when the line is removed
+                                                    unlockSounds().then(() => playSound(qty > 1 ? 'tap' : 'error'));
+                                                    qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id));
+                                                }}
                                                 className="kpm-press w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
                                             >−</button>
                                             <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[#ff9d00]' : 'text-[#3e3226]'}`}>{qty}</span>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                                onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('tap')); addToCart(item); }}
                                                 className="kpm-press w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
                                             >+</button>
                                         </div>
