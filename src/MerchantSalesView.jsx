@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference } from './utils/helpers';
 import { unlockSounds, speakMumble } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
-    const [mobileTab, setMobileTab] = useState('products');
+    /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
+       is dragged between three snap points, so the wares list never has to be left. */
+    const [drawerH, setDrawerH] = useState(52);
+    const [isDragging, setIsDragging] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
     const [activeCategory, setActiveCategory] = useState("ALL");
@@ -897,6 +900,75 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }
     };
 
+    /* ------------------------------------------------------------------
+       MANIFEST DRAWER — drag behaviour.
+
+       Three rules here are not style preferences, they are fixes for bugs the
+       HTML prototype actually shipped (plan sections 6a, 6a-2, 6a-3):
+         - move/up/cancel bind to `window`, never to this component. Dragging
+           UP releases the pointer above the component, so a locally-bound
+           `pointerup` never fires and the gesture is stranded: tall panel,
+           no committed state, blank body.
+         - the drag aborts if the grip left the DOM mid-gesture instead of
+           writing a height into a dead node.
+         - a real drag arms a 120ms swallow for the synthetic click that
+           follows it, or that click lands on whatever ware sits under the
+           finger and opens it.
+       The body is mounted at all times; `overflow-hidden` plus this height is
+       the only thing hiding it, which is what makes the drag reveal content
+       continuously instead of at the end.
+       ------------------------------------------------------------------ */
+    const DRAWER_CLOSED = 52;
+    const gripRef = useRef(null);
+    const dragRef = useRef(null);
+    const ghostUntilRef = useRef(0);
+
+    const drawerSnaps = () => [DRAWER_CLOSED, Math.round(window.innerHeight * 0.55), Math.round(window.innerHeight * 0.92)];
+
+    useEffect(() => {
+        const swallowGhostClick = (e) => {
+            if (Date.now() < ghostUntilRef.current) { e.stopPropagation(); e.preventDefault(); }
+        };
+        document.addEventListener('click', swallowGhostClick, true);
+        return () => document.removeEventListener('click', swallowGhostClick, true);
+    }, []);
+
+    const startDrawerDrag = (e) => {
+        if (dragRef.current) return;
+        dragRef.current = { startY: e.clientY, startH: drawerH, moved: false };
+        setIsDragging(true);
+
+        const onMove = (ev) => {
+            const d = dragRef.current;
+            if (!d) return;
+            if (!gripRef.current || !gripRef.current.isConnected) return onEnd();
+            if (Math.abs(ev.clientY - d.startY) > 4) d.moved = true;
+            const max = window.innerHeight * 0.92;
+            setDrawerH(Math.max(DRAWER_CLOSED, Math.min(max, d.startH + (d.startY - ev.clientY))));
+        };
+
+        const onEnd = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onEnd);
+            window.removeEventListener('pointercancel', onEnd);
+            const d = dragRef.current;
+            dragRef.current = null;
+            setIsDragging(false);
+            if (!d) return;
+            if (!d.moved) {
+                // a tap, not a drag: closed -> half, anything else -> closed
+                setDrawerH(h => (h <= DRAWER_CLOSED + 8 ? drawerSnaps()[1] : DRAWER_CLOSED));
+                return;
+            }
+            ghostUntilRef.current = Date.now() + 120;
+            setDrawerH(h => drawerSnaps().reduce((best, s) => (Math.abs(s - h) < Math.abs(best - h) ? s : best)));
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onEnd);
+        window.addEventListener('pointercancel', onEnd);
+    };
+
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
@@ -1205,19 +1277,50 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         <div className="flex h-full w-full bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 1px, transparent 1px 5px)' }}></div>
             
-            <div className="hide-on-print lg:hidden absolute bottom-0 inset-x-0 h-14 flex border-t-2 border-[#5c4b3a] bg-[#0f0e0d] z-[150] shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-                <button onClick={() => setMobileTab('products')} className={`kpm-press kpm-settle flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'products' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}><ShoppingBag size={18}/> Wares</button>
-                <button onClick={() => setMobileTab('merchant')} className={`kpm-press kpm-settle flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}><User size={18}/> Merchant ({cart.length})</button>
-            </div>
-
-            <div className={`hide-on-print w-full lg:w-[420px] 2xl:w-[520px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            {/* Below lg this element IS the drawer: fixed to the bottom, its height driven
+                by --drawer-h. At lg the media-query classes win over the base ones and it
+                reverts to the static 420px left column, so the desktop layout is untouched.
+                The height comes in as a CSS variable rather than an inline `height` on
+                purpose - an inline height would beat `lg:h-full` and follow us onto desktop. */}
+            <div
+                ref={gripRef}
+                style={{ '--drawer-h': `${drawerH}px` }}
+                className={`hide-on-print fixed bottom-0 inset-x-0 z-[150] h-[var(--drawer-h)] overflow-hidden border-t-4 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]
+                            lg:static lg:z-10 lg:h-auto lg:w-[420px] 2xl:w-[520px] lg:border-t-0 lg:border-r-4 lg:shadow-none
+                            flex flex-col border-[#3e3226] bg-[#0f0e0d] shrink-0
+                            ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
+            >
                 {/* Merchant portrait removed 2026-08-02 - Aldi: he must take no permanent
                     space. He now appears via CapybaraMascot on deal commit and leaves. */}
+
+                {/* The grip. Collapsed it is the whole drawer, so it carries the running
+                    total, the item count and the LAST ITEM ADDED - that last one is what
+                    removes the need to open the manifest just to check it went in. */}
+                <div
+                    onPointerDown={startDrawerDrag}
+                    style={{ touchAction: 'none' }}
+                    className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 cursor-grab active:cursor-grabbing select-none bg-[#26211c] border-b border-[#3e3226]"
+                >
+                    <div className="w-10 h-1.5 rounded-full bg-[#5c4b3a] shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#8b7256] leading-none">
+                            Manifest ({cart.length})
+                        </div>
+                        <div className="text-[10px] font-mono text-[#5c4b3a] truncate leading-tight mt-0.5">
+                            {cart.length ? cart[cart.length - 1].name : 'Empty — tap a ware to add'}
+                        </div>
+                    </div>
+                    <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[#ff9d00]'}`}>
+                        {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
+                    </span>
+                    <ChevronDown size={18} className={`shrink-0 text-[#8b7256] transition-transform ${drawerH > DRAWER_CLOSED + 8 ? '' : 'rotate-180'}`} />
+                </div>
+
                 {/* lg:hidden, not md:hidden - the desktop copy below is `hidden lg:flex`, so
                     md: left 768-1023px with NEITHER manifest rendered. That band is large
                     phones in landscape, which Aldi confirmed is supported. */}
                 <div className="lg:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
-               
+
                 <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                     
                     <div className="mb-4">
@@ -1271,7 +1374,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
             </div>
 
-            <div className={`hide-on-print flex-1 flex-col bg-[#161412] pb-14 lg:pb-0 overflow-hidden ${mobileTab === 'products' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            {/* Always mounted now. It used to be hidden whenever the Merchant tab was open,
+                which is the ~2n tab switches per sale this phase exists to remove. The
+                bottom padding is the collapsed drawer's 52px, so the last ware clears it. */}
+            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[52px] lg:pb-0 overflow-hidden">
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
@@ -1291,29 +1397,52 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap lg:flex-wrap lg:content-start lg:overflow-x-hidden gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory lg:snap-none scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:flex-row lg:flex-wrap lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card snap-start w-[160px] md:w-[240px] lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
-                            <div className="h-32 md:h-44 lg:h-48 p-3 md:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
+                            <div className="w-20 h-20 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={48} className="text-[#3e3226] opacity-50"/>}
-                                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-black/80 text-[#8b7256] text-[11px] md:text-[10px] font-black px-2 py-0.5 md:px-2 md:py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={32} className="lg:w-12 lg:h-12 text-[#3e3226] opacity-50"/>}
+                                <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                             </div>
-                            <div className="flex-1 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-t-2 border-[#3e3226] p-3 md:p-4 flex flex-col font-mono relative">
-                                <h4 className="text-[#d4c5a3] text-[11px] md:text-sm font-black uppercase mb-3 line-clamp-2 h-[32px] md:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
-                                <div className="mt-auto flex flex-col items-start md:flex-row md:justify-between md:items-end w-full gap-2 md:gap-0">
-                                    <div className="flex flex-col gap-0.5 md:gap-1">
-                                        <span className="text-[11px] md:text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
-                                        <span className={`text-[10px] md:text-xs font-black px-1.5 py-0.5 md:px-2 md:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>{item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}</span>
-                                    </div>
-                                    <div className="text-left md:text-right w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-[#3e3226] md:border-none">
-                                        <span className="text-[11px] md:text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest block mb-0.5 md:mb-1">Ecer Price</span>
-                                        <span className="text-[16px] md:text-2xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                            <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-l-2 lg:border-l-0 lg:border-t-2 border-[#3e3226] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                    <h4 className="text-[#d4c5a3] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
+                                    <div className="mt-1 lg:mt-auto flex flex-row items-center gap-2 lg:gap-0 lg:justify-between lg:items-end w-full">
+                                        <div className="flex flex-col gap-0.5 lg:gap-1">
+                                            <span className="hidden lg:block text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
+                                            <span className={`text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>{item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}</span>
+                                        </div>
+                                        <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
+                                            <span className="hidden lg:block text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
+                                            <span className="text-[15px] lg:text-2xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Row steppers, mobile only. Desktop edits quantity in the
+                                    manifest, which is on screen there anyway. */}
+                                {(() => {
+                                    const line = cart.find(c => c.productId === item.id);
+                                    const qty = line?.qty || 0;
+                                    return (
+                                        <div className="lg:hidden flex items-center gap-1 shrink-0">
+                                            <button
+                                                disabled={!line}
+                                                onClick={(e) => { e.stopPropagation(); if (!line) return; qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id)); }}
+                                                className="kpm-press w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
+                                            >−</button>
+                                            <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[#ff9d00]' : 'text-[#3e3226]'}`}>{qty}</span>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                                className="kpm-press w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
+                                            >+</button>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     ))}
