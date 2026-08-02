@@ -201,22 +201,27 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
   animation: kpmMerchTalk 1.1s steps(8, end) infinite; }
 @keyframes kpmMerchTalk { to { background-position: -1600px 0; } }
 
-/* 11 frames: takes the coins, pockets them in the satchel, thumbs up.
-   Plays ONCE and holds the last frame - steps(10) lands on -2000px, which is
-   frame 11, and `forwards` keeps it there instead of snapping back to frame 1. */
+/* DEAL IS ONE POSE, NOT A SHEET. Every defect the multi-frame version had - a body
+   that drifted, a hat that vanished, a hand left floating from a bad split - was a
+   BETWEEN-frame failure. A single drawing has no frames to disagree with, so none of
+   them can occur. The motion comes from CSS instead: a slow breath, transform only,
+   which Lite Mode strips without leaving him mid-pose. 6 KB against 83 KB. */
 .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
-  background-size: 3600px 200px;
-  animation: kpmMerchDeal 4.5s steps(17, end) 1 forwards; }
-@keyframes kpmMerchDeal { to { background-position: -3400px 0; } }
+  background-size: 200px 200px;
+  animation: kpmMerchBreathe 2.8s ease-in-out infinite; }
+@keyframes kpmMerchBreathe {
+  0%, 100% { transform: translateY(0)     scale(1); }
+  50%      { transform: translateY(-2.5px) scale(1.012); }
+}
 
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
    pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
    the point of the animation, not its starting pose. */
 html.lite-mode .kpm-merch-talk { background-position: 0 0; }
-html.lite-mode .kpm-merch-deal { background-position: -3400px 0; }
+html.lite-mode .kpm-merch-deal { animation: none; background-position: 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-merch-talk { animation: none; background-position: 0 0; }
-  .kpm-merch-deal { animation: none; background-position: -3400px 0; }
+  .kpm-merch-deal { animation: none; background-position: 0 0; }
 }
 
 /* ---- entrance and exit ------------------------------------------------------
