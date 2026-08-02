@@ -206,7 +206,7 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    frame 11, and `forwards` keeps it there instead of snapping back to frame 1. */
 .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
   background-size: 3600px 200px;
-  animation: kpmMerchDeal 2.6s steps(17, end) 1 forwards; }
+  animation: kpmMerchDeal 4.5s steps(17, end) 1 forwards; }
 @keyframes kpmMerchDeal { to { background-position: -3400px 0; } }
 
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
