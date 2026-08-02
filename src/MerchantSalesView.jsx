@@ -1210,7 +1210,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <button onClick={() => setMobileTab('merchant')} className={`kpm-press kpm-settle flex-1 text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${mobileTab === 'merchant' ? 'bg-[#3e3226] text-[#ff9d00] shadow-[inset_0_4px_0_#ff9d00]' : 'text-[#5c4b3a] hover:text-[#8b7256]'}`}><User size={18}/> Merchant ({cart.length})</button>
             </div>
 
-            <div className={`hide-on-print w-full lg:w-[420px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
+            <div className={`hide-on-print w-full lg:w-[420px] 2xl:w-[520px] flex-col z-10 border-r-4 border-[#3e3226] bg-[#0f0e0d] transition-all pb-14 lg:pb-0 shrink-0 ${mobileTab === 'merchant' ? 'flex h-full' : 'hidden lg:flex'}`}>
                 {/* Merchant portrait removed 2026-08-02 - Aldi: he must take no permanent
                     space. He now appears via CapybaraMascot on deal commit and leaves. */}
                 {/* lg:hidden, not md:hidden - the desktop copy below is `hidden lg:flex`, so
@@ -1286,7 +1286,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
+                {/* DESKTOP: the wares stop being a sideways carousel and become a wrapping
+                    grid at xl (1280px+). Below that nothing changes - the carousel is right on
+                    a phone, where sideways swiping is natural and vertical space is scarce.
+                    The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
+                    the 1024px layout and scrolling sideways through 260px cards. */}
+                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap xl:flex-wrap xl:content-start xl:overflow-x-hidden gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory xl:snap-none scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card snap-start w-[160px] md:w-[240px] lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
