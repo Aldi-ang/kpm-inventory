@@ -1287,11 +1287,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
 
                 {/* DESKTOP: the wares stop being a sideways carousel and become a wrapping
-                    grid at xl (1280px+). Below that nothing changes - the carousel is right on
+                    grid at lg (1024px+). Below that nothing changes - the carousel is right on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap xl:flex-wrap xl:content-start xl:overflow-x-hidden gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory xl:snap-none scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
+                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 p-3 lg:p-6 lg:pb-8 flex flex-nowrap lg:flex-wrap lg:content-start lg:overflow-x-hidden gap-3 lg:gap-6 scrollbar-hide items-start bg-[#1a1815] relative snap-x snap-mandatory lg:snap-none scroll-pl-3 lg:scroll-pl-6 scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card snap-start w-[160px] md:w-[240px] lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
