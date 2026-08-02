@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1785327012.0461836,
-    "ast_hash": "ce1ac4c609fd6370f2f1416fbe34f870",
+    "mtime": 1785629684.0193613,
+    "ast_hash": "8e4307b79ff0d62af4785927f2dbfa97",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -115,8 +115,8 @@
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
-    "mtime": 1785326520.3946457,
-    "ast_hash": "1e8bd4043f53969d73b8fe3969d3a52d",
+    "mtime": 1785629600.4976187,
+    "ast_hash": "d3a870910a96d613c53ff660a1be7a07",
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
-    "mtime": 1785326521.2559292,
-    "ast_hash": "e99f072569c81575c8c8a9be805e94f8",
+    "mtime": 1785629286.6579943,
+    "ast_hash": "153a614dddddc2cb25d12119cbd23792",
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "MANUAL_TEST_CHECKLIST.md": {
-    "mtime": 1785377250.4322538,
-    "ast_hash": "cb420dd73c9e2028880658daa5140925",
+    "mtime": 1785629749.856527,
+    "ast_hash": "49488841eb5f2d2e44aaad774b61c568",
     "semantic_hash": ""
   },
   "README.md": {

@@ -272,6 +272,39 @@ command, then open the "Network" address it prints on your phone (same WiFi):
 npm run dev -- --host
 ```
 
+### Round 5 — Restock Vault + Executive Targets on the theme tokens
+
+This round has **no logic changes at all** — only colours. What changed is that the Restock Vault
+pair and the Executive Targets strip stopped using blue, purple, emerald and slate, and moved onto
+the same tokens the Dashboard and Manifest already use.
+
+The thing worth looking at: those screens used **blue for "HQ / shipping" and purple for "branch"**.
+Both are banned by the palette, so identity is now carried by **gold vs plain steel** instead of by
+two hues. Meaning-colours are untouched: orange still = pending/warning, red still = rejected,
+verified still = delivered.
+
+- [ ] **Restock Vault → order timeline**: the status chips (PENDING / APPROVED / IN_TRANSIT /
+      DELIVERED / REJECTED / SYSTEM_EDIT) are all still readable and still tell each other apart.
+      SYSTEM_EDIT is deliberately the grey one now.
+- [ ] **Every gold button** (Set Production Goal, Save Shipping Data, Add to Cart, Submit Request,
+      Ship Items) has **dark text, not white**. White on gold measured 2,0:1 — it was unreadable and
+      that's now fixed. If any gold button still shows white text, tell me.
+- [ ] **Hover over the small icon buttons** in the order cards — they still visibly change. Two
+      different greys collapsed into one token, so I re-stepped the hover; this is the check for it.
+- [ ] **Print a Goods Received Note** (Restock Vault → an accepted order → Print Document).
+      It must still come out as **white paper with black ink**, exactly as before.
+      That receipt is a deliberate exception to the palette and keeps fixed print greys.
+- [ ] **Dashboard → Executive Targets**: the three cards (Monthly Trajectory, Daily Volume,
+      Product Shift) — the progress bars and the little pie are readable, and the Filter/Kretek
+      split is still tellable apart at a glance (it's steel vs orange now, not blue vs orange).
+- [ ] **Adjust Goals modal** still opens, saves, and the numbers still stick.
+- [ ] **Lite Mode ON** — same screens, everything still legible.
+- [ ] **Light mode** — same screens, nothing washed out.
+
+Verified by me: build clean (`EXIT=0`), `career.js` self-check passing, and the whole diff is
+class-strings only — no calculation, no Firestore call, no handler was touched. **Not** verified by
+me: how it actually looks. These screens need a real login, so the eyeballing is yours.
+
 ## ⚪ Skip entirely
 
 - Pure UI styling/color changes (unless they hide a real state, like a badge that should show a warning).

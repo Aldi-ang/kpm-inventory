@@ -1394,8 +1394,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_journeyview",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "journeyview.jsx"
     },
     {
@@ -1405,8 +1405,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_journeyview_createjourneyclustericon",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "createjourneyclustericon()"
     },
     {
@@ -1416,8 +1416,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_journeyview_storeiconcache",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "storeiconcache"
     },
     {
@@ -1427,8 +1427,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_journeyview_getstoreicon",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "getstoreicon()"
     },
     {
@@ -1438,8 +1438,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_journeyview_userlocationicon",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "userlocationicon"
     },
     {
@@ -1460,8 +1460,8 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "src_journeyview_locationcontroller",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "locationcontroller()"
     },
     {
@@ -1471,8 +1471,8 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "src_journeyview_mapeditcontroller",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "mapeditcontroller()"
     },
     {
@@ -1482,8 +1482,8 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "src_journeyview_ispointinpolygon",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -1493,8 +1493,8 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "src_journeyview_checkpointingeojson",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -1504,8 +1504,8 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "src_journeyview_getstorehierarchy",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "getstorehierarchy()"
     },
     {
@@ -1515,8 +1515,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "src_journeyview_agent_colors",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "agent_colors"
     },
     {
@@ -1526,8 +1526,8 @@
       "source_location": "L220",
       "_origin": "ast",
       "id": "src_journeyview_gethashcolor",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "gethashcolor()"
     },
     {
@@ -1537,8 +1537,8 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "src_journeyview_journeyview",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "journeyview()"
     },
     {
@@ -2395,8 +2395,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -2406,8 +2406,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -2417,8 +2417,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -2428,8 +2428,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "samplingcartview()"
     },
     {
@@ -2439,8 +2439,8 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -2450,8 +2450,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -2747,8 +2747,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 7,
-      "community_name": "JourneyView.jsx",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -3055,8 +3055,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 6,
-      "community_name": "helpers.js",
+      "community": 5,
+      "community_name": "formatRupiah",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -3401,10 +3401,21 @@
       "norm_label": "testing on your real phone without deploying"
     },
     {
-      "label": "\u26aa Skip entirely",
+      "label": "Round 5 \u2014 Restock Vault + Executive Targets on the theme tokens",
       "file_type": "document",
       "source_file": "MANUAL_TEST_CHECKLIST.md",
       "source_location": "L275",
+      "_origin": "ast",
+      "id": "manual_test_checklist_round_5_restock_vault_executive_targets_on_the_theme_tokens",
+      "community": 9,
+      "community_name": "KPM Inventory \u2014 Manual Test Checklist",
+      "norm_label": "round 5 \u2014 restock vault + executive targets on the theme tokens"
+    },
+    {
+      "label": "\u26aa Skip entirely",
+      "file_type": "document",
+      "source_file": "MANUAL_TEST_CHECKLIST.md",
+      "source_location": "L308",
       "_origin": "ast",
       "id": "manual_test_checklist_skip_entirely",
       "community": 9,
@@ -3415,7 +3426,7 @@
       "label": "After deploying a Firestore Security Rules change specifically",
       "file_type": "document",
       "source_file": "MANUAL_TEST_CHECKLIST.md",
-      "source_location": "L280",
+      "source_location": "L313",
       "_origin": "ast",
       "id": "manual_test_checklist_after_deploying_a_firestore_security_rules_change_specifically",
       "community": 9,
@@ -8642,7 +8653,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/DashboardBenchmarks.jsx",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_dashboardbenchmarks_dashboardbenchmarks",
@@ -10256,7 +10267,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "MANUAL_TEST_CHECKLIST.md",
-      "source_location": "L280",
+      "source_location": "L313",
       "weight": 1.0,
       "_origin": "ast",
       "source": "manual_test_checklist_kpm_inventory_manual_test_checklist",
@@ -10311,7 +10322,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "MANUAL_TEST_CHECKLIST.md",
-      "source_location": "L275",
+      "source_location": "L308",
       "weight": 1.0,
       "_origin": "ast",
       "source": "manual_test_checklist_kpm_inventory_manual_test_checklist",
@@ -10382,6 +10393,17 @@
       "_origin": "ast",
       "source": "manual_test_checklist_this_update_trophy_room_career_ledger_phases_0_8_test_before_pushing_to_vercel",
       "target": "manual_test_checklist_round_4_phase_1_of_the_rework_bug_fixes_readability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "MANUAL_TEST_CHECKLIST.md",
+      "source_location": "L275",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "manual_test_checklist_this_update_trophy_room_career_ledger_phases_0_8_test_before_pushing_to_vercel",
+      "target": "manual_test_checklist_round_5_restock_vault_executive_targets_on_the_theme_tokens",
       "confidence_score": 1.0
     },
     {
@@ -10496,5 +10518,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "8e0edcbc976b8f4fef1859425f0a32e4624f8b04"
+  "built_at_commit": "869898176623cf45becf2bc1938cbb9b4548fd64"
 }
