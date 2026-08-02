@@ -187,7 +187,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                 {/* bubble sits fully above him: 85% overlapped the hat once the sprite
                     filled the box. Border was green-600, which the palette law bans. */}
                 {activeMessage && (
-                    <div className="absolute bottom-[101%] right-[8%] mb-1 z-20 animate-pop-in pointer-events-none">
+                    <div className="absolute bottom-[112%] right-[6%] mb-2 z-20 animate-pop-in pointer-events-none">
                         <div className="relative border-4 border-gold p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(212,175,55,0.45)]" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                             <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>{activeMessage}</p>
                             <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-gold rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
