@@ -195,29 +195,47 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 .kpm-merch { width: 100%; height: 100%; background-repeat: no-repeat;
   background-position: 0 0; image-rendering: auto; }
 
-/* 4 frames, 200px each -> 800px sheet */
-.kpm-merch-idle { background-image: url('/sprites/merchant-idle.png');
-  background-size: 800px 200px;
-  animation: kpmMerchIdle 1.6s steps(4, end) infinite; }
-@keyframes kpmMerchIdle { to { background-position: -800px 0; } }
-
-/* 8 frames, 200px each -> 1600px sheet */
+/* 8 frames, 200px each -> 1600px sheet. Loops while he is speaking. */
 .kpm-merch-talk { background-image: url('/sprites/merchant-talk.png');
   background-size: 1600px 200px;
   animation: kpmMerchTalk 1.1s steps(8, end) infinite; }
 @keyframes kpmMerchTalk { to { background-position: -1600px 0; } }
 
-/* deal is a single pose - the generated deal strip loses the hat mid-loop */
+/* 11 frames: takes the coins, pockets them in the satchel, thumbs up.
+   Plays ONCE and holds the last frame - steps(10) lands on -2000px, which is
+   frame 11, and `forwards` keeps it there instead of snapping back to frame 1. */
 .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
-  background-size: 200px 200px; }
+  background-size: 2200px 200px;
+  animation: kpmMerchDeal 1.5s steps(10, end) 1 forwards; }
+@keyframes kpmMerchDeal { to { background-position: -2000px 0; } }
 
-/* Lite Mode and reduced motion hold frame 1. The blanket rule below kills the
-   animation; these keep the frame explicitly so it cannot land mid-sheet. */
-html.lite-mode .kpm-merch-idle,
+/* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
+   pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
+   the point of the animation, not its starting pose. */
 html.lite-mode .kpm-merch-talk { background-position: 0 0; }
+html.lite-mode .kpm-merch-deal { background-position: -2000px 0; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-idle, .kpm-merch-talk { animation: none; background-position: 0 0; }
+  .kpm-merch-talk { animation: none; background-position: 0 0; }
+  .kpm-merch-deal { animation: none; background-position: -2000px 0; }
 }
+
+/* ---- entrance and exit ------------------------------------------------------
+   He arrives from below with a small overshoot and a slight lean, instead of
+   sliding flatly in from the right. Exit runs at ~65% of the enter duration and
+   drops away, so leaving reads as quicker than arriving. transform + opacity
+   only, so neither can cause layout shift. */
+@keyframes kpmMerchEnter {
+  0%   { transform: translate(38%, 118%) rotate(6deg) scale(.86); opacity: 0; }
+  55%  { transform: translate(0, -6%)    rotate(-2deg) scale(1.04); opacity: 1; }
+  78%  { transform: translate(0, 2%)     rotate(1deg)  scale(.99); }
+  100% { transform: translate(0, 0)      rotate(0)     scale(1);   opacity: 1; }
+}
+@keyframes kpmMerchExit {
+  0%   { transform: translate(0, 0) rotate(0) scale(1); opacity: 1; }
+  100% { transform: translate(26%, 108%) rotate(8deg) scale(.9); opacity: 0; }
+}
+.kpm-merch-enter { animation: kpmMerchEnter 620ms cubic-bezier(.2, .9, .25, 1) both; }
+.kpm-merch-exit  { animation: kpmMerchExit  400ms cubic-bezier(.5, 0, .8, .4) both; }
 
 /* a negative amount: red is a rail, never a fill. The number stays ink. */
 .kpm-neg { border-left: 3px solid var(--danger-rail); padding-left: 10px; }

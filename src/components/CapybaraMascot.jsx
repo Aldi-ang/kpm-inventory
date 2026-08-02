@@ -170,21 +170,27 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
 
     const activeMessage = message || internalMsg; 
     const showMascot = isPeeking || message; 
-    const slideClass = isHiding ? 'translate-x-[200%]' : 'translate-x-0'; 
-    const initialClass = 'translate-x-[200%]';
+    /* He arrives from below with an overshoot instead of sliding flatly in from the
+       right, and leaves faster than he arrives. Keyframes live in theme.css so Lite
+       Mode strips them with everything else. */
+    const stateClass = !showMascot
+        ? 'opacity-0 pointer-events-none translate-x-[200%]'
+        : (isHiding ? 'kpm-merch-exit' : 'kpm-merch-enter');
 
     return (
         <div 
-            className={`hide-on-print fixed bottom-0 right-0 z-[99999] transition-transform duration-700 ease-in-out cursor-pointer group ${showMascot ? slideClass : initialClass}`}
+            className={`hide-on-print fixed bottom-0 right-0 z-[99999] cursor-pointer group ${stateClass}`}
             onClick={onMascotClick}
             style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
         >
             <div className="relative w-32 h-32 md:w-48 md:h-48 transition-transform duration-300 origin-bottom-right" style={{ transform: `scale(${scale || 1})` }}> 
+                {/* bubble sits fully above him: 85% overlapped the hat once the sprite
+                    filled the box. Border was green-600, which the palette law bans. */}
                 {activeMessage && (
-                    <div className="absolute bottom-[85%] right-[20%] z-20 animate-pop-in pointer-events-none">
-                        <div className="relative border-4 border-green-600 p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(0,100,0,0.5)]" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                    <div className="absolute bottom-[101%] right-[8%] mb-1 z-20 animate-pop-in pointer-events-none">
+                        <div className="relative border-4 border-gold p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(212,175,55,0.45)]" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                             <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>{activeMessage}</p>
-                            <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-green-600 rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
+                            <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-gold rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
                         </div>
                     </div>
                 )}
