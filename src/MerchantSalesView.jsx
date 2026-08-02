@@ -871,7 +871,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
             setMerchantMood("deal");
             window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
-                detail: { message: line, sprite: 'kpm-merch-deal' }
+                // talk, not deal: the speech bubble is up for the whole appearance, so the
+                // 8-frame talking loop is what matches it. Lite Mode holds its frame 1,
+                // which is the neutral pose.
+                detail: { message: line, sprite: 'kpm-merch-talk' }
             }));
             setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) { alert("Transaction Failed! Please try again."); } 
