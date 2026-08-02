@@ -214,6 +214,34 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
   50%      { transform: translateY(-2.5px) scale(1.012); }
 }
 
+/* THE COIN HE IS HOLDING. Aldi's idea, and the cheapest one available: reuse the
+   coin sprite the app already ships and precaches, floating beside his hand, instead
+   of drawing a coin into the character art. A spinning coin cannot drift between
+   frames the way a redrawn character does - it is one 8-frame loop that has been
+   working since Phase 3. It also solves "make the coin bigger" for free, because its
+   size is now a CSS number rather than something a generator has to be talked into.
+   Stepped in PIXELS like every other sheet here. */
+.kpm-merch-hold { position: absolute; inset: 0; pointer-events: none; }
+.kpm-merch-hold::after {
+  content: ""; position: absolute; left: 61%; top: 44%;
+  width: 34px; height: 34px;
+  background-image: url('/coin-sprite.png');
+  background-size: 272px 34px;          /* 8 frames x 34px */
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  animation: kpmMerchCoin .8s steps(8, end) infinite,
+             kpmMerchCoinFloat 2.8s ease-in-out infinite;
+}
+@keyframes kpmMerchCoin      { to { background-position: -272px 0; } }
+@keyframes kpmMerchCoinFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+
+/* Lite Mode holds the coin's front face, frame 3 — the same frame the inline
+   .kpm-coin holds, so money reads identically everywhere in the app. */
+html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -102px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-merch-hold::after { animation: none; background-position: -102px 0; }
+}
+
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
    pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
    the point of the animation, not its starting pose. */

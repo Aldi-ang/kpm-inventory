@@ -11,7 +11,7 @@ export default defineConfig({
       workbox: {
         /* sprites/ only - the full-size masters in public/ are megabytes each and
            must never enter the precache. Add new art under sprites/, resized. */
-        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3']
+        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3', 'coin-sprite.png']
       },
       manifest: {
         name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts

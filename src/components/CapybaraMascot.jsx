@@ -195,7 +195,12 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                     </div>
                 )}
                 {radioSprite ? (
-                    <div className={`kpm-merch ${radioSprite}`} role="img" aria-label="Merchant"></div>
+                    <>
+                        <div className={`kpm-merch ${radioSprite}`} role="img" aria-label="Merchant"></div>
+                        {/* the coin he is holding — the app's existing spinning coin sprite,
+                            floated beside his hand rather than drawn into the character */}
+                        {radioSprite === 'kpm-merch-deal' && <div className="kpm-merch-hold" aria-hidden="true"></div>}
+                    </>
                 ) : (
                 <img src={radioImage || staticImageSrc || NORMAL_IMAGE_URL} alt="Mascot" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}/>
                 )}
