@@ -205,18 +205,18 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    Plays ONCE and holds the last frame - steps(10) lands on -2000px, which is
    frame 11, and `forwards` keeps it there instead of snapping back to frame 1. */
 .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
-  background-size: 2200px 200px;
-  animation: kpmMerchDeal 2.4s steps(9, end) 1 forwards; }
-@keyframes kpmMerchDeal { to { background-position: -1800px 0; } }
+  background-size: 3600px 200px;
+  animation: kpmMerchDeal 2.6s steps(17, end) 1 forwards; }
+@keyframes kpmMerchDeal { to { background-position: -3400px 0; } }
 
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
    pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
    the point of the animation, not its starting pose. */
 html.lite-mode .kpm-merch-talk { background-position: 0 0; }
-html.lite-mode .kpm-merch-deal { background-position: -1800px 0; }
+html.lite-mode .kpm-merch-deal { background-position: -3400px 0; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-merch-talk { animation: none; background-position: 0 0; }
-  .kpm-merch-deal { animation: none; background-position: -1800px 0; }
+  .kpm-merch-deal { animation: none; background-position: -3400px 0; }
 }
 
 /* ---- entrance and exit ------------------------------------------------------
