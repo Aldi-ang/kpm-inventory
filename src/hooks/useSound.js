@@ -14,7 +14,19 @@ const SOURCES = {
   tap:    '/sounds/tap.mp3',
   commit: '/sounds/commit.mp3',
   error:  '/sounds/error.mp3',
+  /* Merchant "voice". Four pitches of the same short blip, played in sequence while
+     his line is on screen — the Animal Crossing / Dave the Diver trick. It is not a
+     language, so it never sounds wrong in English or Indonesian, needs no voice actor
+     and no TTS service, and costs 4,6 KB against 100 KB+ for recorded lines. */
+  mumble1: '/sounds/mumble1.mp3',
+  mumble2: '/sounds/mumble2.mp3',
+  mumble3: '/sounds/mumble3.mp3',
+  mumble4: '/sounds/mumble4.mp3',
 };
+
+const MUMBLES = ['mumble1', 'mumble2', 'mumble3', 'mumble4'];
+const CHARS_PER_BLIP = 3;
+const MAX_BLIPS = 8;        // Undertale mumbles the whole line; this is a work tool
 
 const POOL_SIZE = 3;
 
@@ -87,6 +99,21 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
       el.volume = wasVolume;
       return unlocked;
     });
+}
+
+/* Speak a line as mumbling. Returns the number of blips scheduled, so a caller (or a
+   test) can check it without waiting. Silent under Lite Mode and before unlock, because
+   playSound refuses there — no separate check needed. */
+export function speakMumble(text, { AudioImpl, doc, timer = setTimeout } = {}) {
+  const len = (text || '').replace(/\s+/g, '').length;
+  if (!len) return 0;
+  const count = Math.min(MAX_BLIPS, Math.max(1, Math.round(len / CHARS_PER_BLIP)));
+  if (liteModeOn(doc) || !unlocked) return 0;
+  for (let i = 0; i < count; i++) {
+    const name = MUMBLES[(i * 3 + len) % MUMBLES.length];   // varies per line, no RNG
+    timer(() => playSound(name, { AudioImpl, doc }), i * 105);
+  }
+  return count;
 }
 
 /* test seam - not for app code */

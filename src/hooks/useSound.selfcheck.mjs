@@ -2,7 +2,7 @@
    Covers the four things the research draft got wrong: pooling vs cloneNode,
    the unlock double-play, unlocked-before-resolve, and a stale Lite Mode read. */
 import assert from 'node:assert';
-import { playSound, unlockSounds, __reset, __isUnlocked } from './useSound.js';
+import { playSound, unlockSounds, speakMumble, __reset, __isUnlocked } from './useSound.js';
 
 let built = 0;
 const played = [];
@@ -43,4 +43,15 @@ assert.equal(playSound('tap', ctx(false)), true, 'and un-silence when toggled ba
 /* 5. unknown sound is a no-op, not a crash */
 assert.equal(playSound('nope', ctx(false)), false);
 
-console.log('useSound self-check: 5/5 pass');
+/* 6. mumble: blip count scales with the line, and is capped */
+{
+  const timer = (fn) => fn();                   // run synchronously, no waiting
+  const n1 = speakMumble("Deal's done. Good haul.", { ...ctx(false), timer });
+  assert.equal(n1, Math.min(8, Math.round(20 / 3)), 'blip count follows line length');
+  const n2 = speakMumble('x'.repeat(300), { ...ctx(false), timer });
+  assert.equal(n2, 8, 'must cap at 8 blips however long the line is');
+  assert.equal(speakMumble('', { ...ctx(false), timer }), 0, 'empty line is silent');
+  assert.equal(speakMumble('anything', { ...ctx(true), timer }), 0, 'Lite Mode is silent');
+}
+
+console.log('useSound self-check: 6/6 pass');

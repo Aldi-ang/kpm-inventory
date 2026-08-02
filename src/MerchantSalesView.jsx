@@ -3,6 +3,7 @@ import { Search, Box, Zap, X, DollarSign, ShoppingBag, List, User, ChevronDown, 
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference } from './utils/helpers';
+import { unlockSounds, speakMumble } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
     const [mobileTab, setMobileTab] = useState('products');
@@ -870,6 +871,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             ];
             const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
             setMerchantMood("deal");
+            // Committing the sale IS the user gesture browsers require before audio can
+            // play, so unlock here and mumble once the unlock resolves. Lite Mode silences
+            // both inside the hook, so there is no check to duplicate here.
+            unlockSounds().then(() => speakMumble(line));
             window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
                 // talk, not deal: the speech bubble is up for the whole appearance, so the
                 // 8-frame talking loop is what matches it. Lite Mode holds its frame 1,
