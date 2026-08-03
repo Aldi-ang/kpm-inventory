@@ -1273,6 +1273,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         </div>
     );
 
+    /* Which sheet the alcove shows. He idles by default, talks while he has something to
+       say, and holds the coin pose on a committed deal. */
+    const merchSprite = merchantMood === 'deal' ? 'kpm-merch-deal'
+                      : merchantMood === 'talking' ? 'kpm-merch-talk'
+                      : 'kpm-merch-idle';
+
     return (
         <div className="flex h-full w-full bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
             <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 1px, transparent 1px 5px)' }}></div>
@@ -1290,8 +1296,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             flex flex-col border-[#3e3226] bg-[#0f0e0d] shrink-0
                             ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
             >
-                {/* Merchant portrait removed 2026-08-02 - Aldi: he must take no permanent
-                    space. He now appears via CapybaraMascot on deal commit and leaves. */}
+                {/* THE ALCOVE — desktop only. On a phone he still only visits, via
+                    CapybaraMascot on a committed deal; a phone screen has no room to give
+                    him. A desk does, so here he lives in the ledger column: idling while
+                    you shop, talking when he has something to say, holding the coin on a
+                    deal. Everything but the sprite is CSS, so it costs one image. */}
+                <div className="kpm-alcove hidden lg:grid shrink-0" aria-hidden="true">
+                    <div className="rock"></div>
+                    <div className="kpm-torch l">
+                        <div className="pole"></div><div className="bowl"></div>
+                        <div className="kpm-flame"><i className="o"></i><i className="m"></i><i className="c"></i></div>
+                    </div>
+                    <div className="kpm-torch r">
+                        <div className="pole"></div><div className="bowl"></div>
+                        <div className="kpm-flame"><i className="o"></i><i className="m"></i><i className="c"></i></div>
+                    </div>
+                    <div className="cast"></div>
+                    {/* the two shadows are the SAME sprite, flattened - no extra download */}
+                    <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
+                    <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
+                    <div className="floor"></div>
+                    <div className={`fig kpm-merch ${merchSprite}`}>
+                        {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                    </div>
+                    <div className="dark"></div>
+                </div>
 
                 {/* The grip. Collapsed it is the whole drawer, so it carries the running
                     total, the item count and the LAST ITEM ADDED - that last one is what
