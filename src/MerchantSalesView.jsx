@@ -1286,7 +1286,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 ref={gripRef}
                 style={{ '--drawer-h': `${drawerH}px` }}
                 className={`hide-on-print fixed bottom-0 inset-x-0 z-[150] h-[var(--drawer-h)] overflow-hidden border-t-4 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]
-                            lg:static lg:z-10 lg:h-auto lg:w-[420px] lg:border-t-0 lg:border-r-4 lg:shadow-none
+                            lg:static lg:z-10 lg:h-full lg:w-[420px] lg:border-t-0 lg:border-r-4 lg:shadow-none
                             flex flex-col border-[#3e3226] bg-[#0f0e0d] shrink-0
                             ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
             >
@@ -1316,10 +1316,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <ChevronDown size={18} className={`shrink-0 text-[#8b7256] transition-transform ${drawerH > DRAWER_CLOSED + 8 ? '' : 'rotate-180'}`} />
                 </div>
 
-                {/* lg:hidden, not md:hidden - the desktop copy below is `hidden lg:flex`, so
-                    md: left 768-1023px with NEITHER manifest rendered. That band is large
-                    phones in landscape, which Aldi confirmed is supported. */}
-                <div className="lg:hidden flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
+                {/* Rendered at EVERY width now. It used to be lg:hidden with a second copy
+                    further down for desktop, which meant two manifests in the DOM, duplicate
+                    element ids, and - once the drawer became this column - a third column that
+                    did not fit beside the app's sidebar. One manifest, one column. */}
+                <div className="flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
 
                 <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
                     
@@ -1429,7 +1430,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     const line = cart.find(c => c.productId === item.id);
                                     const qty = line?.qty || 0;
                                     return (
-                                        <div className="lg:hidden flex items-center gap-1 shrink-0">
+                                        <div className="flex items-center gap-1 shrink-0">
                                             <button
                                                 disabled={!line}
                                                 onClick={(e) => {
@@ -1454,7 +1455,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     ))}
                 </div>
             </div>
-            <div className="hide-on-print hidden lg:flex h-full shrink-0">{renderManifestUI(false)}</div>
+            {/* the duplicate desktop manifest lived here. Removed 2026-08-03: the drawer
+                column above now carries the manifest at every width. Its removal also kills
+                the duplicate `bypassPhotoCapture` element id that made
+                document.getElementById always hit the mobile copy. */}
 
             {/* --- THE NOO REGISTRATION MODAL --- */}
             {showNooModal && (
