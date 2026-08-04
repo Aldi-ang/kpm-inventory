@@ -3,6 +3,7 @@ import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSqu
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference, convertToBks } from './utils/helpers';
+import { dayStats, agoLabel } from './utils/dayStats';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
@@ -1127,6 +1128,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
+    /* The rail's idle state. Recomputed only when the transaction list actually changes —
+       it walks every transaction in the seven-day window, which is cheap but not free, and
+       this component re-renders on every keystroke in the search box. */
+    const today = React.useMemo(() => dayStats(transactions), [transactions]);
+    const clockLabel = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    /* The ware most likely to run out on this route. Zero is not "low", it is gone, and a
+       salesman cannot act on it from here — it belongs to restock, not to the shelf. */
+    const lowestStock = React.useMemo(() => {
+        const inPlay = inventory.filter(i => (i.stock || 0) > 0);
+        if (!inPlay.length) return null;
+        return inPlay.reduce((a, b) => ((a.stock || 0) <= (b.stock || 0) ? a : b));
+    }, [inventory]);
+
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
@@ -1652,22 +1667,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
-                {/* The examine shelf. Desktop only — a phone screen has no room to spend on a
-                    thing you watch rather than press, and the eye button covers it there.
-                    One state write per hover, not per frame. */}
-                <div className="hidden lg:flex items-center justify-center gap-6 px-4 py-3 border-b border-[#3e3226] bg-[#0f0e0d] shrink-0">
-                    <div className="kpm-cube-stage big h-[150px]" style={cubeVars(examineItem)}>
-                        {renderCube(examineItem)}
-                    </div>
-                    <p className="m-0 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8b7256] leading-relaxed">
-                        {examineItem
-                            ? <>{examineItem.name}<br/><span className="text-[#5c4b3a]">
-                                {examineItem.type || 'MISC'} &middot; {examineItem.stock} Bks in vehicle
-                                {examineItem.dimensions && ` · ${examineItem.dimensions.w}×${examineItem.dimensions.h}×${examineItem.dimensions.d} mm`}
-                              </span></>
-                            : 'Hover any ware to turn it here'}
-                    </p>
-                </div>
+                {/* The examine shelf used to sit here as a full-width horizontal strip, which
+                    cost the wares 150px of vertical room on every screen. It is the rail now —
+                    same content, in space that was empty anyway. */}
                 <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
                         <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
@@ -1685,7 +1687,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
+                {/* onMouseLeave sits on the wrapper, NOT on the grid. Put it on the grid and
+                    moving the cursor across to read the rail would dismiss the very thing you
+                    moved there to read. Leaving this whole region means you have stopped
+                    shopping, which is exactly when the day's figures should come back. */}
+                <div className="flex-1 min-h-0 flex overflow-hidden" onMouseLeave={() => setExamineItem(null)}>
+                <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 xl:grid-cols-2 [@media(min-width:1600px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         <div key={item.id} onClick={() => addToCart(item)} onMouseEnter={() => setExamineItem(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
@@ -1761,6 +1768,101 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* ---------- THE RAIL ----------
+                    One column, two states, because they are never wanted at the same moment.
+                    Pointing at a ware means a customer is in front of you: show the ware.
+                    Pointing at nothing means you are between stops: show the day.
+
+                    Deliberately NOT both at once. A running total on screen during a sale
+                    invites the salesman to watch his own scoreboard instead of the person
+                    talking to him.
+
+                    xl and up only. Below that the shelf needs the width more, and nothing is
+                    lost: examine is still on the eye button and the day's figures live on the
+                    dashboard, which is where you go between routes anyway. */}
+                <aside className="hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[#3e3226] bg-[#0f0e0d] p-4 overflow-y-auto kpm-scroll">
+                    {examineItem ? (
+                        <div key="examine" className="kpm-rail-panel">
+                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Examine</h3>
+                            <div className="kpm-cube-stage big h-[150px]" style={cubeVars(examineItem)}>
+                                {renderCube(examineItem)}
+                            </div>
+                            <p className="mt-3 mb-1 font-mono text-[12px] font-black uppercase tracking-[0.06em] text-[#e8e4de] leading-tight">{examineItem.name}</p>
+                            <p className="m-0 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                {examineItem.dimensions
+                                    ? `${examineItem.dimensions.w} × ${examineItem.dimensions.h} × ${examineItem.dimensions.d} mm`
+                                    : 'no size set in the vault'}
+                            </p>
+                            <div className="mt-3 border-t border-[#26231f] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">In vehicle</div>
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[#e8e4de]">
+                                    {new Intl.NumberFormat('id-ID').format(examineItem.stock || 0)}
+                                    <span className="text-[13px] text-[#7a736a]"> Bks</span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div key="today" className="kpm-rail-panel">
+                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Today</h3>
+
+                            <div>
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Taken</div>
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[#ff9d00] leading-none">
+                                    Rp {new Intl.NumberFormat('id-ID').format(today.today)}
+                                </div>
+                                {/* Direction is carried by the ARROW first and colour second: the palette
+                                    bans green, so an up/down pair could never lean on red/green anyway. */}
+                                {today.pct === null ? (
+                                    <p className="m-0 mt-1.5 font-mono text-[10px] text-[#7a736a]">no sales yesterday to compare</p>
+                                ) : (
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.pct >= 0 ? 'text-[#d4af37]' : 'text-[#b4524a]'}`}>
+                                        <span aria-hidden="true">{today.pct >= 0 ? '▲' : '▼'}</span>
+                                        {Math.abs(today.pct)}%
+                                        <span className="font-normal text-[#7a736a]">vs yesterday, {clockLabel}</span>
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="mt-3 border-t border-[#26231f] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Stores done</div>
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[#e8e4de] leading-none">{today.stores}</div>
+                                {today.storesYesterday > 0 && (
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[#d4af37]' : 'text-[#b4524a]'}`}>
+                                        <span aria-hidden="true">{today.storesDelta >= 0 ? '▲' : '▼'}</span>
+                                        {Math.abs(today.storesDelta)}
+                                        <span className="font-normal text-[#7a736a]">vs yesterday</span>
+                                    </p>
+                                )}
+                            </div>
+
+                            {today.last && (
+                                <div className="mt-3 border-t border-[#26231f] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Last customer</div>
+                                    <div className="font-mono text-[13px] font-black uppercase text-[#e8e4de] leading-tight break-words">{today.last.customerName}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                        {agoLabel(today.lastAt)} &middot; Rp {new Intl.NumberFormat('id-ID').format(Number(today.last.total) || 0)}
+                                    </p>
+                                </div>
+                            )}
+
+                            {lowestStock && (
+                                <div className="mt-3 border-t border-[#26231f] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Running low</div>
+                                    <div className="font-mono text-[13px] font-black uppercase text-[#b4524a] leading-tight break-words">{lowestStock.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                        {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle
+                                    </p>
+                                </div>
+                            )}
+
+                            <p className="mt-auto pt-3 border-t border-[#26231f] m-0 font-mono text-[10px] leading-relaxed text-[#7a736a]">
+                                Point at a ware to inspect it here.
+                            </p>
+                        </div>
+                    )}
+                </aside>
                 </div>
             </div>
             {/* the duplicate desktop manifest lived here. Removed 2026-08-03: the drawer

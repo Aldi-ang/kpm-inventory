@@ -761,3 +761,17 @@ html.lite-mode .kpm-merch-float .bubble { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-merch-float, .kpm-merch-float.leaving, .kpm-merch-float .bubble { animation: none; }
 }
+
+/* ---------- THE RAIL ----------
+   Its two states replace each other inside the same container, so they CROSSFADE. A slide
+   would imply you navigated somewhere; you did not, you just moved the cursor. */
+.kpm-rail-panel {
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  animation: kpmRailIn .18s ease-out both;
+}
+@keyframes kpmRailIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+html.lite-mode .kpm-rail-panel { animation: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-rail-panel { animation: none; } }
