@@ -1043,7 +1043,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-emerald-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-[#d4af37] text-[#2b2318] shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return alert("You do not have clearance to process returns.");
                         setIsReturMode(true);
@@ -1054,23 +1054,24 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {isReturMode && (
                     <div className="flex bg-[#2a2520] rounded border border-[#5c4b3a] p-1 mb-2 shadow-inner">
                         <button onClick={() => setReturType('BUYBACK')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'BUYBACK' ? 'bg-orange-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>💵 Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-blue-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-[#c9a227] text-[#2b2318] shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
                     </div>
                 )}
 
                 {/* --- 🚀 TEAMWORK IOU BANNER --- */}
                 {selectedCustomerInfo?.pendingIOUs?.length > 0 && !isReturMode && (
                     <div className="bg-[#2b2417] border-2 border-[#d4af37] p-3 rounded mb-3 shadow-[0_0_15px_rgba(212,175,55,0.28)] animate-fade-in-up">
-                        <h4 className="text-blue-400 font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
+                        <h4 className="text-[#d4af37] font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
                         {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
                             const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
                             return (
-                                <div key={i} className="flex justify-between items-center text-[11px] text-blue-200 mb-1 border-b border-blue-800/50 pb-1">
-                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-slate-400 font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
+                                <div key={i} className="flex justify-between items-center text-[11px] text-[#d4c5a3] mb-1 border-b border-[#5c4b3a] pb-1">
+                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-[#8b7256] font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
                                     {!isAlreadyInCart ? (
-                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
+                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-[#c9a227] hover:bg-[#d4af37] text-[#2b2318] px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
                                     ) : (
-                                        <span className="text-emerald-400 font-bold uppercase px-2 py-1 border border-emerald-500/50 rounded bg-emerald-900/30"><Check size={10} className="inline mr-1"/> Added</span>
+                                        /* palette law: "done" is never a hue. Gold plate + tick, same as everywhere else. */
+                                        <span className="text-[#d4af37] font-bold uppercase px-2 py-1 border border-[#d4af37]/50 rounded bg-[#d4af37]/10"><Check size={10} className="inline mr-1"/> Added</span>
                                     )}
                                 </div>
                             );
@@ -1112,12 +1113,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
-                                                <span className="text-blue-400 animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-blue-400 hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
+                                                <span className="text-[#ff9d00] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+                                                <button onClick={() => verifyLocation(true)} className="text-[#ff9d00] hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
                                         
-                                        {gpsStatus === 'verified' && <span className="text-emerald-500 flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
+                                        {gpsStatus === 'verified' && <span className="text-[#d4af37] flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
                                         
                                         {gpsStatus === 'manual_override' && (
                                             <div className="flex flex-col gap-1 w-full">
@@ -1140,7 +1141,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                                 <Camera size={10}/> Request 100m HQ Bypass
                                                             </button>
                                                         ) : bypassState.status === 'uploading' ? (
-                                                            <span className="text-[11px] text-blue-400 font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                            <span className="text-[11px] text-[#ff9d00] font-bold uppercase animate-pulse">Uploading Proof...</span>
                                                         ) : bypassState.status === 'pending' ? (
                                                             <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
                                                         ) : null}
@@ -1148,7 +1149,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     </div>
                                                 )}
                                                 {!canOverrideGps && distanceToStore > 100 && (
-                                                    <span className="text-[11px] text-slate-400 font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                                    <span className="text-[11px] text-[#8b7256] font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
                                                 )}
                                             </div>
                                         )}
@@ -1158,7 +1159,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                     
                                     {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
-                                        <button disabled className="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-400 text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <button disabled className="w-full mt-1 bg-[#1a1815] border border-[#3e3226] text-[#8b7256] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
                                     ) : (
@@ -1239,11 +1240,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         return (
                         <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[#a89070]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#f0e2c0] border-[#c9a227]' : 'bg-[#f2ddd6] border-[#9e4038]') : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
-                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-blue-900' : 'text-red-900') : 'text-[#3e3226]'}`}>
+                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[#6b4d0f]' : 'text-red-900') : 'text-[#3e3226]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
                                     {item.isIouFulfillment && ' (FULFILLING IOU)'}
                                 </span>
-                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200 hover:text-blue-600' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#e6d3a3] text-[#6b4d0f] hover:text-red-700' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
                             </div>
                             {/* the four boxes: type what the customer said, in their words */}
                             {!item.isIouFulfillment && (
@@ -1267,7 +1268,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </span>
                                 </div>
                             )}
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200/50 border-blue-300' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#e6d3a3]/60 border-[#c9a227]' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
@@ -1280,15 +1281,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {/* 🚀 ITEM-LEVEL FORENSIC TAGGING (RETUR ONLY) */}
                             {isReturMode && !item.isIouFulfillment && (
-                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-blue-300/50' : 'border-red-300/50'}`}>
+                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[#c9a227]/50' : 'border-red-300/50'}`}>
                                     <div className="flex gap-2">
                                         <select 
                                             value={item.condition || 'GOOD'} 
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
-                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-emerald-100 border-emerald-400 text-emerald-800'}`}
+                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[#f0e2c0] border-[#a89070] text-[#3e3226]'}`}
                                         >
-                                            <option value="GOOD">🟢 Good (Resellable)</option>
-                                            <option value="DAMAGED">🔴 Damaged (Quarantine)</option>
+                                            <option value="GOOD">Good (Resellable)</option>
+                                            <option value="DAMAGED">Damaged (Quarantine)</option>
                                         </select>
 
                                         {item.condition === 'DAMAGED' && (
@@ -1321,8 +1322,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-emerald-600 border-emerald-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>✅ Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-blue-600 border-blue-500 text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>⏳ Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[#d4af37] border-[#c9a227] text-[#2b2318] shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[#8a6a2f] border-[#a3822f] text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>Hutang Barang (IOU)</button>
                                         </div>
                                     )}
                                 </div>
@@ -1456,7 +1457,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-blue-600 to-blue-800 border-blue-500 text-white hover:from-blue-500 hover:to-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
@@ -1557,35 +1558,35 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* --- THE NOO REGISTRATION MODAL --- */}
             {showNooModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
-                    <div className="bg-slate-900 w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
-                        <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
+                    <div className="bg-[#1a1815] w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
+                        <div className="p-5 border-b border-[#3e3226] bg-black/40 flex justify-between items-center">
                             <div>
                                 <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
+                                <p className="text-[10px] text-[#8b7256] uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
                             </div>
-                            <button onClick={() => setShowNooModal(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowNooModal(false)} className="text-[#8b7256] hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Store Name</label>
-                                <input value={customerName} disabled className="w-full bg-black border border-slate-700 text-slate-300 p-3 rounded font-bold uppercase opacity-70" />
+                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Store Name</label>
+                                <input value={customerName} disabled className="w-full bg-black border border-[#3e3226] text-[#d4c5a3] p-3 rounded font-bold uppercase opacity-70" />
                             </div>
                             
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
-                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-slate-800 border border-slate-600 focus:border-orange-500 outline-none text-white p-3 rounded font-bold" />
+                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
+                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-orange-500 outline-none text-white p-3 rounded font-bold" />
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
-                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
+                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
+                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
                                 <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
                                     <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
@@ -1593,7 +1594,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-slate-600 hover:border-orange-500 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
+                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[#5c4b3a] hover:border-orange-500 bg-[#26211c]/50 hover:bg-[#26211c] text-[#8b7256] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
                                         <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
                                         <span className="text-[11px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
@@ -1601,27 +1602,27 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 )}
                             </div>
                             
-                            <div className="bg-black/30 p-3 rounded border border-slate-700 flex justify-between items-center gap-3">
+                            <div className="bg-black/30 p-3 rounded border border-[#3e3226] flex justify-between items-center gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-900/30 text-blue-400 rounded-full"><Map size={16}/></div>
+                                    <div className="p-2 bg-[#3e3226] text-[#ff9d00] rounded-full"><Map size={16}/></div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location Tracking</p>
-                                        <p className="text-xs text-blue-400 font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
+                                        <p className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest">Location Tracking</p>
+                                        <p className="text-xs text-[#ff9d00] font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
                                     </div>
                                 </div>
                                 {!agentLocation && (
-                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
+                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-[#26211c] hover:bg-[#3e3226] text-[#d4c5a3] border border-[#5c4b3a] px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
                                         Force GPS Lock
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-slate-700 bg-black/40 flex flex-col gap-3">
-                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[#3e3226] bg-black/40 flex flex-col gap-3">
+                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[#26211c] text-[#8b7256] cursor-not-allowed'}`}>
                                 {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
                             </button>
-                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-slate-800 border-slate-600 hover:border-emerald-500 hover:text-emerald-400 text-slate-300' : 'bg-slate-800 border-slate-700 text-slate-400 cursor-not-allowed'}`}>
+                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[#26211c] border-[#5c4b3a] hover:border-[#d4af37] hover:text-[#d4af37] text-[#d4c5a3]' : 'bg-[#26211c] border-[#3e3226] text-[#8b7256] cursor-not-allowed'}`}>
                                 Register Only (No Sale)
                             </button>
                         </div>
@@ -1632,19 +1633,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* --- SAMPLING DEPLOYMENT MODAL --- */}
             {showSampleModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
-                    <div className="bg-slate-900 w-full max-w-md border-2 border-indigo-500/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
-                        <div className="p-5 border-b border-slate-700 bg-black/40 flex justify-between items-center">
+                    <div className="bg-[#1a1815] w-full max-w-md border-2 border-[#d4af37]/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
+                        <div className="p-5 border-b border-[#3e3226] bg-black/40 flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-indigo-500"/> Deploy Marketing Sample</h2>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Target: {customerName}</p>
+                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[#d4af37]"/> Deploy Marketing Sample</h2>
+                                <p className="text-[10px] text-[#8b7256] uppercase tracking-widest mt-1">Target: {customerName}</p>
                             </div>
-                            <button onClick={() => setShowSampleModal(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowSampleModal(false)} className="text-[#8b7256] hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 space-y-5">
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Product</label>
-                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-slate-800 border border-slate-600 focus:border-indigo-500 outline-none text-white p-3 rounded font-bold">
+                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Select Product</label>
+                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-[#d4af37] outline-none text-white p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => {
                                         const sp = p.sticksPerPack || 16;
@@ -1659,13 +1660,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
+                            <div className="grid grid-cols-2 gap-4 bg-[#26211c]/50 p-3 rounded-xl border border-[#3e3226]">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block text-center">Bungkus</label>
-                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-white text-center font-bold text-lg focus:border-indigo-500 outline-none" />
+                                    <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[#1a1815] border-[#5c4b3a] text-white text-center font-bold text-lg focus:border-[#d4af37] outline-none" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block text-center">
+                                    <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest mb-1 block text-center">
                                         Batang {sampleForm.productId && `(Max: ${(inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1})`}
                                     </label>
                                     <input 
@@ -1680,19 +1681,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             if (val > maxBtg) val = maxBtg; 
                                             setSampleForm({...sampleForm, qtyBatang: val});
                                         }} 
-                                        className="w-full p-2 border rounded bg-slate-900 border-slate-600 text-indigo-400 text-center font-bold text-lg focus:border-indigo-500 outline-none" 
+                                        className="w-full p-2 border rounded bg-[#1a1815] border-[#5c4b3a] text-[#d4af37] text-center font-bold text-lg focus:border-[#d4af37] outline-none" 
                                     />
                                 </div>
                             </div>
                             
-                            <div className="bg-indigo-900/20 p-3 rounded border border-indigo-500/30 text-indigo-400 text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
+                            <div className="bg-[#d4af37]/10 p-3 rounded border border-[#d4af37]/30 text-[#d4af37] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
                                 <AlertCircle size={14} className="shrink-0 mt-0.5"/>
                                 <p>Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.</p>
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-slate-700 bg-black/40">
-                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-slate-800 text-slate-400 cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[#3e3226] bg-black/40">
+                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-[#c9a227] hover:bg-[#d4af37] text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-[#26211c] text-[#8b7256] cursor-not-allowed'}`}>
                                 {isProcessingSale ? 'Deploying...' : 'Confirm & Deploy Sample'}
                             </button>
                         </div>
