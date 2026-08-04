@@ -1266,6 +1266,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <span className="text-[10px] font-black font-mono text-[#a35a00] ml-1">
                                         = {new Intl.NumberFormat('id-ID').format(item.qty || 0)} Bks
                                     </span>
+                                    {/* The rates this line is actually using. Packing is per product and set in
+                                        the master vault, and when it is wrong the only symptom is a total that
+                                        looks plausible — 1.011 instead of 511. Printing the rates turns that
+                                        into something a salesman can see without opening anything. */}
+                                    {(() => {
+                                        const per = bksPerUnit(item.product);
+                                        return (
+                                            <span className="w-full text-[9px] font-mono text-[#6b5a3c] tracking-wide">
+                                                1 KARTON = {per.Karton} &middot; 1 BAL = {per.Bal} &middot; 1 SLOP = {per.Slop} BKS
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             )}
                             <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#e6d3a3]/60 border-[#c9a227]' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
