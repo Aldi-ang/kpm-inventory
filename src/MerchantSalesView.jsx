@@ -991,7 +991,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     detail: { message: line, sprite: 'kpm-merch-deal' }
                 }));
             }
-            setTimeout(() => { setMerchantMood("idle"); setMerchantLine(""); }, 3000);
+            /* His line is deliberately NOT cleared here — the receipt is still open and is
+               showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
+               either way. */
+            setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) { alert("Transaction Failed! Please try again."); }
         finally { setIsProcessingSale(false); }
     };
@@ -1310,7 +1313,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 custom-scrollbar bg-[#dfd5bc]/50">
+            {/* Capped at roughly three lines, then it scrolls. An uncapped list pushed the
+                total and the commit button further down with every ware added, so the two
+                controls a salesman uses most ended up furthest apart exactly when the basket
+                was biggest. The cap is a max-height, not a fixed one, so a basket of one line
+                does not leave a hole. */}
+            <div className="flex-1 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[#dfd5bc]/50">
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
@@ -1480,7 +1488,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
                     </div>
                     <div className="dark" aria-hidden="true"></div>
-                    {merchantLine && <p className="says" role="status">{merchantLine}</p>}
+                    {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
                 </div>
 
                 {/* The grip. Collapsed it is the whole drawer, so it carries the running
@@ -1880,7 +1888,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 const receiptTimeStr = dateParts[1] || '';
 
                 return (
-                    <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4">
+                    <div className="print-modal-wrapper fixed inset-0 z-[400] bg-black/90 flex flex-col items-center justify-center gap-3 p-4">
+                        {/* THE DEAL MOMENT, MOVED TO WHERE THE EYES ARE.
+                            The receipt covers the alcove, so the deal pose played behind it and was
+                            never seen. Holding the receipt back until the animation finished was the
+                            obvious fix and the wrong one: it blocks the user for over a second on the
+                            step he repeats all day, and a required document must not wait on a
+                            flourish. So the merchant moves onto the receipt instead — same pose, same
+                            coin, same line, drawn directly above the nota where he is already looking.
+                            hide-on-print keeps him off the paper: the nota is KPM's document, and he
+                            is not part of it. */}
+                        <div className="hide-on-print hidden lg:flex items-end gap-3 shrink-0">
+                            {/* 200px box scaled as a whole, NOT a smaller box with a smaller sheet.
+                                The coin is positioned as a percentage of the figure, so shrinking the
+                                box alone would walk it off his palm — the exact bug that cost a
+                                session when the figure was 150px against 200px frames. */}
+                            <div className="w-[130px] h-[130px] shrink-0">
+                                <div className="kpm-merch kpm-merch-deal w-[200px] h-[200px] relative origin-top-left scale-[0.65]">
+                                    <span className="kpm-merch-hold"></span>
+                                </div>
+                            </div>
+                            {merchantLine && (
+                                <p className="mb-6 max-w-[240px] rounded-lg border border-[#c9b892] bg-[#f5e6c8] px-3 py-2 font-mono text-[11px] font-bold leading-snug text-[#2b2318] shadow-lg">
+                                    {merchantLine}
+                                </p>
+                            )}
+                        </div>
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             
                             {printFormat === 'thermal' && (

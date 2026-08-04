@@ -268,7 +268,11 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    SAME sprite element flattened to black - no second image is downloaded.
    Lite Mode strips the motion and leaves a lit alcove, which still reads.
    ============================================================================ */
-.kpm-alcove { position: relative; height: 236px; overflow: hidden;
+/* Taller than the 200px figure so his line has somewhere to sit that is not his hat, and
+   sticky so he stays on screen while the manifest under him is scrolled — his reaction is
+   worthless if it plays somewhere the salesman is not looking. */
+.kpm-alcove { position: sticky; top: 0; z-index: 30;
+  height: 280px; overflow: hidden;
   background: #0d0b09; display: grid; place-items: end center; }
 .kpm-alcove .rock { position: absolute; inset: 0; z-index: 0;
   background:
@@ -558,7 +562,9 @@ html.lite-mode .product-card:hover .kpm-cube {
    bubble at all, so on desktop he mouthed the talking animation in silence. Same words,
    drawn where he actually is. */
 .kpm-alcove .says {
-  position: absolute; z-index: 5; left: 50%; bottom: 168px;
+  /* Clear of the hat. The figure is 200px and bottom-aligned in a 280px alcove, so his hat
+     crown sits around 232px up; the bubble's tail starts above that. */
+  position: absolute; z-index: 5; left: 50%; bottom: 240px;
   transform: translateX(-50%);
   max-width: 82%; padding: 7px 11px;
   background: #f5e6c8; color: #2b2318;
@@ -615,3 +621,15 @@ html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-colo
   .kpm-hover:hover::after { transform: translateX(-120%); }
   .kpm-alcove .says { animation: none; }
 }
+
+/* ---------- THE MANIFEST'S OWN SCROLLBAR ----------
+   The list is capped at about three lines, so it scrolls often and the bar has to be
+   visible enough to be grabbed — the default overlay bar on Windows fades out and reads
+   as "there is nothing more below". On the parchment, not the dark chrome. */
+.kpm-scroll { scrollbar-width: thin; scrollbar-color: #a89070 transparent; }
+.kpm-scroll::-webkit-scrollbar { width: 10px; }
+.kpm-scroll::-webkit-scrollbar-track { background: #cfc3a6; border-radius: 6px; }
+.kpm-scroll::-webkit-scrollbar-thumb {
+  background: #a89070; border: 2px solid #cfc3a6; border-radius: 6px;
+}
+.kpm-scroll::-webkit-scrollbar-thumb:hover { background: #8b7256; }
