@@ -13,6 +13,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
     const [activeCategory, setActiveCategory] = useState("ALL");
+    // which ware the examine shelf is showing — one write per hover, never per frame
+    const [examineItem, setExamineItem] = useState(null);
     
     // --- MERCHANT STATE ---
     const [merchantMood, setMerchantMood] = useState("idle");
@@ -1489,6 +1491,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
+                {/* The examine shelf. Desktop only — a phone screen has no room to spend on a
+                    thing you watch rather than press, and the eye button covers it there.
+                    One state write per hover, not per frame. */}
+                <div className="hidden lg:flex items-center justify-center gap-6 px-4 py-3 border-b border-[#3e3226] bg-[#0f0e0d] shrink-0" style={{ perspective: '520px' }}>
+                    <div className="kpm-bigcube">
+                        <i className="f grid place-items-center overflow-hidden">
+                            {examineItem?.images?.front
+                                ? <img src={examineItem.images.front} className="max-h-full max-w-full object-contain" alt={examineItem.name}/>
+                                : <span className="text-[9px] font-black font-mono tracking-widest text-[#ff9d00]">EXAMINE</span>}
+                        </i>
+                        <i className="bk"></i><i className="l"></i><i className="r"></i>
+                        <i className="t"></i><i className="bt"></i>
+                    </div>
+                    <p className="m-0 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8b7256] leading-relaxed">
+                        {examineItem
+                            ? <>{examineItem.name}<br/><span className="text-[#5c4b3a]">{examineItem.type || 'MISC'} &middot; {examineItem.stock} Bks in vehicle</span></>
+                            : 'Hover any ware to turn it here'}
+                    </p>
+                </div>
                 <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
                         <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
@@ -1508,10 +1529,24 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
+                        <div key={item.id} onClick={() => addToCart(item)} onMouseEnter={() => setExamineItem(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
                             <div className="w-20 h-20 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
-                                {item.images?.front ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300 drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)] group-hover:scale-110" alt="product"/> : <Box size={32} className="lg:w-12 lg:h-12 text-[#3e3226] opacity-50"/>}
+                                {/* The ware as a solid object, not a picture of one. Front face is the real
+                                    photo, the other faces are tinted panels; it turns only while pointed at.
+                                    Pure CSS on purpose — see the note above .kpm-cube in theme.css. */}
+                                <div className="kpm-cube-stage w-14 h-16 lg:w-24 lg:h-32 relative">
+                                    <div className="kpm-cube">
+                                        <i className="f grid place-items-center overflow-hidden">
+                                            {item.images?.front
+                                                ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300" alt={item.name}/>
+                                                : <Box size={28} className="text-[#3e3226] opacity-50"/>}
+                                        </i>
+                                        <i className="bk"></i>
+                                        <i className="l"></i>
+                                        <i className="r"></i>
+                                    </div>
+                                </div>
                                 <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
