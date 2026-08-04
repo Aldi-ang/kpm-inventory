@@ -337,10 +337,15 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
   background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.68), transparent 72%); }
 
 /* his figure, and the two shadows it throws */
-.kpm-alcove .fig { position: relative; z-index: 3; width: 150px; height: 150px;
+/* 200px, NOT 150. Every frame in the sheets is 200x200, so a 150px box cropped 50px off
+   the right and the bottom of every frame — which cut his feet and tail off and pushed the
+   whole figure visually off centre. It also explains the coin: the palm sits at 81% across
+   in the SPRITE, and the coin's 72,5% was measured against a full 200px frame, so it only
+   lands on his hand once the box is the frame's real size. */
+.kpm-alcove .fig { position: relative; z-index: 3; width: 200px; height: 200px;
   filter: drop-shadow(0 -2px 16px rgba(70,160,255,.26)); }
-.kpm-alcove .sh { position: absolute; bottom: 0; left: 50%; margin-left: -75px;
-  width: 150px; height: 150px; z-index: 1; pointer-events: none;
+.kpm-alcove .sh { position: absolute; bottom: 0; left: 50%; margin-left: -100px;
+  width: 200px; height: 200px; z-index: 1; pointer-events: none;
   filter: brightness(0) blur(5px); transform-origin: 50% 100%; }
 .kpm-alcove .sh.a { transform: translateX(30px) skewX(-27deg) scale(1.06,.88); opacity: .5; }
 .kpm-alcove .sh.b { transform: translateX(-26px) skewX(22deg) scale(.98,.8); opacity: .34; }
@@ -546,4 +551,67 @@ html.lite-mode .kpm-cube-stage.big .kpm-cube,
 html.lite-mode .product-card:hover .kpm-cube {
   animation: none !important;
   transform: rotateX(-8deg) rotateY(-24deg) !important;
+}
+
+/* ---------- WHAT HE SAYS, ON A DESK ----------
+   The phone gets its line through CapybaraMascot's CAPY_COMMS bubble. The alcove had no
+   bubble at all, so on desktop he mouthed the talking animation in silence. Same words,
+   drawn where he actually is. */
+.kpm-alcove .says {
+  position: absolute; z-index: 5; left: 50%; bottom: 168px;
+  transform: translateX(-50%);
+  max-width: 82%; padding: 7px 11px;
+  background: #f5e6c8; color: #2b2318;
+  border: 1px solid #c9b892; border-radius: 8px;
+  font: 700 11px/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  text-align: center; letter-spacing: .02em;
+  box-shadow: 0 6px 16px rgba(0,0,0,.5);
+  animation: kpmSays .22s ease-out both;
+}
+.kpm-alcove .says::after {
+  content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px;
+  width: 0; height: 0;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-top: 6px solid #f5e6c8;
+}
+@keyframes kpmSays { from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+                     to   { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ---------- THE KEY BADGE ----------
+   Marks the "/" shortcut on the search field, the same way the prototype did. */
+.kpm-kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px;
+  border: 1px solid #3e3226; border-bottom-width: 2px; border-radius: 4px;
+  background: #26211c; color: #8b7256;
+  font: 700 11px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* ---------- HOVER ----------
+   One treatment for every control in the terminal, so the whole screen answers a cursor
+   the same way: it lifts a little and a light passes over it. Transform and opacity only,
+   which is what keeps it off the layout and cheap enough for a long list of wares.
+   .kpm-press already owns the pressed state; this is only the approach. */
+.kpm-hover { position: relative; overflow: hidden;
+  transition: transform .16s ease-out, box-shadow .16s ease-out, border-color .16s ease-out; }
+.kpm-hover::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,224,168,.20) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform .45s ease-out;
+}
+.kpm-hover:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.38); }
+.kpm-hover:hover::after { transform: translateX(120%); }
+.kpm-hover:active { transform: translateY(0); box-shadow: none; }
+
+/* Lite Mode is the performance switch: the hover still ANSWERS, it just stops sweeping
+   and lifting. A control that gives no feedback at all would be a usability regression,
+   not a performance setting. */
+html.lite-mode .kpm-hover { transition: none; }
+html.lite-mode .kpm-hover::after { display: none; }
+html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-color: #ff9d00; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-hover, .kpm-hover::after { transition: none; }
+  .kpm-hover:hover { transform: none; }
+  .kpm-hover:hover::after { transform: translateX(-120%); }
+  .kpm-alcove .says { animation: none; }
 }

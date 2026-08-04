@@ -18,6 +18,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     
     // --- MERCHANT STATE ---
     const [merchantMood, setMerchantMood] = useState("idle");
+    const [merchantLine, setMerchantLine] = useState("");   // what the alcove bubble shows
+    const searchRef = useRef(null);
     const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
@@ -280,15 +282,44 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        deal commit ONLY, so a 15-line basket stays silent until it is paid. The dialogue table
        this used to hold was verbatim Resident Evil 4 merchant lines and has been deleted.
        Callers are left in place: they sit on transaction paths and changing them buys nothing. */
+    /* He mouthed the talking animation in silence on desktop: the mumble and the bubble
+       were both wired only through CapybaraMascot's CAPY_COMMS event, which the alcove
+       does not listen to. Same words, same voice, drawn where he actually stands. */
+    const CHATTER = {
+        add:       ["Right, that's noted.", "Into the book it goes.", "Good pick.", "Aye, one more."],
+        expensive: ["Now that's a proper ware.", "Heavy coin, that one.", "Fine taste."],
+    };
     const triggerMerchantSpeak = (type) => {
         // He reacts, but not to every single press - a 15-line basket would have him
         // talking non-stop. At most once every 6 seconds, then back to idle.
         const now = Date.now();
         if (now - lastChatterRef.current < 6000) return;
         lastChatterRef.current = now;
+
+        const pool = CHATTER[type] || CHATTER.add;
+        const line = pool[Math.floor(Math.random() * pool.length)];
+        setMerchantLine(line);
         setMerchantMood('talking');
-        setTimeout(() => setMerchantMood('idle'), 2400);
+        unlockSounds().then(() => speakMumble(line));
+        setTimeout(() => { setMerchantMood('idle'); setMerchantLine(""); }, 2400);
     };
+
+    /* "/" jumps to the search box, the way the prototype did it. Guarded against firing
+       while the salesman is typing a customer name or a quantity — otherwise the key that
+       finds a ware would eat a character out of whatever field he is already in. */
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.key !== '/' || e.ctrlKey || e.altKey || e.metaKey) return;
+            const t = e.target;
+            const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+            if (typing) return;
+            e.preventDefault();
+            searchRef.current?.focus();
+            searchRef.current?.select();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         const localToday = new Date().toLocaleDateString('en-CA'); 
@@ -944,6 +975,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             ];
             const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
             setMerchantMood("deal");
+            setMerchantLine(line);          // the alcove bubble, for the desktop path
             // Committing the sale IS the user gesture browsers require before audio can
             // play, so unlock here. The signing sound comes first and the mumble follows it
             // rather than landing on top - two sounds at the same instant read as one mess.
@@ -959,8 +991,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     detail: { message: line, sprite: 'kpm-merch-deal' }
                 }));
             }
-            setTimeout(() => setMerchantMood("idle"), 3000);
-        } catch (error) { alert("Transaction Failed! Please try again."); } 
+            setTimeout(() => { setMerchantMood("idle"); setMerchantLine(""); }, 3000);
+        } catch (error) { alert("Transaction Failed! Please try again."); }
         finally { setIsProcessingSale(false); }
     };
 
@@ -1075,18 +1107,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${!isReturMode ? 'bg-[#d4af37] text-[#2b2318] shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[#c9a227] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return alert("You do not have clearance to process returns.");
                         setIsReturMode(true);
-                    }} className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${isReturMode ? 'bg-red-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
+                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[#8e4038] text-[#f7f2ee]' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
                 {isReturMode && (
                     <div className="flex bg-[#2a2520] rounded border border-[#5c4b3a] p-1 mb-2 shadow-inner">
-                        <button onClick={() => setReturType('BUYBACK')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'BUYBACK' ? 'bg-orange-600 text-white shadow-md' : 'text-[#8b7256] hover:text-white'}`}>💵 Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded transition-all ${returType === 'EXCHANGE' ? 'bg-[#c9a227] text-[#2b2318] shadow-md' : 'text-[#8b7256] hover:text-white'}`}>🔄 Exchange (Tukar)</button>
+                        {/* Muted plates, no emoji. These two are a mode switch, not an alert —
+                            a saturated orange and a bright gold shouting at each other was the
+                            loudest thing on a screen whose whole point is a quiet ledger. Buyback
+                            keeps the desaturated danger plate because it pays money OUT. */}
+                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[#8e4038] text-[#f7f2ee]' : 'text-[#8b7256] hover:text-white'}`}>Buyback (Refund)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[#8a6a2f] text-[#f5e6c8]' : 'text-[#8b7256] hover:text-white'}`}>Exchange (Tukar)</button>
                     </div>
                 )}
 
@@ -1150,7 +1186,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             </div>
                                         )}
                                         
-                                        {gpsStatus === 'verified' && <span className="text-[#d4af37] flex items-center gap-1 shadow-[0_0_10px_rgba(212,175,55,0.3)]"><MapPin size={12}/> Geofence Secured: In Range ({distanceToStore}m)</span>}
+                                        {/* The prototype's geofence block. The app had this as a thin
+                                            inline line that was easy to miss, and it is the check that
+                                            decides whether a sale is allowed to happen at all — it should
+                                            read as a statement, with the distance and the store named. */}
+                                        {gpsStatus === 'verified' && (
+                                            <div className="w-full border-l-[3px] border-[#a35a00] bg-[#f2e9d4] px-3 py-2 rounded-r">
+                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#a35a00] mb-1">Location verified</b>
+                                                <span className="block normal-case tracking-normal text-[12px] font-semibold text-[#2b2318] leading-snug">
+                                                    {distanceToStore}m from {selectedCustomerInfo.name}
+                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[#6b5a3c] ml-2 align-middle">auto</i>
+                                                </span>
+                                            </div>
+                                        )}
                                         
                                         {gpsStatus === 'manual_override' && (
                                             <div className="flex flex-col gap-1 w-full">
@@ -1305,7 +1353,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {(() => {
                                         const per = bksPerUnit(item.product);
                                         return (
-                                            <span className="w-full text-[9px] font-mono text-[#6b5a3c] tracking-wide">
+                                            <span className="w-full text-[11px] font-mono font-bold text-[#6b5a3c] tracking-wide mt-0.5">
                                                 1 KARTON = {per.Karton} &middot; 1 BAL = {per.Bal} &middot; 1 SLOP = {per.Slop} BKS
                                             </span>
                                         );
@@ -1411,7 +1459,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     him. A desk does, so here he lives in the ledger column: idling while
                     you shop, talking when he has something to say, holding the coin on a
                     deal. Everything but the sprite is CSS, so it costs one image. */}
-                <div className="kpm-alcove hidden lg:grid shrink-0" aria-hidden="true">
+                {/* aria-hidden on the scenery only — his line is real content and is
+                    announced, which is why the bubble sits outside that subtree. */}
+                <div className="kpm-alcove hidden lg:grid shrink-0">
                     <div className="rock"></div>
                     <div className="kpm-torch l">
                         <div className="pole"></div><div className="bowl"></div>
@@ -1426,10 +1476,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
                     <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
                     <div className="floor"></div>
-                    <div className={`fig kpm-merch ${merchSprite}`}>
+                    <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
                         {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
                     </div>
-                    <div className="dark"></div>
+                    <div className="dark" aria-hidden="true"></div>
+                    {merchantLine && <p className="says" role="status">{merchantLine}</p>}
                 </div>
 
                 {/* The grip. Collapsed it is the whole drawer, so it carries the running
@@ -1477,8 +1528,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => document.getElementById('txProof').click()} className="w-full py-4 border-2 border-dashed border-[#c9b892] hover:border-[#a35a00] text-[#6b5a3c] hover:text-[#a35a00] bg-transparent rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
-                                <Camera size={24} />
+                            <button onClick={() => document.getElementById('txProof').click()} className="kpm-hover w-full py-2 border border-dashed border-[#c9b892] hover:border-[#a35a00] text-[#6b5a3c] hover:text-[#a35a00] bg-transparent rounded flex items-center justify-center gap-2">
+                                <Camera size={14} />
                                 <span className="text-[10px] uppercase tracking-widest font-bold">Capture Handover Photo</span>
                             </button>
                         )}
@@ -1505,7 +1556,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
+                        className={`kpm-hover py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
@@ -1523,7 +1574,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 bottom padding is the collapsed drawer's 52px, so the last ware clears it. */}
             <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[52px] lg:pb-0 overflow-hidden">
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
                 {/* The examine shelf. Desktop only — a phone screen has no room to spend on a
                     thing you watch rather than press, and the eye button covers it there.
@@ -1543,12 +1594,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
                 <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
+                        <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
                     <div className="hidden lg:flex gap-1">
-                        <button onClick={() => scroll('left')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
-                        <button onClick={() => scroll('right')} className="p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
+                        <button onClick={() => scroll('left')} className="kpm-hover p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
+                        <button onClick={() => scroll('right')} className="kpm-hover p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
                     </div>
                 </div>
 
@@ -1578,7 +1630,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <button
                                     onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
                                     aria-label={`Examine ${item.name}`}
-                                    className="kpm-press absolute bottom-1 left-1 lg:bottom-3 lg:left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                    className="kpm-press kpm-hover absolute bottom-1 left-1 lg:bottom-3 lg:left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
                                 >
                                     <Eye size={14}/>
                                 </button>
@@ -1614,12 +1666,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     unlockSounds().then(() => playSound(qty > 1 ? 'click' : 'error'));
                                                     qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id));
                                                 }}
-                                                className="kpm-press w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
                                             >−</button>
                                             <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[#ff9d00]' : 'text-[#3e3226]'}`}>{qty}</span>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); addToCart(item); }}
-                                                className="kpm-press w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
                                             >+</button>
                                         </div>
                                     );

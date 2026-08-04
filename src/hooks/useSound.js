@@ -32,6 +32,16 @@ const MUMBLES = ['mumble1', 'mumble2', 'mumble3', 'mumble4'];
 const CHARS_PER_BLIP = 3;
 const MAX_BLIPS = 8;        // Undertale mumbles the whole line; this is a work tool
 
+/* Per-sound level. Everything used to sit at a flat 0,5, which made the steppers - the
+   control pressed more than any other in the app, often outdoors next to a road - the
+   quietest thing in it. The stepper and the error tone go to full; the mumbles stay lower
+   because eight of them fire in a row and at full they stop being a voice and become noise. */
+const VOLUMES = {
+  click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, sign: 0.9,
+  mumble1: 0.7, mumble2: 0.7, mumble3: 0.7, mumble4: 0.7,
+};
+const DEFAULT_VOLUME = 0.85;
+
 const POOL_SIZE = 3;
 
 /* name -> { els: HTMLAudioElement[], next: number } */
@@ -43,7 +53,7 @@ function makePool(name, AudioImpl) {
   for (let i = 0; i < POOL_SIZE; i++) {
     const el = new AudioImpl(SOURCES[name]);
     el.preload = 'auto';
-    el.volume = 0.5;
+    el.volume = VOLUMES[name] ?? DEFAULT_VOLUME;
     els.push(el);
   }
   return { els, next: 0 };
