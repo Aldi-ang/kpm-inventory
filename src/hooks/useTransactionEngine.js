@@ -1,5 +1,5 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
-import { getCurrentDate } from '../utils/helpers';
+import { getCurrentDate, stripCartItemForStorage } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
 
 export default function useTransactionEngine({
@@ -60,8 +60,10 @@ export default function useTransactionEngine({
                 const finalTransItems = activeCart.map(item => {
                     const distPrice = item.product?.priceDistributor || 0;
                     const itemProfit = (item.calculatedPrice * item.qty) - (distPrice * item.qty);
+                    // price read from item.product BEFORE stripping it — the snapshot is the
+                    // whole reason the embedded copy is not needed in the stored document
                     return {
-                        ...item,
+                        ...stripCartItemForStorage(item),
                         distributorPriceSnapshot: distPrice,
                         profitSnapshot: itemProfit
                     };
@@ -222,14 +224,10 @@ export default function useTransactionEngine({
                 batch.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
             }
 
-            // Clean up the temporary tracking flags before saving to DB
-            const finalTransItems = transactionItems.map(i => {
-                const copy = {...i};
-                delete copy.prodData;
-                delete copy.isPhysicallyGiven;
-                delete copy.qtyInBks;
-                return copy;
-            });
+            // Clean up the temporary tracking flags AND the embedded master product before
+            // saving to DB — see stripCartItemForStorage for why the product is the one that
+            // actually mattered.
+            const finalTransItems = transactionItems.map(stripCartItemForStorage);
 
             // 📖 PHASE 3: RECEIPT GENERATION (Source of Truth)
             const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 

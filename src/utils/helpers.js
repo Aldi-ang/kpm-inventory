@@ -49,6 +49,27 @@ export const getRandomColor = (str) => {
 // that actually breaks the write, rather than doing full RFC email validation.
 export const isSafeDocIdEmail = (email) => /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(String(email || ''));
 
+/* A cart line carries the whole master product on `item.product` so pricing and the stock
+   guard can read it while the basket is open. That object holds up to six per-face photos
+   as base64 data URIs, and writing it into the transaction blew straight past Firestore's
+   1 MiB per-document limit the moment Aldi photographed his products:
+
+     "Document ... cannot be written because its size (1.119.320 bytes) exceeds the
+      maximum allowed size of 1.048.576 bytes"
+
+   The sale simply failed. Nothing downstream needs the embedded copy — the receipt looks
+   the product back up from `inventory` by productId — so it is stripped here, in ONE place
+   every write path routes through, rather than in each of them. `prodData`, `qtyInBks` and
+   `isPhysicallyGiven` are engine scratch fields and go with it. */
+export const stripCartItemForStorage = (item) => {
+    const copy = { ...item };
+    delete copy.product;
+    delete copy.prodData;
+    delete copy.qtyInBks;
+    delete copy.isPhysicallyGiven;
+    return copy;
+};
+
 export const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
     const packsPerSlop = product.packsPerSlop || 10;

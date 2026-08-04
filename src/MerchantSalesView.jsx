@@ -1318,7 +1318,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 controls a salesman uses most ended up furthest apart exactly when the basket
                 was biggest. The cap is a max-height, not a fixed one, so a basket of one line
                 does not leave a hole. */}
-            <div className="flex-1 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[#dfd5bc]/50">
+            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[#dfd5bc]/50">
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
@@ -1518,7 +1518,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     further down for desktop, which meant two manifests in the DOM, duplicate
                     element ids, and - once the drawer became this column - a third column that
                     did not fit beside the app's sidebar. One manifest, one column. */}
-                <div className="flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
+                {/* min-h-0 is load-bearing. A flex child defaults to min-height:auto and
+                    refuses to shrink below its content, so without it this wrapper keeps its
+                    full natural height, the column grows past the viewport, and the alcove -
+                    the one element that must always be visible - is the first thing pushed
+                    off the top. That is why the merchant vanished while he could still be
+                    heard. */}
+                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
 
                 {/* The commit footer is part of the manifest, so it is the same sheet of paper.
                     It used to be a dark panel bolted under the parchment, which read as two

@@ -168,7 +168,17 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         );
     }
 
-    const activeMessage = message || internalMsg; 
+    const activeMessage = message || internalMsg;
+
+    /* Only the sales terminal's deal ever passed an explicit sprite, so every other popup in
+       the app - triggerCapy("Product updated!"), the sampling reminder, all of them - fell
+       through to NORMAL_IMAGE_URL and showed the OLD pixel capybara. Two mascots, one app.
+       The new merchant is now the default: he mouths the words while a line is on screen and
+       idles otherwise. An explicit sprite still wins, and an explicit image still wins over
+       the fallback, so a caller that genuinely wants a picture is unaffected. */
+    const explicitImage = radioImage || staticImageSrc;
+    const spriteToShow = radioSprite
+        || (explicitImage ? null : (activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle'));
     const showMascot = isPeeking || message; 
     /* He arrives from below with an overshoot instead of sliding flatly in from the
        right, and leaves faster than he arrives. Keyframes live in theme.css so Lite
@@ -194,12 +204,12 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                         </div>
                     </div>
                 )}
-                {radioSprite ? (
+                {spriteToShow ? (
                     <>
-                        <div className={`kpm-merch ${radioSprite}`} role="img" aria-label="Merchant"></div>
+                        <div className={`kpm-merch ${spriteToShow}`} role="img" aria-label="Merchant"></div>
                         {/* the coin he is holding — the app's existing spinning coin sprite,
                             floated beside his hand rather than drawn into the character */}
-                        {radioSprite === 'kpm-merch-deal' && <div className="kpm-merch-hold" aria-hidden="true"></div>}
+                        {spriteToShow === 'kpm-merch-deal' && <div className="kpm-merch-hold" aria-hidden="true"></div>}
                     </>
                 ) : (
                 <img src={radioImage || staticImageSrc || NORMAL_IMAGE_URL} alt="Mascot" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}/>
