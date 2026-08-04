@@ -229,6 +229,32 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    working since Phase 3. It also solves "make the coin bigger" for free, because its
    size is now a CSS number rather than something a generator has to be talked into.
    Stepped in PIXELS like every other sheet here. */
+/* ----------------------------------------------------------------------------
+   WEATHERED PARCHMENT — the manifest surface.
+   The old surface was a flat cream with one grain line. This is paper that has
+   been carried in a satchel: fibre in two directions, a diagonal shred, aged
+   corners, and a few age stains. All gradients, so Lite Mode keeps every bit of
+   it — gradients are not in its kill list.
+   ---------------------------------------------------------------------------- */
+.kpm-parchment { position: relative; background-color: #e8dcc0;
+  background-image:
+    repeating-linear-gradient(0deg,  rgba(120,95,55,.055) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(120,95,55,.04)  0 1px, transparent 1px 5px),
+    repeating-linear-gradient(24deg, rgba(90,66,30,.05)   0 2px, transparent 2px 23px),
+    radial-gradient(120% 80% at 12% 0%,  rgba(150,120,70,.22), transparent 60%),
+    radial-gradient(90% 70% at 96% 100%, rgba(110,84,44,.20), transparent 55%);
+  box-shadow: inset 0 0 60px rgba(110,84,44,.28); }
+/* the stains sit above the fibre but below the content */
+.kpm-parchment::before { content: ""; position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38px 26px at 18% 22%, rgba(122,86,34,.20), transparent 70%),
+    radial-gradient(52px 30px at 78% 44%, rgba(122,86,34,.15), transparent 72%),
+    radial-gradient(30px 22px at 44% 74%, rgba(96,66,26,.18), transparent 70%),
+    radial-gradient(70px 40px at  8% 88%, rgba(122,86,34,.13), transparent 72%),
+    radial-gradient(24px 18px at 92% 12%, rgba(96,66,26,.22), transparent 70%); }
+.kpm-parchment > * { position: relative; z-index: 1; }
+
 /* ============================================================================
    THE ALCOVE — where the merchant stands on DESKTOP.
    ----------------------------------------------------------------------------

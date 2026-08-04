@@ -1001,8 +1001,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;
 
     const renderManifestUI = (isMobile) => (
-        <div className={`bg-[#e6dcc3] text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
-            <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 4px)' }}></div>
+        <div className={`kpm-parchment text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
+            {/* grain now comes from .kpm-parchment */}
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
             <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
@@ -1029,7 +1029,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                 {/* --- 🚀 TEAMWORK IOU BANNER --- */}
                 {selectedCustomerInfo?.pendingIOUs?.length > 0 && !isReturMode && (
-                    <div className="bg-blue-900/40 border-2 border-blue-500 p-3 rounded mb-3 shadow-[0_0_15px_rgba(59,130,246,0.3)] animate-fade-in-up">
+                    <div className="bg-[#2b2417] border-2 border-[#d4af37] p-3 rounded mb-3 shadow-[0_0_15px_rgba(212,175,55,0.28)] animate-fade-in-up">
                         <h4 className="text-blue-400 font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
                         {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
                             const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
@@ -1206,7 +1206,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[#a89070]/30 pb-3 p-2 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-100 border-blue-300' : 'bg-red-100 border-red-300') : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
+                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[#a89070]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#f0e2c0] border-[#c9a227]' : 'bg-[#f2ddd6] border-[#9e4038]') : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
                                 <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-blue-900' : 'text-red-900') : 'text-[#3e3226]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
