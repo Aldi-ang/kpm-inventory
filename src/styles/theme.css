@@ -593,33 +593,90 @@ html.lite-mode .product-card:hover .kpm-cube {
 }
 
 /* ---------- HOVER ----------
-   One treatment for every control in the terminal, so the whole screen answers a cursor
-   the same way: it lifts a little and a light passes over it. Transform and opacity only,
-   which is what keeps it off the layout and cheap enough for a long list of wares.
-   .kpm-press already owns the pressed state; this is only the approach. */
-.kpm-hover { position: relative; overflow: hidden;
-  transition: transform .16s ease-out, box-shadow .16s ease-out, border-color .16s ease-out; }
-.kpm-hover::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, rgba(255,224,168,.20) 50%, transparent 65%);
-  transform: translateX(-120%);
-  transition: transform .45s ease-out;
-}
-.kpm-hover:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.38); }
-.kpm-hover:hover::after { transform: translateX(120%); }
-.kpm-hover:active { transform: translateY(0); box-shadow: none; }
+   TARGET ACQUIRED, not a shop window. The first version lifted the control and swept a
+   band of light across it; Aldi's read was that it is too much, and he is right — a light
+   travelling across every ware in a twenty-item grid is a lot of movement for a screen
+   whose whole point is a quiet ledger.
 
-/* Lite Mode is the performance switch: the hover still ANSWERS, it just stops sweeping
-   and lifting. A control that gives no feedback at all would be a usability regression,
-   not a performance setting. */
-html.lite-mode .kpm-hover { transition: none; }
-html.lite-mode .kpm-hover::after { display: none; }
-html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-color: #ff9d00; }
+   What replaces it is one idea instead of three: two hairline corner brackets close in on
+   the control, the way a reticle settles on a target. Nothing lifts, nothing glows,
+   nothing sweeps. The brackets move 3px and fade in — that is the entire animation.
+
+   The brackets are the ONLY thing this rule owns, so it can sit on a control that already
+   uses ::after for its own purpose without a collision, which the sweep could not.
+   .kpm-press still owns the pressed state. */
+.kpm-hover {
+  position: relative;
+  transition: border-color .16s ease-out, color .16s ease-out;
+}
+.kpm-hover::before,
+.kpm-hover::after {
+  content: ""; position: absolute; pointer-events: none;
+  width: 8px; height: 8px;
+  border: 0 solid #ffca28;
+  opacity: 0;
+  transition: opacity .16s ease-out, inset .18s cubic-bezier(.2,.8,.3,1);
+}
+.kpm-hover::before { top: 6px; left: 6px;  border-top-width: 1px; border-left-width: 1px; }
+.kpm-hover::after  { bottom: 6px; right: 6px; border-bottom-width: 1px; border-right-width: 1px; }
+.kpm-hover:hover::before,
+.kpm-hover:focus-visible::before { opacity: 1; top: 3px; left: 3px; }
+.kpm-hover:hover::after,
+.kpm-hover:focus-visible::after  { opacity: 1; bottom: 3px; right: 3px; }
+
+/* Lite Mode is the performance switch: the hover still ANSWERS, the brackets just appear
+   instead of closing in. A control that gives no feedback at all would be a usability
+   regression, not a performance setting. */
+html.lite-mode .kpm-hover,
+html.lite-mode .kpm-hover::before,
+html.lite-mode .kpm-hover::after { transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-hover, .kpm-hover::after { transition: none; }
-  .kpm-hover:hover { transform: none; }
-  .kpm-hover:hover::after { transform: translateX(-120%); }
+  .kpm-hover, .kpm-hover::before, .kpm-hover::after { transition: none; }
   .kpm-alcove .says { animation: none; }
+}
+
+/* ---------- THE POINTER ----------
+   A reticle rather than an arrow, drawn as a data URI so it costs no request and cannot
+   fail to load. Two states only: a ring for anything you can point at, a ring with a dot
+   for anything you can press. Text fields keep the system I-beam — replacing that would
+   cost the caret position, and a salesman typing a customer name needs it.
+
+   @media (pointer: fine) so it never applies on a phone, where there is no cursor and the
+   rule would only cost bytes. Every value falls back to the native cursor after the
+   comma, so a browser that rejects the SVG still behaves. */
+@media (pointer: fine) {
+  html.kpm-cursor,
+  html.kpm-cursor body {
+    cursor: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>\
+<circle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-opacity='.55' stroke-width='3'/>\
+<circle cx='12' cy='12' r='7.5' fill='none' stroke='%23ffca28' stroke-width='1.25'/>\
+<circle cx='12' cy='12' r='1.1' fill='%23ffca28'/>\
+</svg>") 12 12, default;
+  }
+  html.kpm-cursor a,
+  html.kpm-cursor button,
+  html.kpm-cursor select,
+  html.kpm-cursor summary,
+  html.kpm-cursor [role="button"],
+  html.kpm-cursor label[for] {
+    cursor: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26'>\
+<g fill='none' stroke='%23000' stroke-opacity='.55' stroke-width='3.4' stroke-linecap='square'>\
+<path d='M4 8V4h4'/><path d='M22 8V4h-4'/><path d='M4 18v4h4'/><path d='M22 18v4h-4'/>\
+</g>\
+<g fill='none' stroke='%23ffca28' stroke-width='1.5' stroke-linecap='square'>\
+<path d='M4 8V4h4'/><path d='M22 8V4h-4'/><path d='M4 18v4h4'/><path d='M22 18v4h-4'/>\
+</g>\
+<circle cx='13' cy='13' r='1.6' fill='%23ffca28'/>\
+</svg>") 13 13, pointer;
+  }
+  /* the caret is information — never replace it */
+  html.kpm-cursor input,
+  html.kpm-cursor textarea,
+  html.kpm-cursor [contenteditable="true"] { cursor: text; }
+  html.kpm-cursor :disabled,
+  html.kpm-cursor [aria-disabled="true"] { cursor: not-allowed; }
 }
 
 /* ---------- THE MANIFEST'S OWN SCROLLBAR ----------
