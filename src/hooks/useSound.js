@@ -18,6 +18,10 @@ const SOURCES = {
      his line is on screen — the Animal Crossing / Dave the Diver trick. It is not a
      language, so it never sounds wrong in English or Indonesian, needs no voice actor
      and no TTS service, and costs 4,6 KB against 100 KB+ for recorded lines. */
+  /* Aldi's own SFX, from RE UI/SFX. click is trimmed to 150ms - the source was 3,4s of
+     mostly silence, which made every press sound late. */
+  click:  '/sounds/click.mp3',
+  sign:   '/sounds/sign.mp3',
   mumble1: '/sounds/mumble1.mp3',
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',

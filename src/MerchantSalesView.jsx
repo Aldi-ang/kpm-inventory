@@ -16,6 +16,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     
     // --- MERCHANT STATE ---
     const [merchantMood, setMerchantMood] = useState("idle");
+    const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(false);
@@ -278,7 +279,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        this used to hold was verbatim Resident Evil 4 merchant lines and has been deleted.
        Callers are left in place: they sit on transaction paths and changing them buys nothing. */
     const triggerMerchantSpeak = (type) => {
-        setMerchantMood(type === 'expensive' ? 'talking' : 'idle');
+        // He reacts, but not to every single press - a 15-line basket would have him
+        // talking non-stop. At most once every 6 seconds, then back to idle.
+        const now = Date.now();
+        if (now - lastChatterRef.current < 6000) return;
+        lastChatterRef.current = now;
+        setMerchantMood('talking');
+        setTimeout(() => setMerchantMood('idle'), 2400);
     };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
@@ -875,15 +882,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
             setMerchantMood("deal");
             // Committing the sale IS the user gesture browsers require before audio can
-            // play, so unlock here and mumble once the unlock resolves. Lite Mode silences
-            // both inside the hook, so there is no check to duplicate here.
-            unlockSounds().then(() => speakMumble(line));
-            window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
-                // talk, not deal: the speech bubble is up for the whole appearance, so the
-                // 8-frame talking loop is what matches it. Lite Mode holds its frame 1,
-                // which is the neutral pose.
-                detail: { message: line, sprite: 'kpm-merch-deal' }
-            }));
+            // play, so unlock here. The signing sound comes first and the mumble follows it
+            // rather than landing on top - two sounds at the same instant read as one mess.
+            unlockSounds().then(() => {
+                playSound('sign');
+                setTimeout(() => speakMumble(line), 520);
+            });
+            // DESKTOP has the alcove, which is already showing him: a corner mascot as well
+            // would be two merchants and two coins on one screen. Below lg he has no alcove,
+            // so the corner appearance is the only way he can react at all.
+            if (window.innerWidth < 1024) {
+                window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
+                    detail: { message: line, sprite: 'kpm-merch-deal' }
+                }));
+            }
             setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) { alert("Transaction Failed! Please try again."); } 
         finally { setIsProcessingSale(false); }
@@ -1466,14 +1478,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     e.stopPropagation();
                                                     if (!line) return;
                                                     // a tap on the way down, a distinct tone when the line is removed
-                                                    unlockSounds().then(() => playSound(qty > 1 ? 'tap' : 'error'));
+                                                    unlockSounds().then(() => playSound(qty > 1 ? 'click' : 'error'));
                                                     qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id));
                                                 }}
                                                 className="kpm-press w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
                                             >−</button>
                                             <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[#ff9d00]' : 'text-[#3e3226]'}`}>{qty}</span>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('tap')); addToCart(item); }}
+                                                onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); addToCart(item); }}
                                                 className="kpm-press w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
                                             >+</button>
                                         </div>
