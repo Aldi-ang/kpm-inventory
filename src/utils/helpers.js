@@ -49,6 +49,30 @@ export const getRandomColor = (str) => {
 // that actually breaks the write, rather than doing full RFC email validation.
 export const isSafeDocIdEmail = (email) => /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(String(email || ''));
 
+/* The inverse of convertToBks: turn a flat Bks figure back into the units a salesman
+   actually counts in. 9.892 Bks means nothing at a glance; "12 Karton 1 Bal 4 Slop 2 Bks"
+   is what he would say out loud, and it is how he checks the van without opening a box.
+
+   Largest unit first, remainder cascading down, so the result is unique — 1 Bal and
+   20 Slop are the same quantity but only one of them is how anyone describes it. */
+export const splitToUnits = (totalBks, product) => {
+    const per = {
+        Karton: convertToBks(1, 'Karton', product || {}),
+        Bal:    convertToBks(1, 'Bal',    product || {}),
+        Slop:   convertToBks(1, 'Slop',   product || {}),
+    };
+    let rest = Math.max(0, Math.floor(Number(totalBks) || 0));
+    const out = {};
+    for (const unit of ['Karton', 'Bal', 'Slop']) {
+        const size = per[unit];
+        // a product with nonsense packing must not divide by zero and produce Infinity
+        out[unit] = size > 0 ? Math.floor(rest / size) : 0;
+        rest -= out[unit] * size;
+    }
+    out.Bks = rest;
+    return out;
+};
+
 /* A cart line carries the whole master product on `item.product` so pricing and the stock
    guard can read it while the basket is open. That object holds up to six per-face photos
    as base64 data URIs, and writing it into the transaction blew straight past Firestore's

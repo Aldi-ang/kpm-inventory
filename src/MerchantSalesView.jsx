@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
-import { savePhotoAndGetReference, convertToBks } from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks, splitToUnits } from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
@@ -1722,9 +1722,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <div className="flex-1 min-w-0 flex flex-col">
                                     <h4 className="text-[#d4c5a3] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
                                     <div className="mt-1 lg:mt-auto flex flex-row items-center gap-2 lg:gap-0 lg:justify-between lg:items-end w-full">
+                                        {/* The running Bks figure moved to the rail, where hovering shows it
+                                            properly broken into Karton / Bal / Slop / Bks. A bare "9.892 Bks"
+                                            on the card was four words of noise on the most crowded surface
+                                            in the app.
+
+                                            What stays is the STATE, not the number. Dropping the count is
+                                            housekeeping; dropping every stock signal would be a regression —
+                                            a salesman has to see an empty ware without hovering it, because
+                                            he will never hover the one he was not already thinking about. */}
                                         <div className="flex flex-col gap-0.5 lg:gap-1">
-                                            <span className="hidden lg:block text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest">In Stock</span>
-                                            <span className={`text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block ${item.stock > 0 ? 'bg-[#1a1815] text-[#8b7256] border-[#3e3226]' : 'bg-red-900/20 text-red-500 border-red-900/50'}`}>{item.stock > 0 ? `${item.stock} Units` : 'EMPTY'}</span>
+                                            {item.stock <= 0 ? (
+                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
+                                            ) : item.stock <= (item.minStock || 50) ? (
+                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[#3e2a10] text-[#ff9d00] border-[#ff9d00]/50">LOW</span>
+                                            ) : null}
                                         </div>
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
                                             <span className="hidden lg:block text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
@@ -1795,12 +1807,33 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     ? `${examineItem.dimensions.w} × ${examineItem.dimensions.h} × ${examineItem.dimensions.d} mm`
                                     : 'no size set in the vault'}
                             </p>
+                            {/* In the units he counts in, not a flat Bks figure. "12 Karton 1 Bal
+                                4 Slop" is what he would say out loud and how he checks the van
+                                without opening a box; 9.892 is a number he has to do maths on. */}
                             <div className="mt-3 border-t border-[#26231f] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">In vehicle</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[#e8e4de]">
-                                    {new Intl.NumberFormat('id-ID').format(examineItem.stock || 0)}
-                                    <span className="text-[13px] text-[#7a736a]"> Bks</span>
-                                </div>
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-2">In vehicle</div>
+                                {(() => {
+                                    const split = splitToUnits(examineItem.stock || 0, examineItem);
+                                    const rows = ['Karton', 'Bal', 'Slop', 'Bks'];
+                                    if (!(examineItem.stock > 0)) {
+                                        return <div className="font-mono text-[13px] font-black uppercase text-[#b4524a]">Empty</div>;
+                                    }
+                                    return (
+                                        <>
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {rows.map(u => (
+                                                    <div key={u} className={`rounded border px-1 py-1.5 text-center ${split[u] ? 'border-[#5c4b3a] bg-[#1a1815]' : 'border-[#26231f] bg-transparent'}`}>
+                                                        <div className={`font-mono text-[15px] font-black tabular-nums leading-none ${split[u] ? 'text-[#e8e4de]' : 'text-[#3e3a35]'}`}>{split[u]}</div>
+                                                        <div className="mt-1 font-mono text-[7.5px] font-black uppercase tracking-[0.1em] text-[#7a736a]">{u}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="mt-1.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                                = {new Intl.NumberFormat('id-ID').format(examineItem.stock)} Bks total
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     ) : (
