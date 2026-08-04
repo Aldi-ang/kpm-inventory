@@ -380,6 +380,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         });
     };
 
+    /* MIXED UNITS — "2 karton, 3 slop, 17 bungkus" of one product.
+       Aldi's requirement: the salesman types what the customer said, in the customer's
+       words, and never does the arithmetic himself.
+
+       Deliberately NOT a change to how a line is stored. The line still holds ONE qty in
+       ONE unit, exactly as before, so pricing, the stock guard, retur, IOU and the
+       deduction path all keep working untouched. The four boxes are a CALCULATOR: they
+       total to Bks, write that through updateCartItem, and keep the typed breakdown in a
+       display-only `mix` field that no calculation ever reads. */
+    const bksPerUnit = (prod) => {
+        const pps = prod?.packsPerSlop || 10;
+        const spb = prod?.slopsPerBal || 20;
+        const bpc = prod?.balsPerCarton || 4;
+        return { Karton: bpc * spb * pps, Bal: spb * pps, Slop: pps, Bks: 1 };
+    };
+
+    const applyMix = (item, key, raw) => {
+        const digits = String(raw).replace(/\D/g, '');
+        const mix = { ...(item.mix || {}), [key]: digits };
+        const per = bksPerUnit(item.product);
+        const totalBks = Object.keys(per).reduce((a, u) => a + (Number(mix[u]) || 0) * per[u], 0);
+        setCart(prev => prev.map(i => i.productId === item.productId ? { ...i, mix } : i));
+        updateCartItem(item.productId, 'unit', 'Bks');
+        updateCartItem(item.productId, 'qty', totalBks);
+    };
+
     const updateCartItem = (id, field, val) => {
         setCart(prev => prev.map(item => {
             if (item.productId === id) {
@@ -1214,6 +1240,28 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </span>
                                 <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200 hover:text-blue-600' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
                             </div>
+                            {/* the four boxes: type what the customer said, in their words */}
+                            {!item.isIouFulfillment && (
+                                <div className="flex items-center gap-1 flex-wrap mb-2">
+                                    {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
+                                        <span key={u} className="flex items-center gap-1 border border-[#a89070] bg-[#f7f0e0] px-1.5 py-1 rounded">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={(item.mix && item.mix[u]) || ''}
+                                                onChange={(e) => applyMix(item, u, e.target.value)}
+                                                placeholder="–"
+                                                aria-label={`${item.name} ${u}`}
+                                                className="w-8 bg-transparent text-center text-[#2b2318] font-black text-sm outline-none"
+                                            />
+                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[#6b5a3c]">{u}</em>
+                                        </span>
+                                    ))}
+                                    <span className="text-[10px] font-black font-mono text-[#a35a00] ml-1">
+                                        = {new Intl.NumberFormat('id-ID').format(item.qty || 0)} Bks
+                                    </span>
+                                </div>
+                            )}
                             <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200/50 border-blue-300' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
