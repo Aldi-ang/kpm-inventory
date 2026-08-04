@@ -14,7 +14,12 @@ export default function BiohazardTheme({
     notifications, onNotificationClick, appVersion,
     darkMode, setDarkMode, syncIndicator
 }) {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    /* Starts open on a desk and closed on a phone. One piece of state drives both, but the
+       sensible default differs: a phone has no room to spend on navigation you are not
+       using, a desk starts with it visible because that is where it has always been. */
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(
+        () => typeof window !== 'undefined' && window.innerWidth >= 1024
+    );
     
     const handleLogout = () => {
         if(window.confirm("Terminate Session?")) {
@@ -72,14 +77,26 @@ export default function BiohazardTheme({
 
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="hide-on-print lg:hidden fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
+                aria-expanded={isMobileMenuOpen}
+                className="hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
             >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
-            <div className={`hide-on-print fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+            {/* On a phone it slides over the content; on a desk it is in the flow, so closing
+                it has to give its WIDTH back rather than just translate away — otherwise the
+                space it occupied stays empty and the toggle achieves nothing. Padding has to
+                collapse with it, or 32px of it survives at zero width. */}
+            <div className={`hide-on-print fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 overflow-hidden
+                             transition-[transform,width,padding,opacity] duration-300 lg:relative lg:translate-x-0
+                             ${isMobileMenuOpen
+                                ? 'translate-x-0 lg:w-64 lg:opacity-100'
+                                : '-translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
                 
-                <div key={`brand-${isAdmin}`} className="mb-6 ml-12 lg:ml-2 mt-0.5 lg:mt-0 boot-1">
+                {/* ml-12 at every width now: the toggle is fixed at top-left on desktop too,
+                    so the brand has to clear it there as well or the button lands on the name. */}
+                <div key={`brand-${isAdmin}`} className="mb-6 ml-12 mt-0.5 lg:mt-0 boot-1">
                     <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>

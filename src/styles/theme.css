@@ -635,42 +635,69 @@ html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-colo
 .kpm-scroll::-webkit-scrollbar-thumb:hover { background: #8b7256; }
 
 /* ---------- THE TRAVELLING MERCHANT ----------
-   When the alcove scrolls out of view he steps out of it and stands in the corner instead,
-   then goes home when the cave comes back. Aldi's idea: pinning the alcove only helps while
-   it is on screen at all, and browsing far down the shelf put his reaction somewhere nobody
-   was looking.
+   When the alcove scrolls out of view he steps out of it and stands in the corner, then
+   goes home when the cave comes back. Aldi's idea: pinning the alcove only helps while it
+   is on screen at all, and browsing far down the shelf put his reaction where nobody was
+   looking.
 
    The figure box stays 200px because that is the size every frame in the sheets is drawn
-   at, and the WHOLE box is scaled down. Resizing the box instead crops 50px off every
-   frame and walks the coin off his palm — the bug that cost a session. Nothing here may
-   touch background-size for the same reason: that is what selects the frame.
-
-   bottom-right is deliberately the corner CapybaraMascot uses. They cannot collide — the
-   terminal's deal does not dispatch CAPY_COMMS on desktop, so only one is ever on screen. */
+   at, and the WHOLE box is scaled. Resizing the box crops 50px off every frame and walks
+   the coin off his palm. Nothing in this block may set background-size for the same
+   reason: that is what selects the frame. */
 .kpm-merch-float {
   position: fixed; right: 18px; bottom: 8px; z-index: 140;
-  align-items: flex-end; gap: 8px;
+  width: 144px;              /* 200px * .72, the figure's real footprint */
   pointer-events: none;
-  animation: kpm-merch-enter .42s cubic-bezier(.2,.9,.25,1.08) both;
+  animation: kpmMerchArrive .42s cubic-bezier(.2,.9,.25,1.06) both;
 }
+.kpm-merch-float.leaving { animation: kpmMerchLeave .3s ease-in both; }
+
 .kpm-merch-float .fig {
-  position: relative; flex: none;
+  position: relative;
   width: 200px; height: 200px;
   transform: scale(.72); transform-origin: bottom right;
   filter: drop-shadow(0 6px 14px rgba(0,0,0,.75))
           drop-shadow(0 -2px 14px rgba(70,160,255,.22));
 }
+
+/* Above the hat, not off to one side. The art's crown sits about 30px down a 200px frame,
+   so at .72 the hat top is ~122px above his feet; the bubble clears it with room for the
+   tail. Centred on the figure rather than on the box, because the box is anchored
+   bottom-right and the drawing is not centred in it. */
 .kpm-merch-float .bubble {
-  margin: 0 0 58px; max-width: 210px; padding: 7px 11px;
+  position: absolute; bottom: 132px; right: 4px;
+  margin: 0; max-width: 220px; min-width: 120px; width: max-content;
+  padding: 7px 11px;
   background: #f5e6c8; color: #2b2318;
   border: 1px solid #c9b892; border-radius: 8px;
   font: 700 11px/1.35 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  text-align: center;
   box-shadow: 0 6px 16px rgba(0,0,0,.5);
   animation: kpmSays .22s ease-out both;
 }
+.kpm-merch-float .bubble::after {
+  content: ""; position: absolute; right: 34px; bottom: -6px;
+  width: 0; height: 0;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-top: 6px solid #f5e6c8;
+}
+
+/* He walks in from the right edge rather than materialising. Slight overshoot on arrival,
+   and he leaves faster than he arrives — an exit that takes as long as an entrance reads
+   as sluggish. */
+@keyframes kpmMerchArrive {
+  from { opacity: 0; transform: translateX(120%); }
+  70%  { opacity: 1; transform: translateX(-6%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes kpmMerchLeave {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(120%); }
+}
 
 html.lite-mode .kpm-merch-float,
+html.lite-mode .kpm-merch-float.leaving,
 html.lite-mode .kpm-merch-float .bubble { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-float, .kpm-merch-float .bubble { animation: none; }
+  .kpm-merch-float, .kpm-merch-float.leaving, .kpm-merch-float .bubble { animation: none; }
 }

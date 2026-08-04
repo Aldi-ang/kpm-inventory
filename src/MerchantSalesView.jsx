@@ -23,6 +23,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const alcoveRef = useRef(null);
     // true once his alcove has scrolled out of view — see the travelling merchant below
     const [alcoveOut, setAlcoveOut] = useState(false);
+    // he has to outlive alcoveOut by one animation, or he would vanish instead of leaving
+    const [floatShown, setFloatShown] = useState(false);
+    const [floatLeaving, setFloatLeaving] = useState(false);
     const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
@@ -343,6 +346,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         io.observe(el);
         return () => io.disconnect();
     }, []);
+
+    /* Unmounting the moment the cave returns would delete him mid-step. He is kept alive
+       for the length of the leave animation instead, then removed. */
+    useEffect(() => {
+        if (alcoveOut) { setFloatLeaving(false); setFloatShown(true); return; }
+        if (!floatShown) return;
+        setFloatLeaving(true);
+        const t = setTimeout(() => { setFloatShown(false); setFloatLeaving(false); }, 300);
+        return () => clearTimeout(t);
+    }, [alcoveOut, floatShown]);
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         const localToday = new Date().toLocaleDateString('en-CA'); 
@@ -1518,8 +1531,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     difference is where he is standing, so there is nothing here that can drift
                     out of sync with the alcove. Desktop only: below lg there is no alcove to
                     leave, and CapybaraMascot already covers the phone. */}
-                {alcoveOut && (
-                    <div className="kpm-merch-float hide-on-print hidden lg:flex">
+                {floatShown && (
+                    <div className={`kpm-merch-float hide-on-print hidden lg:block ${floatLeaving ? 'leaving' : ''}`}>
                         {merchantLine && merchantMood !== 'idle' && (
                             <p className="bubble" role="status">{merchantLine}</p>
                         )}
@@ -1708,7 +1721,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     const line = cart.find(c => c.productId === item.id);
                                     const qty = line?.qty || 0;
                                     return (
-                                        <div className="flex items-center gap-1 shrink-0">
+                                        /* mt on desktop: the steppers sat directly under the stock
+                                           pill with nothing between them, so the two read as one
+                                           control and the + was easy to hit while aiming at the
+                                           stock figure. Size is unchanged - 32px is already under
+                                           the 44px touch minimum and shrinking it further would
+                                           trade one complaint for a worse one. */
+                                        <div className="flex items-center gap-2 shrink-0 mt-1 lg:mt-3">
                                             <button
                                                 disabled={!line}
                                                 onClick={(e) => {
