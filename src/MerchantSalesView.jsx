@@ -20,6 +20,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [merchantMood, setMerchantMood] = useState("idle");
     const [merchantLine, setMerchantLine] = useState("");   // what the alcove bubble shows
     const searchRef = useRef(null);
+    const alcoveRef = useRef(null);
+    // true once his alcove has scrolled out of view — see the travelling merchant below
+    const [alcoveOut, setAlcoveOut] = useState(false);
     const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
@@ -319,6 +322,26 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
+    /* THE TRAVELLING MERCHANT — Aldi's idea, and the right one.
+       Pinning the alcove only helps while it is on screen at all; browse far enough down the
+       shelf and his reaction plays somewhere nobody is looking. So when the cave leaves the
+       viewport he steps out of it and reappears in the corner, and when it comes back he
+       goes home.
+
+       An IntersectionObserver rather than a scroll listener: the browser reports the crossing
+       itself, so this costs nothing per frame, which matters on a list that is already
+       animating twenty CSS boxes. */
+    useEffect(() => {
+        const el = alcoveRef.current;
+        if (!el || typeof IntersectionObserver === 'undefined') return;
+        const io = new IntersectionObserver(
+            ([entry]) => setAlcoveOut(!entry.isIntersecting),
+            { threshold: 0.35 }
+        );
+        io.observe(el);
+        return () => io.disconnect();
     }, []);
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
@@ -1469,7 +1492,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     deal. Everything but the sprite is CSS, so it costs one image. */}
                 {/* aria-hidden on the scenery only — his line is real content and is
                     announced, which is why the bubble sits outside that subtree. */}
-                <div className="kpm-alcove hidden lg:grid shrink-0">
+                <div ref={alcoveRef} className="kpm-alcove hidden lg:grid shrink-0">
                     <div className="rock"></div>
                     <div className="kpm-torch l">
                         <div className="pole"></div><div className="bowl"></div>
@@ -1490,6 +1513,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className="dark" aria-hidden="true"></div>
                     {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
                 </div>
+
+                {/* He stepped out of the cave. Same sprite, same line, same mood — the only
+                    difference is where he is standing, so there is nothing here that can drift
+                    out of sync with the alcove. Desktop only: below lg there is no alcove to
+                    leave, and CapybaraMascot already covers the phone. */}
+                {alcoveOut && (
+                    <div className="kpm-merch-float hide-on-print hidden lg:flex">
+                        {merchantLine && merchantMood !== 'idle' && (
+                            <p className="bubble" role="status">{merchantLine}</p>
+                        )}
+                        <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
+                            {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                        </div>
+                    </div>
+                )}
 
                 {/* The grip. Collapsed it is the whole drawer, so it carries the running
                     total, the item count and the LAST ITEM ADDED - that last one is what
@@ -1904,18 +1942,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             coin, same line, drawn directly above the nota where he is already looking.
                             hide-on-print keeps him off the paper: the nota is KPM's document, and he
                             is not part of it. */}
-                        <div className="hide-on-print hidden lg:flex items-end gap-3 shrink-0">
+                        <div className="hide-on-print hidden lg:flex items-center gap-6 shrink-0">
                             {/* 200px box scaled as a whole, NOT a smaller box with a smaller sheet.
                                 The coin is positioned as a percentage of the figure, so shrinking the
                                 box alone would walk it off his palm — the exact bug that cost a
-                                session when the figure was 150px against 200px frames. */}
-                            <div className="w-[130px] h-[130px] shrink-0">
-                                <div className="kpm-merch kpm-merch-deal w-[200px] h-[200px] relative origin-top-left scale-[0.65]">
+                                session when the figure was 150px against 200px frames. The wrapper
+                                reserves the SCALED footprint, including the coin, which sits at 72,5%
+                                across; without that the bubble beside him overlapped the coin. */}
+                            <div className="w-[150px] h-[150px] shrink-0 relative">
+                                <div className="kpm-merch kpm-merch-deal w-[200px] h-[200px] absolute inset-0 origin-top-left scale-75">
                                     <span className="kpm-merch-hold"></span>
                                 </div>
                             </div>
                             {merchantLine && (
-                                <p className="mb-6 max-w-[240px] rounded-lg border border-[#c9b892] bg-[#f5e6c8] px-3 py-2 font-mono text-[11px] font-bold leading-snug text-[#2b2318] shadow-lg">
+                                <p className="max-w-[240px] rounded-lg border border-[#c9b892] bg-[#f5e6c8] px-3 py-2 font-mono text-[11px] font-bold leading-snug text-[#2b2318] shadow-lg">
                                     {merchantLine}
                                 </p>
                             )}
