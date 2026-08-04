@@ -645,7 +645,7 @@ html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-colo
    the coin off his palm. Nothing in this block may set background-size for the same
    reason: that is what selects the frame. */
 .kpm-merch-float {
-  position: fixed; right: 18px; bottom: 8px; z-index: 140;
+  position: fixed; right: 44px; bottom: 8px; z-index: 140;
   width: 144px;              /* 200px * .72, the figure's real footprint */
   pointer-events: none;
   animation: kpmMerchArrive .42s cubic-bezier(.2,.9,.25,1.06) both;
@@ -665,8 +665,11 @@ html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-colo
    tail. Centred on the figure rather than on the box, because the box is anchored
    bottom-right and the drawing is not centred in it. */
 .kpm-merch-float .bubble {
-  position: absolute; bottom: 132px; right: 4px;
-  margin: 0; max-width: 220px; min-width: 120px; width: max-content;
+  /* centred over the figure, not tucked against the right edge. The box is anchored
+     bottom-right and 144px wide, so its own centre IS his centre — the earlier right:4px
+     put the tail out past his shoulder. */
+  position: absolute; bottom: 132px; left: 50%; transform: translateX(-50%);
+  margin: 0; max-width: 240px; min-width: 120px; width: max-content;
   padding: 7px 11px;
   background: #f5e6c8; color: #2b2318;
   border: 1px solid #c9b892; border-radius: 8px;
@@ -676,7 +679,7 @@ html.lite-mode .kpm-hover:hover { transform: none; box-shadow: none; border-colo
   animation: kpmSays .22s ease-out both;
 }
 .kpm-merch-float .bubble::after {
-  content: ""; position: absolute; right: 34px; bottom: -6px;
+  content: ""; position: absolute; left: 50%; margin-left: -6px; bottom: -6px;
   width: 0; height: 0;
   border-left: 6px solid transparent; border-right: 6px solid transparent;
   border-top: 6px solid #f5e6c8;

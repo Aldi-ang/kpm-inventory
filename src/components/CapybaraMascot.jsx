@@ -42,6 +42,8 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
 
     const [isPeeking, setIsPeeking] = useState(false);
     const [isHiding, setIsHiding] = useState(false);
+    // the sales terminal owns the merchant while its corner figure is on screen
+    const [suppressed, setSuppressed] = useState(false);
     const [internalMsg, setInternalMsg] = useState("");
     // art for THIS appearance only. Lets the merchant borrow the mascot's whole
     // show-up-and-go behaviour without a second component being written.
@@ -96,8 +98,29 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         return () => { if (audio) { audio.pause(); audio.currentTime = 0; } };
     }, [isDiscoMode]);
 
+    /* The sales terminal draws its OWN merchant in the corner once his alcove scrolls away.
+       This mascot peeks on its own timer every 90-210s, so the two appeared together and
+       there were two capybaras on screen. The terminal now says when it owns him; while it
+       does, this one stands down and stops scheduling peeks entirely.
+
+       An event rather than a prop because App renders this mascot and MerchantSalesView is
+       lazily loaded several levels away — threading a boolean through would touch both and
+       every layer between, for a flag only one screen ever sets. */
     useEffect(() => {
-        if (isDiscoMode) return; 
+        const onSuppress = (e) => setSuppressed(!!e.detail?.on);
+        window.addEventListener('CAPY_SUPPRESS', onSuppress);
+        return () => window.removeEventListener('CAPY_SUPPRESS', onSuppress);
+    }, []);
+
+    useEffect(() => {
+        if (!suppressed) return;
+        setIsPeeking(false);
+        setIsHiding(false);
+        setInternalMsg("");
+    }, [suppressed]);
+
+    useEffect(() => {
+        if (isDiscoMode || suppressed) return;
 
         let peekTimer;
         let hideTimer;
@@ -134,7 +157,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
 
         scheduleNextPeek();
         return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); };
-    }, [isDiscoMode, dialogueList]); 
+    }, [isDiscoMode, dialogueList, suppressed]);
 
     const onMascotClick = () => {
         if (message || internalMsg) {
@@ -179,7 +202,9 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
     const explicitImage = radioImage || staticImageSrc;
     const spriteToShow = radioSprite
         || (explicitImage ? null : (activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle'));
-    const showMascot = isPeeking || message; 
+    // suppressed wins over an explicit `message` too — otherwise a triggerCapy fired while
+    // the terminal owns the corner would put the second capybara straight back on screen
+    const showMascot = !suppressed && (isPeeking || message);
     /* He arrives from below with an overshoot instead of sliding flatly in from the
        right, and leaves faster than he arrives. Keyframes live in theme.css so Lite
        Mode strips them with everything else. */
