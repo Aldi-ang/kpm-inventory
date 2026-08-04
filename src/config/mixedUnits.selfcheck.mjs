@@ -5,12 +5,26 @@
    waits, so it gets a test even though it is only a few lines. The conversion mirrors
    the multipliers already used for pricing at MerchantSalesView :47, :343 and :408. */
 import assert from 'node:assert';
+import { convertToBks } from '../utils/helpers.js';
 
-const bksPerUnit = (prod) => {
-  const pps = prod?.packsPerSlop || 10;
-  const spb = prod?.slopsPerBal || 20;
-  const bpc = prod?.balsPerCarton || 4;
-  return { Karton: bpc * spb * pps, Bal: spb * pps, Slop: pps, Bks: 1 };
+/* Mirrors MerchantSalesView :392 — the multipliers come from helpers.convertToBks so the
+   per-product packing saved in the master vault is the single source of truth. */
+const bksPerUnit = (prod) => ({
+  Karton: convertToBks(1, 'Karton', prod || {}),
+  Bal:    convertToBks(1, 'Bal',    prod || {}),
+  Slop:   convertToBks(1, 'Slop',   prod || {}),
+  Bks:    1,
+});
+
+/* Mirrors the packing guard in App.handleSaveProduct. */
+const savePacking = (form) => {
+  const packing = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+  const out = {};
+  for (const [field, fallback] of Object.entries(packing)) {
+    const n = Number(form[field]);
+    out[field] = (Number.isFinite(n) && n > 0) ? n : fallback;
+  }
+  return out;
 };
 
 const totalBks = (prod, mix) => {
@@ -40,4 +54,21 @@ assert.equal(totalBks(custom, { Bal: 1, Slop: 1, Bks: 1 }), 160 + 16 + 1);
 assert.equal(totalBks(d, { Bks: 12 }), 12);
 assert.equal(totalBks(d, { Karton: 1 }), 800);
 
-console.log('mixed-unit self-check: 5/5 pass');
+/* 6. Aldi's real-world packing: a Bal of 100 Bks, a Karton of 5 Bal */
+const real = { packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 5 };
+assert.deepEqual(bksPerUnit(real), { Karton: 500, Bal: 100, Slop: 10, Bks: 1 });
+assert.equal(totalBks(real, { Karton: 1, Bal: 1 }), 600);
+
+/* 7. the master-vault guard: a blank, zero or junk packing box must NEVER store 0.
+      A 0 multiplier would charge nothing and deduct nothing for every Bal or Karton
+      sale of that product - a free-sale bug, so this is the assertion that matters. */
+assert.deepEqual(savePacking({}), { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 });
+assert.deepEqual(savePacking({ packsPerSlop: '', slopsPerBal: '0', balsPerCarton: 'abc' }),
+                 { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 });
+assert.deepEqual(savePacking({ packsPerSlop: '-5' }).packsPerSlop, 10);
+
+/* 8. a real entry is kept verbatim, not silently defaulted */
+assert.deepEqual(savePacking({ packsPerSlop: '16', slopsPerBal: '10', balsPerCarton: '5' }),
+                 { packsPerSlop: 16, slopsPerBal: 10, balsPerCarton: 5 });
+
+console.log('mixed-unit self-check: 8/8 pass');

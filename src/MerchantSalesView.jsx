@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
-import { savePhotoAndGetReference } from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks } from './utils/helpers';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
@@ -389,12 +389,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        deduction path all keep working untouched. The four boxes are a CALCULATOR: they
        total to Bks, write that through updateCartItem, and keep the typed breakdown in a
        display-only `mix` field that no calculation ever reads. */
-    const bksPerUnit = (prod) => {
-        const pps = prod?.packsPerSlop || 10;
-        const spb = prod?.slopsPerBal || 20;
-        const bpc = prod?.balsPerCarton || 4;
-        return { Karton: bpc * spb * pps, Bal: spb * pps, Slop: pps, Bks: 1 };
-    };
+    /* Packing is per product and set in the master vault, so the multipliers must come from
+       the ONE place the rest of the app already reads them — helpers.convertToBks. Its own
+       10/20/4 fallbacks apply when a product has no packing saved. `prod || {}` keeps that
+       fallback alive: convertToBks returns qty untouched for a missing product, which would
+       silently price a Karton as one Bks. */
+    const bksPerUnit = (prod) => ({
+        Karton: convertToBks(1, 'Karton', prod || {}),
+        Bal:    convertToBks(1, 'Bal',    prod || {}),
+        Slop:   convertToBks(1, 'Slop',   prod || {}),
+        Bks:    1,
+    });
 
     const applyMix = (item, key, raw) => {
         const digits = String(raw).replace(/\D/g, '');
@@ -1263,7 +1268,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
                             <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-blue-200/50 border-blue-300' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
-                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-10 md:w-12 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
+                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}

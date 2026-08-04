@@ -2608,8 +2608,18 @@ const handleGitHubMirror = async () => {
           const formData = new FormData(e.target); 
           const data = Object.fromEntries(formData.entries());
           // 🚀 ADDED 'sticksPerPack' TO THE NUMBER CONVERSION ARRAY
-          const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer']; 
-          numFields.forEach(field => data[field] = Number(data[field]) || 0); 
+          const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
+          numFields.forEach(field => data[field] = Number(data[field]) || 0);
+
+          /* Packing is deliberately NOT in numFields. That list coerces empty to 0, and a 0
+             here is a multiplier — a Bal priced at 0 Bks would charge nothing and deduct
+             nothing. Blank or nonsense falls back to the same defaults every read site in
+             the app already assumes, so a half-filled form can never produce a free sale. */
+          const packing = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+          Object.entries(packing).forEach(([field, fallback]) => {
+              const n = Number(data[field]);
+              data[field] = (Number.isFinite(n) && n > 0) ? n : fallback;
+          });
           
           data.images = { ...(editingProduct?.images || {}), ...tempImages }; 
           data.dimensions = { ...boxDimensions }; 
@@ -3725,7 +3735,17 @@ const handleGitHubMirror = async () => {
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-blue-500/50 text-blue-400 focus:border-blue-500 outline-none"/></div>
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
                                     </div>
-                                    
+
+                                    {/* PACKING. Every sale in Bal or Karton multiplies by these, and until now
+                                        nothing wrote them — eight read sites across the app were all falling back
+                                        to 10/20/4 for every product. Aldi's real stock varies (a Bal can be 100 or
+                                        200 Bks, a Karton 4 or 5 Bal), so they have to be per product. */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                    </div>
+
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
                                     <div className="flex items-center gap-2">
                                         <input 
