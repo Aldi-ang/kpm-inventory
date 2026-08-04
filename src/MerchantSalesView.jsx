@@ -352,6 +352,36 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         }));
     };
 
+    /* The ware as the master vault knows it. `dimensions` are the millimetres Aldi set with
+       the W/H/D sliders in ExamineModal and `images` are the faces he photographed, so the
+       terminal shows the same object he sized rather than a generic brick. Defaults match
+       ExamineModal :11 so an unmeasured product still looks like a cigarette pack. */
+    const cubeVars = (prod) => {
+        const d = prod?.dimensions || { w: 55, h: 90, d: 22 };
+        return { '--mm-w': d.w, '--mm-h': d.h, '--mm-d': d.d };
+    };
+    const renderCube = (prod) => {
+        const img = prod?.images || {};
+        const front = img.front || prod?.image;
+        const back = prod?.useFrontForBack ? front : img.back;
+        const face = (cls, src) => (
+            <i className={cls}>{src ? <img src={src} alt="" /> : null}</i>
+        );
+        return (
+            <div className="kpm-cube">
+                <i className="f">
+                    {front ? <img src={front} alt={prod?.name || ''} />
+                           : <span className="grid place-items-center w-full h-full text-[9px] font-black font-mono tracking-widest text-[#ff9d00]">EXAMINE</span>}
+                </i>
+                {face('bk', back)}
+                {face('l', img.left)}
+                {face('r', img.right)}
+                {face('t', img.top)}
+                {face('bt', img.bottom)}
+            </div>
+        );
+    };
+
     const addToCart = (product) => {
         if (!isReturMode && product.stock <= 0) return alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
 
@@ -1431,10 +1461,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     did not fit beside the app's sidebar. One manifest, one column. */}
                 <div className="flex-1 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
 
-                <div className="p-4 md:p-6 bg-[#26211c] border-t-4 border-[#5c4b3a] flex flex-col shrink-0 z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
-                    
+                {/* The commit footer is part of the manifest, so it is the same sheet of paper.
+                    It used to be a dark panel bolted under the parchment, which read as two
+                    documents. Tokens are the artifact's: #c9b892 rules, #6b5a3c labels,
+                    #a35a00 for the total. */}
+                <div className="kpm-parchment p-4 md:p-6 border-t-2 border-[#c9b892] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
+
                     <div className="mb-4">
-                        <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-red-500">*</span></label>
+                        <label className="text-[10px] font-bold text-[#6b5a3c] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[#9e4038]">*</span></label>
                         <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
@@ -1443,16 +1477,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => document.getElementById('txProof').click()} className="w-full py-4 border-2 border-dashed border-[#5c4b3a] hover:border-[#ff9d00] text-[#8b7256] hover:text-[#ff9d00] bg-black/40 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
+                            <button onClick={() => document.getElementById('txProof').click()} className="w-full py-4 border-2 border-dashed border-[#c9b892] hover:border-[#a35a00] text-[#6b5a3c] hover:text-[#a35a00] bg-transparent rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
                                 <Camera size={24} />
                                 <span className="text-[10px] uppercase tracking-widest font-bold">Capture Handover Photo</span>
                             </button>
                         )}
                     </div>
 
-                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#5c4b3a] pb-2 md:pb-3 font-mono">
-                        <span className="text-xs md:text-sm font-bold text-[#8b7256] uppercase tracking-widest">Total Value</span>
-                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none drop-shadow-sm ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[#ff9d00]'}`}>
+                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#c9b892] pb-2 md:pb-3 font-mono">
+                        <span className="text-xs md:text-sm font-bold text-[#6b5a3c] uppercase tracking-widest">Total Value</span>
+                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[#9e4038]' : 'text-[#a35a00]'}`}>
                             {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                         </span>
                     </div>
@@ -1471,7 +1505,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-[#1a1815] text-[#5c4b3a] border-[#3e3226] opacity-50 cursor-not-allowed'}`}
+                        className={`py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
@@ -1494,19 +1528,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {/* The examine shelf. Desktop only — a phone screen has no room to spend on a
                     thing you watch rather than press, and the eye button covers it there.
                     One state write per hover, not per frame. */}
-                <div className="hidden lg:flex items-center justify-center gap-6 px-4 py-3 border-b border-[#3e3226] bg-[#0f0e0d] shrink-0" style={{ perspective: '520px' }}>
-                    <div className="kpm-bigcube">
-                        <i className="f grid place-items-center overflow-hidden">
-                            {examineItem?.images?.front
-                                ? <img src={examineItem.images.front} className="max-h-full max-w-full object-contain" alt={examineItem.name}/>
-                                : <span className="text-[9px] font-black font-mono tracking-widest text-[#ff9d00]">EXAMINE</span>}
-                        </i>
-                        <i className="bk"></i><i className="l"></i><i className="r"></i>
-                        <i className="t"></i><i className="bt"></i>
+                <div className="hidden lg:flex items-center justify-center gap-6 px-4 py-3 border-b border-[#3e3226] bg-[#0f0e0d] shrink-0">
+                    <div className="kpm-cube-stage big h-[150px]" style={cubeVars(examineItem)}>
+                        {renderCube(examineItem)}
                     </div>
                     <p className="m-0 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8b7256] leading-relaxed">
                         {examineItem
-                            ? <>{examineItem.name}<br/><span className="text-[#5c4b3a]">{examineItem.type || 'MISC'} &middot; {examineItem.stock} Bks in vehicle</span></>
+                            ? <>{examineItem.name}<br/><span className="text-[#5c4b3a]">
+                                {examineItem.type || 'MISC'} &middot; {examineItem.stock} Bks in vehicle
+                                {examineItem.dimensions && ` · ${examineItem.dimensions.w}×${examineItem.dimensions.h}×${examineItem.dimensions.d} mm`}
+                              </span></>
                             : 'Hover any ware to turn it here'}
                     </p>
                 </div>
@@ -1535,17 +1566,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
                                     Pure CSS on purpose — see the note above .kpm-cube in theme.css. */}
-                                <div className="kpm-cube-stage w-14 h-16 lg:w-24 lg:h-32 relative">
-                                    <div className="kpm-cube">
-                                        <i className="f grid place-items-center overflow-hidden">
-                                            {item.images?.front
-                                                ? <img src={item.images.front} className="max-h-full max-w-full object-contain sepia-[.3] group-hover:sepia-0 transition-all duration-300" alt={item.name}/>
-                                                : <Box size={28} className="text-[#3e3226] opacity-50"/>}
-                                        </i>
-                                        <i className="bk"></i>
-                                        <i className="l"></i>
-                                        <i className="r"></i>
-                                    </div>
+                                <div className="kpm-cube-stage w-full h-full relative" style={cubeVars(item)}>
+                                    {renderCube(item)}
                                 </div>
                                 <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}

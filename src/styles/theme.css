@@ -464,28 +464,43 @@ html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-/* ---------- WARES THAT TURN ----------
-   Ported from the PC prototype's .cube / .bigcube. ExamineModal drives its rotation with
-   requestAnimationFrame writing React state — one of those is fine, but twenty on a product
-   list would re-render the page 60 times a second. These are pure CSS, so a full grid of
-   them costs nothing, and the card cube only turns while it is actually pointed at.
 
-   The front face carries the real product photo; the other five are tinted panels, which is
-   what sells the solid-object read. Depth is half the width (translateZ), so the sides meet
-   the front edge exactly rather than floating near it. */
-/* Depth is driven by two vars so one rule set serves both card sizes: --kpm-cube-z is HALF
-   the box depth (the front face sits at +z, the back at -z), --kpm-cube-half is half the
-   card width, which is where the two side faces have to land. Getting these wrong is what
-   makes a CSS box look like five loose rectangles instead of a solid. */
-.kpm-cube-stage { perspective: 340px; --kpm-cube-z: 12px; --kpm-cube-half: 28px; }
-@media (min-width: 1024px) {
-  .kpm-cube-stage { perspective: 520px; --kpm-cube-z: 20px; --kpm-cube-half: 48px; }
+/* ---------- WARES THAT TURN ----------
+   Ported from the PC prototype, then wired to the real product record.
+
+   Size and faces come from the MASTER VAULT. Aldi measured every product himself with the
+   W/H/D sliders in ExamineModal — those land on `product.dimensions` in millimetres — and
+   photographed the faces onto `product.images`. A 16-stick Cello Chocolate really is fatter
+   than a 12-stick pack, so it has to look fatter here too. The card fixes only the HEIGHT;
+   width and depth are derived from the true millimetres, which is what keeps the
+   proportions honest instead of every ware being the same brick.
+
+   Pure CSS. ExamineModal drives its rotation with requestAnimationFrame writing React
+   state — fine for one modal, but twenty of those on a product list would re-render the
+   page sixty times a second. The only JavaScript here is one state write per hover, for
+   the shelf caption; never per frame. */
+.kpm-cube-stage {
+  display: grid;
+  place-items: center;
+  perspective: 340px;
+  --kpm-slot-h: 54px;
 }
+@media (min-width: 1024px) {
+  .kpm-cube-stage { perspective: 520px; --kpm-slot-h: 118px; }
+}
+/* the examine shelf: same rules, bigger slot, and it turns on its own because it is the
+   one box on screen meant to be watched rather than glanced at */
+.kpm-cube-stage.big { --kpm-slot-h: 132px; perspective: 560px; }
+.kpm-cube-stage.big .kpm-cube { animation: kpm-turn 5.2s linear infinite; }
 
 .kpm-cube {
+  --k: calc(var(--kpm-slot-h) / var(--mm-h, 90));   /* px per millimetre */
+  --w: calc(var(--mm-w, 55) * var(--k));
+  --h: var(--kpm-slot-h);
+  --d: calc(var(--mm-d, 22) * var(--k));
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: var(--w);
+  height: var(--h);
   transform-style: preserve-3d;
   transform: rotateX(-8deg) rotateY(-24deg);
   transition: transform .45s ease-out;
@@ -493,46 +508,30 @@ html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
 .product-card:hover .kpm-cube,
 .product-card:focus-within .kpm-cube { animation: kpm-turn 3.6s linear infinite; }
 
-.kpm-cube > i, .kpm-bigcube > i {
-  position: absolute;
-  display: block;
-  border: 1px solid #3e3226;
-  backface-visibility: hidden;
-}
+/* Face geometry mirrors ExamineModal :73-78 exactly, so a box looks the same in the
+   terminal as in the editor Aldi sized it in. */
+.kpm-cube > i { position: absolute; display: block; border: 1px solid #3e3226; overflow: hidden; }
+.kpm-cube > i > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .kpm-cube > .f, .kpm-cube > .bk { inset: 0; background: #1a1815; }
-.kpm-cube > .f  { transform: translateZ(var(--kpm-cube-z, 22px)); border-color: #5c4b3a; }
-.kpm-cube > .bk { transform: rotateY(180deg) translateZ(var(--kpm-cube-z, 22px)); background: #0f0e0d; }
+.kpm-cube > .f  { transform: translateZ(calc(var(--d) / 2)); border-color: #5c4b3a; }
+.kpm-cube > .bk { transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); background: #0f0e0d; }
+
 .kpm-cube > .l, .kpm-cube > .r {
-  top: 0; bottom: 0;
-  width: calc(var(--kpm-cube-z, 22px) * 2);
-  left: 50%; margin-left: calc(var(--kpm-cube-z, 22px) * -1);
+  top: 0; height: var(--h); width: var(--d);
+  left: calc((var(--w) - var(--d)) / 2);
   background: #26211c;
 }
-.kpm-cube > .l { transform: rotateY(-90deg) translateZ(var(--kpm-cube-half, 50px)); }
-.kpm-cube > .r { transform: rotateY(90deg)  translateZ(var(--kpm-cube-half, 50px)); }
+.kpm-cube > .l { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+.kpm-cube > .r { transform: rotateY(90deg)  translateZ(calc(var(--w) / 2)); }
 
-/* The examine shelf above the search. Always turning, because it is the one on screen
-   that is meant to be watched rather than glanced at. */
-.kpm-bigcube {
-  position: relative;
-  width: 62px; height: 108px;
-  transform-style: preserve-3d;
-  animation: kpm-turn 5.2s linear infinite;
-  flex: none;
+.kpm-cube > .t, .kpm-cube > .bt {
+  left: 0; width: var(--w); height: var(--d);
+  top: calc((var(--h) - var(--d)) / 2);
+  background: #2f2820;
 }
-.kpm-bigcube > .f, .kpm-bigcube > .bk { inset: 0; background: #1a1815; }
-.kpm-bigcube > .f  { transform: translateZ(18px); border-color: #5c4b3a; }
-.kpm-bigcube > .bk { transform: rotateY(180deg) translateZ(18px); background: #0f0e0d; }
-.kpm-bigcube > .l, .kpm-bigcube > .r {
-  top: 0; height: 108px; width: 36px; left: 13px; background: #26211c;
-}
-.kpm-bigcube > .l { transform: rotateY(-90deg) translateZ(31px); }
-.kpm-bigcube > .r { transform: rotateY(90deg)  translateZ(31px); }
-.kpm-bigcube > .t, .kpm-bigcube > .bt {
-  left: 0; width: 62px; height: 36px; top: 36px; background: #2f2820;
-}
-.kpm-bigcube > .t  { transform: rotateX(90deg)  translateZ(54px); }
-.kpm-bigcube > .bt { transform: rotateX(-90deg) translateZ(54px); background: #14110e; }
+.kpm-cube > .t  { transform: rotateX(90deg)  translateZ(calc(var(--h) / 2)); }
+.kpm-cube > .bt { transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); background: #14110e; }
 
 @keyframes kpm-turn {
   from { transform: rotateX(-8deg) rotateY(0); }
@@ -540,10 +539,10 @@ html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
 }
 
 /* Lite Mode is the performance switch: the box keeps its solid 3D read, it just stops
-   turning. Parked at a three-quarter angle rather than flat on, so it still looks like
-   an object and not a photo in a frame. */
+   turning. Parked at three-quarters, so it still looks like an object rather than
+   collapsing to a photo in a frame. */
 html.lite-mode .kpm-cube,
-html.lite-mode .kpm-bigcube,
+html.lite-mode .kpm-cube-stage.big .kpm-cube,
 html.lite-mode .product-card:hover .kpm-cube {
   animation: none !important;
   transform: rotateX(-8deg) rotateY(-24deg) !important;
