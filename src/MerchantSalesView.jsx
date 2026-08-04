@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check } from 'lucide-react';
+import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference, convertToBks } from './utils/helpers';
@@ -1515,6 +1515,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
+                                {/* Examine was reachable ONLY by right-click, which does not exist on a
+                                    phone — so on the device most of these sales happen on, the 3D box
+                                    could not be opened at all. Right-click still works. */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
+                                    aria-label={`Examine ${item.name}`}
+                                    className="kpm-press absolute bottom-1 left-1 lg:bottom-3 lg:left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                >
+                                    <Eye size={14}/>
+                                </button>
                             </div>
                             <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-l-2 lg:border-l-0 lg:border-t-2 border-[#3e3226] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
                                 <div className="flex-1 min-w-0 flex flex-col">

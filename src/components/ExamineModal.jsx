@@ -39,7 +39,7 @@ export default function ExamineModal({ product, onClose, onUpdateProduct, isAdmi
   
   const handleMouseUp = () => setIsDragging(false);
   
-  const renderFace = (imageSrc, defaultColor = "bg-white") => { if (imageSrc) return <img src={imageSrc} className="w-full h-full object-cover" alt="texture" />; return <div className={`w-full h-full ${defaultColor} border border-slate-400 opacity-90`}></div>; };
+  const renderFace = (imageSrc, defaultColor = "bg-white") => { if (imageSrc) return <img src={imageSrc} className="w-full h-full object-cover" alt="texture" />; return <div className={`w-full h-full ${defaultColor} border border-[#5c4b3a] opacity-90`}></div>; };
   
   const images = product.images || {};
   const frontImage = images.front || product.image;
@@ -63,24 +63,24 @@ export default function ExamineModal({ product, onClose, onUpdateProduct, isAdmi
       
       <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0">
           <h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2>
-          <p className="text-emerald-400 text-xs mt-2 tracking-widest animate-pulse">
+          <p className="text-[#d4af37] text-xs mt-2 tracking-widest animate-pulse">
               {isDragging ? "INSPECTING OBJECT..." : "AUTOMATIC ROTATION"}
           </p>
       </div>
 
       <div className="relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
         <div className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`, transformStyle: 'preserve-3d', transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}>
-          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-slate-400" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
-          <div className="absolute inset-0 bg-slate-800 backface-hidden flex items-center justify-center border border-slate-600" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-slate-800")}</div>
-          <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.right, "bg-slate-200")}</div>
-          <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.left, "bg-slate-200")}</div>
-          <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.top, "bg-slate-300")}</div>
-          <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-slate-300")}</div>
+          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
+          <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>
+          <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.right, "bg-[#d4c5a3]")}</div>
+          <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.left, "bg-[#d4c5a3]")}</div>
+          <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.top, "bg-[#a89070]")}</div>
+          <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-[#a89070]")}</div>
         </div>
       </div>
 
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
-        <div className="flex justify-between items-start mb-2 font-mono text-xs text-orange-300">
+        <div className="flex justify-between items-start mb-2 font-mono text-xs text-[#ff9d00]">
            <span>{isAdmin ? `STOCK: ${product.stock} Bks` : "3D VISUALIZATION"}</span>
            <span>TYPE: {product.type}</span>
            <span>CUKAI: {product.taxStamp || 'Standard'}</span>

@@ -2628,8 +2628,11 @@ const handleGitHubMirror = async () => {
           
           if (editingProduct?.id) { 
               await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); 
-              await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`); 
-              triggerCapy("Product updated successfully!"); 
+              await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`);
+              /* Report the packing that was actually written, not just "saved". A wrong
+                 multiplier is invisible downstream — it produces a plausible total and a
+                 plausible receipt — so the one moment it can be caught is here. */
+              triggerCapy(`${data.name} saved. 1 Karton = ${data.balsPerCarton * data.slopsPerBal * data.packsPerSlop} Bks, 1 Bal = ${data.slopsPerBal * data.packsPerSlop} Bks.`);
           } else { 
               data.createdAt = serverTimestamp(); 
               await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); 
