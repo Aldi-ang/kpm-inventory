@@ -375,7 +375,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         if (cust.lastVisit === localToday) {
             const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
             if (!window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`)) {
-                setCustomerName(""); setShowCustomerDropdown(false); return; 
+                /* Declining must NOT wipe what he typed. It used to, and that is the "I pick a
+                   customer and the box goes blank" bug: a browser that has had "prevent this
+                   page from creating more dialogues" ticked returns false from confirm()
+                   WITHOUT showing anything, so the field emptied for no visible reason. The
+                   guard is unchanged — declining still refuses the selection — it just no
+                   longer destroys his input on the way out. */
+                setShowCustomerDropdown(false); return;
             }
         }
 
@@ -384,7 +390,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         if (assignedAgent && assignedAgent !== 'Unassigned') {
             const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
             if (!isAssignedToMe && !window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()}.\n\nAre you sure you want to intercept their target?`)) {
-                setCustomerName(""); setShowCustomerDropdown(false); return;
+                // same as above: refuse the selection, keep his typing
+                setShowCustomerDropdown(false); return;
             }
         }
 

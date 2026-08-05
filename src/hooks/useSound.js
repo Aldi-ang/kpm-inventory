@@ -42,6 +42,44 @@ const VOLUMES = {
 };
 const DEFAULT_VOLUME = 0.85;
 
+/* ---- LOUDER THAN THE FILE ----
+   An <audio> element's volume is a fraction: 1.0 IS the file, and there is no 1.5. The
+   steppers were already pinned at 1.0 and Aldi still wants them louder, so the only way up
+   is a real gain stage — route the element through Web Audio and multiply.
+
+   Numbers are multipliers of the file, not fractions of it. The stepper gets the most
+   because it is pressed more than anything else in the app, usually outdoors beside a road.
+   The mumbles stay modest: eight fire in a row, and loud enough they stop being a voice.
+
+   If Web Audio is missing or refuses, nothing breaks — the element keeps playing at its own
+   volume, which is exactly today's behaviour. */
+const BOOST = {
+  click: 3.2, error: 2.4, tap: 2.2, commit: 2.4, sign: 2.4,
+  mumble1: 1.5, mumble2: 1.5, mumble3: 1.5, mumble4: 1.5,
+};
+const DEFAULT_BOOST = 1.8;
+
+let audioCtx = null;
+const routed = new WeakSet();   // createMediaElementSource may only be called ONCE per element
+
+function boostElement(el, name) {
+  if (!audioCtx || routed.has(el)) return;
+  try {
+    const src = audioCtx.createMediaElementSource(el);
+    const gain = audioCtx.createGain();
+    gain.gain.value = BOOST[name] ?? DEFAULT_BOOST;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    routed.add(el);
+    /* Once it is in the graph the element's own volume becomes the PRE-gain level, so it
+       goes to full and the multiplier above does the shaping. Leaving it at 0.5 here would
+       simply halve everything before the boost and undo the point. */
+    el.volume = 1;
+  } catch (err) {
+    /* Already routed, or no output device. Element volume still applies. */
+  }
+}
+
 const POOL_SIZE = 3;
 
 /* name -> { els: HTMLAudioElement[], next: number } */
@@ -98,6 +136,17 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
   initSounds(AudioImpl);
   const pool = pools.get('tap');
   if (!pool) return Promise.resolve(false);
+
+  /* The unlock gesture is also the only moment Web Audio is allowed to start, so the gain
+     stage is built here rather than at import time. */
+  try {
+    const Ctx = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (Ctx && !audioCtx) audioCtx = new Ctx();
+    if (audioCtx?.state === 'suspended') audioCtx.resume();
+    if (audioCtx) {
+      for (const [name, p] of pools) p.els.forEach(el => boostElement(el, name));
+    }
+  } catch (err) { audioCtx = null; }
 
   const el = pool.els[0];
   const wasVolume = el.volume;

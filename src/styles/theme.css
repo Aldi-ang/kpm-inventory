@@ -797,8 +797,27 @@ html.lite-mode .kpm-rail-panel { animation: none; }
    centring the bubble on the BOX put it off his shoulder. These numbers are measured from
    the art: his hat crown sits about 30px down the frame, which after the .72 scale is
    roughly 122px above his feet, and his head centres near 55% across. */
+/* Anchored to the RIGHT edge, not to a percentage of the box.
+
+   The figure is scaled with transform-origin: bottom right, so whatever the art does inside
+   its 200px frame, he always ends up hard against that right edge. Pinning the bubble to the
+   same edge makes it track him by construction — the two previous attempts both guessed a
+   percentage of the container and both landed off his shoulder, because the drawing is not
+   centred in its frame and a percentage cannot know that.
+
+   The tail sits 44px in from the right, which is over his head rather than his arm. */
 .kpm-merch-float .bubble {
-  bottom: 150px;
-  left: 55%;
+  bottom: 158px;
+  left: auto;
+  right: 4px;
+  transform: none;
 }
-.kpm-merch-float .bubble::after { left: 50%; margin-left: -6px; }
+.kpm-merch-float .bubble::after { left: auto; right: 44px; margin-left: 0; }
+
+/* kpmSays carries translateX(-50%) for the alcove bubble, which would drag this one back
+   off-centre. This one fades and rises only. */
+@keyframes kpmFloatSays {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.kpm-merch-float .bubble { animation: kpmFloatSays .22s ease-out both; }
