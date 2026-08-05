@@ -4,6 +4,7 @@ import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot
 import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference, convertToBks, splitToUnits } from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
+import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
@@ -1142,6 +1143,48 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         return inPlay.reduce((a, b) => ((a.stock || 0) <= (b.stock || 0) ? a : b));
     }, [inventory]);
 
+    /* What he should know before he opens the shop door. Built from the transactions already
+       in memory, so the common case — a store on a weekly round — costs nothing extra. */
+    const brief = React.useMemo(
+        () => customerBrief(transactions, customerName),
+        [transactions, customerName]
+    );
+
+    /* One tap to load their usual order. Everything is re-priced from TODAY's product record
+       rather than replayed from the stored line, or a sale would resurrect last month's
+       price. Lines he cannot actually fulfil are dropped or clamped by reorderFromLast, and
+       he is told which — a basket that quietly differs from the one he asked for is worse
+       than no button at all. */
+    const handleReorder = () => {
+        if (!brief) return;
+        const { lines, dropped, clamped } = reorderFromLast(brief.lastItems, inventory);
+        if (!lines.length) {
+            alert("Nothing from their last order is on the vehicle today.");
+            return;
+        }
+
+        const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail'));
+        setCart(lines.map(({ product, qty, unit }) => {
+            let base = product.priceRetail || 0;
+            if (tierToUse === 'Ecer') base = product.priceEcer || 0;
+            if (tierToUse === 'Grosir') base = product.priceGrosir || 0;
+            return {
+                productId: product.id, name: product.name, qty, unit, priceTier: tierToUse,
+                calculatedPrice: base * convertToBks(1, unit, product),
+                product, condition: 'GOOD', returnReason: '', otherReasonDetail: '',
+                fulfillment: 'NOW',
+            };
+        }));
+
+        unlockSounds().then(() => playSound('commit'));
+        triggerMerchantSpeak('add');
+
+        const notes = [];
+        if (clamped.length) notes.push(clamped.map(c => `${c.name}: only ${c.qty} on board (wanted ${c.wanted})`).join('\n'));
+        if (dropped.length) notes.push(`Not on the vehicle today:\n${dropped.join('\n')}`);
+        if (notes.length) alert(`Loaded their last order, with changes:\n\n${notes.join('\n\n')}`);
+    };
+
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
 
@@ -1835,6 +1878,69 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     );
                                 })()}
                             </div>
+                        </div>
+                    ) : brief ? (
+                        /* THE BRIEF. Ranked above Today because the moment a customer is named,
+                           the day's running total stops being the useful thing on screen and
+                           their file starts being it. A hovered ware still wins over both — that
+                           is him pointing at something specific. */
+                        <div key="brief" className="kpm-rail-panel">
+                            <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</h3>
+                            <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[#e8e4de] break-words">{customerName}</p>
+
+                            {debtInfo && debtInfo.totalDebt > 0 && (
+                                <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Owes</div>
+                                    <div className="font-mono text-[15px] font-black tabular-nums text-[#e08c82] leading-none">
+                                        Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
+                                    </div>
+                                    <div className="mt-1 font-mono text-[10px] tabular-nums text-[#7a736a]">{debtInfo.ageDays} days old</div>
+                                </div>
+                            )}
+
+                            <div className="border-t border-[#26231f] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Last order &middot; {agoLabel(brief.lastAt)}</div>
+                                {brief.lastItems.length ? (
+                                    <ul className="m-0 list-none p-0 flex flex-col gap-1">
+                                        {brief.lastItems.slice(0, 4).map((it, i) => (
+                                            <li key={i} className="font-mono text-[11px] leading-tight text-[#e8e4de] flex justify-between gap-2">
+                                                <span className="min-w-0 break-words">{it.name}</span>
+                                                <span className="shrink-0 tabular-nums text-[#a39b90]">{it.qty} {it.unit}</span>
+                                            </li>
+                                        ))}
+                                        {brief.lastItems.length > 4 && (
+                                            <li className="font-mono text-[10px] text-[#7a736a]">+{brief.lastItems.length - 4} more</li>
+                                        )}
+                                    </ul>
+                                ) : (
+                                    <p className="m-0 font-mono text-[11px] text-[#7a736a]">No line detail on that order.</p>
+                                )}
+                                <div className="mt-2 font-mono text-[11px] font-black tabular-nums text-[#ff9d00]">
+                                    Rp {new Intl.NumberFormat('id-ID').format(brief.lastTotal)}
+                                </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#26231f] pt-3">
+                                <div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1">Usual basket</div>
+                                    <div className="font-mono text-[13px] font-black tabular-nums text-[#e8e4de]">Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</div>
+                                </div>
+                                <div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1">Visits &middot; 7d</div>
+                                    <div className="font-mono text-[13px] font-black tabular-nums text-[#e8e4de]">{brief.visits}</div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleReorder}
+                                disabled={isReturMode || !brief.lastItems.length}
+                                className="kpm-hover kpm-press mt-4 w-full rounded border-2 border-[#ffca28] bg-gradient-to-r from-[#ff9d00] to-[#c47f00] py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black disabled:cursor-not-allowed disabled:border-[#3e3a35] disabled:bg-none disabled:bg-transparent disabled:text-[#57514a]"
+                            >
+                                Same as last time
+                            </button>
+                            {isReturMode && (
+                                <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[#7a736a]">Not while a retur is open.</p>
+                            )}
                         </div>
                     ) : (
                         <div key="today" className="kpm-rail-panel">
