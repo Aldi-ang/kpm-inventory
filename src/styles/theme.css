@@ -787,8 +787,18 @@ html.lite-mode .kpm-rail-panel { animation: none; }
 @media (max-width: 1535px) {
   html.kpm-nav-open .kpm-rail { display: none; }
 }
-/* Same shift for the third column of wares: 1600 of real space becomes 1856 of screen. */
-@media (max-width: 1855px) {
+/* Same shift for the third column of wares.
+
+   The arithmetic, so the next person does not have to guess at it: the ledger takes 420px
+   and the rail 236px, so a third column needs about 3 x 200 for the cards plus 2 x 24 of
+   gap plus 48 of padding — roughly 700px of shelf, so ~1400px of screen. With the
+   navigation panel open, add its 256px: ~1660px.
+
+   Those numbers only hold because the cards now FILL their grid track. They used to carry a
+   fixed lg:w-[260px] inside the grid, which forced the third column to wait for ~1790px of
+   screen — that is why Aldi kept seeing two. A fixed width inside a grid fights the track
+   instead of using it. */
+@media (max-width: 1659px) {
   html.kpm-nav-open .kpm-wares-3up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
