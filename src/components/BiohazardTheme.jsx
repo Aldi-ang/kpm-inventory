@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
@@ -20,6 +20,19 @@ export default function BiohazardTheme({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(
         () => typeof window !== 'undefined' && window.innerWidth >= 1024
     );
+
+    /* Tell the rest of the app the sidebar is taking 256px.
+
+       Tailwind's breakpoints measure the VIEWPORT, so a screen at 1400px looks identical to
+       them whether this panel is open or shut — but the sales terminal only has 1144px to
+       lay out in when it is open. That is why its shelf and rail collapsed into each other.
+       A class on <html> is the smallest thing that lets CSS account for the difference; see
+       the kpm-nav-open rules in theme.css. */
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.toggle('kpm-nav-open', isMobileMenuOpen);
+        return () => root.classList.remove('kpm-nav-open');
+    }, [isMobileMenuOpen]);
     
     const handleLogout = () => {
         if(window.confirm("Terminate Session?")) {

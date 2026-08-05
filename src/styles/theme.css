@@ -775,3 +775,30 @@ html.lite-mode .kpm-merch-float .bubble { animation: none; }
 }
 html.lite-mode .kpm-rail-panel { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-rail-panel { animation: none; } }
+
+/* ---------- THE SIDEBAR STEALS 256px ----------
+   Tailwind's breakpoints measure the VIEWPORT. They cannot see that the navigation panel is
+   open, so at 1400px the terminal was still being told "you have xl room" while it actually
+   had 1144px — and the ledger, the shelf and the rail crushed into each other.
+
+   html.kpm-nav-open is set by BiohazardTheme whenever the panel is open. The thresholds
+   below are simply the normal ones plus the panel's width: the rail needs 1280 of real
+   space, so it needs 1536 of screen while the panel is open. */
+@media (max-width: 1535px) {
+  html.kpm-nav-open .kpm-rail { display: none; }
+}
+/* Same shift for the third column of wares: 1600 of real space becomes 1856 of screen. */
+@media (max-width: 1855px) {
+  html.kpm-nav-open .kpm-wares-3up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- THE CORNER MERCHANT'S LINE ----------
+   His drawing is not centred inside its 200px frame — he stands toward the right of it — so
+   centring the bubble on the BOX put it off his shoulder. These numbers are measured from
+   the art: his hat crown sits about 30px down the frame, which after the .72 scale is
+   roughly 122px above his feet, and his head centres near 55% across. */
+.kpm-merch-float .bubble {
+  bottom: 150px;
+  left: 55%;
+}
+.kpm-merch-float .bubble::after { left: 50%; margin-left: -6px; }

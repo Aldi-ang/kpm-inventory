@@ -1596,21 +1596,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
                 </div>
 
-                {/* He stepped out of the cave. Same sprite, same line, same mood — the only
-                    difference is where he is standing, so there is nothing here that can drift
-                    out of sync with the alcove. Desktop only: below lg there is no alcove to
-                    leave, and CapybaraMascot already covers the phone. */}
-                {floatShown && (
-                    <div className={`kpm-merch-float hide-on-print hidden lg:block ${floatLeaving ? 'leaving' : ''}`}>
-                        {merchantLine && merchantMood !== 'idle' && (
-                            <p className="bubble" role="status">{merchantLine}</p>
-                        )}
-                        <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
-                            {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
-                        </div>
-                    </div>
-                )}
-
                 {/* The grip. Collapsed it is the whole drawer, so it carries the running
                     total, the item count and the LAST ITEM ADDED - that last one is what
                     removes the need to open the manifest just to check it went in. */}
@@ -1730,23 +1715,39 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
-                {/* onMouseLeave sits on the wrapper, NOT on the grid. Put it on the grid and
-                    moving the cursor across to read the rail would dismiss the very thing you
-                    moved there to read. Leaving this whole region means you have stopped
-                    shopping, which is exactly when the day's figures should come back. */}
-                <div className="flex-1 min-h-0 flex overflow-hidden" onMouseLeave={() => setExamineItem(null)}>
-                <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 xl:grid-cols-2 [@media(min-width:1600px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
+                {/* No onMouseLeave any more: the rail is PINNED by pressing a ware's picture,
+                    so it must survive the cursor leaving. Clearing it on leave is what made the
+                    panel unreachable — you cannot walk to a thing that disappears when you set
+                    off towards it. Press the picture again, or another, to change it. */}
+                <div className="flex-1 min-h-0 flex overflow-hidden">
+                <div className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 xl:grid-cols-2 [@media(min-width:1600px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
-                        <div key={item.id} onClick={() => addToCart(item)} onMouseEnter={() => setExamineItem(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
+                        /* Hover no longer drives the rail. Aldi's problem was concrete and
+                           unanswerable by tuning: to reach the rail on the right he has to drag
+                           the cursor ACROSS the shelf, so the panel he is walking towards keeps
+                           changing under him before he arrives. A pointer cannot teleport.
+
+                           The picture is now a pin — press it and that ware stays in the rail
+                           until he presses another, or the same one again. Pressing anywhere
+                           else on the card still adds to the cart, which is the common action
+                           and keeps the biggest target. */
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-[260px] shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
                             <div className="w-20 h-20 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
                                     Pure CSS on purpose — see the note above .kpm-cube in theme.css. */}
-                                <div className="kpm-cube-stage w-full h-full relative" style={cubeVars(item)}>
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('tap')); setExamineItem(prev => prev?.id === item.id ? null : item); }}
+                                    aria-pressed={examineItem?.id === item.id}
+                                    aria-label={`Show ${item.name} in the rail`}
+                                    className={`kpm-cube-stage w-full h-full relative cursor-pointer bg-transparent border-0 p-0 rounded-lg transition-shadow ${examineItem?.id === item.id ? 'shadow-[inset_0_0_0_2px_#d4af37]' : ''}`}
+                                    style={cubeVars(item)}
+                                >
                                     {renderCube(item)}
-                                </div>
+                                </button>
                                 <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
@@ -1837,7 +1838,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     xl and up only. Below that the shelf needs the width more, and nothing is
                     lost: examine is still on the eye button and the day's figures live on the
                     dashboard, which is where you go between routes anyway. */}
-                <aside className="hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[#3e3226] bg-[#0f0e0d] p-4 overflow-y-auto kpm-scroll">
+                <aside className="kpm-rail hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[#3e3226] bg-[#0f0e0d] p-4 overflow-y-auto kpm-scroll">
                     {examineItem ? (
                         <div key="examine" className="kpm-rail-panel">
                             <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Examine</h3>
@@ -2004,6 +2005,27 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </aside>
                 </div>
             </div>
+            {/* He stepped out of the cave. Same sprite, same line, same mood — the only
+                difference is where he is standing, so there is nothing here that can drift out
+                of sync with the alcove. Desktop only: below lg there is no alcove to leave, and
+                CapybaraMascot already covers the phone.
+
+                Rendered HERE, at the terminal root, and deliberately NOT inside the ledger
+                column. That column carries lg:z-10, which starts its own stacking context —
+                anything inside it is trapped below z-index 10 no matter what its own z-index
+                says, so he was painted behind the wares grid that follows him in the DOM. A
+                fixed element only escapes if no ancestor has boxed it in. */}
+            {floatShown && (
+                <div className={`kpm-merch-float hide-on-print hidden lg:block ${floatLeaving ? 'leaving' : ''}`}>
+                    {merchantLine && merchantMood !== 'idle' && (
+                        <p className="bubble" role="status">{merchantLine}</p>
+                    )}
+                    <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
+                        {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                    </div>
+                </div>
+            )}
+
             {/* the duplicate desktop manifest lived here. Removed 2026-08-03: the drawer
                 column above now carries the manifest at every width. Its removal also kills
                 the duplicate `bypassPhotoCapture` element id that made
