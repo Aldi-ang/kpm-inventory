@@ -820,16 +820,28 @@ html.lite-mode .kpm-rail-panel { animation: none; }
    Fixed at the source: pin the figure's own box to the container's bottom-right corner.
    The scaled figure then fills the container exactly, and centring the bubble on the
    container centres it on HIM — by construction, not by measurement. */
-.kpm-merch-float { height: 144px; }
+/* Full size, matching the cave. He was scaled to .72 so he would not dominate the corner,
+   but next to the alcove figure he read as a different, smaller merchant rather than the
+   same one who had walked out. The sheets are drawn at 200px, so scale 1 is also the only
+   size that costs no resampling.
+
+   The box is 200px square now, and the figure keeps its bottom-right anchor, so the
+   bubble's centring still lands on him by construction. pointer-events stays none on the
+   whole group, so a bigger figure cannot start swallowing clicks on the shelf behind it. */
+.kpm-merch-float { width: 200px; height: 200px; }
 .kpm-merch-float .fig {
   position: absolute;
   right: 0;
   bottom: 0;
+  transform: none;
 }
+/* 214px above his feet is exactly where the cave bubble sits above the cave figure, and
+   both figures are now 200px — so the two read as the same character with the same voice. */
 .kpm-merch-float .bubble {
-  bottom: 150px;
+  bottom: 214px;
   left: 50%;
   right: auto;
+  max-width: 230px;
   transform: translateX(-50%);
 }
 .kpm-merch-float .bubble::after { left: 50%; right: auto; margin-left: -6px; }
