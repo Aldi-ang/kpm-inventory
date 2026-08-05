@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } from 'firebase/firestore'; // 🚀 IMPORTED 'where'
+import { mergeNotifications } from '../utils/notifications';
 
 export default function useDatabaseSync(db, appId, user, userId, userRole, agentProfileId) {
     // Data States
@@ -52,7 +53,18 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         // 🛡️ FIREWALL ACTIVE: All transaction/log data is strictly gated to the last 7 days!
         const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Transactions listener:", err.code));
         const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Samplings listener:", err.code));
-        const unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Audit logs listener:", err.code));
+        /* 💸 ADMIN ONLY, same pattern the procurement listener below already uses.
+           Audit logs are written far more often than sales — every save, every restore, every
+           permission change — so this was the single largest listener in the app, and every
+           salesman's phone was paying for all of it on every cold start.
+
+           Nothing non-admin reads them: SafetyStatus (the only agent-visible consumer, via
+           DashboardView) looks exclusively for backup and mirror entries, which are admin
+           actions. A salesman's copy was always empty of anything he could act on. */
+        let unsubLogs = () => {};
+        if (userRole === 'ADMIN') {
+            unsubLogs = onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setAuditLogs(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Audit logs listener:", err.code));
+        }
         // 🚀 FIX: Procurement is HQ-only (see RestockVaultView, "HQ ONLY: FACTORY PROCUREMENT
         // ENGINE"). Firestore rules allow it for the vault owner / distributor admin only, so
         // subscribing every tier threw an uncaught permission-denied in the snapshot listener
@@ -65,15 +77,32 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("EOD reports listener:", err.code));
         const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Account transfers listener:", err.code));
 
-        // 3. Notifications (Filtered + Time-Gated)
-        const unsubNotifs = onSnapshot(query(collection(db, basePath, 'notifications'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => {
-            const myNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(n => {
-                if (userRole === 'ADMIN' && n.targetRole === 'ADMIN') return true;
-                if (agentProfileId && n.targetId === agentProfileId) return true;
-                return false;
-            });
-            setNotifications(myNotifs);
-        }, (err) => console.warn("Notifications listener:", err.code));
+        /* 3. Notifications — 💸 FILTERED ON THE SERVER, not after paying for the rows.
+           This read EVERY notification in the collection for 7 days and then threw away all
+           but the handful addressed to this user. Firestore bills the documents it sends, so
+           the discarded ones were the bulk of the cost and none of the value.
+
+           Deliberately a single-field equality with NO timestamp clause. Adding
+           where(timestamp) + orderBy on top of an equality needs a COMPOSITE INDEX, and a
+           missing index does not degrade — it fails the listener outright and the bell goes
+           silent. This way each query uses the automatic single-field index, so it needs no
+           index deployment and cannot break in production. The 7-day cut is applied here in
+           the client, where it costs nothing.
+
+           An admin can be addressed both ways (as ADMIN, and as themselves when selling), so
+           they get both queries merged. */
+        const notifRef = collection(db, basePath, 'notifications');
+        const notifQueries = [];
+        if (userRole === 'ADMIN') notifQueries.push(query(notifRef, where('targetRole', '==', 'ADMIN')));
+        if (agentProfileId)       notifQueries.push(query(notifRef, where('targetId', '==', agentProfileId)));
+
+        const notifBuckets = notifQueries.map(() => []);
+        const notifCutoff = sevenDaysAgo.getTime();
+        const notifUnsubs = notifQueries.map((q, i) => onSnapshot(q, (snap) => {
+            notifBuckets[i] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setNotifications(mergeNotifications(notifBuckets, notifCutoff));
+        }, (err) => console.warn("Notifications listener:", err.code)));
+        const unsubNotifs = () => notifUnsubs.forEach(u => u());
 
         // 4. Admin Vehicle Canvas
         const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
