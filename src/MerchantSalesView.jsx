@@ -397,6 +397,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
+        /* Drop any pinned ware. A pin outranks the brief in the rail, and since pins now
+           persist until pressed again, one left over from earlier browsing would hide the
+           brief for every customer chosen afterwards — which is exactly what it did. */
+        setExamineItem(null);
         triggerMerchantSpeak('add');
         setSelectedCustomerInfo(cust); 
         setBypassState({ status: 'idle', id: null, photo: null }); 
@@ -1887,14 +1891,26 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 })()}
                             </div>
                         </div>
-                    ) : brief ? (
+                    ) : customerName.trim() ? (
                         /* THE BRIEF. Ranked above Today because the moment a customer is named,
                            the day's running total stops being the useful thing on screen and
-                           their file starts being it. A hovered ware still wins over both — that
-                           is him pointing at something specific. */
+                           their file starts being it. A PINNED ware still wins over both — that
+                           is him pointing at something specific.
+
+                           Shown whenever a customer is NAMED, not only when history exists.
+                           "No recent order" is itself worth reading: it says this is a new or a
+                           stale account and he should not assume a usual basket. Falling back to
+                           the day's takings there just looked like the rail had ignored him. */
                         <div key="brief" className="kpm-rail-panel">
                             <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</h3>
                             <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[#e8e4de] break-words">{customerName}</p>
+
+                            {!brief && (
+                                <p className="m-0 border-t border-[#26231f] pt-3 font-mono text-[11px] leading-relaxed text-[#7a736a]">
+                                    No order in the last 7 days.<br/>
+                                    <span className="text-[#57514a]">New account, or one worth asking about.</span>
+                                </p>
+                            )}
 
                             {debtInfo && debtInfo.totalDebt > 0 && (
                                 <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
@@ -1906,6 +1922,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
+                            {brief && (<>
                             <div className="border-t border-[#26231f] pt-3">
                                 <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Last order &middot; {agoLabel(brief.lastAt)}</div>
                                 {brief.lastItems.length ? (
@@ -1949,6 +1966,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             {isReturMode && (
                                 <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[#7a736a]">Not while a retur is open.</p>
                             )}
+                            </>)}
                         </div>
                     ) : (
                         <div key="today" className="kpm-rail-panel">
