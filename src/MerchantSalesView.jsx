@@ -296,6 +296,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const CHATTER = {
         add:       ["Right, that's noted.", "Into the book it goes.", "Good pick.", "Aye, one more."],
         expensive: ["Now that's a proper ware.", "Heavy coin, that one.", "Fine taste."],
+        /* Choosing a customer used to borrow the `add` lines, so he announced "Aye, one more"
+           when nothing had been added — he was narrating the wrong event. These are about
+           opening someone's page, and they stay neutral because the same lines have to suit a
+           regular and a shop he has never sold to. */
+        customer:  ["Their page, then.", "Right, let's see their book.", "Ah. This one.", "Let's have a look at them."],
     };
     const triggerMerchantSpeak = (type) => {
         // He reacts, but not to every single press - a 15-line basket would have him
@@ -401,7 +406,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
            persist until pressed again, one left over from earlier browsing would hide the
            brief for every customer chosen afterwards — which is exactly what it did. */
         setExamineItem(null);
-        triggerMerchantSpeak('add');
+        triggerMerchantSpeak('customer');
         setSelectedCustomerInfo(cust); 
         setBypassState({ status: 'idle', id: null, photo: null }); 
 
