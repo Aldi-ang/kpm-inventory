@@ -141,6 +141,11 @@ check(G7b, 'hover gated behind a real pointer',
 check(G7b, 'reorder button meets the 44px touch minimum', term.includes('h-11'));
 inJs (G7b, 'stock breakdown on the card',  'In vehicle');
 check(G7b, 'card wraps so the breakdown gets its own row', term.includes('flex-wrap lg:flex-col'));
+/* Three targets never fit an 80px square. The eye moved into the panel; the picture keeps
+   the square to itself and grew to 96px. */
+inJs (G7b, 'examine moved into the panel', 'Examine in 3D');
+check(G7b, 'eye no longer overlaps the picture on phone', term.includes('hidden lg:block absolute bottom-3 left-3'));
+check(G7b, 'picture target grew to 96px', term.includes('w-24 h-24 lg:w-auto'));
 
 /* ── 8. PALETTE LAW ──────────────────────────────────────────────────────── */
 const G8 = '8. Palette law';

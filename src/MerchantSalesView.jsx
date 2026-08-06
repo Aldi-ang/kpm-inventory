@@ -1820,7 +1820,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                            else on the card still adds to the cart, which is the common action
                            and keeps the biggest target. */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row flex-wrap lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
-                            <div className="w-20 h-20 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
+                            {/* 96px on a phone, not 80. This whole square is the press target for
+                                the stock breakdown, and 80 minus its own padding left barely more
+                                than a fingertip. */}
+                            <div className="w-24 h-24 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
@@ -1841,10 +1844,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {/* Examine was reachable ONLY by right-click, which does not exist on a
                                     phone — so on the device most of these sales happen on, the 3D box
                                     could not be opened at all. Right-click still works. */}
+                                {/* Desktop only. On a phone this sat in the corner of an 80px square
+                                    that is ALSO the press target for the stock breakdown, so two
+                                    controls fought over one thumb-width and neither was reliable.
+                                    It moves into the breakdown panel below, where it gets a full
+                                    row — see "Examine in 3D" there. */}
                                 <button
                                     onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
                                     aria-label={`Examine ${item.name}`}
-                                    className="kpm-press kpm-hover absolute bottom-1 left-1 lg:bottom-3 lg:left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                    className="kpm-press kpm-hover hidden lg:block absolute bottom-3 left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
                                 >
                                     <Eye size={14}/>
                                 </button>
@@ -1949,6 +1957,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     ) : (
                                         <div className="font-mono text-[11px] font-black uppercase text-[#b4524a]">Empty</div>
                                     )}
+
+                                    {/* The eye moved here off the 80px image. A full row at 44px is
+                                        a target a thumb can actually hit, and it only appears once
+                                        he has asked about this ware — which is exactly when he might
+                                        want to turn it over. */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
+                                        className="kpm-press mt-2 flex h-11 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256]"
+                                    >
+                                        <Eye size={14}/> Examine in 3D
+                                    </button>
                                 </div>
                             )}
                         </div>
