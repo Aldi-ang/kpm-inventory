@@ -125,6 +125,21 @@ for (const [label, needle] of [
   ['printed receipt',     'print-receipt'],
 ]) inJs(G7, label, needle);
 
+/* ── 7b. THE PHONE ───────────────────────────────────────────────────────── */
+const G7b = '7b. Phone';
+inCss(G7b, 'context strip',               '.kpm-strip');
+inCss(G7b, 'strip enters',                '@keyframes kpmStripIn');
+inJs (G7b, 'brief on the phone',          'Before you go in');
+inJs (G7b, 'collapses while selling',     'Selling to');
+check(G7b, 'strip animates transform/opacity only, never height',
+  !/\.kpm-strip\{[^}]*height/.test(css) && !/@keyframes kpmStripIn\{[^}]*height/.test(css));
+/* A touch screen fires :hover on tap and KEEPS it. Ungated hover rules latch onto whatever
+   was last pressed — brackets stuck on, a ware spinning forever. */
+check(G7b, 'hover gated behind a real pointer',
+  (css.match(/@media\(hover:hover\)and \(pointer:fine\)/g) || []).length >= 2,
+  'need the bracket hover AND the cube spin gated');
+check(G7b, 'reorder button meets the 44px touch minimum', term.includes('h-11'));
+
 /* ── 8. PALETTE LAW ──────────────────────────────────────────────────────── */
 const G8 = '8. Palette law';
 const beforeNota = src.slice(0, src.indexOf('print-receipt'));

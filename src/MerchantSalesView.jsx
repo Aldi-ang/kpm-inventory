@@ -1731,6 +1731,77 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     a phone, where sideways swiping is natural and vertical space is scarce.
                     The file had NO xl or 2xl classes at all, so a 1920px screen was rendering
                     the 1024px layout and scrolling sideways through 260px cards. */}
+                {/* ---------- THE CONTEXT STRIP — phone only ----------
+                    The rail does not come to the phone: there is no room and no cursor to
+                    drive it. What crosses over is the INFORMATION, in the shape a phone can
+                    carry — one card, never a dashboard.
+
+                    It shows the customer's file while he is deciding, then collapses to a
+                    single line the moment the basket has something in it. That is the whole
+                    trick: a brief is worth a lot in the thirty seconds before the
+                    conversation and nothing at all while he is counting Karton, so it gives
+                    the room back to the shelf exactly when the shelf needs it.
+
+                    Collapsing is a swap between two short blocks, NOT an animated height.
+                    Height animates through layout on every frame; on the cheap Android this
+                    runs on that is the difference between smooth and not. */}
+                {customerName.trim() && (
+                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
+                        {cart.length > 0 ? (
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#7a736a]">Selling to</div>
+                                    <div className="truncate font-mono text-[12px] font-black uppercase text-[#e8e4de]">{customerName}</div>
+                                </div>
+                                {/* The debt is the ONE thing that stays visible while he sells.
+                                    Everything else can wait; this changes what he should accept. */}
+                                {debtInfo && debtInfo.totalDebt > 0 && (
+                                    <div className="shrink-0 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-2 py-1 text-right">
+                                        <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[#b4524a]">Owes</div>
+                                        <div className="font-mono text-[11px] font-black tabular-nums text-[#e08c82]">
+                                            Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</div>
+                                        <div className="truncate font-mono text-[13px] font-black uppercase text-[#e8e4de]">{customerName}</div>
+                                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                            {brief
+                                                ? <>Last order {agoLabel(brief.lastAt)} &middot; usually Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</>
+                                                : 'No order in the last 7 days'}
+                                        </div>
+                                    </div>
+                                    {debtInfo && debtInfo.totalDebt > 0 && (
+                                        <div className="shrink-0 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-2 py-1 text-right">
+                                            <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[#b4524a]">Owes</div>
+                                            <div className="font-mono text-[11px] font-black tabular-nums text-[#e08c82]">
+                                                Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
+                                            </div>
+                                            <div className="font-mono text-[8.5px] tabular-nums text-[#7a736a]">{debtInfo.ageDays}d old</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 44px tall, which is the touch minimum — this is pressed with a
+                                    thumb, outdoors, often one-handed. */}
+                                {brief?.lastItems?.length > 0 && !isReturMode && (
+                                    <button
+                                        onClick={handleReorder}
+                                        className="kpm-press h-11 w-full rounded border-2 border-[#ffca28] bg-gradient-to-r from-[#ff9d00] to-[#c47f00] font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black"
+                                    >
+                                        Same as last time
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* No onMouseLeave any more: the rail is PINNED by pressing a ware's picture,
                     so it must survive the cursor leaving. Clearing it on leave is what made the
                     panel unreachable — you cannot walk to a thing that disappears when you set

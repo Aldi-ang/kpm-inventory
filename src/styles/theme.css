@@ -514,7 +514,11 @@ html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
   transform: rotateX(-8deg) rotateY(-24deg);
   transition: transform .45s ease-out;
 }
-.product-card:hover .kpm-cube,
+/* Same gate as .kpm-hover: on a touch screen :hover latches after a tap, so without this
+   the last ware pressed would spin forever on a phone. */
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover .kpm-cube { animation: kpm-turn 3.6s linear infinite; }
+}
 .product-card:focus-within .kpm-cube { animation: kpm-turn 3.6s linear infinite; }
 
 /* Face geometry mirrors ExamineModal :73-78 exactly, so a box looks the same in the
@@ -619,9 +623,14 @@ html.lite-mode .product-card:hover .kpm-cube {
 }
 .kpm-hover::before { top: 6px; left: 6px;  border-top-width: 1px; border-left-width: 1px; }
 .kpm-hover::after  { bottom: 6px; right: 6px; border-bottom-width: 1px; border-right-width: 1px; }
-.kpm-hover:hover::before,
+/* Hover is gated behind a real pointer. A touch screen fires :hover on tap and then KEEPS
+   it until you tap elsewhere, so on a phone the brackets would latch onto the last thing
+   the salesman pressed and sit there. Focus is not gated — a keyboard user needs it. */
+@media (hover: hover) and (pointer: fine) {
+  .kpm-hover:hover::before { opacity: 1; top: 3px; left: 3px; }
+  .kpm-hover:hover::after  { opacity: 1; bottom: 3px; right: 3px; }
+}
 .kpm-hover:focus-visible::before { opacity: 1; top: 3px; left: 3px; }
-.kpm-hover:hover::after,
 .kpm-hover:focus-visible::after  { opacity: 1; bottom: 3px; right: 3px; }
 
 /* Lite Mode is the performance switch: the hover still ANSWERS, the brackets just appear
@@ -856,3 +865,24 @@ html.lite-mode .kpm-rail-panel { animation: none; }
 
 /* Lower, closer to his hat. It was clearing the crown by too much and reading as detached. */
 .kpm-alcove .says { bottom: 214px; }
+
+/* ---------- THE PHONE'S CONTEXT STRIP ----------
+   Enters with a short fade and rise. Transform and opacity only — an animated height would
+   run layout on every frame, and this runs on whatever Android the salesman happens to own.
+
+   150ms and a strong ease-out, because he sees this once per store, roughly forty times a
+   day. That is often enough that anything slower would start to feel like waiting, and rare
+   enough that it earns an animation at all. */
+.kpm-strip {
+  animation: kpmStripIn .15s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes kpmStripIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+html.lite-mode .kpm-strip { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* the fade stays — it explains that something arrived; only the movement goes */
+  .kpm-strip { animation: kpmStripFade .15s ease-out both; }
+  @keyframes kpmStripFade { from { opacity: 0; } to { opacity: 1; } }
+}
