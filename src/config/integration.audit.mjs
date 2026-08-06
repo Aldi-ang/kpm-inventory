@@ -74,6 +74,12 @@ inJs (G3, 'no-history state',             'No order in the last 7 days.');
 inJs (G3, 'today vs yesterday',           'vs yesterday');
 inJs (G3, 'stock in units he counts in',  'Bks total');
 inJs (G3, 'reorder guarded by stock',     'on the vehicle today');
+inJs (G3, 'next stop',                    'Next stop');
+inJs (G3, 'how many are left today',      'left today');
+check(G3, 'directions opens maps', term.includes('maps/dir/?api=1'));
+/* It leaves the app, and an app that leaves cannot finish a sale — so it must open in a new
+   tab and must never carry primary weight. */
+check(G3, 'directions opens in a new tab', term.includes('noopener noreferrer'));
 
 /* ── 4. THE LEDGER ───────────────────────────────────────────────────────── */
 const G4 = '4. The ledger';
@@ -155,6 +161,9 @@ check(G7b, 'nothing overlaps the picture', !/absolute bottom-\d+ left-\d+[^"]*z-
 check(G7b, 'examine reachable in BOTH panels',
   (term.match(/Examine in 3D/g) || []).length >= 2, 'rail panel + phone card panel');
 check(G7b, 'picture target grew to 96px', term.includes('w-24 h-24 lg:w-auto'));
+/* The state the phone spends most of its day in: driving, no customer chosen. */
+check(G7b, 'driving state shows the next stop', term.includes('!customerName.trim()') || term.includes('Next stop'));
+check(G7b, 'Go button meets the touch minimum', /h-11 shrink-0 items-center/.test(term));
 
 /* ── 8. PALETTE LAW ──────────────────────────────────────────────────────── */
 const G8 = '8. Palette law';

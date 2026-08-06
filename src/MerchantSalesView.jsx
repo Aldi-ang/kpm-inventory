@@ -5,6 +5,7 @@ import { hasClearance } from './config/permissions';
 import { savePhotoAndGetReference, convertToBks, splitToUnits } from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
+import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
@@ -1166,6 +1167,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         [transactions, customerName]
     );
 
+    /* Where he goes next — the nearest store he is allowed to sell to and has not done today.
+       No journey-plan props were needed: his GPS fix, the customer list and assignedAgent are
+       all already here, the question had simply never been asked. */
+    const upNext = React.useMemo(
+        () => nextStop(customers, agentLocation, user?.displayName || user?.email?.split('@')[0] || ''),
+        [customers, agentLocation, user]
+    );
+
     /* One tap to load their usual order. Everything is re-priced from TODAY's product record
        rather than replayed from the stored line, or a sale would resurrect last month's
        price. Lines he cannot actually fulfil are dropped or clamped by reorderFromLast, and
@@ -1745,6 +1754,36 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     Collapsing is a swap between two short blocks, NOT an animated height.
                     Height animates through layout on every frame; on the cheap Android this
                     runs on that is the difference between smooth and not. */}
+                {/* DRIVING — no customer chosen yet, so the useful thing is where he is going,
+                    not what he is selling. This is the state the phone spends most of its day
+                    in, and it used to show nothing at all. */}
+                {!customerName.trim() && upNext && (
+                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Next stop</div>
+                                <div className="truncate font-mono text-[13px] font-black uppercase text-[#e8e4de]">{upNext.customer.name}</div>
+                                <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                    {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
+                                </div>
+                            </div>
+                            {directionsUrl(upNext.customer) && (
+                                /* Secondary on purpose. It opens another app, and an app that
+                                   leaves cannot finish a sale — so it never gets the primary
+                                   weight even though it is the only button here. */
+                                <a
+                                    href={directionsUrl(upNext.customer)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="kpm-press flex h-11 shrink-0 items-center gap-1.5 rounded border border-[#3e3226] bg-[#1a1815] px-3 font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[#8b7256] no-underline"
+                                >
+                                    <Map size={14}/> Go
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {customerName.trim() && (
                     <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
                         {cart.length > 0 ? (
@@ -2163,6 +2202,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
                                         {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle
                                     </p>
+                                </div>
+                            )}
+
+                            {/* WHERE HE GOES NEXT. Sits in the idle panel because that is the
+                                state he is in between stores — the day's takings and the next
+                                stop answer the same question, "what now?", from either side. */}
+                            {upNext && (
+                                <div className="mt-3 border-t border-[#26231f] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[13px] font-black uppercase leading-tight text-[#e8e4de] break-words">{upNext.customer.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                        {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
+                                    </p>
+                                    {directionsUrl(upNext.customer) && (
+                                        /* A link, not a button: it leaves the app, and an app that
+                                           leaves cannot finish a sale — so it stays secondary and
+                                           quiet, never the thing his thumb finds first. */
+                                        <a
+                                            href={directionsUrl(upNext.customer)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] no-underline hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                        >
+                                            <Map size={13}/> Directions
+                                        </a>
+                                    )}
                                 </div>
                             )}
 
