@@ -94,13 +94,22 @@ inJs (G3, 'next stop explains a finished round', 'Nothing left nearby');
 /* A revisit by the SAME agent is reported, not blocked — blocking it silently was the
    "I pick a customer and nothing happens" bug. Another agent's claim keeps the hard gate. */
 inJs (G3, 'own revisit is reported',      'Already sold here today');
-inJs (G3, "another agent's claim still gates", 'DOUBLE-TAP WARNING');
+inJs (G3, "another agent's claim is reported", 'Already secured today');
+/* window.confirm returns false SILENTLY once a browser has been told to suppress dialogs,
+   so a guard built on it fails closed and invisibly — selecting a store simply does nothing.
+   The claim must be a banner, which cannot be suppressed. */
+check(G3, 'no blocking dialog guards customer selection',
+  !/window\.confirm\([^)]*DOUBLE-TAP/.test(src),
+  'the double-tap dialog must not come back');
 /* The brief must wait until he has SETTLED on a customer. Rendering on raw keystrokes put a
    brief on screen for "HQ" while he was typing his way to "HQ 1", and reported "no order in
    the last 7 days" about a store that does not exist — indistinguishable from a real record. */
 check(G3, 'brief waits for a settled customer', src.includes('customerSettled'));
-check(G3, 'settled means selected OR search closed',
-  /customerSettled\s*=\s*!!customerName\.trim\(\)\s*&&\s*\(!!selectedCustomerInfo\s*\|\|\s*!showCustomerDropdown\)/.test(src));
+/* "Search is closed" was not strong enough — clicking away closes it, and a typed name that
+   happens to match old walk-in transactions then filled the brief with real figures for a
+   store nobody chose. A brief needs a CHOSEN customer. */
+check(G3, 'a brief requires a chosen customer',
+  /customerSettled\s*=\s*!!selectedCustomerInfo\s*&&\s*!!customerName\.trim\(\)/.test(src));
 check(G3, 'no surface still keys off raw typing',
   !/\) : customerName\.trim\(\) \? \(/.test(src) && !/\{customerName\.trim\(\) && \(\n\s*<div className="kpm-strip/.test(src));
 

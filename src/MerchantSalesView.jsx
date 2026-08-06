@@ -144,8 +144,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [agentLocation, setAgentLocation] = useState(null);
     // every store inside the fence, nearest first, capped at two — see verifyLocation
     const [nearbyStores, setNearbyStores] = useState([]);
-    // he has already sold to this store today — shown, not blocked. See handleCustomerSelect.
-    const [revisitToday, setRevisitToday] = useState(false);
+    /* null when the store has not been visited today. Otherwise 'me', or the name of whoever
+       claimed it — shown as a banner rather than a dialog. See handleCustomerSelect. */
+    const [revisitToday, setRevisitToday] = useState(null);
     const [manualOverride, setManualOverride] = useState(false); 
     const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
@@ -404,14 +405,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
            is the anti-fraud case and it should be hard to walk past. My own second visit
            selects normally and reports itself in the brief instead, where it can be read
            rather than dismissed. */
-        if (cust.lastVisit === localToday && !iVisitedIt) {
-            const claimant = (visitedBy || 'ANOTHER AGENT').toUpperCase();
-            if (!window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`)) {
-                // refuse the selection, but never destroy what he typed
-                setShowCustomerDropdown(false); return;
-            }
-        }
-        setRevisitToday(cust.lastVisit === localToday && iVisitedIt);
+        /* ⚠️ NO BLOCKING DIALOG HERE. window.confirm returns false — silently — in any browser
+           where the user has ticked "prevent this page from creating more dialogues", and Aldi
+           hits that constantly while testing. The symptom is brutal: selecting a store does
+           NOTHING, with no message, no selection and no reason. Two of his three test stores
+           behaved that way while a third worked, which is not a bug anyone can diagnose from
+           the outside.
+
+           A guard that fails closed and invisibly is worse than one that reports loudly. So
+           the claim is recorded on the selection and shown in the brief as a standing banner,
+           which cannot be suppressed, cannot be dismissed by reflex, and stays on screen for
+           as long as the decision is live. */
+        setRevisitToday(cust.lastVisit === localToday
+            ? (iVisitedIt ? 'me' : (visitedBy || 'another agent'))
+            : null);
 
         const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
         const assignedAgent = cust.assignedAgent;
@@ -1221,9 +1228,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        Aldi took it for a deleted customer still living in the database. It was his own
        keystrokes.
 
-       Settled means: a profiled customer is selected, or he has closed the search and left a
-       name in the box, which is how a walk-in is entered. Mid-search is neither. */
-    const customerSettled = !!customerName.trim() && (!!selectedCustomerInfo || !showCustomerDropdown);
+       "Closed the search" was not a strong enough signal — clicking away from the box closes
+       it and left "HQ" looking settled. And "HQ" DOES have history, because it is a walk-in
+       he has sold to before, so the brief filled with real figures for a store nobody chose.
+
+       So: a brief needs a CHOSEN customer, full stop. A walk-in is already announced by the
+       "WALK-IN (LOCKED TO ECER)" line under the field, which is the honest label for it —
+       a brief implies a relationship, and a name typed once is not one. */
+    const customerSettled = !!selectedCustomerInfo && !!customerName.trim();
 
     /* Where he goes next — the nearest store he is allowed to sell to and has not done today.
        No journey-plan props were needed: his GPS fix, the customer list and assignedAgent are
@@ -2159,9 +2171,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 customer calls him back the same afternoon — he just has to know
                                 he already sold here today so the second sale is deliberate. */}
                             {revisitToday && (
-                                <div className="mb-3 border-l-[3px] border-[#ff9d00] bg-[#3e2a10] px-3 py-2">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#ff9d00] mb-1">Already sold here today</div>
-                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">This would be a second visit.</div>
+                                /* Someone else's claim is the anti-fraud case and gets the danger
+                                   colour; his own second visit is merely worth knowing. Both stay
+                                   on screen for as long as the decision is live, which a dialog
+                                   he can dismiss in half a second does not. */
+                                <div className={`mb-3 border-l-[3px] px-3 py-2 ${revisitToday === 'me' ? 'border-[#ff9d00] bg-[#3e2a10]' : 'border-[#b4524a] bg-[#1e1512]'}`}>
+                                    <div className={`font-mono text-[9.5px] font-black uppercase tracking-[0.16em] mb-1 ${revisitToday === 'me' ? 'text-[#ff9d00]' : 'text-[#b4524a]'}`}>
+                                        {revisitToday === 'me' ? 'Already sold here today' : 'Already secured today'}
+                                    </div>
+                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">
+                                        {revisitToday === 'me'
+                                            ? 'This would be a second visit.'
+                                            : <>Claimed by <span className="font-black uppercase text-[#e08c82]">{revisitToday}</span>. Selling here is a redundant visit.</>}
+                                    </div>
                                 </div>
                             )}
 
