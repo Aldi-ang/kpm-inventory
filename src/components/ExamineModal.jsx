@@ -56,7 +56,11 @@ export default function ExamineModal({ product, onClose, onUpdateProduct, isAdmi
 
        Never from scale(0): nothing in the world appears out of nothing, and a box that grows
        from a point reads as a special effect rather than as picking something up. */
-    <div className="kpm-examine-in fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4 overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+    /* z-[10000], not z-[60]. The notification bell sits at z-[9999], so at 60 this "full
+       screen" view was never actually on top — the bell stayed clickable through it and a
+       stray press could navigate away mid-inspection. Backdrop blur as well as the dark:
+       blur is what signals a layer you can dismiss, rather than one more panel. */
+    <div className="kpm-examine-in fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       <button onClick={onClose} className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
       
       <div className="absolute top-8 right-24 z-50 flex gap-2" onMouseDown={(e) => e.stopPropagation()}>

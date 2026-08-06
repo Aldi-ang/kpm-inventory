@@ -919,3 +919,15 @@ html.lite-mode .kpm-examine-object { animation: none; }
   /* the fade stays — it still explains that a layer arrived; only the scale goes */
   .kpm-examine-object { animation: kpmExamineGround .2s ease-out both; }
 }
+
+/* ---------- THE MENU BUTTON AND THE HEADER ----------
+   The button is fixed at top-left. With the navigation panel OPEN it sits over the panel's
+   own brand, which already carries a left margin for it. With the panel CLOSED there is
+   nothing there but the page header, so it landed on "System Active".
+
+   Only the closed case needs the inset, and only on a desk — on a phone the header's pt-16
+   already clears it. Padding the LEFT rather than the top, because the top is shared by
+   every screen and pushing it down would cost vertical room everywhere to fix one overlap. */
+@media (min-width: 1024px) {
+  html:not(.kpm-nav-open) .kpm-topbar { padding-left: 76px; }
+}

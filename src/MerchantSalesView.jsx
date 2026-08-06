@@ -144,6 +144,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [agentLocation, setAgentLocation] = useState(null);
     // every store inside the fence, nearest first, capped at two — see verifyLocation
     const [nearbyStores, setNearbyStores] = useState([]);
+    // he has already sold to this store today — shown, not blocked. See handleCustomerSelect.
+    const [revisitToday, setRevisitToday] = useState(false);
     const [manualOverride, setManualOverride] = useState(false); 
     const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
@@ -385,19 +387,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     }, []);
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
-        const localToday = new Date().toLocaleDateString('en-CA'); 
-        if (cust.lastVisit === localToday) {
-            const claimant = String(cust.lastVisitedBy || cust.lastVisitTag || 'ANOTHER AGENT').toUpperCase();
+        const localToday = new Date().toLocaleDateString('en-CA');
+        const meNow = String(user?.displayName || user?.email?.split('@')[0] || '').trim().toLowerCase();
+        const visitedBy = String(cust.lastVisitedBy || cust.lastVisitTag || '').trim();
+        const iVisitedIt = !!meNow && !!visitedBy &&
+            (visitedBy.toLowerCase().includes(meNow) || meNow.includes(visitedBy.toLowerCase()));
+
+        /* A REVISIT BY ME IS NOT A FRAUD SIGNAL. It used to raise the same blocking dialog as
+           another agent's claim, and declining refused the selection — so after Aldi sold to a
+           store, picking that store again did nothing at all: the name stayed as typed, the
+           pinned ware never cleared, and there was no visible reason why. Worse, a browser
+           with "prevent this page from creating more dialogues" ticked answers confirm() with
+           false WITHOUT showing anything, so the block was often invisible.
+
+           So the two cases split. Someone else securing the store keeps the hard gate — that
+           is the anti-fraud case and it should be hard to walk past. My own second visit
+           selects normally and reports itself in the brief instead, where it can be read
+           rather than dismissed. */
+        if (cust.lastVisit === localToday && !iVisitedIt) {
+            const claimant = (visitedBy || 'ANOTHER AGENT').toUpperCase();
             if (!window.confirm(`⚠️ DOUBLE-TAP WARNING!\n\nTarget "${cust.name}" was ALREADY SECURED today by ${claimant}.\n\nAre you absolutely sure you want to proceed with a redundant visit/sale?`)) {
-                /* Declining must NOT wipe what he typed. It used to, and that is the "I pick a
-                   customer and the box goes blank" bug: a browser that has had "prevent this
-                   page from creating more dialogues" ticked returns false from confirm()
-                   WITHOUT showing anything, so the field emptied for no visible reason. The
-                   guard is unchanged — declining still refuses the selection — it just no
-                   longer destroys his input on the way out. */
+                // refuse the selection, but never destroy what he typed
                 setShowCustomerDropdown(false); return;
             }
         }
+        setRevisitToday(cust.lastVisit === localToday && iVisitedIt);
 
         const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
         const assignedAgent = cust.assignedAgent;
@@ -2129,6 +2143,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </p>
                             )}
 
+                            {/* Reported, not blocked. He is allowed to go back — sometimes a
+                                customer calls him back the same afternoon — he just has to know
+                                he already sold here today so the second sale is deliberate. */}
+                            {revisitToday && (
+                                <div className="mb-3 border-l-[3px] border-[#ff9d00] bg-[#3e2a10] px-3 py-2">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#ff9d00] mb-1">Already sold here today</div>
+                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">This would be a second visit.</div>
+                                </div>
+                            )}
+
                             {debtInfo && debtInfo.totalDebt > 0 && (
                                 <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
                                     <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Owes</div>
@@ -2242,6 +2266,34 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             {/* WHERE HE GOES NEXT. Sits in the idle panel because that is the
                                 state he is in between stores — the day's takings and the next
                                 stop answer the same question, "what now?", from either side. */}
+                            {/* No fix, no suggestion — but SAY so. Showing nothing looked like the
+                                feature was missing; Aldi assigned a store to himself, saw an empty
+                                space, and reasonably concluded it did not work. A desktop browser
+                                often has no location permission at all. */}
+                            {!agentLocation && (
+                                <div className="mt-3 border-t border-[#26231f] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[#7a736a]">
+                                        Needs a GPS fix to know what is nearest.
+                                    </p>
+                                    <button
+                                        onClick={() => verifyLocation(true)}
+                                        className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                    >
+                                        <MapPin size={13}/> Find me
+                                    </button>
+                                </div>
+                            )}
+
+                            {agentLocation && !upNext && (
+                                <div className="mt-3 border-t border-[#26231f] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[#7a736a]">
+                                        Nothing left nearby — every store assigned to you has been visited today.
+                                    </p>
+                                </div>
+                            )}
+
                             {upNext && (
                                 <div className="mt-3 border-t border-[#26231f] pt-3">
                                     <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>

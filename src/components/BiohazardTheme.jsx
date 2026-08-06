@@ -184,7 +184,12 @@ export default function BiohazardTheme({
             </div>
 
             <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
-                <div className={`hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative`}>
+                {/* kpm-topbar: on a phone pt-16 already clears the fixed menu button. On a desk
+                    the button used to be hidden, so lg:pt-6 reclaimed that space — but the
+                    button is on desktop now too, and with the panel CLOSED it sits directly on
+                    "System Active". CSS gives this a left inset in exactly that case; padding
+                    the top instead would shove the whole header down at every width. */}
+                <div className={`kpm-topbar hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative`}>
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>

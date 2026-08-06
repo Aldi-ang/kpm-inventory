@@ -88,6 +88,13 @@ check(G3, 'swap renders on both surfaces',
   (src.match(/\{renderStoreSwap\(\)\}/g) || []).length === 2, 'rail + phone strip');
 check(G3, 'swap capped at two', /slice\(0,\s*2\)/.test(src));
 check(G3, 'swap reaches the bundle', term.includes('min-w-0 flex-1 truncate rounded border'));
+/* Showing nothing when there is no GPS fix read as "the feature is missing". */
+inJs (G3, 'next stop explains a missing fix', 'Needs a GPS fix');
+inJs (G3, 'next stop explains a finished round', 'Nothing left nearby');
+/* A revisit by the SAME agent is reported, not blocked — blocking it silently was the
+   "I pick a customer and nothing happens" bug. Another agent's claim keeps the hard gate. */
+inJs (G3, 'own revisit is reported',      'Already sold here today');
+inJs (G3, "another agent's claim still gates", 'DOUBLE-TAP WARNING');
 
 /* ── 4. THE LEDGER ───────────────────────────────────────────────────────── */
 const G4 = '4. The ledger';
@@ -120,6 +127,10 @@ inCss(G6, 'app knows the nav is open',    'kpm-nav-open');
 inCss(G6, 'rail yields when cramped',     'max-width:1535px');
 inCss(G6, 'grid yields when cramped',     'max-width:1659px');
 check(G6, 'sidebar collapses its width', css.includes('.lg' + BS + ':w-0'));
+/* With the panel closed the fixed menu button landed on "System Active". */
+check(G6, 'menu button does not sit on the header', css.includes('html:not(.kpm-nav-open) .kpm-topbar'));
+/* The bell is z-[9999]; a "full screen" 3D view at z-[60] was never actually on top. */
+check(G6, '3D view outranks the notification bell', allJs.includes('z-[10000]'));
 
 /* ── 7. NOTHING LOST ─────────────────────────────────────────────────────── */
 const G7 = '7. Old features intact';
