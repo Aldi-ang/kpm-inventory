@@ -80,6 +80,14 @@ check(G3, 'directions opens maps', term.includes('maps/dir/?api=1'));
 /* It leaves the app, and an app that leaves cannot finish a sale — so it must open in a new
    tab and must never carry primary weight. */
 check(G3, 'directions opens in a new tab', term.includes('noopener noreferrer'));
+/* Two shops sharing a wall is a real situation in a pasar; three is a menu. */
+/* State names are minified away, so the source is the honest place to assert the mechanism
+   and the built chunk is where to assert it actually renders. */
+check(G3, 'two-store swap exists', src.includes('nearbyStores') && src.includes('renderStoreSwap'));
+check(G3, 'swap renders on both surfaces',
+  (src.match(/\{renderStoreSwap\(\)\}/g) || []).length === 2, 'rail + phone strip');
+check(G3, 'swap capped at two', /slice\(0,\s*2\)/.test(src));
+check(G3, 'swap reaches the bundle', term.includes('min-w-0 flex-1 truncate rounded border'));
 
 /* ── 4. THE LEDGER ───────────────────────────────────────────────────────── */
 const G4 = '4. The ledger';

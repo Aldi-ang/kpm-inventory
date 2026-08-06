@@ -142,6 +142,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [gpsStatus, setGpsStatus] = useState('idle'); 
     const [distanceToStore, setDistanceToStore] = useState(null);
     const [agentLocation, setAgentLocation] = useState(null);
+    // every store inside the fence, nearest first, capped at two — see verifyLocation
+    const [nearbyStores, setNearbyStores] = useState([]);
     const [manualOverride, setManualOverride] = useState(false); 
     const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
@@ -230,16 +232,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             setGpsStatus('bypass'); 
                         }
                     } else if (!manualOverride && customers.length > 0) {
-                        let closestStore = null; let minDistance = Infinity;
-                        customers.forEach(c => {
-                            if (c.latitude && c.longitude && c.status !== 'PENDING') {
-                                const dist = calculateDistance(lat, lon, c.latitude, c.longitude);
-                                if (dist < minDistance) { minDistance = dist; closestStore = c; }
-                            }
-                        });
-                        if (closestStore && minDistance <= 50) {
-                            setDistanceToStore(Math.round(minDistance));
-                            handleCustomerSelect(closestStore, Math.round(minDistance));
+                        /* Everything inside the fence, nearest first — not just the single
+                           closest. Two shops share a wall often enough in a pasar that picking
+                           the nearer one and offering no way out is how a sale lands on the
+                           wrong store. Capped at TWO by Aldi's call: two is a real situation,
+                           three is a menu, and beyond that he should search instead. */
+                        const inRange = customers
+                            .filter(c => c.latitude && c.longitude && c.status !== 'PENDING')
+                            .map(c => ({ c, dist: calculateDistance(lat, lon, c.latitude, c.longitude) }))
+                            .filter(x => x.dist <= 50)
+                            .sort((a, b) => a.dist - b.dist);
+
+                        setNearbyStores(inRange.slice(0, 2).map(x => ({ ...x.c, _metres: Math.round(x.dist) })));
+
+                        if (inRange.length) {
+                            setDistanceToStore(Math.round(inRange[0].dist));
+                            handleCustomerSelect(inRange[0].c, Math.round(inRange[0].dist));
                         } else setGpsStatus('idle');
                     } else if (customerName.trim().length > 0) setGpsStatus('walk_in'); 
                     else setGpsStatus('idle');
@@ -1167,6 +1175,30 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         [transactions, customerName]
     );
 
+    /* Two shops inside one fence. Rendered identically on the desk and the phone from one
+       definition, because a control that means "you might be at the other one" must not be
+       two slightly different controls. Only appears when it is genuinely ambiguous. */
+    const renderStoreSwap = () => {
+        if (nearbyStores.length < 2) return null;
+        return (
+            <div className="mb-2 flex gap-1">
+                {nearbyStores.map(s => {
+                    const on = s.name === customerName;
+                    return (
+                        <button
+                            key={s.id}
+                            onClick={() => { if (!on) handleCustomerSelect(s, s._metres); }}
+                            aria-pressed={on}
+                            className={`kpm-press min-w-0 flex-1 truncate rounded border px-2 py-1.5 font-mono text-[9px] font-black uppercase tracking-[0.08em] ${on ? 'border-[#d4af37] bg-[#1a1815] text-[#d4af37]' : 'border-[#3e3226] bg-transparent text-[#7a736a]'}`}
+                        >
+                            {s.name} &middot; {s._metres}m
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    };
+
     /* Where he goes next — the nearest store he is allowed to sell to and has not done today.
        No journey-plan props were needed: his GPS fix, the customer list and assignedAgent are
        all already here, the question had simply never been asked. */
@@ -1805,6 +1837,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                         ) : (
                             <div className="flex flex-col gap-2">
+                                {renderStoreSwap()}
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</div>
@@ -2085,6 +2118,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                            stale account and he should not assume a usual basket. Falling back to
                            the day's takings there just looked like the rail had ignored him. */
                         <div key="brief" className="kpm-rail-panel">
+                            {renderStoreSwap()}
                             <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</h3>
                             <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[#e8e4de] break-words">{customerName}</p>
 
