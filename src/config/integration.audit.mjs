@@ -54,7 +54,7 @@ inCss(G2, '3D box',                       '.kpm-cube');
 inCss(G2, 'sized from real millimetres',  '--mm-h');
 inCss(G2, 'turns on hover',               '@keyframes kpm-turn');
 inJs (G2, 'six faces from the vault',     'useFrontForBack');
-inJs (G2, 'press picture to pin',         'in the rail');
+inJs (G2, 'press picture to pin/expand',  'Show what is left of ');
 inJs (G2, 'examine button',               'Examine ');
 check(G2, 'hover-to-rail removed', !term.includes('onMouseEnter'));
 check(G2, 'no fixed card width in grid', !term.includes('lg:w-[260px]'));
@@ -139,6 +139,8 @@ check(G7b, 'hover gated behind a real pointer',
   (css.match(/@media\(hover:hover\)and \(pointer:fine\)/g) || []).length >= 2,
   'need the bracket hover AND the cube spin gated');
 check(G7b, 'reorder button meets the 44px touch minimum', term.includes('h-11'));
+inJs (G7b, 'stock breakdown on the card',  'In vehicle');
+check(G7b, 'card wraps so the breakdown gets its own row', term.includes('flex-wrap lg:flex-col'));
 
 /* ── 8. PALETTE LAW ──────────────────────────────────────────────────────── */
 const G8 = '8. Palette law';

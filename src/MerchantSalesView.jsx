@@ -1819,7 +1819,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                            until he presses another, or the same one again. Pressing anywhere
                            else on the card still adds to the cart, which is the common action
                            and keeps the biggest target. */
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row flex-wrap lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
                             <div className="w-20 h-20 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
@@ -1829,7 +1829,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('tap')); setExamineItem(prev => prev?.id === item.id ? null : item); }}
                                     aria-pressed={examineItem?.id === item.id}
-                                    aria-label={`Show ${item.name} in the rail`}
+                                    aria-label={`Show what is left of ${item.name}`}
                                     className={`kpm-cube-stage w-full h-full relative cursor-pointer bg-transparent border-0 p-0 rounded-lg transition-shadow ${examineItem?.id === item.id ? 'shadow-[inset_0_0_0_2px_#d4af37]' : ''}`}
                                     style={cubeVars(item)}
                                 >
@@ -1909,6 +1909,48 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     );
                                 })()}
                             </div>
+
+                            {/* PHONE ONLY: the same press that pins a ware to the rail on a desk
+                                opens its stock here, because there is no rail to pin it to. One
+                                gesture, one meaning — "show me this ware" — rendered wherever
+                                there is room for it.
+
+                                It is the units he counts in, not a flat Bks figure. Standing at
+                                the back of the van he needs "two Karton and a Bal", not 1.847.
+                                The card wraps so this lands full width underneath rather than
+                                squeezing the row. */}
+                            {examineItem?.id === item.id && (
+                                <div className="kpm-strip w-full lg:hidden border-t-2 border-[#3e3226] bg-black/40 px-2 py-2">
+                                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                                        <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#7a736a]">In vehicle</span>
+                                        {item.dimensions && (
+                                            <span className="font-mono text-[8.5px] tabular-nums text-[#57514a]">
+                                                {item.dimensions.w}×{item.dimensions.h}×{item.dimensions.d} mm
+                                            </span>
+                                        )}
+                                    </div>
+                                    {item.stock > 0 ? (
+                                        <>
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {(() => {
+                                                    const split = splitToUnits(item.stock, item);
+                                                    return ['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
+                                                        <div key={u} className={`rounded border px-1 py-1 text-center ${split[u] ? 'border-[#5c4b3a] bg-[#1a1815]' : 'border-[#26231f]'}`}>
+                                                            <div className={`font-mono text-[13px] font-black tabular-nums leading-none ${split[u] ? 'text-[#e8e4de]' : 'text-[#3e3a35]'}`}>{split[u]}</div>
+                                                            <div className="mt-0.5 font-mono text-[7px] font-black uppercase tracking-[0.1em] text-[#7a736a]">{u}</div>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                            <div className="mt-1 font-mono text-[9px] tabular-nums text-[#7a736a]">
+                                                = {new Intl.NumberFormat('id-ID').format(item.stock)} Bks total
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="font-mono text-[11px] font-black uppercase text-[#b4524a]">Empty</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
