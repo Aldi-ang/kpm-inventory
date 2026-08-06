@@ -106,9 +106,9 @@ rules, both on you, not on him:
 
 **1. Run the check, do not read the code.**
 ```bash
-npm run build && node src/config/integration.audit.mjs
+npm run build; node src/config/integration.audit.mjs
 ```
-95 checks over the built output. It answers "is the terminal intact?" in one command and
+105 checks over the built output. It answers "is the terminal intact?" in one command and
 costs a fraction of reading `MerchantSalesView.jsx`, which is ~2.000 lines. The other
 `*.selfcheck.mjs` files under `src/config/` do the same for the money paths. **Reading source
 to orient yourself is the expensive habit — the checks exist so you do not have to.**

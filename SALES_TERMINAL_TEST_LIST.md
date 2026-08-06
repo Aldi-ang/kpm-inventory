@@ -6,9 +6,15 @@ Everything designed for the terminal is now built. This is the list to walk, in 
 takes seconds. If it fails, stop and send me the failure — no point testing by hand what a
 machine already says is broken.
 
-```bash
-npm run build && node src/config/integration.audit.mjs
+You are on Windows PowerShell, so use `;` between the two — `&&` is a Bash thing and
+PowerShell rejects it with "not a valid statement separator".
+
+```powershell
+npm run build; node src/config/integration.audit.mjs
 ```
+
+Run it from the project folder, the one holding `package.json`. In VS Code, Terminal → New
+Terminal already opens there.
 
 ## How to report a failure
 
