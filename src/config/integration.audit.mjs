@@ -95,6 +95,14 @@ inJs (G3, 'next stop explains a finished round', 'Nothing left nearby');
    "I pick a customer and nothing happens" bug. Another agent's claim keeps the hard gate. */
 inJs (G3, 'own revisit is reported',      'Already sold here today');
 inJs (G3, "another agent's claim still gates", 'DOUBLE-TAP WARNING');
+/* The brief must wait until he has SETTLED on a customer. Rendering on raw keystrokes put a
+   brief on screen for "HQ" while he was typing his way to "HQ 1", and reported "no order in
+   the last 7 days" about a store that does not exist — indistinguishable from a real record. */
+check(G3, 'brief waits for a settled customer', src.includes('customerSettled'));
+check(G3, 'settled means selected OR search closed',
+  /customerSettled\s*=\s*!!customerName\.trim\(\)\s*&&\s*\(!!selectedCustomerInfo\s*\|\|\s*!showCustomerDropdown\)/.test(src));
+check(G3, 'no surface still keys off raw typing',
+  !/\) : customerName\.trim\(\) \? \(/.test(src) && !/\{customerName\.trim\(\) && \(\n\s*<div className="kpm-strip/.test(src));
 
 /* ── 4. THE LEDGER ───────────────────────────────────────────────────────── */
 const G4 = '4. The ledger';

@@ -1213,6 +1213,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         );
     };
 
+    /* Has he actually SETTLED on a customer, or is he still typing one?
+
+       The brief used to appear for any non-empty text, so typing "HQ" to find "HQ 1" put a
+       brief on screen for a store called "HQ" that does not exist — and reported "no order in
+       the last 7 days" about it, which reads exactly like a real customer with no history.
+       Aldi took it for a deleted customer still living in the database. It was his own
+       keystrokes.
+
+       Settled means: a profiled customer is selected, or he has closed the search and left a
+       name in the box, which is how a walk-in is entered. Mid-search is neither. */
+    const customerSettled = !!customerName.trim() && (!!selectedCustomerInfo || !showCustomerDropdown);
+
     /* Where he goes next — the nearest store he is allowed to sell to and has not done today.
        No journey-plan props were needed: his GPS fix, the customer list and assignedAgent are
        all already here, the question had simply never been asked. */
@@ -1803,7 +1815,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {/* DRIVING — no customer chosen yet, so the useful thing is where he is going,
                     not what he is selling. This is the state the phone spends most of its day
                     in, and it used to show nothing at all. */}
-                {!customerName.trim() && upNext && (
+                {!customerSettled && upNext && (
                     <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
@@ -1830,7 +1842,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
                 )}
 
-                {customerName.trim() && (
+                {customerSettled && (
                     <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
                         {cart.length > 0 ? (
                             <div className="flex items-center justify-between gap-3">
@@ -2121,7 +2133,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <Eye size={14}/> Examine in 3D
                             </button>
                         </div>
-                    ) : customerName.trim() ? (
+                    ) : customerSettled ? (
                         /* THE BRIEF. Ranked above Today because the moment a customer is named,
                            the day's running total stops being the useful thing on screen and
                            their file starts being it. A PINNED ware still wins over both — that
