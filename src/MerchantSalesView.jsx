@@ -1844,18 +1844,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {/* Examine was reachable ONLY by right-click, which does not exist on a
                                     phone — so on the device most of these sales happen on, the 3D box
                                     could not be opened at all. Right-click still works. */}
-                                {/* Desktop only. On a phone this sat in the corner of an 80px square
-                                    that is ALSO the press target for the stock breakdown, so two
-                                    controls fought over one thumb-width and neither was reliable.
-                                    It moves into the breakdown panel below, where it gets a full
-                                    row — see "Examine in 3D" there. */}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
-                                    aria-label={`Examine ${item.name}`}
-                                    className="kpm-press kpm-hover hidden lg:block absolute bottom-3 left-3 z-20 p-1.5 rounded-full bg-black/80 border border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
-                                >
-                                    <Eye size={14}/>
-                                </button>
+                                {/* The eye used to sit here, on top of the picture. Moving it to
+                                    desktop-only was not enough: the picture is the press target for
+                                    "show me this ware" at EVERY width, so anything overlapping it
+                                    competes with it everywhere, just less often on a big screen.
+
+                                    It now lives where the ware's detail already is — the rail on a
+                                    desk, the card's own panel on a phone — so the picture is one
+                                    clean target and the examine button gets a full row in both
+                                    places. Right-click on the card still opens it directly. */}
                             </div>
                             <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-l-2 lg:border-l-0 lg:border-t-2 border-[#3e3226] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
                                 <div className="flex-1 min-w-0 flex flex-col">
@@ -2027,6 +2024,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     );
                                 })()}
                             </div>
+
+                            {/* Same button as the phone's panel, same place in the hierarchy: the
+                                ware's detail. It came off the picture because the picture is the
+                                press target for opening this panel at every width. */}
+                            <button
+                                onClick={() => { unlockSounds().then(() => playSound('click')); onInspect(examineItem); }}
+                                className="kpm-press kpm-hover mt-3 flex h-10 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                            >
+                                <Eye size={14}/> Examine in 3D
+                            </button>
                         </div>
                     ) : customerName.trim() ? (
                         /* THE BRIEF. Ranked above Today because the moment a customer is named,

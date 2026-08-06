@@ -95,6 +95,10 @@ inCss(G5, 'key badge for "/"',            '.kpm-kbd');
 inCss(G5, 'press feedback',               '.kpm-press');
 check(G5, 'louder SFX (gain stage)', allJs.includes('createMediaElementSource'));
 check(G5, 'lite mode still answers hover', css.includes('lite-mode .kpm-hover'));
+inCss(G5, 'examine opens with motion',    '@keyframes kpmExamineObject');
+check(G5, 'examine never scales from zero',
+  /@keyframes kpmExamineObject\{[^}]*scale\(\.94\)/.test(css), 'must start at .94, not 0');
+check(G5, 'examine motion respects lite mode', css.includes('lite-mode .kpm-examine-in'));
 
 /* ── 6. SIDEBAR AWARENESS ────────────────────────────────────────────────── */
 const G6 = '6. Sidebar';
@@ -144,7 +148,12 @@ check(G7b, 'card wraps so the breakdown gets its own row', term.includes('flex-w
 /* Three targets never fit an 80px square. The eye moved into the panel; the picture keeps
    the square to itself and grew to 96px. */
 inJs (G7b, 'examine moved into the panel', 'Examine in 3D');
-check(G7b, 'eye no longer overlaps the picture on phone', term.includes('hidden lg:block absolute bottom-3 left-3'));
+/* Stronger than "the eye is desktop-only": NOTHING may be absolutely positioned over the
+   picture, because the picture is the press target for opening a ware's detail at every
+   width. Anything on top of it competes with it. */
+check(G7b, 'nothing overlaps the picture', !/absolute bottom-\d+ left-\d+[^"]*z-20/.test(term));
+check(G7b, 'examine reachable in BOTH panels',
+  (term.match(/Examine in 3D/g) || []).length >= 2, 'rail panel + phone card panel');
 check(G7b, 'picture target grew to 96px', term.includes('w-24 h-24 lg:w-auto'));
 
 /* ── 8. PALETTE LAW ──────────────────────────────────────────────────────── */

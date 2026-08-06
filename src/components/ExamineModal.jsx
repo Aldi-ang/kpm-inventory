@@ -50,7 +50,13 @@ export default function ExamineModal({ product, onClose, onUpdateProduct, isAdmi
   );
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4 overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+    /* kpm-examine-in: the ground fades, the object scales up from .94. It used to appear
+       fully formed with no transition at all, which reads as a jump cut — the box is simply
+       THERE, and the eye has to re-find what it was looking at.
+
+       Never from scale(0): nothing in the world appears out of nothing, and a box that grows
+       from a point reads as a special effect rather than as picking something up. */
+    <div className="kpm-examine-in fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4 overflow-hidden" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       <button onClick={onClose} className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
       
       <div className="absolute top-8 right-24 z-50 flex gap-2" onMouseDown={(e) => e.stopPropagation()}>
@@ -68,7 +74,7 @@ export default function ExamineModal({ product, onClose, onUpdateProduct, isAdmi
           </p>
       </div>
 
-      <div className="relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
+      <div className="kpm-examine-object relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
         <div className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`, transformStyle: 'preserve-3d', transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}>
           <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
           <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>

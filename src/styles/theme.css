@@ -886,3 +886,36 @@ html.lite-mode .kpm-strip { animation: none; }
   .kpm-strip { animation: kpmStripFade .15s ease-out both; }
   @keyframes kpmStripFade { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* ---------- PICKING UP A WARE ----------
+   The 3D examine used to appear fully formed, with no transition at all. That reads as a
+   jump cut: the box is simply THERE and the eye has to re-find what it was looking at.
+
+   Two parts on purpose. The ground fades in on its own, faster, so the shelf behind is gone
+   before the object settles — otherwise the two compete. The object scales up from .94,
+   which is "picked up", not "materialised". Never from scale(0): nothing in the real world
+   appears out of nothing, and a box growing from a point reads as a special effect.
+
+   200ms and 260ms, both ease-out, because this is opened deliberately and rarely — a few
+   times per route. Long enough to be felt, short enough that a second look costs nothing. */
+.kpm-examine-in {
+  animation: kpmExamineGround .2s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.kpm-examine-object {
+  animation: kpmExamineObject .26s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes kpmExamineGround {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes kpmExamineObject {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+html.lite-mode .kpm-examine-in,
+html.lite-mode .kpm-examine-object { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* the fade stays — it still explains that a layer arrived; only the scale goes */
+  .kpm-examine-object { animation: kpmExamineGround .2s ease-out both; }
+}
