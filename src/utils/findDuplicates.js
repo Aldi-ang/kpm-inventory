@@ -35,6 +35,17 @@ export const metresBetween = (aLat, aLng, bLat, bLng) => {
 
 const hasCoords = (c) => Number.isFinite(Number(c?.latitude)) && Number.isFinite(Number(c?.longitude));
 
+/* A stable name for one group, so a "these are not duplicates" decision can be remembered and
+   the same false positive stops being re-reviewed on every scan. Sorted, so it does not depend
+   on the order members happen to come back in.
+
+   Membership is deliberately part of the key: if a THIRD store later joins a pair he already
+   cleared, the key changes and the group returns for a fresh look. That is correct — the new
+   store is new information, and silently swallowing it would hide a real duplicate behind an
+   old decision. */
+export const groupKey = (group) =>
+    (group?.members ?? []).map(m => String(m?.id ?? '')).sort().join('|');
+
 /* Beyond this, two shops sharing a name are almost certainly two different shops. A genuine
    double-registration lands within metres of itself — the same salesman, standing in the same
    doorway, filing twice. 500m is already far past that. */

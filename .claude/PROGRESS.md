@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 22:20 WIB** · branch `phase0-solid-ground` · last commit `149c890`
+**Updated: 2026-08-07 22:55 WIB** · branch `phase0-solid-ground` · last commit `149c890`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -191,6 +191,50 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-07 22:5x WIB — 🔴 THE CONTEXT METER IS BROKEN. FIX THIS FIRST.
+
+**Aldi hit 92% and no warning ever fired — not once, all session.** The hook IS registered
+(`.claude/settings.json` → UserPromptSubmit → `context-watch.mjs`) and the script itself works;
+it was tested against synthetic transcripts and all four tiers fired correctly.
+
+**The bug is the denominator.** `context-watch.mjs` reads `autoCompactWindow` from
+`C:/Users/ASUS/.claude/settings.json` and divides by it. Aldi ran `/autocompact 1000k`, so that
+value is **1,000,000** — but the real usable context is nowhere near that. At ~185k used the hook
+computes 18% and stays silent, while the UI correctly shows 92%. **The meter has been reporting
+roughly a fifth of the truth for this whole session**, which is why the 93% stop never fired and
+why the 80% and 55% tiers never fired either.
+
+**Fix to make next session (NOT done — do this before any other work):** stop trusting
+`autoCompactWindow` as the window size. Either clamp it (`Math.min(setting, 200_000)`) or drop the
+setting entirely and hard-code the real window. Then re-run the four-tier test — the existing
+synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
+93% stop until this is fixed; it cannot fire.**
+
+### 2026-08-07 22:4x WIB — duplicate panel: Open goes to the wrong place, dismiss is HALF-BUILT
+
+**Uncommitted-work warning: `groupKey` is built and tested but NOTHING USES IT YET.**
+
+Aldi asked for two things and neither is finished:
+
+1. **The Open button is wrong.** It calls `openDetail(m)` → `CustomerDetailView`, which is the
+   competitor-intelligence/3D-map screen, and *"from there i cant go back to folder form, instead
+   its pull me back to he find duplicate panel"*. **He wants it to open the store in the EDIT FORM
+   inside its folder so he can change the data.** The right call is `handleEdit(c)`
+   (`CustomerManager.jsx:956`) — it loads the store into the form and scrolls to top. Also set
+   `setSelectedProvince/Region/City` from the store so he lands in the right folder. One-line
+   swap plus the folder navigation; not done.
+
+2. **"Clarify" / dismiss — his idea, and correct.** *"when there is thousands of stores that we
+   know its not duplicated here each time we press find duplicated, it will be pain in the ass to
+   find the real duplicates right?"* So a group he judges as NOT duplicates must stay dismissed
+   across rescans. `groupKey(group)` is DONE and self-checked in `findDuplicates.js` — sorted
+   member ids joined by `|`, and membership is part of the key on purpose so a third store joining
+   a cleared pair resurfaces it. **What is left:** a "Not duplicates" button per group, persistence
+   (recommended: one Firestore doc `artifacts/{appId}/users/{uid}/settings/duplicate_ignores`
+   holding an array of keys — loaded on scan, written on dismiss), filtering dismissed groups out
+   of the report, and a visible "N hidden · show them · reset" control so it never becomes a black
+   hole. Self-checks are already at **26 passing**.
+
 ### 2026-08-07 22:20 WIB — the finder found a false positive before it found duplicates
 
 **Aldi ran it: 11 groups out of 151 stores.** His screenshot showed the top group as three
@@ -304,48 +348,5 @@ Claude does not enter. Verified only that the build is green, the audit passes, 
 modules serve 200, and the app still renders.
 
 ---
-
-### 2026-08-07 19:2x WIB — duplicate/invisible customers: root cause found (investigation)
-
-**The field-name split. This is the bug.**
-`src/hooks/useTransactionEngine.js` writes the store's tier as **`pricingTier`** — line 104 in the
-offline payload and line 269/284 in the online batch. Every other part of the app writes and reads
-**`priceTier`** (66 uses vs 6). The two are never reconciled on write.
-
-`App.jsx:3209 permittedCustomers` is the filter that decides which stores a non-admin agent can
-see. It reads `c.priceTier`, falls back to `c.tier` — and **does not know about `pricingTier`.**
-Both are absent on a sales-flow store, so `mappedTier` silently defaults to `'Retail'` (line 3220).
-
-**The loop that produces duplicates:**
-1. Salesman registers a store through the sales flow → saved with `pricingTier`, no `priceTier`
-2. The directory filter reads `priceTier` → undefined → treats the store as `'Retail'`
-3. If `'Retail'` is not in that agent's `allowedTiers`, the store he just made is invisible to him
-4. He cannot find it, so he registers it again → **a second document, new random ID**
-5. Repeat
-
-It also means a store registered as **Grosir is priced as Retail** afterwards. That is a money bug,
-not just a visibility one.
-
-**Why the terminal still worked and hid this:** `MerchantSalesView.jsx:301` and `:472` read
-`c.priceTier || c.tier || c.pricingTier` — the terminal DOES understand all three. Only the
-directory/journey/map filter does not. That asymmetry is why selling worked while finding failed.
-
-**Second, independent duplicate source:** `CustomerManager.jsx handleImportKML` (~L588–641) creates
-a fresh auto-ID doc per placemark with **no dedup check at all** — not by name, not by coordinates.
-Importing the same KML twice duplicates every pin. There are also three separate customer-creation
-paths that each mint a new auto-ID with no existence check: `MerchantSalesView.jsx:757` and `:780`,
-and `useTransactionEngine.js:263`.
-
-**Theories checked and RULED OUT — do not re-investigate:**
-- *Nameless ghost docs hidden by `orderBy('name')` in `useDatabaseSync.js:47`.* The mechanism is
-  real (Firestore silently omits docs missing the sort field), but `ignoreUndefinedProperties` is
-  NOT set in `src/config/firebase.js`, so the SDK throws on undefined instead of writing a nameless
-  doc. No app path can create one. Only a hand-edited console doc could.
-- *The browser-dialog bug causing duplicates.* It cannot. A blocked dialog writes nothing.
-- *`project_kpm_email_docid_bug.md`.* Different bug, already resolved, unrelated.
-
-**The one thing that would confirm it against real data**, which Claude cannot do (the app is behind
-a master password and this is production): open the Firebase console → `customers` → pick a known
-duplicate → check whether it has `pricingTier` instead of `priceTier`. That settles it in 2 minutes.
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._

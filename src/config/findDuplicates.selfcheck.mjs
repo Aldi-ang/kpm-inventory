@@ -5,7 +5,7 @@
    salesman re-registering a store he could not find retypes it slightly differently, and the three
    creation paths stamp their dates in three different formats. */
 import assert from 'node:assert/strict';
-import { findDuplicates, normaliseName, metresBetween, createdMillis } from '../utils/findDuplicates.js';
+import { findDuplicates, normaliseName, metresBetween, createdMillis, groupKey } from '../utils/findDuplicates.js';
 
 let n = 0;
 const t = (label, fn) => { fn(); n++; console.log(`  ok   ${label}`); };
@@ -191,6 +191,38 @@ t('a store with no coordinates gets a null distance, not a wrong one', () => {
         {id:'b', name:'TOKO KOORD'},
     ]);
     assert.deepEqual(g[0].distances.filter(d => d === null).length, 1);
+});
+
+/* The "not duplicates" decision has to survive rescans, or at a few thousand stores he re-judges
+   the same false positives forever and stops using the tool. */
+t('a group key is stable no matter what order the members arrive in', () => {
+    const a = groupKey({members:[{id:'x'},{id:'a'},{id:'m'}]});
+    const b = groupKey({members:[{id:'m'},{id:'x'},{id:'a'}]});
+    assert.equal(a, b);
+    assert.equal(a, 'a|m|x');
+});
+
+t('two different groups never share a key', () => {
+    assert.notEqual(groupKey({members:[{id:'a'},{id:'b'}]}),
+                    groupKey({members:[{id:'a'},{id:'c'}]}));
+});
+
+t('a third store joining a cleared pair changes the key, so it comes back', () => {
+    const pair = groupKey({members:[{id:'a'},{id:'b'}]});
+    const trio = groupKey({members:[{id:'a'},{id:'b'},{id:'c'}]});
+    assert.notEqual(pair, trio, 'a new member is new information and must resurface');
+});
+
+t('the key survives a real scan result', () => {
+    const g = findDuplicates([
+        {id:'zzz', name:'TOKO KUNCI'}, {id:'aaa', name:'TOKO KUNCI'},
+    ]);
+    assert.equal(groupKey(g[0]), 'aaa|zzz');
+});
+
+t('junk groups do not blow up the key', () => {
+    assert.equal(groupKey(null), '');
+    assert.equal(groupKey({}), '');
 });
 
 t('haversine is sane', () => {
