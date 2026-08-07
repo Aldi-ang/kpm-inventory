@@ -10,6 +10,13 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/PROGRESS.md\"",
+            "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\PROGRESS.md\" -Raw -Encoding UTF8",
+            "timeout": 5,
+            "statusMessage": "Reading where we left off..."
+          },
+          {
+            "type": "command",
             "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/session-start-context.md\"",
             "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\session-start-context.md\" -Raw -Encoding UTF8",
             "timeout": 5,
@@ -28,6 +35,18 @@
             "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\pre-compact-context.md\" -Raw -Encoding UTF8",
             "timeout": 5,
             "statusMessage": "Telling the summariser what to keep..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/check-progress.mjs\" \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main\"",
+            "timeout": 15,
+            "statusMessage": "Checking the progress note is current..."
           }
         ]
       }

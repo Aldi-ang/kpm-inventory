@@ -1,0 +1,92 @@
+# PROGRESS — read this, search for nothing
+
+**Updated: 2026-08-07 13:56 WIB** · branch `phase0-solid-ground`
+
+This file is printed into Claude automatically at the start of every session, so the
+last state is already in front of him before he touches a tool. He must never go
+hunting for "where did we leave off" again — that hunt is what cost Aldi 60% once.
+
+If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
+
+---
+
+## Where things live — never search for these
+
+| What | Exact path |
+|---|---|
+| The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
+| The 115-check audit — run before anything | `src/config/integration.audit.mjs` |
+| Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
+| Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
+| Standing rules (auto-loaded each session) | `.claude/session-start-context.md` |
+| Compaction guidance (auto-loaded) | `.claude/pre-compact-context.md` |
+| Long-term memory index | `C:\Users\ASUS\.claude\projects\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\memory\MEMORY.md` |
+| The resume brief (traps, locked decisions) | same memory folder → `project_kpm_merchantsales_redesign_brief.md` |
+| A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
+| Code knowledge graph — query, do not grep | `graphify-out/` |
+| Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
+
+## First command of every session
+
+```powershell
+npm run build; node src/config/integration.audit.mjs
+```
+
+115 checks over the built output. One turn, small result. If it passes, the terminal is
+intact — do **not** re-read source to confirm it.
+
+---
+
+## NOW
+
+Sales terminal redesign is **built and passing 115/115**. Design work is CLOSED.
+Aldi is hand-testing it group by group and reporting **BROKEN / UGLY / AWKWARD**.
+He got through groups A and B; four fixes from that pass are already committed.
+
+Alongside that: cutting token cost. Root cause was measured, not guessed —
+cost = context size x turns taken, and the 60% incident was a *search* for progress
+data in the wrong folder. This file exists to end that.
+
+## WAITING ON ALDI — do not re-derive these, just ask
+
+- 🔴 **Other-agent store block.** Picking a store assigned to another salesman is now a
+  loud warning, not a hard block. Does he want the block back? If yes: build it as an
+  in-page confirmation, **never `window.confirm`** (his browser suppresses dialogs, so it
+  silently returns false and the guard fails invisibly).
+- ✅ **Retest HQ 1 and HQ (RETAIL) 1** — they should select properly now.
+- ✅ **Resume the test list at group C**, then D–G. B2/B3 need his phone (GPS).
+  C2 needs a second salesman account, which he does not have — skip and report.
+- 🔴 **`/autocompact 200k`** — recommended, 600k is costing triple rent. His call.
+- 🔴 **Connectors.** He approved removing unused ones, but they are claude.ai account
+  settings — only he can click them. GitHub and Vercel are both unnecessary here
+  (`gh` CLI covers GitHub; this app deploys to Firebase, not Vercel).
+
+## NEXT, once testing is done — he has not chosen
+
+1. Auto-select the customer when he parks inside their geofence + the two-store swap.
+2. The cost chain — needs the journey map and leaderboard changed first.
+3. Regional warehouse stock in the rail — own region only, field is `location`.
+
+---
+
+## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 13:56 WIB
+Measured where tokens actually go by parsing the session transcripts. Found the old
+diagnosis was wrong: no single tool result ever exceeded 3k tokens, so "stop reading the
+big file" was aimed at nothing. The real driver is **~29 tool round-trips per user
+message against a context that is re-sent every turn**. Corrected
+`.claude/session-start-context.md` (`aaa3eda`). Established that `/clear` costs nothing
+while `/compact` at 90% costs ~540k — so notes + clear beats compact at a clean break.
+Researched `rtk-ai/rtk`: verdict **do not install** — it only shrinks shell output, misses
+Claude's native Read/Grep entirely, and would compress away the `git show --stat` proof
+Aldi requires before any "done" claim.
+
+### 2026-08-07 (earlier)
+Test list check-count corrected to 115 (`33e112b`). Resume brief compressed 118 → 96
+lines and the `window.confirm` trap written down for the first time.
+
+### 2026-08-06
+PreCompact hook added and standing rules compressed 128 → 59 lines (`8feb135`).
+Four fixes from Aldi's first test pass (`a2c6c5c`), store selection always acts and the
+round follows the week (`ba4ffe5`), brief waits for a chosen customer (`5eb2a87`).
