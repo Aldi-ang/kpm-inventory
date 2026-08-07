@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:32 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:35 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -74,6 +74,16 @@ data in the wrong folder. This file exists to end that.
   settings — only he can click them. GitHub and Vercel are both unnecessary here
   (`gh` CLI covers GitHub; this app deploys to Firebase, not Vercel).
 
+## 🚫 DO NOT open a PR or merge to main yet
+
+Aldi decided: finish the test list and every adjustment it produces FIRST, then push all 80
+commits together. A break found during testing is fixed on `phase0-solid-ground`, never on
+main. Do not offer the PR again until groups C-G are done and he says so.
+
+The only uncommitted files are graphify generated output (`graphify-out/` modified files plus
+dated folders). Nothing hand-written is unsaved. `graphify update .` regenerates them, so they
+are never worth rescuing.
+
 ## NEXT, once testing is done — he has not chosen
 
 1. Auto-select the customer when he parks inside their geofence + the two-store swap.
@@ -83,6 +93,12 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:35 WIB
+Confirmed clearing the context cannot lose work: /clear empties the conversation only. Branch
+is 80 commits ahead of main (+7.1k lines in src; the +116k in the status bar is mostly
+generated graphify output, not code). Aldi decided to hold the PR until testing and
+adjustments are finished, then push everything at once.
 
 ### 2026-08-07 14:32 WIB
 SETTLED: autoCompactWindow 600k -> 200k, set directly in ~/.claude/settings.json. Autocompact
