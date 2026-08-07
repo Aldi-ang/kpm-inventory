@@ -1,5 +1,13 @@
 ## Standing rules — kpm-inventory
 
+### If Aldi does not remember where things stood
+
+`.claude/PROGRESS.md` was printed above, before this file. It is the whole answer.
+"where were we?", "what was I doing?", "continue the last work" -> answer from that text in the
+first reply, **zero tool calls**. Never grep, never `git log`, never open the terminal file to
+reconstruct state. That reconstruction cost him 60% of a budget once; the note exists to replace
+it, and using a tool anyway wastes the thing that was built to save him.
+
 ### What actually costs Aldi money — measured, not guessed
 
 **Cost = context size x turns taken.** Every turn re-sends the whole conversation, so a result

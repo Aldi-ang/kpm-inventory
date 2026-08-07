@@ -1,12 +1,23 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:07 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:11 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
 hunting for "where did we leave off" again — that hunt is what cost Aldi 60% once.
 
 If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
+
+## ▶ DO THIS NEXT
+
+**Resume the manual test list at group C** — `SALES_TERMINAL_TEST_LIST.md`, groups C through G.
+Four things are waiting on Aldi; they are listed under WAITING ON ALDI below.
+
+**Aldi will often not remember any of this, and that is fine — it is what this file is for.**
+"where were we?" / "what were we doing?" / "continue the last work" are all answered from THIS
+FILE ALONE, in the first reply, with **zero tool calls**. Never run a command, read a file, or
+search anything to reconstruct state — that search is the 60% incident, and this file exists so
+it never happens twice. Answer, then ask which of the waiting items he wants to take.
 
 ---
 
@@ -72,6 +83,13 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:11 WIB
+Added DO THIS NEXT at the top, and the rule that a vague question from Aldi ("where were
+we?") is answered from this file alone with zero tool calls. He should never have to
+remember his own progress; reconstructing it with tools is the failure this replaces.
+He also switched off and deleted a large number of claude.ai connectors and plugin packs,
+cutting the fixed per-session tax.
 
 ### 2026-08-07 14:07 WIB
 Built this file and the two hooks that keep it true (`d403de9`): a Stop hook that blocks
