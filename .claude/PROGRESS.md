@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `312d3de`
+**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `7856c43`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -11,8 +11,12 @@ the problem, im talking about the 5 hours limit - plan usage limit."*
 
 - **`/clear` does NOT help.** Never offer it as the answer to this. It empties context; the plan
   quota keeps counting regardless.
-- **Claude cannot see plan usage.** `context-watch.mjs` reads the transcript, so it can only ever
-  measure context. No hook currently exists that can warn about this. Only Aldi can see it.
+- **Claude cannot see plan usage YET.** `context-watch.mjs` measures the *context window* only —
+  a different limit. **But 9router's Quota Tracker has the real number** (`session (5h)`, shown
+  as `31 / 100` with a reset countdown) and its `localhost:20128/api/quota` endpoint exists and
+  returns **401**, i.e. it works and needs a credential. Building that reader is the top job —
+  see the LOG. Until it exists, only Aldi can see the quota, so his stated percentage is the
+  only signal.
 - **When he states a percentage, act on that turn — do not finish what you were doing first.**
   Write this file, commit, reply short. He said 94% once and the turn stalled anyway, which is
   precisely the stuck-screen-and-force-retry he asked to prevent.
@@ -27,7 +31,11 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 
 ## ▶ DO THIS NEXT
 
-**Resume the manual test list.** `SALES_TERMINAL_TEST_LIST.md` now carries its own status table
+**1. Build the plan-quota reader — ask Aldi for the 9router credential first.** Full design and
+the probe results are in the newest LOG entry. This is the thread he was actively on when he went
+to sleep on 2026-08-08, and it is the one that stops him getting locked out mid-work.
+
+**2. Then resume the manual test list.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
 at the top — read that, not this paragraph, for which item is next. As of this write: A and B
 done (B2/B3 need his phone), H1 and H3 passed, **H2 is the next thing he runs**, then C1 and
 C3–C6, then D through G. C2b is untestable — it needs a second salesman account he does not have.
@@ -59,7 +67,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
-| The context meter + the 93% hard stop | `.claude/context-watch.mjs` |
+| The context meter (measures, never guesses) | `.claude/context-watch.mjs` |
 | Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
 | Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
@@ -342,170 +350,5 @@ while quietly wrong — is what let him hit 92% in silence. If uncalibrated, say
 number. Round the estimate **up**.
 
 **Not started. Context was 79% when this was settled and the build did not fit in the remainder.**
-
-### 2026-08-08 — both half-built items are DONE, and the context meter is fixed
-
-**`ffa3215`** — the Open button is now **Edit**: `openForEdit` calls `handleEdit` and moves the
-province/kabupaten/kecamatan pickers to the store first, so he lands on the form inside the right
-folder instead of the 3D-map detail screen he could not get back from.
-
-**Same commit** — "✓ Not duplicates" per group, persisted to Firestore at
-`artifacts/{appId}/users/{uid}/settings/duplicate_ignores` as an array of group keys, so the
-decision follows him between devices. Cleared groups stay countable and reversible: the header
-shows how many are hidden, with **Show them** and **Bring them all back**. A failed save restores
-the decision in the UI rather than reporting a success that did not happen.
-
-**`312d3de`** — `context-watch.mjs` denominator clamped to 200k. It was reading
-`autoCompactWindow` = 1,000,000 after `/autocompact 1000k`, so it computed a fifth of the truth
-and stayed silent all session while the UI showed 92%. Verified: 96/85/60% now report honestly,
-20% stays silent. Its top tier also no longer calls itself "end of usage" — it says **end of
-CONTEXT**, because conflating that with the plan quota is what sent a whole session chasing the
-wrong fix.
-
-**Answered for him, having actually checked:** nothing local exposes the 5-hour plan quota.
-`policy-limits.json` is policy restrictions; `codeburn` is historical local spend; the transcript
-only describes context. **Claude cannot see the plan limit. Only Aldi can.** Do not build a
-guessed estimate of it without him asking — an under-reporting meter is exactly what just failed.
-
-Build green, audit **147/147**, duplicate self-checks **26/26**.
-
-### 2026-08-07 22:4x WIB — duplicate panel: Open goes to the wrong place, dismiss (now both DONE above)
-
-**Uncommitted-work warning: `groupKey` is built and tested but NOTHING USES IT YET.**
-
-Aldi asked for two things and neither is finished:
-
-1. **The Open button is wrong.** It calls `openDetail(m)` → `CustomerDetailView`, which is the
-   competitor-intelligence/3D-map screen, and *"from there i cant go back to folder form, instead
-   its pull me back to he find duplicate panel"*. **He wants it to open the store in the EDIT FORM
-   inside its folder so he can change the data.** The right call is `handleEdit(c)`
-   (`CustomerManager.jsx:956`) — it loads the store into the form and scrolls to top. Also set
-   `setSelectedProvince/Region/City` from the store so he lands in the right folder. One-line
-   swap plus the folder navigation; not done.
-
-2. **"Clarify" / dismiss — his idea, and correct.** *"when there is thousands of stores that we
-   know its not duplicated here each time we press find duplicated, it will be pain in the ass to
-   find the real duplicates right?"* So a group he judges as NOT duplicates must stay dismissed
-   across rescans. `groupKey(group)` is DONE and self-checked in `findDuplicates.js` — sorted
-   member ids joined by `|`, and membership is part of the key on purpose so a third store joining
-   a cleared pair resurfaces it. **What is left:** a "Not duplicates" button per group, persistence
-   (recommended: one Firestore doc `artifacts/{appId}/users/{uid}/settings/duplicate_ignores`
-   holding an array of keys — loaded on scan, written on dismiss), filtering dismissed groups out
-   of the report, and a visible "N hidden · show them · reset" control so it never becomes a black
-   hole. Self-checks are already at **26 passing**.
-
-### 2026-08-07 22:20 WIB — the finder found a false positive before it found duplicates
-
-**Aldi ran it: 11 groups out of 151 stores.** His screenshot showed the top group as three
-*"warung sembako sumber rejeki"* — **14.5 km apart**, matched on name alone. That name is about
-as distinctive as "corner shop" in Indonesian. Three real shops, not one shop three times. He saw
-it too: *"u are right to call that one, maybe add automatic label for the same customer name
-located in different places?"*
-
-So **11 is an upper bound, not a count**, and the pre-flag number must not be quoted as evidence
-about the KML import. Get the number again after the change below.
-
-`findDuplicates.js` now exports `FAR_APART_METRES = 500` and sets `sameNameFarApart` on any
-name-only group wider than that. A genuine double-registration sits within metres of itself —
-same salesman, same doorway, filed twice — so 500m is already generous. Flagged groups sink to
-the bottom of the report and carry a yellow "Probably NOT duplicates" warning; the delete confirm
-shouts louder on them specifically, because that is the group he is most likely to delete from by
-mistake. Groups also expose `distances[]`, index-aligned with `members`.
-
-He asked for per-row controls, so each row now has **Open** (jumps to the full profile) and
-**Delete** (one row at a time, confirm names the store, its id, its last visit and its agent —
-two rows share a name, so the id is the only way to tell them apart). No bulk delete, no
-auto-merge. Every row also carries an automatic **📍 place label** — Kecamatan/Kabupaten, else map
-folder, else raw coordinates — which is the actual answer to "I don't even know where these are".
-
-Audit group 12 was rewritten rather than relaxed: it used to assert no delete control existed at
-all, which his request made false. It now asserts the delete asks first and names the id, that no
-bulk delete or auto-merge exists, that far-apart name matches are flagged, and that every row
-shows its place. **143 → 147**, self-checks **16 → 21**.
-
-### 2026-08-07 21:39 WIB — the end-of-window stop is now a HOOK, not a promise
-
-Aldi: *"this habits should work everytime and automatically without me ask u to do so everytime"*.
-So it stopped being a memory note and became structure. `.claude/context-watch.mjs` gained a
-fourth tier at **93%**: write `PROGRESS.md` first, then show the clear banner, then start nothing
-new. Fires on its own every session; needs neither his reminder nor Claude's memory.
-
-**93, not the 95-98 he said, deliberately** — a note begun at 97% may not fit in what is left,
-and a note that fails to land is the exact failure he asked to prevent. 93% leaves ~70k. Told him
-this in the reply rather than silently changing his number. All four tiers verified against
-synthetic transcripts: 96% hits the new branch, 85% the red banner, 60% amber, 20% silent.
-
-Quest log gained **Snipping Tool paste** (Win+Shift+S → click a test → Ctrl+V). The armed test is
-outlined gold and labelled PASTE HERE. Arming updates the DOM directly instead of re-rendering —
-a full render would rebuild the notes box under his cursor and eat what he was typing. Text
-pastes are untouched; only images are intercepted. Source copied to `.claude/kpm-test-quest.html`
-so it survives the scratchpad being cleared.
-
-### 2026-08-07 20:1x WIB — duplicate finder shipped, plus an 8-bit test logger
-
-**Duplicate finder — committed.** `src/utils/findDuplicates.js` is a pure module (no React, no
-Firestore) so `src/config/findDuplicates.selfcheck.mjs` can run the real logic against fixtures —
-**16 checks, all passing**. Two stores match if their names agree once punctuation and spacing
-stop mattering, OR if they sit within 40m; union-find joins the passes so a chain groups together.
-Members sort oldest first across all three date shapes the app writes. Admin button + report panel
-in `CustomerManager.jsx`. **No delete or merge control anywhere in it, deliberately** — audit group
-12 fails the build if one appears, if the finder gains database access, or if it sorts its input in
-place. Audit **138 → 143**.
-
-**Test logger artifact:** https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016
-8-bit CRT quest log holding the real `SALES_TERMINAL_TEST_LIST.md` items. Good/Broken/Weird per
-test, notes, downscaled photo attachments, localStorage persistence, WebAudio bleeps, and a COPY
-REPORT button producing markdown he pastes back into chat. A and B and the three confirmed items
-come pre-marked so the meter shows the true picture. **Told him plainly there is no capability
-that lets a published page send data back to Claude by itself** — `downloads` and `mcp` are the
-only two available and neither does that, so copy-paste is the mechanism, not a shortcut.
-
-Redeploy by republishing the same scratchpad path from this conversation, or pass that URL as
-`url` from any other conversation — otherwise a new URL is minted.
-
-### 2026-08-07 19:5x WIB — the tier-spelling fix is BUILT (Aldi: "you can do both fix bro")
-
-Both halves done, audit **133 → 138**, build green, committed. Not pushed.
-
-**Code (3 files).** `useTransactionEngine.js` now writes `priceTier` in all three places it used
-to write `pricingTier` — the offline payload and both online branches. `App.jsx:3220`
-`permittedCustomers` now reads `c.priceTier || c.pricingTier`. **That reader change is the actual
-rescue**: every store already saved the old way becomes visible again immediately, with no
-migration run at all. Said so plainly to Aldi rather than letting the migration take the credit.
-
-**Repair button.** `handleRepairTierField` in `CustomerManager.jsx`, next to the existing Data
-Scrub, following the same `commitInChunks` shape. Admin-only, amber, and only rendered when a
-store actually needs it, with the count in the label. Copies `pricingTier` → `priceTier` where
-`priceTier` is missing. Adds only; never overwrites an existing value, never removes
-`pricingTier`, never deletes or merges a store.
-
-**A near-miss worth keeping.** The repair was first written as `type: 'set'` with `merge: true`.
-`commitInChunks` (helpers.js:139) passes **`op.options`**, not `op.merge`, to `batch.set()` — so
-the flag would have been silently dropped and every touched customer document REPLACED by a
-single `priceTier` field. Name, address, GPS, tier, all gone, on live production data. Changed to
-`type: 'update'`, which writes only the named field and throws if a doc vanished mid-run instead
-of quietly creating a nameless one-field record — and a nameless record is invisible to the
-`orderBy('name')` listener, so the silent version would have manufactured the exact ghost the
-repair exists to clear. Audit group 11 now fails the build if `set` or any delete reappears there.
-
-**CONFIRMED AGAINST REAL DATA, and the scale is now known: the button read "Repair 3 Store
-Tiers".** Aldi pressed it and confirmed; the repair has run. So the diagnosis was right — real
-records really were saved with `pricingTier` — but only **3** stores were ever affected.
-
-**Do not treat the duplicate problem as solved.** Three records cannot account for the volume of
-duplicates Aldi described. The tier split was real but small. The prime remaining suspect is
-`handleImportKML` in `CustomerManager.jsx` (~L588–641), which mints a fresh auto-ID document per
-placemark with **no dedup check of any kind** — same name, same coordinates, no matter. Importing
-one KML twice duplicates every pin in it. Next investigation starts there, not at the tier field.
-
-**Still true, still not done:** the duplicate documents themselves are untouched. Merging or
-deleting a duplicate store means deciding which one keeps its history and debt — human judgement,
-a separate job, and NOT something to automate. Aldi has not been asked to decide it yet.
-
-**Untested in the real screens.** The repair button needs admin + the master password, which
-Claude does not enter. Verified only that the build is green, the audit passes, all changed
-modules serve 200, and the app still renders.
-
----
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._
