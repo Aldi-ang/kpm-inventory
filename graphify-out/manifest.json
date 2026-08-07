@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1786112660.1117084,
-    "ast_hash": "6876abfb37b0e3a5772548d19ebf0fcb",
+    "mtime": 1786113943.1802938,
+    "ast_hash": "76749fd7dece4e66a6fe122d965fc4b7",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786112777.496797,
-    "ast_hash": "eaad265f394177514feba2e356e3f020",
+    "mtime": 1786113970.1575432,
+    "ast_hash": "2ddb51954953bc500a82fab9cf077d9f",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -565,13 +565,13 @@
     "semantic_hash": ""
   },
   ".claude/context-watch.mjs": {
-    "mtime": 1786087798.0454204,
-    "ast_hash": "08247f2eace6c7660024267f1e845435",
+    "mtime": 1786113378.420372,
+    "ast_hash": "2cb7ae9869a0b9675a1b1996895a0290",
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786112166.5650928,
-    "ast_hash": "61fc1d764ed913ba307a704c579f293c",
+    "mtime": 1786114076.5438695,
+    "ast_hash": "a788b06295ed91b548287ba22dcf02a2",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -585,13 +585,18 @@
     "semantic_hash": ""
   },
   "src/config/findDuplicates.selfcheck.mjs": {
-    "mtime": 1786112552.2539804,
-    "ast_hash": "afe1d32d9e821ad267bb26f47f0db5e8",
+    "mtime": 1786113827.7590675,
+    "ast_hash": "cc91d1fa8a9fcbe3dd825c6d090d0b97",
     "semantic_hash": ""
   },
   "src/utils/findDuplicates.js": {
-    "mtime": 1786112511.635346,
-    "ast_hash": "12e09d82d886e6faf0b7c75e0d116545",
+    "mtime": 1786113814.215587,
+    "ast_hash": "4925909b442d74533335eed3b3c1ca92",
+    "semantic_hash": ""
+  },
+  ".claude/kpm-test-quest.html": {
+    "mtime": 1786113555.751116,
+    "ast_hash": "e7cda6ad1f4776975892e9c86a846ff2",
     "semantic_hash": ""
   }
 }

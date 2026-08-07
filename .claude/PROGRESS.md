@@ -110,10 +110,12 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- ❓ **"Press Find Duplicates and tell me the number."** Asked 2026-08-07, unanswered. Admin
-  button in the Customer Directory. This is the next real fact: the tier repair touched only 3
-  stores, which cannot account for the duplicates he described, and the count tells us whether
-  the KML import is the real source. Nothing else about duplicates should be built until he says.
+- ✅ **ANSWERED 2026-08-07: 11 possible duplicate groups out of 151 stores.** But the top group
+  was three *"warung sembako sumber rejeki"* **14.5 km apart**, matched on name alone — a shop
+  name about as distinctive as "corner shop". Those are almost certainly three real shops.
+  **So 11 is an upper bound, not a count.** The finder now flags and demotes name-only matches
+  beyond 500m; he has not re-run it since. Get the post-flag number before drawing any conclusion
+  about the KML import.
 
 - 🔴 **The 180 `alert(` calls — he has picked NOTHING yet.** The question put to him, verbatim:
   *"My question isn't whether to fix them. It's how"* — a box in the middle of the screen that
@@ -125,12 +127,6 @@ throwaway first.
   means deciding which copy keeps its sales history and its outstanding debt — real money, human
   judgement, deliberately not automated. Ask only after he has seen the finder's output.
 
-- 🔴 **180 `alert(` calls across src/ — same bug class, deliberately NOT done.** A suppressed
-  `alert` only fails to inform; nothing breaks, it just goes quiet. Aldi chose the prompts over
-  the full sweep, so this is the last of the dialog family left. Needs his yes before starting —
-  180 sites changes how the app talks to him everywhere, and he should see the first few before
-  the rest land. A toast strip may beat 180 modal boxes; ask which he wants.
-  (The 11 `prompt(` calls that were here are DONE — see the LOG.)
 
 - ✅ **Other-agent store block — DONE, committed `f2060f1`. Kept only for the reasoning; nothing
   here is still an ask. The paragraphs below are the REASONING, kept so it is never re-argued.
@@ -192,6 +188,35 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 22:20 WIB — the finder found a false positive before it found duplicates
+
+**Aldi ran it: 11 groups out of 151 stores.** His screenshot showed the top group as three
+*"warung sembako sumber rejeki"* — **14.5 km apart**, matched on name alone. That name is about
+as distinctive as "corner shop" in Indonesian. Three real shops, not one shop three times. He saw
+it too: *"u are right to call that one, maybe add automatic label for the same customer name
+located in different places?"*
+
+So **11 is an upper bound, not a count**, and the pre-flag number must not be quoted as evidence
+about the KML import. Get the number again after the change below.
+
+`findDuplicates.js` now exports `FAR_APART_METRES = 500` and sets `sameNameFarApart` on any
+name-only group wider than that. A genuine double-registration sits within metres of itself —
+same salesman, same doorway, filed twice — so 500m is already generous. Flagged groups sink to
+the bottom of the report and carry a yellow "Probably NOT duplicates" warning; the delete confirm
+shouts louder on them specifically, because that is the group he is most likely to delete from by
+mistake. Groups also expose `distances[]`, index-aligned with `members`.
+
+He asked for per-row controls, so each row now has **Open** (jumps to the full profile) and
+**Delete** (one row at a time, confirm names the store, its id, its last visit and its agent —
+two rows share a name, so the id is the only way to tell them apart). No bulk delete, no
+auto-merge. Every row also carries an automatic **📍 place label** — Kecamatan/Kabupaten, else map
+folder, else raw coordinates — which is the actual answer to "I don't even know where these are".
+
+Audit group 12 was rewritten rather than relaxed: it used to assert no delete control existed at
+all, which his request made false. It now asserts the delete asks first and names the id, that no
+bulk delete or auto-merge exists, that far-apart name matches are flagged, and that every row
+shows its place. **143 → 147**, self-checks **16 → 21**.
 
 ### 2026-08-07 21:39 WIB — the end-of-window stop is now a HOOK, not a promise
 
@@ -320,33 +345,5 @@ and `useTransactionEngine.js:263`.
 **The one thing that would confirm it against real data**, which Claude cannot do (the app is behind
 a master password and this is production): open the Firebase console → `customers` → pick a known
 duplicate → check whether it has `pricingTier` instead of `priceTier`. That settles it in 2 minutes.
-
-### 2026-08-07 18:31 WIB — 11 prompt dialogs replaced; the scheduled session was a dud
-
-**The scheduling attempt failed and is worth more than the feature.** A one-shot scheduled task
-was set for 17:59 to do this work while Aldi rested. It stamped `lastRunAt` at 17:59:34,
-disabled itself, and **did nothing** — no commit, clean tree, no log file, target untouched.
-Aldi spotted it before any check did. Lesson written into its own section above: a stamped
-`lastRunAt` is not evidence of work, and do not offer unattended scheduling here again.
-
-**Then the work was done in-session, ~15 minutes.** `promptAction()` joins `confirmAction()` in
-`src/components/ConfirmGate.jsx`, reusing the same single mounted host. It keeps the browser's
-contract on purpose — typed string on accept, **null** on any cancel — because callers already
-guard with `if (name && name.trim())` and that guard keeps working untouched. An empty string
-would have slipped past those guards and renamed things to nothing; there is a check for it.
-
-**11 sites, not 12.** The twelfth grep hit was inside a comment in `AgentProfileView.jsx:341`
-describing a prompt that had already been removed. Counting grep lines is not counting calls.
-Four enclosing functions needed `async`; none returned a value a caller could misread.
-
-Audit **129 → 133**. Commit `87156f8`. Not pushed — branch still has no upstream.
-
-**Browser-tested by me, and the confirm path re-tested for regression since `close()` was
-rewritten.** Prompt: draws, field present, pre-filled and text pre-selected, Save returns the
-typed string, Cancel returns null, Escape returns null, nothing left on screen. Confirm: danger
-red, plain gold, no stray input box, yes/cancel/escape all still correct.
-
-**Still untested and must not be reported otherwise:** all 11 prompts in their real screens.
-The app is behind `ENTER MASTER PASSWORD`, which I do not enter, so no real screen was reached.
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._

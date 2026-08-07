@@ -353,9 +353,31 @@ check(G12, 'the finder does not mutate the list it is given',
    with the report. */
 const panelStart = custMgr.indexOf('dupReport && (');
 const dupPanel = custMgr.slice(panelStart, custMgr.indexOf('CUSTOMER DIRECTORY PERMISSION TIER', panelStart));
-check(G12, 'the report offers no delete or merge control',
-  panelStart !== -1 && !/handleDelete|deleteDoc|onMerge|Merge\b/i.test(dupPanel),
-  'the report shows what is there and stops — merging is a separate, human decision');
+/* Aldi asked for Open and Delete on each row (2026-08-07) so he could act without hunting for
+   the record. Delete stays, but it is the only destructive control in the panel and it is
+   one-at-a-time: no bulk delete, no auto-merge. Choosing which copy keeps its sales history and
+   its debt is still his call, made per row, with the store named in front of him. */
+check(G12, 'deleting from the report asks first, and names the exact store',
+  /handleDeleteDuplicate/.test(dupPanel) &&
+  /await confirmAction\(/.test(custMgr.slice(custMgr.indexOf('handleDeleteDuplicate'))) &&
+  /id \$\{store\.id\}/.test(custMgr),
+  'two rows share a name — the confirm must show the id or he cannot tell them apart');
+check(G12, 'no bulk delete and no auto-merge',
+  !/deleteAll|Merge All|mergeDuplicates|forEach\([^)]*deleteDoc/i.test(dupPanel),
+  'one row at a time, decided by him, or a misclick takes out a whole group');
+/* The false positive that started this: three "warung sembako sumber rejeki" 14.5km apart,
+   matched on a name as generic as "corner shop". Without the warning, deleting two of them
+   reads as tidying up and actually destroys two live stores. */
+check(G12, 'name-only matches that are far apart are flagged as probably NOT duplicates',
+  /sameNameFarApart/.test(dup) && /FAR_APART_METRES/.test(dup) &&
+  /Probably NOT duplicates/.test(dupPanel),
+  'a common shop name repeating across a city is a coincidence, not a duplicate');
+check(G12, 'the delete confirm shouts louder on a coincidence group',
+  /sameNameFarApart[\s\S]{0,400}PROBABLY NOT DUPLICATES/.test(custMgr),
+  'the group that most needs the warning is the one he is most likely to delete from');
+check(G12, 'every row says where it actually is',
+  /dupPlace/.test(dupPanel) && /const dupPlace/.test(custMgr),
+  'identical names in a list are why he could not tell the records apart');
 check(G12, 'the finder reached the built bundle',
   allJs.includes('likely the original'),
   'findDuplicates is not in dist/ — the button would do nothing');

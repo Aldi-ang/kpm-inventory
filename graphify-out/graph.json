@@ -98,8 +98,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "claude_context_watch",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "context-watch.mjs"
     },
     {
@@ -109,8 +109,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "claude_context_watch_hook",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "hook"
     },
     {
@@ -120,8 +120,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "claude_context_watch_lines",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "lines"
     },
     {
@@ -131,8 +131,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "claude_context_watch_used",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "used"
     },
     {
@@ -142,8 +142,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "claude_context_watch_pct",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "pct"
     },
     {
@@ -153,8 +153,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "claude_context_watch_left",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "left"
     },
     {
@@ -164,8 +164,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "claude_context_watch_k",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 35,
+      "community_name": "context-watch.mjs",
       "norm_label": "k()"
     },
     {
@@ -1867,8 +1867,8 @@
       "source_location": "L460",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_borderimporter",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "borderimporter()"
     },
     {
@@ -1900,8 +1900,8 @@
       "source_location": "L1050",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -1933,8 +1933,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_merchantsalesview",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "merchantsalesview.jsx"
     },
     {
@@ -1944,8 +1944,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_merchantsalesview_merchantsalesview",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "merchantsalesview()"
     },
     {
@@ -2439,8 +2439,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -2450,8 +2450,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "historyreportview()"
     },
     {
@@ -2604,8 +2604,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -2615,8 +2615,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -2626,8 +2626,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -2637,8 +2637,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "samplingcartview()"
     },
     {
@@ -2648,8 +2648,8 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -2659,8 +2659,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -2956,8 +2956,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "daystats.selfcheck.mjs"
     },
     {
@@ -2967,8 +2967,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_at",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "at()"
     },
     {
@@ -2978,8 +2978,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_tx",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "tx()"
     },
     {
@@ -2989,8 +2989,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_now",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "now"
     },
     {
@@ -3000,8 +3000,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_rows",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "rows"
     },
     {
@@ -3011,8 +3011,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_s",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "s"
     },
     {
@@ -3022,8 +3022,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_shuffled",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "shuffled"
     },
     {
@@ -3033,8 +3033,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_withreturn",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "withreturn"
     },
     {
@@ -3044,8 +3044,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justafterlocalmidnight",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "justafterlocalmidnight"
     },
     {
@@ -3055,8 +3055,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justbeforelocalmidnight",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "justbeforelocalmidnight"
     },
     {
@@ -3550,8 +3550,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "mixedunits.selfcheck.mjs"
     },
     {
@@ -3561,8 +3561,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_bksperunit",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "bksperunit()"
     },
     {
@@ -3572,8 +3572,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_savepacking",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "savepacking()"
     },
     {
@@ -3583,8 +3583,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_totalbks",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "totalbks()"
     },
     {
@@ -3594,8 +3594,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_d",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "d"
     },
     {
@@ -3605,8 +3605,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_custom",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "custom"
     },
     {
@@ -3616,8 +3616,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_real",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "real"
     },
     {
@@ -3627,8 +3627,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_cello",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "cello"
     },
     {
@@ -3638,8 +3638,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_back",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "back()"
     },
     {
@@ -3891,8 +3891,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_config_permissions_translatelegacyrole",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "translatelegacyrole()"
     },
     {
@@ -3946,8 +3946,8 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "src_config_permissions_hasclearance",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "hasclearance()"
     },
     {
@@ -4364,8 +4364,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio",
-      "community": 6,
-      "community_name": "savePhotoAndGetReference",
+      "community": 36,
+      "community_name": "StubAudio",
       "norm_label": "stubaudio"
     },
     {
@@ -4375,8 +4375,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_constructor",
-      "community": 6,
-      "community_name": "savePhotoAndGetReference",
+      "community": 36,
+      "community_name": "StubAudio",
       "norm_label": ".constructor()"
     },
     {
@@ -4386,8 +4386,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_play",
-      "community": 6,
-      "community_name": "savePhotoAndGetReference",
+      "community": 36,
+      "community_name": "StubAudio",
       "norm_label": ".play()"
     },
     {
@@ -4397,8 +4397,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_pause",
-      "community": 6,
-      "community_name": "savePhotoAndGetReference",
+      "community": 36,
+      "community_name": "StubAudio",
       "norm_label": ".pause()"
     },
     {
@@ -4573,8 +4573,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "daystats.js"
     },
     {
@@ -4584,8 +4584,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "txseconds()"
     },
     {
@@ -4595,8 +4595,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "daystats()"
     },
     {
@@ -4606,8 +4606,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_utils_daystats_agolabel",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "agolabel()"
     },
     {
@@ -4658,7 +4658,7 @@
       "label": "createdMillis()",
       "file_type": "code",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L41",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_findduplicates_createdmillis",
       "community": 29,
@@ -4669,7 +4669,7 @@
       "label": "findDuplicates()",
       "file_type": "code",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L57",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "src_utils_findduplicates_findduplicates",
       "community": 29,
@@ -4727,8 +4727,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 33,
+      "community_name": "hasClearance",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -4771,8 +4771,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "splittounits()"
     },
     {
@@ -4793,8 +4793,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_utils_helpers_converttobks",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 32,
+      "community_name": "MerchantSalesView",
       "norm_label": "converttobks()"
     },
     {
@@ -4848,8 +4848,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "nextstop.js"
     },
     {
@@ -4859,8 +4859,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "km()"
     },
     {
@@ -4870,8 +4870,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "mine()"
     },
     {
@@ -4881,8 +4881,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -4892,8 +4892,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "nextstop()"
     },
     {
@@ -4903,8 +4903,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_utils_nextstop_directionsurl",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "directionsurl()"
     },
     {
@@ -4914,8 +4914,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_nextstop_metreslabel",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 34,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "metreslabel()"
     },
     {
@@ -4966,7 +4966,7 @@
       "label": "\u25b6 DO THIS NEXT",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L14",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "claude_progress_do_this_next",
       "community": 26,
@@ -4977,7 +4977,7 @@
       "label": "Where things live \u2014 never search for these",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L31",
+      "source_location": "L39",
       "_origin": "ast",
       "id": "claude_progress_where_things_live_never_search_for_these",
       "community": 26,
@@ -4988,7 +4988,7 @@
       "label": "First command of every session",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L51",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "claude_progress_first_command_of_every_session",
       "community": 26,
@@ -4999,7 +4999,7 @@
       "label": "NOW",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L62",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "claude_progress_now",
       "community": 26,
@@ -5010,7 +5010,7 @@
       "label": "\u23f0 SCHEDULED TASKS DO NOT WORK HERE \u2014 DON'T OFFER ONE AGAIN",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L72",
+      "source_location": "L97",
       "_origin": "ast",
       "id": "claude_progress_scheduled_tasks_do_not_work_here_don_t_offer_one_again",
       "community": 26,
@@ -5021,7 +5021,7 @@
       "label": "WAITING ON ALDI \u2014 do not re-derive these, just ask",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L111",
       "_origin": "ast",
       "id": "claude_progress_waiting_on_aldi_do_not_re_derive_these_just_ask",
       "community": 26,
@@ -5032,7 +5032,7 @@
       "label": "\ud83d\udeab DO NOT open a PR or merge to main yet",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L136",
+      "source_location": "L172",
       "_origin": "ast",
       "id": "claude_progress_do_not_open_a_pr_or_merge_to_main_yet",
       "community": 26,
@@ -5043,7 +5043,7 @@
       "label": "NEXT, once testing is done \u2014 he has not chosen",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L146",
+      "source_location": "L182",
       "_origin": "ast",
       "id": "claude_progress_next_once_testing_is_done_he_has_not_chosen",
       "community": 26,
@@ -5054,7 +5054,7 @@
       "label": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L154",
+      "source_location": "L190",
       "_origin": "ast",
       "id": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
       "community": 26,
@@ -5062,10 +5062,43 @@
       "norm_label": "log \u2014 newest first, older entries live in `git log` for this file"
     },
     {
+      "label": "2026-08-07 22:20 WIB \u2014 the finder found a false positive before it found duplicates",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L192",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_22_20_wib_the_finder_found_a_false_positive_before_it_found_duplicates",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 22:20 wib \u2014 the finder found a false positive before it found duplicates"
+    },
+    {
+      "label": "2026-08-07 21:39 WIB \u2014 the end-of-window stop is now a HOOK, not a promise",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L221",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_21_39_wib_the_end_of_window_stop_is_now_a_hook_not_a_promise",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 21:39 wib \u2014 the end-of-window stop is now a hook, not a promise"
+    },
+    {
+      "label": "2026-08-07 20:1x WIB \u2014 duplicate finder shipped, plus an 8-bit test logger",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L239",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_20_1x_wib_duplicate_finder_shipped_plus_an_8_bit_test_logger",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 20:1x wib \u2014 duplicate finder shipped, plus an 8-bit test logger"
+    },
+    {
       "label": "2026-08-07 19:5x WIB \u2014 the tier-spelling fix is BUILT (Aldi: \"you can do both fix bro\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L156",
+      "source_location": "L261",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_19_5x_wib_the_tier_spelling_fix_is_built_aldi_you_can_do_both_fix_bro",
       "community": 26,
@@ -5076,210 +5109,12 @@
       "label": "2026-08-07 19:2x WIB \u2014 duplicate/invisible customers: root cause found (investigation)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L201",
+      "source_location": "L306",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
       "community": 26,
       "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "2026-08-07 19:2x wib \u2014 duplicate/invisible customers: root cause found (investigation)"
-    },
-    {
-      "label": "2026-08-07 18:31 WIB \u2014 11 prompt dialogs replaced; the scheduled session was a dud",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L244",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_18_31_wib_11_prompt_dialogs_replaced_the_scheduled_session_was_a_dud",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 18:31 wib \u2014 11 prompt dialogs replaced; the scheduled session was a dud"
-    },
-    {
-      "label": "2026-08-07 16:34 WIB \u2014 all 58 remaining dialogs replaced, gate tested in a real browser",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L272",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_16_34_wib_all_58_remaining_dialogs_replaced_gate_tested_in_a_real_browser",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 16:34 wib \u2014 all 58 remaining dialogs replaced, gate tested in a real browser"
-    },
-    {
-      "label": "2026-08-07 15:52 WIB \u2014 committed `f2060f1`, two of three new tests passed",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L303",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_15_52_wib_committed_f2060f1_two_of_three_new_tests_passed",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 15:52 wib \u2014 committed `f2060f1`, two of three new tests passed"
-    },
-    {
-      "label": "2026-08-07 15:41 WIB \u2014 stale-stamp hole in the new territory code, found and closed",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L328",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_15_41_wib_stale_stamp_hole_in_the_new_territory_code_found_and_closed",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 15:41 wib \u2014 stale-stamp hole in the new territory code, found and closed"
-    },
-    {
-      "label": "2026-08-07 15:06 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L348",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_15_06_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 15:06 wib"
-    },
-    {
-      "label": "2026-08-07 14:55 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L362",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_55_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:55 wib"
-    },
-    {
-      "label": "2026-08-07 (later)",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L375",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_later",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 (later)"
-    },
-    {
-      "label": "2026-08-07 14:46 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L388",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_46_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:46 wib"
-    },
-    {
-      "label": "2026-08-07 14:35 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L402",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_35_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:35 wib"
-    },
-    {
-      "label": "2026-08-07 14:32 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L408",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_32_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:32 wib"
-    },
-    {
-      "label": "2026-08-07 14:30 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L416",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_30_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:30 wib"
-    },
-    {
-      "label": "2026-08-07 14:25 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L423",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_25_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:25 wib"
-    },
-    {
-      "label": "2026-08-07 14:23 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L428",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_23_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:23 wib"
-    },
-    {
-      "label": "2026-08-07 14:11 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L436",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_11_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:11 wib"
-    },
-    {
-      "label": "2026-08-07 14:07 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L443",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_14_07_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 14:07 wib"
-    },
-    {
-      "label": "2026-08-07 13:56 WIB",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L456",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_13_56_wib",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 13:56 wib"
-    },
-    {
-      "label": "2026-08-07 (earlier)",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L467",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_earlier",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 (earlier)"
-    },
-    {
-      "label": "2026-08-06",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L471",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_06",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-06"
     },
     {
       "label": "pre-compact-context.md",
@@ -12650,7 +12485,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L677",
+      "source_location": "L731",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -15971,7 +15806,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L77",
+      "source_location": "L82",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16026,7 +15861,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L41",
+      "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates",
@@ -16037,7 +15872,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L57",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates",
@@ -16082,7 +15917,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L75",
+      "source_location": "L80",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16094,7 +15929,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L90",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16106,7 +15941,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L85",
+      "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16118,7 +15953,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L117",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16408,7 +16243,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L136",
+      "source_location": "L172",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16419,7 +16254,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L14",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16430,7 +16265,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L51",
+      "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16441,7 +16276,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L154",
+      "source_location": "L190",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16452,7 +16287,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L146",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16463,7 +16298,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L62",
+      "source_location": "L74",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16474,7 +16309,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L72",
+      "source_location": "L97",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16485,7 +16320,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16496,7 +16331,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L31",
+      "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16507,183 +16342,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L471",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_06",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L456",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_13_56_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L443",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_07_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L436",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_11_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L428",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_23_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L423",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_25_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L416",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_30_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L408",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_32_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L402",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_35_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L388",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_46_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L362",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_14_55_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L348",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_15_06_wib",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L328",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_15_41_wib_stale_stamp_hole_in_the_new_territory_code_found_and_closed",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L303",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_15_52_wib_committed_f2060f1_two_of_three_new_tests_passed",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L272",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_16_34_wib_all_58_remaining_dialogs_replaced_gate_tested_in_a_real_browser",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L244",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_18_31_wib_11_prompt_dialogs_replaced_the_scheduled_session_was_a_dud",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L201",
+      "source_location": "L306",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16694,7 +16353,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L156",
+      "source_location": "L261",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16705,22 +16364,33 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L467",
+      "source_location": "L239",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_earlier",
+      "target": "claude_progress_2026_08_07_20_1x_wib_duplicate_finder_shipped_plus_an_8_bit_test_logger",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L375",
+      "source_location": "L221",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_later",
+      "target": "claude_progress_2026_08_07_21_39_wib_the_end_of_window_stop_is_now_a_hook_not_a_promise",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L192",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_22_20_wib_the_finder_found_a_false_positive_before_it_found_duplicates",
       "confidence_score": 1.0
     },
     {
@@ -17495,5 +17165,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "6912f679536d07b0f0b940b55dfb4a37fb72763b"
+  "built_at_commit": "a60069dd351244f80d3b30cf21bda48742b41a1f"
 }

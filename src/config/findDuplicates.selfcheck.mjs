@@ -140,6 +140,59 @@ t('biggest pile first, so the worst offender is on top', () => {
     assert.deepEqual(g.map(x => x.members.length), [3, 2]);
 });
 
+/* Straight from Aldi's real data: three "warung sembako sumber rejeki" 14.5km apart. A generic
+   Indonesian shop name repeating across a city is a coincidence, not a double-registration, and
+   offering a delete button on it is how a live store gets destroyed. */
+t('same name but far apart is flagged, not presented as a duplicate', () => {
+    const g = findDuplicates([
+        {id:'a', name:'WARUNG SEMBAKO SUMBER REJEKI', latitude:-6.20, longitude:106.81},
+        {id:'b', name:'WARUNG SEMBAKO SUMBER REJEKI', latitude:-6.20, longitude:106.94}, // ~14km
+    ]);
+    assert.equal(g.length, 1);
+    assert.equal(g[0].sameNameFarApart, true);
+    assert.ok(g[0].widestMetres > 10000);
+});
+
+t('a genuine double-registration in the same doorway is NOT flagged', () => {
+    const g = findDuplicates([
+        {id:'a', name:'TOKO ASLI', ...near(0)},
+        {id:'b', name:'TOKO ASLI', ...near(0.0001)},   // ~11m
+    ]);
+    assert.equal(g[0].sameNameFarApart, false);
+});
+
+t('coincidences sink below real duplicates in the report', () => {
+    const g = findDuplicates([
+        {id:'far1', name:'WARUNG UMUM', latitude:-6.20, longitude:106.81},
+        {id:'far2', name:'WARUNG UMUM', latitude:-6.20, longitude:106.94},
+        {id:'far3', name:'WARUNG UMUM', latitude:-6.20, longitude:107.02},
+        {id:'real1', name:'TOKO NYATA', ...near(0)},
+        {id:'real2', name:'TOKO NYATA', ...near(0.0001)},
+    ]);
+    // the 3-member coincidence must NOT outrank the 2-member real pair
+    assert.equal(g[0].members.length, 2, 'real duplicate should be first');
+    assert.equal(g[0].sameNameFarApart, false);
+    assert.equal(g[g.length-1].sameNameFarApart, true);
+});
+
+t('distances line up with members, oldest first is always 0', () => {
+    const g = findDuplicates([
+        {id:'old', name:'TOKO JARAK', ...near(0), createdAt:'2020-01-01T00:00:00.000Z'},
+        {id:'new', name:'TOKO JARAK', ...near(0.001), createdAt:'2026-01-01T00:00:00.000Z'},
+    ], {radiusMetres:5000});
+    assert.equal(g[0].distances.length, g[0].members.length);
+    assert.equal(g[0].distances[0], 0);
+    assert.ok(g[0].distances[1] > 100 && g[0].distances[1] < 130, 'got '+g[0].distances[1]);
+});
+
+t('a store with no coordinates gets a null distance, not a wrong one', () => {
+    const g = findDuplicates([
+        {id:'a', name:'TOKO KOORD', ...near(0)},
+        {id:'b', name:'TOKO KOORD'},
+    ]);
+    assert.deepEqual(g[0].distances.filter(d => d === null).length, 1);
+});
+
 t('haversine is sane', () => {
     assert.equal(Math.round(metresBetween(LAT, LNG, LAT, LNG)), 0);
     assert.ok(Math.abs(metresBetween(LAT, LNG, LAT + 0.001, LNG) - 111) < 3);

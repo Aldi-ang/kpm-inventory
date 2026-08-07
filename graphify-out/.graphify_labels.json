@@ -29,5 +29,11 @@
   "27": "check-progress.mjs",
   "28": "COMPACTING NOW — what the summary must keep, and what it must drop",
   "29": "CustomerManager.jsx",
-  "31": "txSize.selfcheck.mjs"
+  "30": "dayStats.selfcheck.mjs",
+  "31": "txSize.selfcheck.mjs",
+  "32": "MerchantSalesView",
+  "33": "hasClearance",
+  "34": "MerchantSalesView.jsx",
+  "35": "context-watch.mjs",
+  "36": "StubAudio"
 }

@@ -673,6 +673,60 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         }, 0);
     };
 
+    /* Deleting from the report is the one destructive thing in this panel, so the confirm names
+       the exact store, its id and its last visit — enough to tell two same-named rows apart —
+       and shouts louder when the group is only a name coincidence. Aldi's own data had three
+       "warung sembako sumber rejeki" 14.5km apart; without this wording, deleting two of them
+       would look like tidying up and would actually destroy two live shops. */
+    const handleDeleteDuplicate = async (store, group) => {
+        const warn = group.sameNameFarApart
+            ? `⚠️ THESE ARE PROBABLY NOT DUPLICATES.\n\nThey only share a name, and they are ` +
+              `${group.widestMetres >= 1000 ? (group.widestMetres/1000).toFixed(1)+' km' : group.widestMetres+' m'} apart. ` +
+              `A shop registered twice by mistake sits within a few metres of itself. This is far ` +
+              `more likely to be a different shop with a common name.\n\n`
+            : '';
+        const ok = await confirmAction(
+            `${warn}DELETE THIS STORE PERMANENTLY?\n\n` +
+            `${store.name || '(no name)'}\n` +
+            `id ${store.id}\n` +
+            `${store.lastVisit ? 'last visit ' + store.lastVisit : 'no recorded visit'}\n` +
+            `${store.assignedAgent && store.assignedAgent !== 'Unassigned' ? 'handled by ' + store.assignedAgent : 'unassigned'}\n\n` +
+            `Its sales history and any debt stay in the database but stop pointing at a store. ` +
+            `This cannot be undone.`
+        );
+        if (!ok) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id));
+            if (logAudit) logAudit("CUSTOMER_DELETE_DUPLICATE", `Deleted duplicate ${store.name} (${store.id})`);
+            /* Drop it from the open report immediately. The customers prop refreshes from the
+               snapshot listener a moment later, but the panel must not keep offering a row that
+               is already gone. Groups falling under two members stop being groups. */
+            setDupReport(prev => (prev || [])
+                .map(g => ({ ...g, members: g.members.filter(m => m.id !== store.id) }))
+                .filter(g => g.members.length > 1));
+            if (triggerCapy) triggerCapy(`Removed ${store.name}. 🗑️`);
+        } catch (err) {
+            console.error("Duplicate delete failed:", err);
+            alert(`Could not delete: ${err.message || 'unknown error'}`);
+        }
+    };
+
+    /* Where a store actually is, in one short label. Two rows with the same name are otherwise
+       indistinguishable — this is the whole reason he could not tell which record was which.
+       Prefers the scrubbed Kecamatan/Kabupaten, falls back to the map folder, then to raw
+       coordinates, and says so plainly when the record has no location at all. */
+    const dupPlace = (c) => {
+        const bad = (s) => !s || /unknown|unmapped|uncategorized/i.test(String(s));
+        const kec = !bad(c.city) ? String(c.city) : null;
+        const kab = !bad(c.region) ? String(c.region) : null;
+        if (kec && kab) return `${kec}, ${kab}`;
+        if (kec || kab) return kec || kab;
+        if (!bad(c.mapFolder)) return String(c.mapFolder);
+        if (Number.isFinite(Number(c.latitude)) && Number.isFinite(Number(c.longitude)))
+            return `${Number(c.latitude).toFixed(4)}, ${Number(c.longitude).toFixed(4)}`;
+        return 'no location';
+    };
+
     const dupDate = (c) => {
         const ms = createdMillis(c);
         return ms ? new Date(ms).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : 'no date';
@@ -1042,14 +1096,36 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <div key={gi} className="bg-white dark:bg-black/30 rounded-lg p-3 border border-gray-200 dark:border-white/10">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 mb-2">
                                     {g.members.length} copies · matched by {g.reason === 'both' ? 'name and location' : g.reason}
-                                    {g.widestMetres !== null && <> · {g.widestMetres}m apart</>}
+                                    {g.widestMetres !== null && <> · {g.widestMetres >= 1000 ? (g.widestMetres/1000).toFixed(1)+' km' : g.widestMetres+' m'} apart</>}
                                 </div>
+                                {/* The honest caveat, on the group it applies to. A generic shop
+                                    name repeating across a city is a coincidence, and treating it
+                                    as a duplicate is how a live store gets deleted. */}
+                                {g.sameNameFarApart && (
+                                    <div className="mb-2 border-l-[3px] border-yellow-500 bg-yellow-500/10 px-2 py-1.5 text-[11px] leading-snug text-yellow-800 dark:text-yellow-300">
+                                        <b>Probably NOT duplicates.</b> Same name only, and far apart.
+                                        A shop registered twice by mistake sits within a few metres of itself —
+                                        this looks like different shops sharing a common name. Open them before deleting anything.
+                                    </div>
+                                )}
                                 {g.members.map((m, mi) => (
-                                    <div key={m.id ?? mi} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-1.5 border-t border-gray-100 dark:border-white/5 first:border-t-0">
+                                    <div key={m.id ?? mi} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 border-t border-gray-100 dark:border-white/5 first:border-t-0">
                                         <span className="font-bold text-sm dark:text-white">{m.name || '(no name)'}</span>
+                                        {/* The automatic label. Identical names in every list are exactly
+                                            why these are impossible to tell apart, so each row carries where
+                                            it actually is — the scrubbed location if it has one, raw
+                                            coordinates if it does not. */}
+                                        <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-200">
+                                            📍 {dupPlace(m)}
+                                        </span>
                                         {mi === 0 && (
                                             <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-600 text-white">
                                                 oldest — likely the original
+                                            </span>
+                                        )}
+                                        {g.distances[mi] > 0 && (
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-800 dark:text-yellow-300">
+                                                {g.distances[mi] >= 1000 ? (g.distances[mi]/1000).toFixed(1)+' km' : g.distances[mi]+' m'} from the oldest
                                             </span>
                                         )}
                                         <span className="text-[11px] text-gray-500 dark:text-gray-400">{dupDate(m)}</span>
@@ -1059,6 +1135,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         {m.mapFolder && <span className="text-[11px] text-gray-500 dark:text-gray-400">📁 {m.mapFolder}</span>}
                                         {m.lastVisit && <span className="text-[11px] text-gray-500 dark:text-gray-400">last visit {m.lastVisit}</span>}
                                         <span className="text-[10px] font-mono text-gray-400 dark:text-gray-600">{m.id}</span>
+
+                                        <span className="ml-auto flex gap-1.5 shrink-0">
+                                            <button
+                                                onClick={() => openDetail(m)}
+                                                className="px-2.5 py-1.5 rounded-lg bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[10px] font-black uppercase tracking-wider dark:text-white"
+                                                title="Open this store's full profile — where it is, its history, and its edit form"
+                                            >Open</button>
+                                            <button
+                                                onClick={() => handleDeleteDuplicate(m, g)}
+                                                className="px-2.5 py-1.5 rounded-lg bg-red-700/90 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider"
+                                                title="Permanently delete this store. It asks first and tells you exactly what you are removing."
+                                            >Delete</button>
+                                        </span>
                                     </div>
                                 ))}
                             </div>

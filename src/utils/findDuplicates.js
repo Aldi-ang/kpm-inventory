@@ -35,6 +35,11 @@ export const metresBetween = (aLat, aLng, bLat, bLng) => {
 
 const hasCoords = (c) => Number.isFinite(Number(c?.latitude)) && Number.isFinite(Number(c?.longitude));
 
+/* Beyond this, two shops sharing a name are almost certainly two different shops. A genuine
+   double-registration lands within metres of itself — the same salesman, standing in the same
+   doorway, filing twice. 500m is already far past that. */
+export const FAR_APART_METRES = 500;
+
 /* Oldest-first, so the UI can suggest "this is probably the original" without deciding anything.
    The three creation paths stamp different fields, and KML/engine writes land as Firestore
    Timestamps rather than strings, so all three shapes have to be understood here. */
@@ -120,12 +125,34 @@ export function findDuplicates(customers, { radiusMetres = 40 } = {}) {
             if (my === null) return -1;
             return mx - my;                            // oldest first = probably the original
         });
+        const reason = reasons.size === 2 ? 'both' : (reasons.values().next().value ?? 'name');
+        const widestM = widest === null ? null : Math.round(widest);
+
+        /* Distance of each copy from the oldest one, so the odd one out is visible at a glance
+           instead of hidden inside a single "widest" number. Index-aligned with `members`. */
+        const first = sorted.find(hasCoords);
+        const distances = sorted.map(m => (hasCoords(m) && first)
+            ? Math.round(metresBetween(Number(first.latitude), Number(first.longitude),
+                                       Number(m.latitude), Number(m.longitude)))
+            : null);
+
+        /* THE FALSE-POSITIVE GUARD. Indonesian shop names repeat constantly — "warung sembako
+           sumber rejeki" is about as distinctive as "corner shop". Three of those 14.5km apart
+           are three real shops, not one shop recorded three times. Matching on name alone across
+           that kind of distance is a coincidence, and presenting it as a duplicate is how someone
+           ends up deleting a live store. The report must say so on the group itself. */
         out.push({
-            reason: reasons.size === 2 ? 'both' : (reasons.values().next().value ?? 'name'),
+            reason,
             members: sorted,
-            widestMetres: widest === null ? null : Math.round(widest),
+            widestMetres: widestM,
+            distances,
+            sameNameFarApart: reason === 'name' && widestM !== null && widestM > FAR_APART_METRES,
         });
     }
 
-    return out.sort((a, b) => b.members.length - a.members.length);
+    /* Likely-real duplicates first, coincidental name collisions last. He should not have to
+       scroll past three unrelated warungs to reach the pair that actually is one shop twice. */
+    return out.sort((a, b) =>
+        (a.sameNameFarApart ? 1 : 0) - (b.sameNameFarApart ? 1 : 0) ||
+        b.members.length - a.members.length);
 }
