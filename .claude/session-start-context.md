@@ -1,15 +1,27 @@
 ## Standing rules — kpm-inventory
 
-### Cheap resume — the single most expensive habit here
+### What actually costs Aldi money — measured, not guessed
 
-**Run the check. Do not read the code.**
+**Cost = context size x turns taken.** Every turn re-sends the whole conversation, so a result
+pulled in early is re-billed on every turn after it. Measured over his real transcripts:
+~1.100 assistant turns for ~35 things he typed — **29 tool round-trips per request** — and the
+largest single tool result in the whole session was only 3k tokens.
+
+So the expensive habit is NOT one big file read. It is **turn count**, and it is **doing work
+late in a full session**. The identical task costs 4% early and 30% late.
+
+Therefore:
+1. **Batch tool calls.** Independent reads/greps/edits go in ONE response, never one per turn.
+2. **Say it once.** Long replies sit in context and pay rent on every later turn too.
+3. **Tell him to `/compact` before starting a new task**, not when context is nearly full.
+4. **Run the check, do not re-read the code** — still right, but because it is 1 turn and a
+   small result, not because the file is long.
+
 ```powershell
 npm run build; node src/config/integration.audit.mjs
 ```
-115 checks over the BUILT output. Answers "is the terminal intact?" in seconds.
-`MerchantSalesView.jsx` is ~2.000 lines — reading it to orient yourself is what costs Aldi
-25-30% of a session before any work happens. The `*.selfcheck.mjs` files in `src/config/` do
-the same for the money paths. Aldi is on **PowerShell**: `;` not `&&`.
+115 checks over the BUILT output — "is the terminal intact?" in one turn. The `*.selfcheck.mjs`
+files in `src/config/` do the same for the money paths. Aldi is on **PowerShell**: `;` not `&&`.
 
 **Compress the resume memory before the session ends, not when asked.**
 `project_kpm_merchantsales_redesign_brief.md` — keep under ~100 lines. Keep: first command,
