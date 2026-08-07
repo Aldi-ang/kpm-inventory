@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:23 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:25 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -84,6 +84,11 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:25 WIB
+Taught Alucard the context-watch habit in §9: act on a [context-watch] line before doing
+any work, recommend /clear rather than /compact above 80%, and treat turn count - not big
+reads - as the real cost. Deny on alucard/SKILL.md lifted for the edit and restored after.
 
 ### 2026-08-07 14:23 WIB
 Added a UserPromptSubmit hook that MEASURES context fullness from the live transcript
