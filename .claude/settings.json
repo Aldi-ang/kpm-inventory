@@ -18,6 +18,20 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/pre-compact-context.md\"",
+            "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\pre-compact-context.md\" -Raw -Encoding UTF8",
+            "timeout": 5,
+            "statusMessage": "Telling the summariser what to keep..."
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash|Grep",
