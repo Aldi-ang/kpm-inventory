@@ -242,6 +242,43 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
+### 2026-08-08 — 🟢 A PLAN-USAGE METER IS BUILDABLE. Design settled, NOT built. Do this next.
+
+Aldi asked whether codeburn or 9router could give the 5-hour quota. **Both checked, both no —
+but the raw transcripts can, and that is the answer.**
+
+- **codeburn — cannot.** `get_usage` totals return `costUSD / calls / sessions / cacheHitPercent`,
+  **no token counts and no timestamps**, and its finest period is a whole calendar day. A rolling
+  5-hour window cannot be cut from day buckets. Do not revisit this.
+- **9router — not running.** Nothing answers on `localhost:20128` (`/usage`, `/api/usage`,
+  `/v1/usage`, `/api/stats`, `/health` all dead). If he starts it, its usage section is worth
+  re-checking; until then it does not exist.
+- **The transcripts CAN.** `~/.claude/projects/**/*.jsonl` carries per-call
+  `message.usage` — `input_tokens`, `output_tokens`, `cache_creation_input_tokens`,
+  `cache_read_input_tokens` — **plus an ISO `timestamp` on nearly every line.** Verified on the
+  live file: 533 of 978 lines carry usage, and a trailing-5-hour sum computed cleanly
+  (**74.9M tokens in the last 5 hours from that one file alone**).
+
+**So the numerator is real and cheap. The denominator is the whole problem** — Anthropic does not
+publish the 5-hour allowance to the client, and it is weighted (model, output vs input, and cache
+reads are not billed like fresh input; his cache-hit rate is **99.99%**, so a raw token sum is a
+bad proxy on its own).
+
+**The design, which solves that — calibrate against him, do not guess:**
+1. Script sums tokens across **all** project transcripts in the trailing 5 hours, rolling.
+2. When Aldi states a percentage (he does this naturally — *"its passes 92%"*, *"94% now"*),
+   record `{tokens_at_that_moment, percent_he_said}` to a small JSON file.
+3. Allowance = median of `tokens / (percent/100)` across calibration points. One point makes it
+   usable; two or three make it good.
+4. A UserPromptSubmit hook then reports estimated plan usage every turn, **labelled an estimate**,
+   and stays silent until at least one calibration point exists.
+
+**Non-negotiable when building it:** it must never under-report. That failure — a meter trusted
+while quietly wrong — is what let him hit 92% in silence. If uncalibrated, say so; do not show a
+number. Round the estimate **up**.
+
+**Not started. Context was 79% when this was settled and the build did not fit in the remainder.**
+
 ### 2026-08-08 — both half-built items are DONE, and the context meter is fixed
 
 **`ffa3215`** — the Open button is now **Edit**: `openForEdit` calls `handleEdit` and moves the
