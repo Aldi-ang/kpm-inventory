@@ -2,7 +2,7 @@
 
 Everything designed for the terminal is now built. This is the list to walk, in order.
 
-**Before you start, run this.** It checks 105 things about the built app in one command and
+**Before you start, run this.** It checks 115 things about the built app in one command and
 takes seconds. If it fails, stop and send me the failure — no point testing by hand what a
 machine already says is broken.
 
