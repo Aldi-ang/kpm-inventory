@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 23:05 WIB** · branch `phase0-solid-ground` · last commit `149c890`
+**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `312d3de`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -242,7 +242,33 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
-### 2026-08-07 22:4x WIB — duplicate panel: Open goes to the wrong place, dismiss is HALF-BUILT
+### 2026-08-08 — both half-built items are DONE, and the context meter is fixed
+
+**`ffa3215`** — the Open button is now **Edit**: `openForEdit` calls `handleEdit` and moves the
+province/kabupaten/kecamatan pickers to the store first, so he lands on the form inside the right
+folder instead of the 3D-map detail screen he could not get back from.
+
+**Same commit** — "✓ Not duplicates" per group, persisted to Firestore at
+`artifacts/{appId}/users/{uid}/settings/duplicate_ignores` as an array of group keys, so the
+decision follows him between devices. Cleared groups stay countable and reversible: the header
+shows how many are hidden, with **Show them** and **Bring them all back**. A failed save restores
+the decision in the UI rather than reporting a success that did not happen.
+
+**`312d3de`** — `context-watch.mjs` denominator clamped to 200k. It was reading
+`autoCompactWindow` = 1,000,000 after `/autocompact 1000k`, so it computed a fifth of the truth
+and stayed silent all session while the UI showed 92%. Verified: 96/85/60% now report honestly,
+20% stays silent. Its top tier also no longer calls itself "end of usage" — it says **end of
+CONTEXT**, because conflating that with the plan quota is what sent a whole session chasing the
+wrong fix.
+
+**Answered for him, having actually checked:** nothing local exposes the 5-hour plan quota.
+`policy-limits.json` is policy restrictions; `codeburn` is historical local spend; the transcript
+only describes context. **Claude cannot see the plan limit. Only Aldi can.** Do not build a
+guessed estimate of it without him asking — an under-reporting meter is exactly what just failed.
+
+Build green, audit **147/147**, duplicate self-checks **26/26**.
+
+### 2026-08-07 22:4x WIB — duplicate panel: Open goes to the wrong place, dismiss (now both DONE above)
 
 **Uncommitted-work warning: `groupKey` is built and tested but NOTHING USES IT YET.**
 
