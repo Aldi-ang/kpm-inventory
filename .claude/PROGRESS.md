@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `7856c43`
+**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `c90f397`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -249,6 +249,45 @@ why the 80% and 55% tiers never fired either.
 setting entirely and hard-code the real window. Then re-run the four-tier test — the existing
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
+
+### 2026-08-08 — ⚠️ RESCUED 259 LINES OF UNCOMMITTED WORK FROM A BURIED WORKTREE
+
+**Tell Aldi this first thing. It was one folder-delete from gone.**
+
+`src/.claude/worktrees/customer-directory-permissions-396625/` held **six modified files, never
+committed** — `firestore.rules` (+107 lines), `src/config/permissions.js`, `App.jsx`,
+`CustomerManager.jsx`, `SettingsView.jsx`, `MANUAL_TEST_CHECKLIST.md`. This is the **Customer
+Directory permission tier** work that memory records as "emulator-tested, NOT deployed". None of
+it exists on `phase0-solid-ground`.
+
+Committed on its own branch as **`cccb3c0`** (branch
+`claude/customer-directory-permissions-396625`). That changes nothing about its status —
+**`firestore.rules` is still a DRAFT and still NOT deployed** — it only moves the work out of
+"unsaved on disk" and into git.
+
+**Worktree audit, all four:**
+| Worktree | Branch | State |
+|---|---|---|
+| `critical-bugs-permissions-batch-c3371f` | detached `95c0248` | clean, commit reachable from `main` |
+| `customer-directory-permissions-396625` | own branch | **had the 259 lines — now committed** |
+| `obsidian-claudian-setup-2d80f9` | own branch | clean |
+| `plugin-marketplace-ponytail-68e37f` | detached `3231f21` | clean, reachable from `phase0-solid-ground` |
+
+**No orphans** — every commit is reachable from a branch. **They are now safe to remove**, but
+removal is destructive and Aldi has not approved it, so it was NOT done. The command when he says
+yes: `git worktree remove <path>` for each, which also un-clutters every future search.
+
+**They are NOT in the build.** Vite only bundles what the entry imports, and nothing imports them;
+`integration.audit.mjs`'s `walk()` already skips `.claude`. So the cost is search noise and tooling
+confusion, not bundle size. Do not treat this as a performance problem.
+
+**Second finding, lower severity, NOT fixed — needs a decision.** `logAudit` and `triggerCapy` are
+optional props in child components, and their use is split: **29 guarded** (`if (logAudit)`) vs
+**35 unguarded** bare calls. Inside `App.jsx` unguarded is fine — `logAudit` is defined locally at
+`App.jsx:2335`. The risk is only in children (`BranchWarehouseManager.jsx` has 10,
+`CrownTransferProtocol.jsx`, `CustomerManager.jsx`, `AuditVaultView.jsx`). App.jsx does pass them
+today, so this is a **latent crash risk, not a live bug** — do not report it as one. Fixing means
+touching ~35 call sites for a condition that never currently occurs; ask him before spending that.
 
 ### 2026-08-08 — the context meter now MEASURES instead of guessing, and it is accurate
 
