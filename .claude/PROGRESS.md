@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:30 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:32 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -83,6 +83,14 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:32 WIB
+SETTLED: autoCompactWindow 600k -> 200k, set directly in ~/.claude/settings.json. Autocompact
+cannot be switched off at all (/autocompact rejects "off"; range is 100k-1M), so the only
+lever is the number. context-watch measures against that same number, so lowering it pulls
+both warnings earlier AND keeps average context low: yellow 110k, RED 160k, autocompact 200k
+as a backstop that should never fire. Aldi also confirmed he skims and needs the red banner
+first on screen.
 
 ### 2026-08-07 14:30 WIB
 Aldi DECIDED: no autocompact - he will clear when warned. Setting left at 600k anyway as a
