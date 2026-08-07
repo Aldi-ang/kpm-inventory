@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 21:39 WIB** · branch `phase0-solid-ground` · last commit `29923a9`
+**Updated: 2026-08-07 22:20 WIB** · branch `phase0-solid-ground` · last commit `149c890`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -41,7 +41,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | What | Exact path |
 |---|---|
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
-| The 143-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The 147-check audit — run before anything | `src/config/integration.audit.mjs` |
 | The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
 | Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
 | Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
@@ -55,7 +55,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
 | The context meter + the 93% hard stop | `.claude/context-watch.mjs` |
 | Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
-| Its 16 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
+| Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
@@ -66,14 +66,14 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-143 checks over the built output. One turn, small result. If it passes, the terminal is
+147 checks over the built output. One turn, small result. If it passes, the terminal is
 intact — do **not** re-read source to confirm it.
 
 ---
 
 ## NOW
 
-Sales terminal redesign is **built and passing 143/143**. Design work is CLOSED.
+Sales terminal redesign is **built and passing 147/147**. Design work is CLOSED.
 Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
 on `phase0-solid-ground` and NOTHING is pushed — the branch has no upstream, so Vercel cannot
 see any of it.**
