@@ -1,0 +1,584 @@
+<title>KPM Field Test — Quest Log</title>
+<style>
+/* ── Design plan ────────────────────────────────────────────────────────────
+   Subject: Aldi's own sales terminal already speaks RPG — capybara merchant,
+   "wares", "manifest", ranks, XP. So the arcade treatment is native to the
+   project, not a costume put on top of it.
+
+   Colour  — a single committed CRT world, no light theme. Ground #0f0d0b,
+             panel #1c1814, arcade gold #ffb000, cream #f0e2c0, fail red
+             #d1495b, weird magenta #b96ac9, dim #6b6157. No blue and no green
+             anywhere: that is a standing design law on this project and it
+             holds here too, so the three verdicts read cream / red / magenta.
+   Type    — no webfont. A CDN link would be blocked and fall back silently,
+             and there is no pixel face to inline, so the 8-bit read comes from
+             GEOMETRY instead: chunky uppercase monospace, hard offset shadows,
+             zero border radius anywhere, stepped borders, buttons that
+             physically depress. Honest retro beats a font that never loads.
+   Layout  — a quest log. Fixed HUD with a segmented progress meter, then the
+             real test groups as collapsible quest chains.
+   ──────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#0f0d0b; --panel:#1c1814; --panel2:#241f19; --line:#3a3128;
+  --gold:#ffb000; --cream:#f0e2c0; --red:#d1495b; --magenta:#b96ac9;
+  --dim:#6b6157;
+  --mono:ui-monospace,"Cascadia Mono","Consolas","Courier New",monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--cream);font-family:var(--mono);
+  font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:none;font-smooth:never;
+}
+/* scanlines + vignette: the whole retro atmosphere in two pseudo-elements */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:98;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%);
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 12px 140px}
+
+/* ── HUD ─────────────────────────────────────────────────────────────────── */
+.hud{
+  position:sticky;top:0;z-index:50;background:var(--panel);
+  border-bottom:3px solid var(--line);
+  box-shadow:0 4px 0 rgba(0,0,0,.5);padding:10px 12px;margin-bottom:16px;
+}
+.hud-in{max-width:860px;margin:0 auto}
+.title{
+  font-size:15px;font-weight:700;letter-spacing:.18em;color:var(--gold);
+  text-shadow:2px 2px 0 #000;margin:0 0 8px;text-transform:uppercase;
+}
+.meter{display:flex;gap:2px;height:14px;margin-bottom:6px}
+.seg{flex:1;background:#000;border:1px solid var(--line)}
+.seg.on{background:var(--gold);border-color:var(--gold);box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
+.seg.bad{background:var(--red);border-color:var(--red)}
+.seg.odd{background:var(--magenta);border-color:var(--magenta)}
+.stats{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;letter-spacing:.1em;color:var(--dim)}
+.stats b{color:var(--cream);font-weight:700}
+.stats .g b{color:var(--gold)} .stats .b b{color:var(--red)} .stats .w b{color:var(--magenta)}
+
+/* ── quest groups ────────────────────────────────────────────────────────── */
+.group{border:2px solid var(--line);background:var(--panel);margin-bottom:14px;box-shadow:4px 4px 0 rgba(0,0,0,.45)}
+.ghead{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:var(--panel2);border:0;border-bottom:2px solid var(--line);
+  padding:11px 12px;cursor:pointer;font-family:var(--mono);color:var(--cream);
+  font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+}
+.ghead:hover{background:#2b251d}
+.ghead .caret{color:var(--gold);width:12px}
+.ghead .tally{margin-left:auto;font-size:10px;color:var(--dim);letter-spacing:.08em}
+.ghead .tally.done{color:var(--gold)}
+.gbody{padding:4px 0}
+.gbody[hidden]{display:none}
+
+/* ── one test ────────────────────────────────────────────────────────────── */
+.item{border-bottom:1px solid var(--line);padding:11px 12px}
+.item:last-child{border-bottom:0}
+.item.good{box-shadow:inset 4px 0 0 var(--gold)}
+.item.broken{box-shadow:inset 4px 0 0 var(--red)}
+.item.weird{box-shadow:inset 4px 0 0 var(--magenta)}
+.item.skip{opacity:.45}
+/* The paste target has to be obvious, or Ctrl+V is a guess about where the image lands. */
+.item.armed{background:#231d16;outline:2px solid var(--gold);outline-offset:-2px}
+.armed-tag{
+  display:inline-block;margin-left:8px;font-size:9px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:#1a1509;background:var(--gold);padding:2px 6px;
+}
+.iid{color:var(--gold);font-weight:700;letter-spacing:.1em;font-size:12px}
+.ido{margin:2px 0 3px;font-size:13px}
+.iex{color:var(--dim);font-size:11.5px;margin-bottom:9px}
+.iex b{color:var(--cream);font-weight:400}
+
+.votes{display:flex;gap:6px;flex-wrap:wrap}
+.vote{
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:9px 12px;min-height:40px;cursor:pointer;
+  background:var(--panel2);color:var(--dim);border:2px solid var(--line);
+  box-shadow:3px 3px 0 rgba(0,0,0,.5);transition:none;
+}
+.vote:hover{color:var(--cream);border-color:var(--dim)}
+.vote:active{transform:translate(3px,3px);box-shadow:0 0 0 rgba(0,0,0,0)}
+.vote:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.vote[aria-pressed="true"]{transform:translate(3px,3px);box-shadow:0 0 0}
+.vote.g[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1509}
+.vote.b[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.vote.w[aria-pressed="true"]{background:var(--magenta);border-color:var(--magenta);color:#fff}
+.vote.s[aria-pressed="true"]{background:var(--dim);border-color:var(--dim);color:#12100e}
+
+.detail{margin-top:10px}
+.detail[hidden]{display:none}
+textarea{
+  width:100%;background:#000;color:var(--cream);border:2px solid var(--line);
+  font-family:var(--mono);font-size:12.5px;padding:8px;min-height:64px;resize:vertical;
+}
+textarea:focus{outline:0;border-color:var(--gold)}
+textarea::placeholder{color:#4a423a}
+.shots{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.shot{position:relative;width:64px;height:64px;border:2px solid var(--line);background:#000}
+.shot img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.shot button{
+  position:absolute;top:-8px;right:-8px;width:20px;height:20px;padding:0;
+  background:var(--red);color:#fff;border:2px solid #000;cursor:pointer;
+  font-family:var(--mono);font-size:11px;line-height:1;font-weight:700;
+}
+.addshot{
+  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:0 10px;height:40px;cursor:pointer;
+  background:var(--panel2);color:var(--gold);border:2px dashed var(--line);
+}
+.addshot:hover{border-color:var(--gold)}
+.addshot input{display:none}
+
+/* ── export dock ─────────────────────────────────────────────────────────── */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--panel);
+  border-top:3px solid var(--line);box-shadow:0 -4px 0 rgba(0,0,0,.5);padding:10px 12px;
+}
+.dock-in{max-width:860px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.big{
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:12px 16px;min-height:46px;cursor:pointer;
+  background:var(--gold);color:#1a1509;border:2px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.6);
+}
+.big:active{transform:translate(4px,4px);box-shadow:0 0 0}
+.big.ghost{background:var(--panel2);color:var(--dim);border-color:var(--line)}
+.big.ghost:hover{color:var(--cream)}
+.big:focus-visible{outline:2px solid var(--cream);outline-offset:2px}
+.hint{font-size:10.5px;color:var(--dim);letter-spacing:.06em;flex-basis:100%}
+
+.toast{
+  position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;
+  background:var(--gold);color:#1a1509;border:2px solid #000;box-shadow:4px 4px 0 rgba(0,0,0,.6);
+  padding:10px 16px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+}
+.toast[hidden]{display:none}
+
+.lightbox{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+.lightbox[hidden]{display:none}
+.lightbox img{max-width:100%;max-height:100%;border:3px solid var(--gold);image-rendering:auto}
+
+.note{border:2px solid var(--line);background:var(--panel);padding:11px 12px;margin-bottom:14px;font-size:11.5px;color:var(--dim)}
+.note b{color:var(--gold);letter-spacing:.1em}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:520px){ .vote{flex:1 1 calc(50% - 6px)} .wrap{padding-bottom:160px} }
+</style>
+
+<div class="hud">
+  <div class="hud-in">
+    <h1 class="title">▚ KPM Field Test — Quest Log</h1>
+    <div class="meter" id="meter" role="progressbar" aria-label="Tests answered"></div>
+    <div class="stats">
+      <span>ANSWERED <b id="sDone">0</b>/<b id="sTotal">0</b></span>
+      <span class="g">GOOD <b id="sGood">0</b></span>
+      <span class="b">BROKEN <b id="sBad">0</b></span>
+      <span class="w">WEIRD <b id="sWeird">0</b></span>
+      <span>XP <b id="sXp">0</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="note">
+    <b>SNIPPING TOOL →</b> Snip with <b>Win+Shift+S</b>, click the test you are on, then press
+    <b>Ctrl+V</b>. The image attaches straight to that test — no saving a file first. The test you
+    are aimed at is outlined in gold and says PASTE HERE.
+    <br><br>
+    <b>HOW THIS GETS BACK TO CLAUDE →</b> Nothing here is sent anywhere. Your answers live
+    only in this browser. When you want a review, press <b>COPY REPORT</b> and paste it into the
+    chat. Screenshots stay here — drag the ones that matter straight into the chat window.
+    Progress saves automatically, so you can close this and come back.
+  </div>
+  <div id="groups"></div>
+</div>
+
+<div class="dock">
+  <div class="dock-in">
+    <button class="big" id="copy">▶ Copy Report</button>
+    <button class="big ghost" id="save">↓ Save File</button>
+    <button class="big ghost" id="sfx">♪ Sound: On</button>
+    <button class="big ghost" id="reset">✖ Reset</button>
+    <span class="hint" id="hint">Paste the report into the chat when you want Claude to review it.</span>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt="Attached screenshot"></div>
+
+<script>
+/* Real test list, lifted from SALES_TERMINAL_TEST_LIST.md. Groups A and B and the three
+   already-confirmed items are pre-marked so the meter shows the true picture, not a fake
+   zero — every one of them can still be changed. */
+const TESTS = [
+ {g:'H', name:'Territory + duplicate outlets', items:[
+  {id:'H1', do:'Choose a store assigned to another salesman', ex:'Red bar names them, sale still completes', seed:'good'},
+  {id:'H2a',do:'ROUND 1 — after a finished sale, type a made-up name like WARUNG TEST 99 by hand (do NOT pick from the dropdown)', ex:'No red bar. If ALEX’s red bar is still there, that is the bug'},
+  {id:'H2b',do:'ROUND 2 — pick that store again, then type over the name in the box', ex:'The red bar disappears as you type, without waiting'},
+  {id:'H3', do:'Register a new outlet while standing at an existing one', ex:'Red bar with the distance, plus a "different building" button', seed:'good'},
+ ]},
+ {g:'C', name:'The customer brief', items:[
+  {id:'C1', do:'Choose a customer from the dropdown', ex:'It sticks. The name must not blank itself'},
+  {id:'C2', do:'Choose a store you sold to today', ex:'Gold bar, "Already sold here today". No pop-up', seed:'good'},
+  {id:'C2b',do:'Choose a store another agent sold to today', ex:'Needs a second salesman account — cannot be tested', seed:'skip'},
+  {id:'C3', do:'Choose a customer who owes money', ex:'Red "Owes" block with the age in days'},
+  {id:'C4', do:'Press "Same as last time"', ex:'Manifest fills with their last order'},
+  {id:'C5', do:'Same, but a ware is now empty or low', ex:'Tells you what it dropped or clamped. Never loads stock you do not have'},
+  {id:'C6', do:'Same, during a retur', ex:'Button disabled'},
+ ]},
+ {g:'D', name:'Money — must be exactly right', items:[
+  {id:'D1', do:'Add a ware, type 1 Karton + 1 Bal + 1 Slop + 1 Bks', ex:'Total matches that product’s packing (check the grey line)'},
+  {id:'D2', do:'Read the grey rate line', ex:'Matches what you set in the master vault'},
+  {id:'D3', do:'Change packing in the master vault, come back', ex:'Rate line and total both follow the new numbers'},
+  {id:'D4', do:'Sell a Karton of something with real stock', ex:'Stock drops by the right number of Bks'},
+  {id:'D5', do:'Commit a sale with 3+ lines and product photos', ex:'It saves. This used to fail outright — the 1 MiB limit'},
+  {id:'D6', do:'Check the printed nota', ex:'Still blue, still KPM’s design. Unchanged on purpose'},
+ ]},
+ {g:'E', name:'The merchant', items:[
+  {id:'E1', do:'Idle', ex:'Stands in his cave, torches lit'},
+  {id:'E2', do:'Add a ware', ex:'Talks, mumbles, bubble above his hat'},
+  {id:'E3', do:'Choose a customer', ex:'Says something about opening their page, NOT "one more"'},
+  {id:'E4', do:'Scroll the shelf down far', ex:'Leaves the cave and slides in from the right corner'},
+  {id:'E5', do:'Scroll back up', ex:'Leaves and returns to the cave'},
+  {id:'E6', do:'While he is in the corner', ex:'Only ONE capybara on screen, ever'},
+  {id:'E7', do:'Commit a sale', ex:'Deal pose with the coin, above the receipt not behind it'},
+ ]},
+ {g:'F', name:'Phone', items:[
+  {id:'F1', do:'No customer chosen, GPS on', ex:'Strip shows next stop + a "Go" button'},
+  {id:'F2', do:'Choose a customer', ex:'Strip becomes their brief + "Same as last time"'},
+  {id:'F3', do:'Add something to the manifest', ex:'Strip collapses to one line, keeping only the debt'},
+  {id:'F4', do:'Press a ware’s picture', ex:'Stock breakdown opens under that card, full width'},
+  {id:'F5', do:'Press "Examine in 3D" in that panel', ex:'Opens the 3D view'},
+  {id:'F6', do:'Tap a ware, then tap elsewhere', ex:'No brackets or spinning box left stuck'},
+  {id:'F7', do:'Everything you press', ex:'Nothing feels too small — say what does'},
+ ]},
+ {g:'G', name:'Nothing old was lost', items:[
+  {id:'G1', do:'Retur mode → Buyback', ex:'Works, muted red, no emoji'},
+  {id:'G2', do:'Retur mode → Exchange', ex:'Works, muted gold'},
+  {id:'G3', do:'Mark a returned item Damaged', ex:'Reason dropdown appears and is required'},
+  {id:'G4', do:'Exchange → Hutang Barang (IOU)', ex:'Creates an IOU'},
+  {id:'G5', do:'Customer with a pending IOU', ex:'Banner appears, Fulfill works'},
+  {id:'G6', do:'New outlet (NOO) registration', ex:'Full flow, live photo required'},
+  {id:'G7', do:'Sampling', ex:'Deploy Marketing Sample works'},
+  {id:'G8', do:'Stand out of range of a store', ex:'Geofence blocks the sale; bypass request works'},
+  {id:'G9', do:'Lite Mode on', ex:'Nothing animates, hover still responds, merchant still solid'},
+ ]},
+ {g:'A', name:'The shelf — already walked', items:[
+  {id:'A1', do:'Shelf on a wide screen', ex:'3 wares a row', seed:'good'},
+  {id:'A2', do:'Open and close the sidebar', ex:'Re-flows cleanly, nothing overlaps', seed:'good'},
+  {id:'A3', do:'Hover a ware', ex:'Two thin gold corner brackets close in', seed:'good'},
+  {id:'A4', do:'Hover a ware’s picture', ex:'The box turns slowly', seed:'good'},
+  {id:'A5', do:'Press a ware’s picture', ex:'Its stock opens', seed:'good'},
+  {id:'A6', do:'Press the same picture again', ex:'It closes', seed:'good'},
+  {id:'A7', do:'Press anywhere else on the card', ex:'Adds 1, merchant reacts', seed:'good'},
+  {id:'A8', do:'Press /', ex:'Cursor jumps to search', seed:'good'},
+  {id:'A9', do:'Type in search, then press /', ex:'Nothing happens — must not steal the key', seed:'good'},
+ ]},
+ {g:'B', name:'The rail — already walked', items:[
+  {id:'B1', do:'Nothing selected, nothing pinned', ex:'Takings, vs yesterday, stores done, last customer, running low', seed:'good'},
+  {id:'B2', do:'With GPS on', ex:'"Next stop" with distance + Directions — needs your phone', seed:'skip'},
+  {id:'B3', do:'Press Directions', ex:'Google Maps opens in a NEW tab — needs your phone', seed:'skip'},
+  {id:'B4', do:'Pin a ware', ex:'Rail shows it: 3D box, mm, stock as Karton/Bal/Slop/Bks', seed:'good'},
+  {id:'B5', do:'Press "Examine in 3D"', ex:'Scales up, does not just appear', seed:'good'},
+  {id:'B6', do:'Choose a customer', ex:'Rail becomes their brief, pin clears itself', seed:'good'},
+  {id:'B7', do:'Choose a customer with no history', ex:'"No order in the last 7 days"', seed:'good'},
+ ]},
+];
+
+const KEY='kpm-test-quest-v1';
+let state = load();
+function load(){
+  try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  const s={};
+  TESTS.forEach(g=>g.items.forEach(i=>{ s[i.id]={verdict:i.seed||null,note:'',shots:[]}; }));
+  return s;
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); }
+  catch(e){ toast('Storage full — remove a screenshot'); }
+}
+
+/* WebAudio bleeps: no asset files, and nothing to fail to load. */
+let sfxOn = localStorage.getItem(KEY+'-sfx')!=='off';
+let actx=null;
+function bleep(freq,ms,type){
+  if(!sfxOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), gn=actx.createGain();
+    o.type=type||'square'; o.frequency.value=freq;
+    gn.gain.setValueAtTime(.05,actx.currentTime);
+    gn.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+ms/1000);
+    o.connect(gn); gn.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime+ms/1000);
+  }catch(e){}
+}
+const SOUND={good:()=>{bleep(660,70);setTimeout(()=>bleep(990,110),70);},
+             broken:()=>bleep(150,220,'sawtooth'),
+             weird:()=>{bleep(520,70);setTimeout(()=>bleep(400,120),70);},
+             skip:()=>bleep(300,60)};
+
+/* Which test a pasted screenshot belongs to. Set by touching a test — clicking anywhere on it,
+   voting, or focusing its notes box. Changing it must NOT re-render, or the textarea would be
+   rebuilt underneath the cursor and lose focus mid-sentence. */
+let activeId=null;
+function setActive(id){
+  activeId=id;
+  document.querySelectorAll('.item').forEach(el=>{
+    const on = el.dataset.item===id;
+    el.classList.toggle('armed',on);
+    const tag=el.querySelector('.armed-tag');
+    if(tag) tag.hidden=!on;
+  });
+}
+
+const allItems = TESTS.flatMap(g=>g.items);
+const testable = ()=>allItems.filter(i=>state[i.id].verdict!=='skip');
+
+function counts(){
+  let good=0,bad=0,weird=0,done=0;
+  allItems.forEach(i=>{
+    const v=state[i.id].verdict;
+    if(v==='good'){good++;done++} else if(v==='broken'){bad++;done++} else if(v==='weird'){weird++;done++}
+  });
+  return {good,bad,weird,done,total:testable().length};
+}
+
+function renderHud(){
+  const c=counts();
+  document.getElementById('sDone').textContent=c.done;
+  document.getElementById('sTotal').textContent=c.total;
+  document.getElementById('sGood').textContent=c.good;
+  document.getElementById('sBad').textContent=c.bad;
+  document.getElementById('sWeird').textContent=c.weird;
+  document.getElementById('sXp').textContent=c.good*10+c.bad*25+c.weird*15;
+  const m=document.getElementById('meter'); m.innerHTML='';
+  const segs=testable();
+  segs.forEach(i=>{
+    const v=state[i.id].verdict, d=document.createElement('div');
+    d.className='seg'+(v==='good'?' on':v==='broken'?' bad':v==='weird'?' odd':'');
+    m.appendChild(d);
+  });
+  m.setAttribute('aria-valuenow',c.done); m.setAttribute('aria-valuemax',c.total);
+}
+
+function tally(g){
+  const items=g.items.filter(i=>state[i.id].verdict!=='skip');
+  const done=items.filter(i=>state[i.id].verdict).length;
+  return {done,total:items.length};
+}
+
+function render(){
+  const root=document.getElementById('groups'); root.innerHTML='';
+  TESTS.forEach((g,gi)=>{
+    const t=tally(g);
+    const sec=document.createElement('section'); sec.className='group';
+    const head=document.createElement('button');
+    head.className='ghead'; head.type='button';
+    head.setAttribute('aria-expanded', String(gi<2));
+    head.innerHTML='<span class="caret">'+(gi<2?'▼':'▶')+'</span>'+
+      '<span>'+g.g+' — '+g.name+'</span>'+
+      '<span class="tally'+(t.done===t.total?' done':'')+'">'+t.done+'/'+t.total+'</span>';
+    const body=document.createElement('div'); body.className='gbody'; body.hidden=gi>=2;
+    head.onclick=()=>{
+      body.hidden=!body.hidden;
+      head.querySelector('.caret').textContent=body.hidden?'▶':'▼';
+      head.setAttribute('aria-expanded', String(!body.hidden));
+      bleep(440,40);
+    };
+    g.items.forEach(i=>body.appendChild(itemEl(i)));
+    sec.appendChild(head); sec.appendChild(body); root.appendChild(sec);
+  });
+  renderHud();
+}
+
+function itemEl(i){
+  const st=state[i.id];
+  const el=document.createElement('div');
+  el.className='item'+(st.verdict?' '+st.verdict:'')+(activeId===i.id?' armed':'');
+  el.dataset.item=i.id;
+  el.onclick=()=>setActive(i.id);
+  const head=document.createElement('div');
+  head.innerHTML='<div class="iid">'+i.id+
+                 '<span class="armed-tag"'+(activeId===i.id?'':' hidden')+'>paste here</span></div>'+
+                 '<div class="ido">'+esc(i.do)+'</div>'+
+                 '<div class="iex">Expect: <b>'+esc(i.ex)+'</b></div>';
+  el.appendChild(head);
+
+  const votes=document.createElement('div'); votes.className='votes';
+  [['good','✔ Good','g'],['broken','✖ Broken','b'],['weird','? Weird','w'],['skip','— Skip','s']]
+  .forEach(([v,label,cls])=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='vote '+cls; b.textContent=label;
+    b.setAttribute('aria-pressed', String(st.verdict===v));
+    b.onclick=()=>{
+      st.verdict = st.verdict===v ? null : v;
+      if(st.verdict && SOUND[st.verdict]) SOUND[st.verdict]();
+      activeId = i.id;                 // set before render so the rebuilt card keeps the arming
+      save(); render();
+    };
+    votes.appendChild(b);
+  });
+  el.appendChild(votes);
+
+  const det=document.createElement('div'); det.className='detail';
+  // also open when screenshots exist, so a paste that lands before a verdict is still visible
+  det.hidden = (!st.verdict || st.verdict==='skip') && !(st.shots && st.shots.length);
+  const ta=document.createElement('textarea');
+  ta.placeholder = st.verdict==='good'
+    ? 'Anything worth noting? (optional)'
+    : 'What happened? What did you expect instead? Where were you when it happened?';
+  ta.value=st.note||'';
+  ta.oninput=()=>{ st.note=ta.value; save(); };
+  ta.onfocus=()=>setActive(i.id);
+  det.appendChild(ta);
+
+  const shots=document.createElement('div'); shots.className='shots';
+  (st.shots||[]).forEach((src,ix)=>{
+    const s=document.createElement('div'); s.className='shot';
+    const img=document.createElement('img'); img.src=src; img.alt='Screenshot '+(ix+1)+' for '+i.id;
+    img.onclick=()=>{ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').hidden=false; };
+    const x=document.createElement('button'); x.type='button'; x.textContent='✕';
+    x.setAttribute('aria-label','Remove screenshot');
+    x.onclick=()=>{ st.shots.splice(ix,1); save(); render(); };
+    s.appendChild(img); s.appendChild(x); shots.appendChild(s);
+  });
+  const add=document.createElement('label'); add.className='addshot';
+  add.textContent='+ Photo / Ctrl+V';
+  const fi=document.createElement('input');
+  fi.type='file'; fi.accept='image/*'; fi.setAttribute('capture','environment');
+  fi.onchange=e=>{ const f=e.target.files[0]; if(f) shrink(f,d=>{ st.shots=st.shots||[]; st.shots.push(d); save(); render(); }); };
+  add.appendChild(fi); shots.appendChild(add);
+  det.appendChild(shots);
+  el.appendChild(det);
+  return el;
+}
+
+/* Downscale before storing: full phone photos would blow the ~5MB localStorage budget
+   after two or three, and the point of a screenshot here is legibility, not fidelity. */
+function shrink(file,cb){
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=900, sc=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',0.6));
+    };
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);
+}
+
+function esc(s){ return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+function report(){
+  const c=counts();
+  const L=[];
+  L.push('# KPM Sales Terminal — test results');
+  L.push('');
+  L.push('Answered '+c.done+'/'+c.total+' · GOOD '+c.good+' · BROKEN '+c.bad+' · WEIRD '+c.weird);
+  L.push('');
+  const problems=[];
+  TESTS.forEach(g=>{
+    const rows=g.items.filter(i=>state[i.id].verdict && state[i.id].verdict!=='skip');
+    if(!rows.length) return;
+    L.push('## '+g.g+' — '+g.name);
+    rows.forEach(i=>{
+      const st=state[i.id];
+      const mark = st.verdict==='good'?'GOOD':st.verdict==='broken'?'**BROKEN**':'**WEIRD**';
+      let line='- '+i.id+' '+mark+' — '+i.do;
+      if(st.note && st.note.trim()) line+='\n  - what happened: '+st.note.trim();
+      if(st.shots && st.shots.length) line+='\n  - '+st.shots.length+' screenshot(s) attached in the quest log';
+      L.push(line);
+      if(st.verdict!=='good') problems.push(i.id);
+    });
+    L.push('');
+  });
+  const skipped=allItems.filter(i=>state[i.id].verdict==='skip').map(i=>i.id);
+  const untouched=allItems.filter(i=>!state[i.id].verdict).map(i=>i.id);
+  if(skipped.length){ L.push('Skipped (cannot be tested): '+skipped.join(', ')); L.push(''); }
+  if(untouched.length){ L.push('Not answered yet: '+untouched.join(', ')); L.push(''); }
+  L.push(problems.length ? 'Needs attention: '+problems.join(', ') : 'Nothing broken so far.');
+  return L.join('\n');
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.hidden=false;
+  clearTimeout(toast._t); toast._t=setTimeout(()=>{t.hidden=true;},2600);
+}
+
+document.getElementById('copy').onclick=async()=>{
+  const txt=report();
+  try{ await navigator.clipboard.writeText(txt); toast('Copied — paste it into the chat'); bleep(880,90); }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('Copied — paste it into the chat'); }
+    catch(_){ toast('Could not copy — use Save File'); }
+    ta.remove();
+  }
+};
+
+document.getElementById('save').onclick=async()=>{
+  const payload=report();
+  if(window.claude && window.claude.downloads){
+    try{
+      await window.claude.downloads.save({filename:'kpm-test-results.md', data:payload});
+      toast('Saved'); bleep(880,90); return;
+    }catch(e){ /* viewer declined, or unavailable — fall through */ }
+  }
+  const blob=new Blob([payload],{type:'text/markdown'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='kpm-test-results.md'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Saved');
+};
+
+document.getElementById('sfx').onclick=e=>{
+  sfxOn=!sfxOn;
+  localStorage.setItem(KEY+'-sfx', sfxOn?'on':'off');
+  e.currentTarget.textContent='♪ Sound: '+(sfxOn?'On':'Off');
+  if(sfxOn) bleep(660,80);
+};
+if(!sfxOn) document.getElementById('sfx').textContent='♪ Sound: Off';
+
+document.getElementById('reset').onclick=()=>{
+  if(!confirm('Clear every answer, note and screenshot? This cannot be undone.')) return;
+  localStorage.removeItem(KEY);
+  state=load(); render(); toast('Cleared');
+};
+
+/* Snipping Tool goes to the clipboard, not to a file, so Ctrl+V has to be a first-class way in.
+   Text pastes are left completely alone — only an image in the clipboard is intercepted. */
+document.addEventListener('paste', e=>{
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  let file=null;
+  for(const it of items){
+    if(it.type && it.type.indexOf('image/')===0){ file=it.getAsFile(); break; }
+  }
+  if(!file) return;
+  e.preventDefault();
+  if(!activeId){ toast('Click a test first, then paste'); bleep(200,180,'sawtooth'); return; }
+  const target=activeId;
+  shrink(file, d=>{
+    const st=state[target];
+    st.shots=st.shots||[]; st.shots.push(d);
+    save(); render(); setActive(target);
+    toast('Screenshot added to '+target); bleep(880,90);
+  });
+});
+
+document.getElementById('lightbox').onclick=e=>{ e.currentTarget.hidden=true; };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('lightbox').hidden=true; });
+
+render();
+</script>

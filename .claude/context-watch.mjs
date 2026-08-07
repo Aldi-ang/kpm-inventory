@@ -69,7 +69,33 @@ const head = `[context-watch] ~${k(used)} of ${k(WINDOW)} used (${pct}%), ~${k(l
 /* Aldi skims and has said so. A warning he scrolls past is a warning that did not happen, so
    the banner is prescribed here verbatim rather than left to phrasing — it must be the first
    thing on screen, alone on its line, and it must not drift between sessions. */
-if (pct >= 80) {
+/* Aldi's standing instruction, 2026-08-07: "before each token usage run out, i want u to stop
+   the work and make notes before the usage run out and stuck on the screen" — because when the
+   window dies mid-task the screen sticks, he force-retries, and the next session finds NO note
+   covering the work that was in flight, so it re-derives everything. That re-derivation is the
+   real cost.
+
+   He said 95-98%. This fires at 93 on purpose: a PROGRESS.md write begun at 97% may not fit in
+   what is left, and a note that does not land is the exact failure he asked to prevent. Firing
+   early is what makes his instruction achievable rather than merely stated. */
+if (pct >= 93) {
+  console.log(`${head}
+
+🔴 END OF WINDOW. Aldi's standing rule fires here. Do this in THIS order, nothing else:
+
+1. Write .claude/PROGRESS.md NOW, before any other tool call. Not a summary of this reply —
+   the real state: what landed, what is half-done, what the next session must not re-derive,
+   and the exact next command. If code changed, commit it in the same turn.
+2. Then reply with ONLY this line, alone, nothing above it:
+
+🔴🔴🔴 **CLEAR NOW — type \`/clear\`** · context ${pct}% full, notes are saved 🔴🔴🔴
+
+3. Then at most two short lines: what is safely committed, and what he does next.
+
+Start NO new work, no matter how small it looks, and do not answer a new question with tool
+calls — an unfinished turn here strands him with a stuck screen and no notes.
+NEVER recommend /compact: it bills roughly ${k(used)} tokens, clearing bills nothing.`);
+} else if (pct >= 80) {
   console.log(`${head}
 
 STOP. Before doing ANY work, before any tool call, the reply must OPEN with exactly this,
