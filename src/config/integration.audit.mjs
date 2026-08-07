@@ -336,6 +336,33 @@ check(G11, 'the tier repair never deletes anything',
   !/deleteDoc|type:\s*'delete'/.test(repairBlock),
   'merging or removing a duplicate store is a human decision, not this button');
 
+/* ── 12. the duplicate finder reports and nothing else ─────────────────────
+   Choosing which of two copies keeps its sales history and its outstanding debt is a decision
+   about real money. The finder exists to put that choice in front of Aldi, never to make it. */
+const G12 = '12. Duplicate finder is read-only';
+const dup = fs.readFileSync('src/utils/findDuplicates.js', 'utf8');
+check(G12, 'the finder cannot touch the database',
+  !/deleteDoc|updateDoc|setDoc|writeBatch|addDoc|commitInChunks/.test(dup),
+  'findDuplicates.js must stay a pure function over the customer list');
+check(G12, 'the finder does not mutate the list it is given',
+  dup.includes('[...members]') && !/customers\.sort\(|list\.sort\(/.test(dup),
+  'it runs against live app state — sorting in place would reorder the directory');
+/* A delete button here would be one misclick from destroying a store's history. */
+/* Slice the PANEL only. Anchoring at handleFindDuplicates instead swept in the unrelated
+   handleDelete defined between it and the JSX, and failed on code that has nothing to do
+   with the report. */
+const panelStart = custMgr.indexOf('dupReport && (');
+const dupPanel = custMgr.slice(panelStart, custMgr.indexOf('CUSTOMER DIRECTORY PERMISSION TIER', panelStart));
+check(G12, 'the report offers no delete or merge control',
+  panelStart !== -1 && !/handleDelete|deleteDoc|onMerge|Merge\b/i.test(dupPanel),
+  'the report shows what is there and stops — merging is a separate, human decision');
+check(G12, 'the finder reached the built bundle',
+  allJs.includes('likely the original'),
+  'findDuplicates is not in dist/ — the button would do nothing');
+check(G12, 'the finder has a runnable self-check',
+  fs.existsSync('src/config/findDuplicates.selfcheck.mjs'),
+  'node src/config/findDuplicates.selfcheck.mjs');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

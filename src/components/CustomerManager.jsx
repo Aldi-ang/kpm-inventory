@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
+import { findDuplicates, createdMillis } from '../utils/findDuplicates';
 import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 import { getCustomerAccessLevel } from '../config/permissions';
 
@@ -651,6 +652,32 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         e.target.value = null;
     };
 
+    /* 🔎 DUPLICATE FINDER — reports only, changes nothing.
+       The KML import creates a fresh document per placemark with no dedup check, so importing one
+       file twice duplicates every pin in it; the three NOO paths can also each mint a second copy
+       of a store the agent could not find. Until now nothing could show Aldi the result.
+       No delete or merge button lives here on purpose: choosing which copy keeps its sales history
+       and its outstanding debt is a decision about real money. See findDuplicates.js. */
+    const [dupReport, setDupReport] = useState(null);
+    const [dupScanning, setDupScanning] = useState(false);
+
+    const handleFindDuplicates = () => {
+        setDupScanning(true);
+        // let the button repaint before a synchronous scan over the whole customer list
+        setTimeout(() => {
+            const groups = findDuplicates(customers, { radiusMetres: 40 });
+            setDupReport(groups);
+            setDupScanning(false);
+            if (logAudit) logAudit("DUPLICATE_SCAN", `Scanned ${customers.length} stores, found ${groups.length} duplicate groups.`);
+            if (triggerCapy) triggerCapy(groups.length ? `Found ${groups.length} duplicate groups. 🔎` : `No duplicates found. Clean list! ✅`);
+        }, 0);
+    };
+
+    const dupDate = (c) => {
+        const ms = createdMillis(c);
+        return ms ? new Date(ms).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : 'no date';
+    };
+
     /* 🔧 ONE-TIME REPAIR: the pricingTier / priceTier spelling split.
        useTransactionEngine used to save a store's price level as `pricingTier`, while the rest
        of the app — including the filter that decides which stores an agent may see — reads
@@ -965,6 +992,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             </button>
                         )}
                         <button
+                            onClick={handleFindDuplicates}
+                            disabled={dupScanning}
+                            className="bg-orange-700 hover:bg-orange-600 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2"
+                            title="Report stores that look like the same shop recorded twice. Changes nothing."
+                        >
+                            <Search size={14}/> {dupScanning ? 'Scanning…' : 'Find Duplicates'}
+                        </button>
+                        <button
                             onClick={handleEnterpriseDataScrub}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
                             title="Hard-map all UNMAPPED stores into the Database permanently"
@@ -978,7 +1013,60 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 )}
             </div>
-            
+
+            {/* Duplicate report. Deliberately has no delete or merge control — see the comment on
+                handleFindDuplicates. It shows what is there and stops. */}
+            {isAdmin && dupReport && (
+                <div className="border border-orange-500/40 bg-orange-50 dark:bg-[#1e1512] rounded-xl p-4">
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                        <div>
+                            <h3 className="font-black uppercase tracking-widest text-sm text-orange-700 dark:text-orange-400">
+                                {dupReport.length === 0
+                                    ? 'No duplicates found'
+                                    : `${dupReport.length} possible duplicate${dupReport.length === 1 ? '' : 's'}`}
+                            </h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
+                                {dupReport.length === 0
+                                    ? `Checked all ${customers.length} stores. Nothing shares a name or sits within 40 metres of another.`
+                                    : `Checked ${customers.length} stores. Matched on identical name, or within 40 metres of each other. Nothing has been changed or deleted — this is a report.`}
+                            </p>
+                        </div>
+                        <button onClick={() => setDupReport(null)}
+                            className="text-xs font-bold uppercase text-gray-500 hover:text-gray-800 dark:hover:text-white shrink-0">
+                            Close
+                        </button>
+                    </div>
+
+                    <div className="space-y-3 max-h-[28rem] overflow-y-auto">
+                        {dupReport.map((g, gi) => (
+                            <div key={gi} className="bg-white dark:bg-black/30 rounded-lg p-3 border border-gray-200 dark:border-white/10">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 mb-2">
+                                    {g.members.length} copies · matched by {g.reason === 'both' ? 'name and location' : g.reason}
+                                    {g.widestMetres !== null && <> · {g.widestMetres}m apart</>}
+                                </div>
+                                {g.members.map((m, mi) => (
+                                    <div key={m.id ?? mi} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-1.5 border-t border-gray-100 dark:border-white/5 first:border-t-0">
+                                        <span className="font-bold text-sm dark:text-white">{m.name || '(no name)'}</span>
+                                        {mi === 0 && (
+                                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-600 text-white">
+                                                oldest — likely the original
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{dupDate(m)}</span>
+                                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                                            {m.assignedAgent && m.assignedAgent !== 'Unassigned' ? m.assignedAgent : 'unassigned'}
+                                        </span>
+                                        {m.mapFolder && <span className="text-[11px] text-gray-500 dark:text-gray-400">📁 {m.mapFolder}</span>}
+                                        {m.lastVisit && <span className="text-[11px] text-gray-500 dark:text-gray-400">last visit {m.lastVisit}</span>}
+                                        <span className="text-[10px] font-mono text-gray-400 dark:text-gray-600">{m.id}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only hides Add/Edit entirely — the
                 directory stays fully browsable, but nothing here can be saved. */}
             {!canAddOrEditAnything && (

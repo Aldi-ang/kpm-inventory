@@ -1449,8 +1449,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "src_app_kpminventoryapp",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "kpminventoryapp()"
     },
     {
@@ -1460,8 +1460,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1471,8 +1471,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1482,8 +1482,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_eodreconciliationview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "eodreconciliationview.jsx"
     },
     {
@@ -1493,8 +1493,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1867,8 +1867,8 @@
       "source_location": "L460",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_borderimporter",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "borderimporter()"
     },
     {
@@ -2307,52 +2307,52 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customermanager.jsx"
     },
     {
       "label": "isPointInPolygon()",
       "file_type": "code",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L8",
+      "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "ispointinpolygon()"
     },
     {
       "label": "checkPointInGeoJSON()",
       "file_type": "code",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L18",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "checkpointingeojson()"
     },
     {
       "label": "CustomerDetailView()",
       "file_type": "code",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L36",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customerdetailview()"
     },
     {
       "label": "CustomerManagement()",
       "file_type": "code",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L201",
+      "source_location": "L202",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customermanagement()"
     },
     {
@@ -2439,8 +2439,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -2450,8 +2450,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "historyreportview()"
     },
     {
@@ -2582,8 +2582,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "safetystatus.jsx"
     },
     {
@@ -2593,8 +2593,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_safetystatus_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "safetystatus()"
     },
     {
@@ -2604,8 +2604,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -2615,8 +2615,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -2626,8 +2626,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -2637,8 +2637,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "samplingcartview()"
     },
     {
@@ -2648,8 +2648,8 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -2659,8 +2659,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -2824,8 +2824,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "customerbrief.selfcheck.mjs"
     },
     {
@@ -2835,8 +2835,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_at",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "at()"
     },
     {
@@ -2846,8 +2846,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_tx",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "tx()"
     },
     {
@@ -2857,8 +2857,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_rows",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "rows"
     },
     {
@@ -2868,8 +2868,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_b",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "b"
     },
     {
@@ -2879,8 +2879,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_messy",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "messy"
     },
     {
@@ -2890,8 +2890,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sameday",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "sameday"
     },
     {
@@ -2901,8 +2901,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sd",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "sd"
     },
     {
@@ -2912,8 +2912,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_withretur",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "withretur"
     },
     {
@@ -2923,8 +2923,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_inventory",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "inventory"
     },
     {
@@ -2934,8 +2934,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_ok",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "ok"
     },
     {
@@ -2945,8 +2945,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_guarded",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "guarded"
     },
     {
@@ -3058,6 +3058,39 @@
       "community": 5,
       "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "justbeforelocalmidnight"
+    },
+    {
+      "label": "findDuplicates.selfcheck.mjs",
+      "file_type": "code",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_config_findduplicates_selfcheck",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "findduplicates.selfcheck.mjs"
+    },
+    {
+      "label": "t()",
+      "file_type": "code",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "src_config_findduplicates_selfcheck_t",
+      "community": 3,
+      "community_name": "permissions.js",
+      "norm_label": "t()"
+    },
+    {
+      "label": "near()",
+      "file_type": "code",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "src_config_findduplicates_selfcheck_near",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "near()"
     },
     {
       "label": "firebase.js",
@@ -3478,14 +3511,47 @@
       "norm_label": "repairblock"
     },
     {
+      "label": "dup",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L343",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_dup",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "dup"
+    },
+    {
+      "label": "panelStart",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L354",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_panelstart",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "panelstart"
+    },
+    {
+      "label": "dupPanel",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L355",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_duppanel",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "duppanel"
+    },
+    {
       "label": "mixedUnits.selfcheck.mjs",
       "file_type": "code",
       "source_file": "src/config/mixedUnits.selfcheck.mjs",
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "mixedunits.selfcheck.mjs"
     },
     {
@@ -3495,8 +3561,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_bksperunit",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "bksperunit()"
     },
     {
@@ -3506,8 +3572,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_savepacking",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "savepacking()"
     },
     {
@@ -3517,8 +3583,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_totalbks",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "totalbks()"
     },
     {
@@ -3528,8 +3594,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_d",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "d"
     },
     {
@@ -3539,8 +3605,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_custom",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "custom"
     },
     {
@@ -3550,8 +3616,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_real",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "real"
     },
     {
@@ -3561,8 +3627,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_cello",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "cello"
     },
     {
@@ -3572,8 +3638,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_back",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "back()"
     },
     {
@@ -3825,8 +3891,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_config_permissions_translatelegacyrole",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "translatelegacyrole()"
     },
     {
@@ -3847,8 +3913,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -3880,8 +3946,8 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "src_config_permissions_hasclearance",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "hasclearance()"
     },
     {
@@ -3902,8 +3968,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -4452,8 +4518,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_customerbrief",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "customerbrief.js"
     },
     {
@@ -4463,8 +4529,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_customerbrief_briefseconds",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "briefseconds()"
     },
     {
@@ -4474,8 +4540,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_customerbrief_key",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "key()"
     },
     {
@@ -4485,8 +4551,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_customerbrief_customerbrief",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "customerbrief()"
     },
     {
@@ -4496,8 +4562,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_customerbrief_reorderfromlast",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "reorderfromlast()"
     },
     {
@@ -4545,14 +4611,80 @@
       "norm_label": "agolabel()"
     },
     {
+      "label": "findDuplicates.js",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "findduplicates.js"
+    },
+    {
+      "label": "normaliseName()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_normalisename",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "normalisename()"
+    },
+    {
+      "label": "metresBetween()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_metresbetween",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "metresbetween()"
+    },
+    {
+      "label": "hasCoords()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_hascoords",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "hascoords()"
+    },
+    {
+      "label": "createdMillis()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_createdmillis",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "createdmillis()"
+    },
+    {
+      "label": "findDuplicates()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_findduplicates",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
+      "norm_label": "findduplicates()"
+    },
+    {
       "label": "helpers.js",
       "file_type": "code",
       "source_file": "src/utils/helpers.js",
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "helpers.js"
     },
     {
@@ -4595,8 +4727,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -4606,8 +4738,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_utils_helpers_getlocaldaykey",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "getlocaldaykey()"
     },
     {
@@ -4639,8 +4771,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "splittounits()"
     },
     {
@@ -4661,8 +4793,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_utils_helpers_converttobks",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "converttobks()"
     },
     {
@@ -4944,7 +5076,7 @@
       "label": "2026-08-07 19:2x WIB \u2014 duplicate/invisible customers: root cause found (investigation)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L191",
+      "source_location": "L201",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
       "community": 26,
@@ -4955,7 +5087,7 @@
       "label": "2026-08-07 18:31 WIB \u2014 11 prompt dialogs replaced; the scheduled session was a dud",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L234",
+      "source_location": "L244",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_18_31_wib_11_prompt_dialogs_replaced_the_scheduled_session_was_a_dud",
       "community": 26,
@@ -4966,7 +5098,7 @@
       "label": "2026-08-07 16:34 WIB \u2014 all 58 remaining dialogs replaced, gate tested in a real browser",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L262",
+      "source_location": "L272",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_16_34_wib_all_58_remaining_dialogs_replaced_gate_tested_in_a_real_browser",
       "community": 26,
@@ -4977,7 +5109,7 @@
       "label": "2026-08-07 15:52 WIB \u2014 committed `f2060f1`, two of three new tests passed",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L293",
+      "source_location": "L303",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_52_wib_committed_f2060f1_two_of_three_new_tests_passed",
       "community": 26,
@@ -4988,7 +5120,7 @@
       "label": "2026-08-07 15:41 WIB \u2014 stale-stamp hole in the new territory code, found and closed",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L318",
+      "source_location": "L328",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_41_wib_stale_stamp_hole_in_the_new_territory_code_found_and_closed",
       "community": 26,
@@ -4999,7 +5131,7 @@
       "label": "2026-08-07 15:06 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L338",
+      "source_location": "L348",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_06_wib",
       "community": 26,
@@ -5010,7 +5142,7 @@
       "label": "2026-08-07 14:55 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L352",
+      "source_location": "L362",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_55_wib",
       "community": 26,
@@ -5021,7 +5153,7 @@
       "label": "2026-08-07 (later)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L365",
+      "source_location": "L375",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_later",
       "community": 26,
@@ -5032,7 +5164,7 @@
       "label": "2026-08-07 14:46 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L378",
+      "source_location": "L388",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_46_wib",
       "community": 26,
@@ -5043,7 +5175,7 @@
       "label": "2026-08-07 14:35 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L392",
+      "source_location": "L402",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_35_wib",
       "community": 26,
@@ -5054,7 +5186,7 @@
       "label": "2026-08-07 14:32 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L398",
+      "source_location": "L408",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_32_wib",
       "community": 26,
@@ -5065,7 +5197,7 @@
       "label": "2026-08-07 14:30 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L406",
+      "source_location": "L416",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_30_wib",
       "community": 26,
@@ -5076,7 +5208,7 @@
       "label": "2026-08-07 14:25 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L413",
+      "source_location": "L423",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_25_wib",
       "community": 26,
@@ -5087,7 +5219,7 @@
       "label": "2026-08-07 14:23 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L418",
+      "source_location": "L428",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_23_wib",
       "community": 26,
@@ -5098,7 +5230,7 @@
       "label": "2026-08-07 14:11 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L426",
+      "source_location": "L436",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_11_wib",
       "community": 26,
@@ -5109,7 +5241,7 @@
       "label": "2026-08-07 14:07 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L433",
+      "source_location": "L443",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_07_wib",
       "community": 26,
@@ -5120,7 +5252,7 @@
       "label": "2026-08-07 13:56 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L446",
+      "source_location": "L456",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_13_56_wib",
       "community": 26,
@@ -5131,7 +5263,7 @@
       "label": "2026-08-07 (earlier)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L457",
+      "source_location": "L467",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_earlier",
       "community": 26,
@@ -5142,7 +5274,7 @@
       "label": "2026-08-06",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L461",
+      "source_location": "L471",
       "_origin": "ast",
       "id": "claude_progress_2026_08_06",
       "community": 26,
@@ -10223,6 +10355,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/MapMissionControl.jsx",
+      "source_location": "L1577",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_mapmissioncontrol_tierautomationengine",
+      "target": "src_config_findduplicates_selfcheck_t"
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -10532,6 +10676,18 @@
       "source": "src_merchantsalesview",
       "target": "src_utils_nextstop_nextstop",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/MerchantSalesView.jsx",
+      "source_location": "L384",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_merchantsalesview_merchantsalesview",
+      "target": "src_config_findduplicates_selfcheck_t"
     },
     {
       "relation": "indirect_call",
@@ -10876,6 +11032,18 @@
       "source": "src_restockvaultview_restockvaultview",
       "target": "src_components_confirmgate_confirmaction",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/RestockVaultView.jsx",
+      "source_location": "L449",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_restockvaultview_restockvaultview",
+      "target": "src_config_findduplicates_selfcheck_t"
     },
     {
       "relation": "calls",
@@ -11994,7 +12162,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12066,7 +12234,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12079,7 +12247,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L58",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customerdetailview",
@@ -12091,7 +12259,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L441",
+      "source_location": "L442",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12162,7 +12330,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12175,7 +12343,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L438",
+      "source_location": "L439",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12256,7 +12424,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12267,7 +12435,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12278,7 +12446,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L201",
+      "source_location": "L202",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12289,7 +12457,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L8",
+      "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12301,7 +12469,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12313,7 +12481,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12325,7 +12493,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12337,7 +12505,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
@@ -12349,11 +12517,47 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager",
       "target": "src_utils_bordercache_savebordercache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager",
+      "target": "src_utils_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager",
+      "target": "src_utils_findduplicates_createdmillis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager",
+      "target": "src_utils_findduplicates_findduplicates",
       "confidence_score": 1.0
     },
     {
@@ -12385,7 +12589,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_checkpointingeojson",
@@ -12397,7 +12601,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L356",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12410,7 +12614,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L208",
+      "source_location": "L209",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12422,7 +12626,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L260",
+      "source_location": "L261",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12434,7 +12638,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L282",
+      "source_location": "L283",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12446,7 +12650,31 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L457",
+      "source_location": "L677",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager_customermanagement",
+      "target": "src_utils_findduplicates_createdmillis"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L668",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager_customermanagement",
+      "target": "src_utils_findduplicates_findduplicates"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L458",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12748,6 +12976,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "indirect_call",
+      "context": "collection",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/components/HistoryReportView.jsx",
+      "source_location": "L59",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_historyreportview_historyreportview",
+      "target": "src_config_findduplicates_selfcheck_t"
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -12864,6 +13104,18 @@
       "source": "src_components_settingsview",
       "target": "src_components_landlorddashboard",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/components/LandlordDashboard.jsx",
+      "source_location": "L256",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_landlorddashboard_landlorddashboard",
+      "target": "src_config_findduplicates_selfcheck_t"
     },
     {
       "relation": "calls",
@@ -13141,6 +13393,18 @@
       "source": "src_components_samplingmanager_samplingfolderview",
       "target": "src_components_samplingmanager_formatsampleqty",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/components/SamplingManager.jsx",
+      "source_location": "L126",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_samplingmanager_samplinganalyticsview",
+      "target": "src_config_findduplicates_selfcheck_t"
     },
     {
       "relation": "calls",
@@ -13749,6 +14013,88 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_config_findduplicates_selfcheck_near",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_config_findduplicates_selfcheck_t",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates_createdmillis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates_metresbetween",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates_normalisename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/config/firebase.js",
       "source_location": "L17",
       "weight": 1.0,
@@ -13915,6 +14261,28 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L343",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_dup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L355",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_duppanel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
@@ -14019,6 +14387,17 @@
       "_origin": "ast",
       "source": "src_config_integration_audit",
       "target": "src_config_integration_audit_offpalette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L354",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_panelstart",
       "confidence_score": 1.0
     },
     {
@@ -15587,6 +15966,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L77",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates_findduplicates",
+      "target": "src_utils_customerbrief_key"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/dayStats.js",
@@ -15629,6 +16020,109 @@
       "_origin": "ast",
       "source": "src_utils_daystats_daystats",
       "target": "src_utils_daystats_txseconds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_createdmillis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_hascoords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_metresbetween",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_normalisename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates_findduplicates",
+      "target": "src_utils_findduplicates_normalisename",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L90",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates_findduplicates",
+      "target": "src_utils_findduplicates_metresbetween",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L85",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates_findduplicates",
+      "target": "src_utils_findduplicates_hascoords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L117",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates_findduplicates",
+      "target": "src_utils_findduplicates_createdmillis",
       "confidence_score": 1.0
     },
     {
@@ -16013,7 +16507,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L461",
+      "source_location": "L471",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16024,7 +16518,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L446",
+      "source_location": "L456",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16035,7 +16529,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L433",
+      "source_location": "L443",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16046,7 +16540,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L426",
+      "source_location": "L436",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16057,7 +16551,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L418",
+      "source_location": "L428",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16068,7 +16562,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L413",
+      "source_location": "L423",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16079,7 +16573,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L406",
+      "source_location": "L416",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16090,7 +16584,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L398",
+      "source_location": "L408",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16101,7 +16595,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L392",
+      "source_location": "L402",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16112,7 +16606,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L378",
+      "source_location": "L388",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16123,7 +16617,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L352",
+      "source_location": "L362",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16134,7 +16628,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L338",
+      "source_location": "L348",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16145,7 +16639,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L318",
+      "source_location": "L328",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16156,7 +16650,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L293",
+      "source_location": "L303",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16167,7 +16661,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L262",
+      "source_location": "L272",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16178,7 +16672,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L234",
+      "source_location": "L244",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16189,7 +16683,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L191",
+      "source_location": "L201",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16211,7 +16705,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L457",
+      "source_location": "L467",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16222,7 +16716,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L365",
+      "source_location": "L375",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -17001,5 +17495,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "542be60c3241c2459465b6dfa4cce349a37cdd2f"
+  "built_at_commit": "6912f679536d07b0f0b940b55dfb4a37fb72763b"
 }

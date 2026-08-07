@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1786109313.9062302,
-    "ast_hash": "a090b7b0c2de426b4ce993689676ecc5",
+    "mtime": 1786112660.1117084,
+    "ast_hash": "6876abfb37b0e3a5772548d19ebf0fcb",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786109336.2773314,
-    "ast_hash": "28559b39186a28a1dd580ac716d886e7",
+    "mtime": 1786112777.496797,
+    "ast_hash": "eaad265f394177514feba2e356e3f020",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786109419.6315253,
-    "ast_hash": "daa0d6790018073e155507857622dc09",
+    "mtime": 1786112166.5650928,
+    "ast_hash": "61fc1d764ed913ba307a704c579f293c",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -582,6 +582,16 @@
   "src/components/ConfirmGate.jsx": {
     "mtime": 1786101580.0960834,
     "ast_hash": "95b7d369383072bde27f6e7d3229c63b",
+    "semantic_hash": ""
+  },
+  "src/config/findDuplicates.selfcheck.mjs": {
+    "mtime": 1786112552.2539804,
+    "ast_hash": "afe1d32d9e821ad267bb26f47f0db5e8",
+    "semantic_hash": ""
+  },
+  "src/utils/findDuplicates.js": {
+    "mtime": 1786112511.635346,
+    "ast_hash": "12e09d82d886e6faf0b7c75e0d116545",
     "semantic_hash": ""
   }
 }
