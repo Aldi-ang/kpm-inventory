@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:25 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:30 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -70,7 +70,6 @@ data in the wrong folder. This file exists to end that.
 - ✅ **Retest HQ 1 and HQ (RETAIL) 1** — they should select properly now.
 - ✅ **Resume the test list at group C**, then D–G. B2/B3 need his phone (GPS).
   C2 needs a second salesman account, which he does not have — skip and report.
-- 🔴 **`/autocompact 200k`** — recommended, 600k is costing triple rent. His call.
 - 🔴 **Connectors.** He approved removing unused ones, but they are claude.ai account
   settings — only he can click them. GitHub and Vercel are both unnecessary here
   (`gh` CLI covers GitHub; this app deploys to Firebase, not Vercel).
@@ -84,6 +83,13 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:30 WIB
+Aldi DECIDED: no autocompact - he will clear when warned. Setting left at 600k anyway as a
+silent backstop, since clearing at the 80%% warning (480k) means it never fires; disabling it
+would only remove the safety net for the day he ignores the warning. He also said he skims
+and will not read a paragraph, so context-watch now prescribes the banner verbatim: a red
+🔴 line at >=80%%, yellow 🟡 at 55-80%%, first thing on screen, nothing above it.
 
 ### 2026-08-07 14:25 WIB
 Taught Alucard the context-watch habit in §9: act on a [context-watch] line before doing

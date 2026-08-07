@@ -66,17 +66,33 @@ if (pct < 55) process.exit(0);
 
 const head = `[context-watch] ~${k(used)} of ${k(WINDOW)} used (${pct}%), ~${k(left)} left.`;
 
+/* Aldi skims and has said so. A warning he scrolls past is a warning that did not happen, so
+   the banner is prescribed here verbatim rather than left to phrasing — it must be the first
+   thing on screen, alone on its line, and it must not drift between sessions. */
 if (pct >= 80) {
   console.log(`${head}
-TELL ALDI FIRST, before doing any work: context is nearly full, and every turn from here
-re-sends all of it. If this new request is a fresh task, he should write nothing and type
-**/clear** now — it is free, and PROGRESS.md will restore where things stand. If instead this
-is the middle of something already in flight, finish the smallest useful piece, update
-.claude/PROGRESS.md, and tell him to clear after that. Do NOT recommend /compact at this
-level: compacting here bills roughly ${k(used)} tokens, clearing bills nothing.`);
+
+STOP. Before doing ANY work, before any tool call, the reply must OPEN with exactly this,
+alone on its own line, nothing above it:
+
+🔴🔴🔴 **CLEAR NOW — type \`/clear\`** · context ${pct}% full 🔴🔴🔴
+
+Then at most two short lines: what is already saved in PROGRESS.md, and what he does next.
+Nothing else. He skims, so anything longer buries the one instruction that matters.
+
+If this request is a NEW task -> do not start it at all. Clearing is free and PROGRESS.md
+restores where things stand.
+If it is the MIDDLE of something in flight -> finish only the smallest useful piece, write
+.claude/PROGRESS.md, then repeat the banner at the end.
+NEVER recommend /compact here: it bills roughly ${k(used)} tokens, clearing bills nothing.`);
 } else {
   console.log(`${head}
-Judge the request against that headroom before starting. A fix-and-verify cycle on the sales
-terminal runs roughly 30-60k. If this job plausibly needs more than ~${k(left)}, say so in one
-line and recommend **/clear** before starting rather than stopping halfway through.`);
+
+Open the reply with this line, alone, before anything else:
+
+🟡 **Context ${pct}% full — good moment to \`/clear\` after this**
+
+Then judge THIS request against the ~${k(left)} left before starting. A fix-and-verify cycle on
+the sales terminal runs roughly 30-60k. If the job plausibly needs more than that headroom, say
+so in one line and tell him to clear FIRST rather than stopping halfway through.`);
 }
