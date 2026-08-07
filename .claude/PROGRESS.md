@@ -86,8 +86,10 @@ Three jobs closed today, all after the same root cause: **the app failed silentl
 3. A duplicate-store finder now exists, because nothing could ever show him the damage.
 
 **Open thread:** 3 stores cannot explain the duplicates he described. The KML import creates a
-fresh document per pin with no dedup check of any kind, and is the prime suspect. He has not yet
-run **Find Duplicates** — that number is the next real fact and it is waiting on him.
+fresh document per pin with no dedup check of any kind, and is still the prime suspect. He ran
+**Find Duplicates**: **11 groups out of 151 stores** — but the largest was a name coincidence
+14.5 km wide, so **11 is an upper bound, not a count.** The finder now flags those; the number
+after that change is the one to reason from, and he has not re-run it yet.
 
 He also asked for the testing to be less tedious, so the test list now has an 8-bit quest log
 (link in the table above). Nothing in it reaches Claude on its own; he presses COPY REPORT and
