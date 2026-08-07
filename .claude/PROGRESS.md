@@ -242,7 +242,71 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
-### 2026-08-08 — 🟢 A PLAN-USAGE METER IS BUILDABLE. Design settled, NOT built. Do this next.
+### 2026-08-08 — the context meter now MEASURES instead of guessing, and it is accurate
+
+**It was wrong twice in one day, in opposite directions. Both fixed; do not "improve" it by
+guessing a ceiling again.**
+
+1. **Under-reported.** It divided by `autoCompactWindow` = 1,000,000 and stayed silent all
+   session while the UI showed 92%.
+2. **Then over-reported.** The "fix" clamped the window to 200k on the assumption that was the
+   real size. Aldi's UI then read **459.7k / 1.0M (46%)** while the hook shouted 80% and told him
+   to clear with more than half his window free. **His window really is 1M.** The clamp is gone.
+
+**The real repair was the numerator, not the denominator.** It was estimating tokens from message
+characters, which only sees message text — never the system prompt, tool schemas or attachments —
+so it guessed 160k on a 459.7k conversation. The transcript already carries the true figure:
+every assistant line has `message.usage`, and on the MOST RECENT one,
+`input_tokens + cache_read_input_tokens + cache_creation_input_tokens + output_tokens` **is** the
+context that request actually sent. It now reads that, backwards from the end, and falls back to
+the character estimate only when a session has no usage line yet.
+
+**Verified against reality:** hook computes **466,796 (47%)** where Aldi's UI showed
+**459,700 (46%)** — 7k apart, which is just the turns between his screenshot and the check. It
+correctly stayed silent at 46%, being under the 55% threshold.
+
+**Standing warning for whoever touches this next:** never hard-code or clamp the window. Read
+`autoCompactWindow` and trust it. Both of today's failures came from assuming a number instead of
+measuring one.
+
+### 2026-08-08 — 🟢🟢 9ROUTER EXPOSES THE REAL QUOTA. Read it, do not estimate it.
+
+**This supersedes the calibration design below. Build this instead — it is the true number, not a
+fitted guess.**
+
+Aldi started 9router and pointed at its Quota Tracker. His screenshot, verbatim from the UI:
+
+> **Claude · Account 1 · session (5h) · 31 / 100 · 69% · in 4h 0m**
+
+So the quota is **already tracked, already normalised to /100, and already carries the reset
+countdown**. No token summing, no calibration, no weighting guesswork needed.
+
+**Probed `localhost:20128` while it was running:**
+```
+/api/health   200
+/api/quota    401      <- exists, needs auth
+/api/quotas   401      <- exists, needs auth
+/api/usage    401      <- exists, needs auth
+/quota /usage /health  404
+```
+**The endpoints are real. They only need a credential.** Not pursued further — Aldi had gone to
+sleep and hunting for his API key unasked is not something to do while he is away.
+
+**Next session, in order:**
+1. Ask him where 9router's API key/token lives, or for the header it wants. **Ask — do not go
+   looking through his config files for a credential.**
+2. `curl` one authenticated call to `/api/quota` and **record the real response shape** before
+   writing anything against it. Never code against a guessed JSON shape.
+3. Then a UserPromptSubmit hook that reads it and warns at his thresholds. Because this is the
+   real percentage, the "never under-report" rule is satisfied by construction — no rounding-up
+   fudge needed.
+4. If the key turns out to be awkward, the transcript-calibration design below still works as a
+   fallback. It is now plan B, not plan A.
+
+**Also captured for calibration if plan B is ever needed:** at ~80% context in this session, his
+tracker read **31/100 with 4h 0m remaining**.
+
+### 2026-08-08 — plan B (superseded by the above): estimate from transcripts + calibration
 
 Aldi asked whether codeburn or 9router could give the 5-hour quota. **Both checked, both no —
 but the raw transcripts can, and that is the answer.**

@@ -19,15 +19,14 @@ if (!tp || !fs.existsSync(tp)) process.exit(0);
 
 /* The window Claude Code will auto-compact at. Reading it means this self-adjusts the day
    Aldi changes the setting, instead of quietly measuring against a stale number. */
+/* NO CLAMP. A clamp to 200k was added earlier today on the assumption that the real window was
+   200k; Aldi's own UI then showed "459.7k / 1.0M (46%)" while this reported 80%. His window
+   really is 1M. Guessing a ceiling made it over-report and cost him a needless clear — the
+   mirror image of the under-reporting bug it was meant to fix. Trust the setting. */
 let WINDOW = 200_000;
 try {
   const s = JSON.parse(fs.readFileSync('C:/Users/ASUS/.claude/settings.json', 'utf8'));
-  /* Clamped, and that clamp is the whole point. Aldi ran `/autocompact 1000k`, so this setting
-     read 1,000,000 — five times the real usable context. Every tier below then computed about a
-     fifth of the truth and stayed silent through an entire session while the UI correctly showed
-     92%. A meter that under-reports is worse than no meter, because it is trusted. The setting
-     can raise the auto-compact point; it cannot make the context window bigger than it is. */
-  if (Number.isFinite(s.autoCompactWindow)) WINDOW = Math.min(s.autoCompactWindow, 200_000);
+  if (Number.isFinite(s.autoCompactWindow) && s.autoCompactWindow > 0) WINDOW = s.autoCompactWindow;
 } catch { /* default stands */ }
 
 const lines = fs.readFileSync(tp, 'utf8').split('\n');
@@ -61,7 +60,28 @@ for (let i = start; i < lines.length; i++) {
   }
 }
 
-const used = Math.round(chars / 4);            // ~4 chars per token
+/* The character count above is a guess and it guesses LOW — it estimated 160k on a conversation
+   Claude Code itself measured at 459.7k, because it only sees message text and never the system
+   prompt, tool schemas or attachments.
+
+   But the transcript already carries the real numbers. Every assistant line has `message.usage`,
+   and for the MOST RECENT one, input + cache_read + cache_creation IS the context that was
+   actually sent on that request. That is measured, not inferred, so it is what we report.
+   Reading backwards also makes the compaction scan above irrelevant here: whatever the last
+   request sent already reflects any compaction that happened before it. */
+let real = 0;
+for (let i = lines.length - 1; i >= 0; i--) {
+  if (!lines[i]) continue;
+  let m; try { m = JSON.parse(lines[i]); } catch { continue; }
+  const u = m.message?.usage;
+  if (!u) continue;
+  real = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) +
+         (u.cache_creation_input_tokens || 0) + (u.output_tokens || 0);
+  if (real > 0) break;
+}
+
+// fall back to the character estimate only when no usage line exists at all (a brand-new session)
+const used = real > 0 ? real : Math.round(chars / 4);
 const pct = Math.round((used / WINDOW) * 100);
 const left = Math.max(0, WINDOW - used);
 const k = (n) => Math.round(n / 1000) + 'k';
