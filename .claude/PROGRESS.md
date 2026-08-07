@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 16:34 WIB** · branch `phase0-solid-ground` · last commit `5091e25`
+**Updated: 2026-08-07 18:31 WIB** · branch `phase0-solid-ground` · last commit `87156f8`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -33,7 +33,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | What | Exact path |
 |---|---|
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
-| The 129-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The 133-check audit — run before anything | `src/config/integration.audit.mjs` |
 | The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
 | Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
 | Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
@@ -54,14 +54,14 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-129 checks over the built output. One turn, small result. If it passes, the terminal is
+133 checks over the built output. One turn, small result. If it passes, the terminal is
 intact — do **not** re-read source to confirm it.
 
 ---
 
 ## NOW
 
-Sales terminal redesign is **built and passing 129/129**. Design work is CLOSED.
+Sales terminal redesign is **built and passing 133/133**. Design work is CLOSED.
 Aldi is hand-testing it group by group and reporting **BROKEN / UGLY / AWKWARD**.
 He got through groups A and B; four fixes from that pass are already committed.
 
@@ -69,40 +69,38 @@ Alongside that: cutting token cost. Root cause was measured, not guessed —
 cost = context size x turns taken, and the 60% incident was a *search* for progress
 data in the wrong folder. This file exists to end that.
 
-## ⏰ A SCHEDULED SESSION MAY HAVE ALREADY DONE WORK — CHECK BEFORE STARTING ANYTHING
+## ⏰ SCHEDULED TASKS DO NOT WORK HERE — DON'T OFFER ONE AGAIN
 
-**Set 2026-08-07 17:49 WIB to fire at 17:59 WIB, once.** Task id `kpm-convert-prompt-dialogs`,
-stored at `C:\Users\ASUS\.claude\scheduled-tasks\kpm-convert-prompt-dialogs\SKILL.md`.
+Tried once, 2026-08-07. `mcp__scheduled-tasks__create_scheduled_task`, one-shot, fired at
+17:59:34 and auto-disabled itself. **It did nothing at all** — no commit, clean working tree,
+no log file anywhere, target file untouched. It records `lastRunAt` whether or not any work
+happened, so a stamped timestamp is NOT evidence it ran.
 
-It converts the **12 `prompt()` calls only** — Aldi picked that scope over the full 192-site
-sweep. It is told to commit, never push, and to update this file when it finishes.
+Aldi noticed before the note did: *"i dont think its even running right now"*. The work was
+then done directly in-session in about fifteen minutes.
 
-**So before doing anything: run `git log --oneline -5`.** If a commit about prompt dialogs is
-there, that work is DONE — do not redo it. If this section is still here but the LOG has no entry
-for it, the task either has not fired yet or it failed; check
-`C:\Users\ASUS\.claude\scheduled-tasks\kpm-convert-prompt-dialogs\` and ask Aldi before repeating
-the work. **Delete this whole section once its result is folded into the LOG.**
+**If he asks for unattended work again, say this failed and offer to just do it now instead.**
+Do not promise a scheduled session a second time without testing the mechanism on something
+throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- 🔴 **180 `alert(` and 12 `prompt(` calls across src/ — the SAME bug class, not yet fixed and
-  NOT in the scope he approved.** A suppressed `alert` only fails to inform, which is ugly but
-  harmless. A suppressed **`prompt` returns null**, so the action silently aborts exactly the way
-  the confirms did — `SettingsView.jsx:1048` renames a rank that way. Recommendation: convert the
-  12 prompts (small, and they are the ones that actually break), leave the 180 alerts for a later
-  sweep or a toast. Needs his yes — 192 call sites is not something to start unasked.
+- 🔴 **180 `alert(` calls across src/ — same bug class, deliberately NOT done.** A suppressed
+  `alert` only fails to inform; nothing breaks, it just goes quiet. Aldi chose the prompts over
+  the full sweep, so this is the last of the dialog family left. Needs his yes before starting —
+  180 sites changes how the app talks to him everywhere, and he should see the first few before
+  the rest land. A toast strip may beat 180 modal boxes; ask which he wants.
+  (The 11 `prompt(` calls that were here are DONE — see the LOG.)
 
 - ✅ **Other-agent store block — DONE, committed `f2060f1`. Kept only for the reasoning; nothing
-  here is still an ask.** The note used
-  to say this was already a loud warning. **It was wrong; the repo won.** `MerchantSalesView.jsx:427`
-  is still `window.confirm`, so on his browser it returns false silently and line 429 refuses the
-  selection — an invisible hard block, the exact failure the comment at `:408` warns about nine
-  lines earlier. Recommended, not yet built: (a) delete the confirm, reuse the `setRevisitToday`
-  standing-banner pattern, (b) stamp the saved sale with `territoryOverride: <assignedAgent>`,
-  (c) nothing else — no PIN, no approval queue. Reasoning: a wrong *allow* is fixable by the
-  existing transfer flow; a wrong *block* kills a real cash sale and teaches login-sharing, which
-  destroys all attribution. The identity test at `:426` is a fuzzy substring compare, so it is
-  wrong in both directions — never harden a gate built on it.
+  here is still an ask. The paragraphs below are the REASONING, kept so it is never re-argued.
+  Anything in them written in the present tense is describing the code as it was BEFORE the fix.**
+
+  **The locked decision: territory is reported, never blocked.** A wrong *allow* is repairable by
+  the existing store-transfer flow; a wrong *block* kills a live cash sale and teaches
+  login-sharing, which destroys every attribution the block was meant to protect. The identity
+  test is a fuzzy substring compare, so a wall built on it is wrong in both directions — never
+  harden a gate built on it. Do not reopen this.
   **DONE AND COMMITTED `f2060f1` 2026-08-07 15:21. NOT PUSHED — the branch has no remote at all,
   so Vercel cannot see it. H1 and H3 hand-tested and passed; H2 still open.** Audit now 122 checks,
   122 pass (was 115). Both confirm dialogs are gone from the terminal; a new §9 group in
@@ -154,6 +152,34 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 18:31 WIB — 11 prompt dialogs replaced; the scheduled session was a dud
+
+**The scheduling attempt failed and is worth more than the feature.** A one-shot scheduled task
+was set for 17:59 to do this work while Aldi rested. It stamped `lastRunAt` at 17:59:34,
+disabled itself, and **did nothing** — no commit, clean tree, no log file, target untouched.
+Aldi spotted it before any check did. Lesson written into its own section above: a stamped
+`lastRunAt` is not evidence of work, and do not offer unattended scheduling here again.
+
+**Then the work was done in-session, ~15 minutes.** `promptAction()` joins `confirmAction()` in
+`src/components/ConfirmGate.jsx`, reusing the same single mounted host. It keeps the browser's
+contract on purpose — typed string on accept, **null** on any cancel — because callers already
+guard with `if (name && name.trim())` and that guard keeps working untouched. An empty string
+would have slipped past those guards and renamed things to nothing; there is a check for it.
+
+**11 sites, not 12.** The twelfth grep hit was inside a comment in `AgentProfileView.jsx:341`
+describing a prompt that had already been removed. Counting grep lines is not counting calls.
+Four enclosing functions needed `async`; none returned a value a caller could misread.
+
+Audit **129 → 133**. Commit `87156f8`. Not pushed — branch still has no upstream.
+
+**Browser-tested by me, and the confirm path re-tested for regression since `close()` was
+rewritten.** Prompt: draws, field present, pre-filled and text pre-selected, Save returns the
+typed string, Cancel returns null, Escape returns null, nothing left on screen. Confirm: danger
+red, plain gold, no stray input box, yes/cancel/escape all still correct.
+
+**Still untested and must not be reported otherwise:** all 11 prompts in their real screens.
+The app is behind `ENTER MASTER PASSWORD`, which I do not enter, so no real screen was reached.
 
 ### 2026-08-07 16:34 WIB — all 58 remaining dialogs replaced, gate tested in a real browser
 
