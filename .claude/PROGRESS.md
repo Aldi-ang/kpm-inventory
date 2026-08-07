@@ -178,6 +178,16 @@ of quietly creating a nameless one-field record — and a nameless record is inv
 `orderBy('name')` listener, so the silent version would have manufactured the exact ghost the
 repair exists to clear. Audit group 11 now fails the build if `set` or any delete reappears there.
 
+**CONFIRMED AGAINST REAL DATA, and the scale is now known: the button read "Repair 3 Store
+Tiers".** Aldi pressed it and confirmed; the repair has run. So the diagnosis was right — real
+records really were saved with `pricingTier` — but only **3** stores were ever affected.
+
+**Do not treat the duplicate problem as solved.** Three records cannot account for the volume of
+duplicates Aldi described. The tier split was real but small. The prime remaining suspect is
+`handleImportKML` in `CustomerManager.jsx` (~L588–641), which mints a fresh auto-ID document per
+placemark with **no dedup check of any kind** — same name, same coordinates, no matter. Importing
+one KML twice duplicates every pin in it. Next investigation starts there, not at the tier field.
+
 **Still true, still not done:** the duplicate documents themselves are untouched. Merging or
 deleting a duplicate store means deciding which one keeps its history and debt — human judgement,
 a separate job, and NOT something to automate. Aldi has not been asked to decide it yet.
