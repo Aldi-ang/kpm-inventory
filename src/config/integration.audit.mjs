@@ -286,6 +286,25 @@ check(G10, 'the gate reached the built bundle',
   allJs.includes('Yes, do it') && allJs.includes('is not mounted'),
   'ConfirmGate is not in dist/ — it would be missing from the app entirely');
 
+/* prompt() is the same failure one step worse: suppressed, it returns null, and every caller
+   reads null as "he cancelled". So renaming a folder or giving a rejection reason silently did
+   nothing, with no box ever drawn. The lookbehind is what keeps this from matching the
+   replacement, promptAction( — without it the check passes on the very thing it bans. */
+const BARE_PROMPT = /(?<![.\w$])(?:window\.)?prompt\s*\(/;
+const promptLeft = appFiles.filter(f => BARE_PROMPT.test(strip(fs.readFileSync(f, 'utf8'))));
+check(G10, 'no window.prompt left in src/', promptLeft.length === 0,
+  promptLeft.length ? `still present in: ${promptLeft.join(', ')}` : '');
+const pUsers = appFiles.filter(f => /await promptAction\s*\(/.test(fs.readFileSync(f, 'utf8')));
+const pMissing = pUsers.filter(f => !/promptAction[^}]*}\s*from\s+['"][^'"]*ConfirmGate/.test(fs.readFileSync(f, 'utf8')));
+check(G10, 'every prompt caller imports promptAction', pMissing.length === 0,
+  pMissing.length ? `missing import: ${pMissing.join(', ')}` : `${pUsers.length} files call it`);
+/* A prompt with no field to type in is just a confirm that throws the answer away. */
+check(G10, 'the typing field reached the built bundle',
+  allJs.includes('Type it in') && gate.includes('inputRef'),
+  'promptAction would resolve empty every time');
+check(G10, 'a cancelled prompt answers null, not empty string', gate.includes("? (inputRef.current?.value ?? '') : null"),
+  'callers guard with `if (name && ...)` — null is what they expect from a cancel');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

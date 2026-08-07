@@ -30,7 +30,7 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe } from 'lucide-react';
-import { confirmAction } from './ConfirmGate.jsx';
+import { confirmAction, promptAction } from './ConfirmGate.jsx';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy, onNavigateToMap }) => {
@@ -435,7 +435,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // 🚀 NEW: BULK DIRECTORY RENAME ENGINE
     const handleBulkRename = async (e, level, oldName, storesToUpdate) => {
         e.stopPropagation(); // Prevents the folder from opening when you click Edit
-        const newName = window.prompt(`Rename "${oldName}" to:`, oldName);
+        const newName = await promptAction(`Rename "${oldName}" to:`, oldName);
         if (!newName || newName.trim() === "" || newName === oldName) return;
 
         if (!await confirmAction(`Are you sure you want to move ${storesToUpdate.length} stores to "${newName}"?`)) return;
@@ -465,8 +465,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     };
 
     // 🚀 NEW: FOLDER CREATION ENGINE
-    const handleAddFolder = (level, parentName) => {
-        const name = window.prompt(`Enter new ${level} folder name:`);
+    const handleAddFolder = async (level, parentName) => {
+        const name = await promptAction(`Enter new ${level} folder name:`);
         if (!name || !name.trim()) return;
         const clean = name.trim();
         if (level === 'Provinsi') setCustomProv(prev => [...prev, clean]);
@@ -507,7 +507,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const handleFastStoreMove = async (storeId, newCity, parentKab) => {
         let targetCity = newCity;
         if (newCity === "CREATE_NEW") {
-            const name = window.prompt("Enter new Kecamatan name:");
+            const name = await promptAction("Enter new Kecamatan name:");
             if (!name || !name.trim()) return;
             targetCity = name.trim();
             setCustomKec(prev => ({ ...prev, [parentKab]: [...(prev[parentKab]||[]), targetCity] }));

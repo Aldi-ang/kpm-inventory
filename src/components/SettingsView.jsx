@@ -9,7 +9,7 @@ import CareerDevTools from './CareerDevTools';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
-import { confirmAction } from './ConfirmGate.jsx';
+import { confirmAction, promptAction } from './ConfirmGate.jsx';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -1032,8 +1032,8 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     };
 
     // 🚀 TIER EDITING HANDLERS
-    const handleAddTier = () => {
-        const name = prompt("Enter new Rank Name (e.g., WAREHOUSE):");
+    const handleAddTier = async () => {
+        const name = await promptAction("Enter new Rank Name (e.g., WAREHOUSE):");
         if (!name || name.trim() === '') return;
         const newId = `CUSTOM_TIER_${Date.now()}`;
         const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
@@ -1042,10 +1042,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setActiveMobileTierId(newId);
     };
 
-    const handleRenameTier = (id) => {
+    const handleRenameTier = async (id) => {
         const idx = tiers.findIndex(t => t.id === id);
         const cleanName = tiers[idx].label.replace(/^T\d+:\s*/, '');
-        const newName = prompt(`Rename Rank T${idx + 2}:`, cleanName);
+        const newName = await promptAction(`Rename Rank T${idx + 2}:`, cleanName);
         if (newName && newName.trim() !== '') {
             setTiers(tiers.map((t, i) => t.id === id ? { ...t, label: `T${i + 2}: ${newName.toUpperCase().trim()}` } : t));
         }

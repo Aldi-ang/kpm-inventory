@@ -100,7 +100,7 @@ import {
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
 import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
-import { confirmAction } from './components/ConfirmGate.jsx';
+import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 
 const APP_VERSION = packageJson.version;
 
@@ -1034,7 +1034,7 @@ const handleGitHubMirror = async () => {
 
   // 🚀 PASSKEY REGISTRATION ENGINE (FIREBASE SYNCED) 🚀
   const handleRegisterPasskey = async () => {
-      const deviceName = prompt("Enter a name for this device (e.g., 'My Samsung S23' or 'Office iPad'):");
+      const deviceName = await promptAction("Enter a name for this device (e.g., 'My Samsung S23' or 'Office iPad'):");
       if (!deviceName) return;
 
       try {

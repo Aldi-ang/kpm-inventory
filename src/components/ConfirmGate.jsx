@@ -37,7 +37,30 @@ export function confirmAction(message) {
         );
         return Promise.resolve(false);
     }
-    return new Promise((resolve) => openGate({ message: String(message ?? ''), resolve }));
+    return new Promise((resolve) => openGate({ kind: 'confirm', message: String(message ?? ''), resolve }));
+}
+
+/* Same story as the confirm, one step worse. A suppressed `prompt` returns null, and every
+   caller here reads null as "he cancelled" — so renaming a folder, naming a device or giving a
+   rejection reason silently did nothing at all, with no box ever drawn.
+
+   The contract is kept identical to the browser's so the call sites did not have to change
+   shape: resolves the typed string on accept (possibly empty) and null on any cancel. Callers
+   already guard with `if (name && name.trim())`, and that guard keeps working untouched. */
+export function promptAction(message, defaultValue = '') {
+    if (!openGate) {
+        console.error(
+            '[ConfirmGate] <ConfirmHost /> is not mounted — check src/main.jsx. ' +
+            'Returning null, which callers read as a cancel.'
+        );
+        return Promise.resolve(null);
+    }
+    return new Promise((resolve) => openGate({
+        kind: 'prompt',
+        message: String(message ?? ''),
+        defaultValue: defaultValue == null ? '' : String(defaultValue),
+        resolve,
+    }));
 }
 
 /* Messages already carry their own severity in the text Aldi wrote long before this file, so
@@ -47,6 +70,7 @@ const DANGER = /DANGER|WARNING|PERMANENT|CANNOT BE UNDONE|DELETE|TERMINAT|CRITIC
 export function ConfirmHost() {
     const [pending, setPending] = useState(null);
     const panelRef = useRef(null);
+    const inputRef = useRef(null);
 
     /* Guarded deregistration: StrictMode mounts, unmounts and remounts in development, and an
        unguarded cleanup would null out the handler the SECOND mount had already installed,
@@ -57,13 +81,28 @@ export function ConfirmHost() {
         return () => { if (openGate === show) openGate = null; };
     }, []);
 
-    const close = useCallback((answer) => {
-        setPending((cur) => { cur?.resolve(answer); return null; });
+    /* One exit for every path — button, Escape, backdrop — so no route can leave the promise
+       hanging and the screen stuck behind a modal. A prompt answers with the typed text or
+       null; a confirm answers true or false. React may invoke this updater twice under
+       StrictMode, but `cur` is null the second time and resolving a settled promise is a
+       no-op, so a double answer cannot reach the caller. */
+    const close = useCallback((accepted) => {
+        setPending((cur) => {
+            if (!cur) return null;
+            if (cur.kind === 'prompt') cur.resolve(accepted ? (inputRef.current?.value ?? '') : null);
+            else cur.resolve(accepted);
+            return null;
+        });
     }, []);
 
     useEffect(() => {
         if (!pending) return;
-        panelRef.current?.focus();
+        /* Focus the field when there is one — he is being asked to type, so put the cursor
+           where the typing goes. select() means a rename starts by replacing the old name. */
+        if (pending.kind === 'prompt' && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        } else panelRef.current?.focus();
         const onKey = (e) => {
             if (e.key === 'Escape') { e.preventDefault(); close(false); }
             if (e.key === 'Enter') { e.preventDefault(); close(true); }
@@ -74,8 +113,11 @@ export function ConfirmHost() {
 
     if (!pending) return null;
 
-    const danger = DANGER.test(pending.message);
+    const isPrompt = pending.kind === 'prompt';
+    const danger = !isPrompt && DANGER.test(pending.message);
     const accent = danger ? '#b4524a' : '#ff9d00';
+    const heading = isPrompt ? 'Type it in' : danger ? 'Confirm — this one is destructive' : 'Confirm';
+    const acceptLabel = isPrompt ? 'Save' : danger ? 'Yes, do it' : 'Confirm';
 
     return (
         <div
@@ -94,13 +136,21 @@ export function ConfirmHost() {
                         className="mb-2 font-mono text-[9.5px] font-black uppercase tracking-[0.16em]"
                         style={{ color: accent }}
                     >
-                        {danger ? 'Confirm — this one is destructive' : 'Confirm'}
+                        {heading}
                     </div>
                     {/* pre-line: many of these messages were written with \n\n paragraph breaks
                         back when a browser dialog was rendering them. */}
                     <div className="whitespace-pre-line font-mono text-[11px] leading-relaxed text-[#cfc6ba]">
                         {pending.message}
                     </div>
+                    {isPrompt && (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            defaultValue={pending.defaultValue}
+                            className="mt-3 w-full border border-[#a89070] bg-[#0d0a09] px-3 py-2 font-mono text-[12px] text-[#f5e6c8] outline-none focus:border-[#ff9d00]"
+                        />
+                    )}
                 </div>
 
                 <div className="flex gap-2 border-t border-[#3a3128] p-3">
@@ -117,7 +167,7 @@ export function ConfirmHost() {
                         className="min-h-[44px] flex-1 px-3 font-mono text-[11px] font-black uppercase tracking-wider text-[#14100e] transition-opacity hover:opacity-85"
                         style={{ backgroundColor: accent }}
                     >
-                        {danger ? 'Yes, do it' : 'Confirm'}
+                        {acceptLabel}
                     </button>
                 </div>
             </div>

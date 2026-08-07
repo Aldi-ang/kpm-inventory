@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64 } from './utils/helpers';
-import { confirmAction } from './components/ConfirmGate.jsx';
+import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 
 const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
@@ -296,7 +296,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     };
 
     const handleRejectAudit = async (audit) => {
-        const reason = window.prompt("Reason for rejection (sent back to Admin):");
+        const reason = await promptAction("Reason for rejection (sent back to Admin):");
         if (reason === null) return; 
 
         setIsProcessingAudit(true);
@@ -469,7 +469,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const handleGodModeEdit = async (productId, productName, currentVaultStock) => {
         if (userRole !== 'DEVELOPER' && userRole !== 'COMPANY_OWNER') return;
         
-        const newStockStr = window.prompt(`[GOD MODE] Override Vault Stock for ${productName} in ${monitorFacility}?\nCurrent: ${currentVaultStock} Bks`, currentVaultStock);
+        const newStockStr = await promptAction(`[GOD MODE] Override Vault Stock for ${productName} in ${monitorFacility}?\nCurrent: ${currentVaultStock} Bks`, currentVaultStock);
         if (newStockStr === null || newStockStr === "") return;
         
         const newStock = parseInt(newStockStr, 10);

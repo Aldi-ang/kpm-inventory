@@ -14,7 +14,7 @@ import 'leaflet/dist/leaflet.css';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks, convertToBks, formatRupiah } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
-import { confirmAction } from './components/ConfirmGate.jsx';
+import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -491,8 +491,8 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     const existingFolders = Object.keys(groupedFolders).sort();
 
     // 🚀 FAST UI CONTROLS
-    const handleCreateFolder = () => {
-        const name = window.prompt("Enter new folder name:");
+    const handleCreateFolder = async () => {
+        const name = await promptAction("Enter new folder name:");
         if (name && name.trim()) {
             setCustomFolders(prev => Array.from(new Set([...prev, name.trim()])));
             setExpandedNodes(prev => ({ ...prev, [name.trim()]: true }));
@@ -506,7 +506,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     const handleFastMove = async (id, newFolder) => {
         if (newFolder === "CREATE_NEW") {
-            const name = window.prompt("Enter new folder name:");
+            const name = await promptAction("Enter new folder name:");
             if (!name || !name.trim()) return;
             newFolder = name.trim();
             setCustomFolders(prev => Array.from(new Set([...prev, newFolder])));
@@ -670,7 +670,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
 
     // 🚀 NEW: BULK FOLDER RENAME ENGINE
     const handleRenameFolder = async (oldName) => {
-        const newName = window.prompt(`BATCH RENAME / MOVE\n\nEnter a new folder name. All items currently inside "${oldName}" will be moved to this new folder:`, oldName);
+        const newName = await promptAction(`BATCH RENAME / MOVE\n\nEnter a new folder name. All items currently inside "${oldName}" will be moved to this new folder:`, oldName);
         if (!newName || newName.trim() === "" || newName === oldName) return;
         
         setIsLoading(true);
