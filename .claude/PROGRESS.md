@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:11 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:23 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -37,6 +37,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
+| The context meter (measures how full we are) | `.claude/context-watch.mjs` |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 
 ## First command of every session
@@ -83,6 +84,14 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:23 WIB
+Added a UserPromptSubmit hook that MEASURES context fullness from the live transcript
+instead of guessing: it finds the last compaction boundary so a just-compacted session is
+not reported as full, and stays completely silent below 55%. At 55-80% it reports headroom
+so the upcoming job can be judged against it; above 80% it demands /clear and explicitly
+forbids recommending /compact, because clearing is free and compacting at that level bills
+the whole window. Claude still cannot clear itself - only Aldi can type it.
 
 ### 2026-08-07 14:11 WIB
 Added DO THIS NEXT at the top, and the rule that a vague question from Aldi ("where were
