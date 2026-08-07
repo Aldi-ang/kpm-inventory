@@ -31,9 +31,5 @@
   "29": "CustomerManager.jsx",
   "30": "dayStats.selfcheck.mjs",
   "31": "txSize.selfcheck.mjs",
-  "32": "MerchantSalesView",
-  "33": "hasClearance",
-  "34": "MerchantSalesView.jsx",
-  "35": "context-watch.mjs",
-  "36": "StubAudio"
+  "35": "context-watch.mjs"
 }

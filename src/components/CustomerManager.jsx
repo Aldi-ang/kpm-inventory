@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
-import { findDuplicates, createdMillis } from '../utils/findDuplicates';
+import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 import { getCustomerAccessLevel } from '../config/permissions';
 
@@ -660,17 +660,70 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
        and its outstanding debt is a decision about real money. See findDuplicates.js. */
     const [dupReport, setDupReport] = useState(null);
     const [dupScanning, setDupScanning] = useState(false);
+    /* Groups he has judged as NOT duplicates. Without this the same false positives — three
+       unrelated "warung sembako" across the city — come back on every single scan, and at a few
+       thousand stores that buries the real ones. His words: "when there is thousands of stores
+       that we know its not duplicated here each time we press find duplicated, it will be pain in
+       the ass to find the real duplicates right?"
+       Kept in Firestore, not localStorage, so the decision follows him between devices. */
+    const [dupIgnored, setDupIgnored] = useState(new Set());
+    const [dupShowIgnored, setDupShowIgnored] = useState(false);
 
-    const handleFindDuplicates = () => {
+    const ignoresRef = () => doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'duplicate_ignores');
+
+    const handleFindDuplicates = async () => {
         setDupScanning(true);
-        // let the button repaint before a synchronous scan over the whole customer list
-        setTimeout(() => {
-            const groups = findDuplicates(customers, { radiusMetres: 40 });
-            setDupReport(groups);
-            setDupScanning(false);
-            if (logAudit) logAudit("DUPLICATE_SCAN", `Scanned ${customers.length} stores, found ${groups.length} duplicate groups.`);
-            if (triggerCapy) triggerCapy(groups.length ? `Found ${groups.length} duplicate groups. 🔎` : `No duplicates found. Clean list! ✅`);
-        }, 0);
+        let ignored = new Set();
+        try {
+            const snap = await getDoc(ignoresRef());
+            if (snap.exists()) ignored = new Set(snap.data().keys || []);
+        } catch (e) {
+            // a failed read must not hide duplicates - fall through with an empty set
+            console.warn('Could not load cleared duplicate groups:', e);
+        }
+        const groups = findDuplicates(customers, { radiusMetres: 40 });
+        setDupIgnored(ignored);
+        setDupShowIgnored(false);
+        setDupReport(groups);
+        setDupScanning(false);
+        const live = groups.filter(g => !ignored.has(groupKey(g))).length;
+        if (logAudit) logAudit("DUPLICATE_SCAN", `Scanned ${customers.length} stores, ${groups.length} groups, ${live} after clearing.`);
+        if (triggerCapy) triggerCapy(live ? `${live} to review. 🔎` : `Nothing left to review. ✅`);
+    };
+
+    /* "Not duplicates" is a judgement, not a deletion — nothing about the stores changes. The key
+       includes every member id, so if a THIRD store later joins a pair he cleared, the key differs
+       and the group comes back for a fresh look. That is deliberate: new information should not be
+       swallowed by an old decision. */
+    const handleNotDuplicate = async (g) => {
+        const key = groupKey(g);
+        const next = new Set(dupIgnored); next.add(key);
+        setDupIgnored(next);
+        try {
+            await setDoc(ignoresRef(), { keys: [...next], updatedAt: new Date().toISOString() }, { merge: true });
+            if (logAudit) logAudit("DUPLICATE_CLEARED", `Marked not-duplicates: ${g.members.map(m => m.name).join(' / ')}`);
+            if (triggerCapy) triggerCapy(`Cleared. It will not come back. ✅`);
+        } catch (e) {
+            console.error('Could not save the not-duplicate decision:', e);
+            setDupIgnored(dupIgnored);      // put it back rather than lie about having saved it
+            alert(`Could not save that: ${e.message || 'unknown error'}`);
+        }
+    };
+
+    const handleResetIgnores = async () => {
+        if (!await confirmAction(
+            `Bring back all ${dupIgnored.size} cleared group${dupIgnored.size === 1 ? '' : 's'}?\n\n` +
+            `They will appear in the report again on the next scan. No store is changed.`
+        )) return;
+        const previous = dupIgnored;
+        setDupIgnored(new Set());
+        try {
+            await setDoc(ignoresRef(), { keys: [], updatedAt: new Date().toISOString() }, { merge: true });
+            if (triggerCapy) triggerCapy(`All cleared groups restored.`);
+        } catch (e) {
+            setDupIgnored(previous);
+            alert(`Could not reset: ${e.message || 'unknown error'}`);
+        }
     };
 
     /* Deleting from the report is the one destructive thing in this panel, so the confirm names
@@ -970,6 +1023,22 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const handleDelete = async (id, name) => { if (await confirmAction("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
     const openDetail = (c) => { setSelectedCustomer(c); setViewMode('detail'); };
 
+    /* From the duplicate report, "Open" must land on the EDIT FORM inside the store's own folder,
+       not on the detail screen. Aldi: "dont redirect it to the competitor intelligence and 3D map,
+       cause from there i cant go back to folder form, instead its pull me back to he find
+       duplicate panel". He is comparing two near-identical records and needs to change one, so the
+       form is the destination. The folder pickers are moved with him, otherwise he arrives at an
+       edit form for a store he cannot see in the list behind it. */
+    // groups still awaiting a decision — cleared ones stay out unless he asks to see them
+    const dupVisible = dupReport ? dupReport.filter(g => dupShowIgnored || !dupIgnored.has(groupKey(g))) : [];
+
+    const openForEdit = (c) => {
+        if (c.province) setSelectedProvince(c.province);
+        if (c.region) setSelectedRegion(c.region);
+        if (c.city) setSelectedCity(c.city);
+        handleEdit(c);
+    };
+
 
     // 🚀 ADMIN NOO APPROVAL PROTOCOL
     const handleApproveNOO = async (e, id, name) => {
@@ -1075,15 +1144,28 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     <div className="flex justify-between items-start gap-4 mb-3">
                         <div>
                             <h3 className="font-black uppercase tracking-widest text-sm text-orange-700 dark:text-orange-400">
-                                {dupReport.length === 0
-                                    ? 'No duplicates found'
-                                    : `${dupReport.length} possible duplicate${dupReport.length === 1 ? '' : 's'}`}
+                                {dupVisible.length === 0
+                                    ? 'Nothing left to review'
+                                    : `${dupVisible.length} possible duplicate${dupVisible.length === 1 ? '' : 's'}`}
                             </h3>
                             <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
-                                {dupReport.length === 0
-                                    ? `Checked all ${customers.length} stores. Nothing shares a name or sits within 40 metres of another.`
+                                {dupVisible.length === 0
+                                    ? `Checked all ${customers.length} stores. Nothing new shares a name or sits within 40 metres of another.`
                                     : `Checked ${customers.length} stores. Matched on identical name, or within 40 metres of each other. Nothing has been changed or deleted — this is a report.`}
                             </p>
+                            {/* Cleared groups must stay countable and reversible, or the button
+                                becomes a black hole he cannot audit. */}
+                            {dupIgnored.size > 0 && (
+                                <p className="text-[11px] text-gray-500 dark:text-gray-500 mt-1">
+                                    {dupIgnored.size} group{dupIgnored.size === 1 ? '' : 's'} marked “not duplicates”.{' '}
+                                    <button onClick={() => setDupShowIgnored(v => !v)} className="underline hover:text-orange-600 dark:hover:text-orange-400">
+                                        {dupShowIgnored ? 'Hide them' : 'Show them'}
+                                    </button>{' · '}
+                                    <button onClick={handleResetIgnores} className="underline hover:text-orange-600 dark:hover:text-orange-400">
+                                        Bring them all back
+                                    </button>
+                                </p>
+                            )}
                         </div>
                         <button onClick={() => setDupReport(null)}
                             className="text-xs font-bold uppercase text-gray-500 hover:text-gray-800 dark:hover:text-white shrink-0">
@@ -1092,11 +1174,20 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
 
                     <div className="space-y-3 max-h-[28rem] overflow-y-auto">
-                        {dupReport.map((g, gi) => (
-                            <div key={gi} className="bg-white dark:bg-black/30 rounded-lg p-3 border border-gray-200 dark:border-white/10">
+                        {dupVisible.map((g, gi) => (
+                            <div key={groupKey(g) || gi} className={`bg-white dark:bg-black/30 rounded-lg p-3 border ${dupIgnored.has(groupKey(g)) ? 'border-dashed border-gray-400 dark:border-white/20 opacity-60' : 'border-gray-200 dark:border-white/10'}`}>
                                 <div className="text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 mb-2">
                                     {g.members.length} copies · matched by {g.reason === 'both' ? 'name and location' : g.reason}
                                     {g.widestMetres !== null && <> · {g.widestMetres >= 1000 ? (g.widestMetres/1000).toFixed(1)+' km' : g.widestMetres+' m'} apart</>}
+                                    {dupIgnored.has(groupKey(g))
+                                        ? <span className="ml-2 normal-case tracking-normal text-gray-500">— already marked not duplicates</span>
+                                        : (
+                                            <button
+                                                onClick={() => handleNotDuplicate(g)}
+                                                className="ml-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[9px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200"
+                                                title="These are different shops. Clear this group so it stops coming back on every scan. Nothing is changed or deleted."
+                                            >✓ Not duplicates</button>
+                                        )}
                                 </div>
                                 {/* The honest caveat, on the group it applies to. A generic shop
                                     name repeating across a city is a coincidence, and treating it
@@ -1138,10 +1229,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                                         <span className="ml-auto flex gap-1.5 shrink-0">
                                             <button
-                                                onClick={() => openDetail(m)}
+                                                onClick={() => openForEdit(m)}
                                                 className="px-2.5 py-1.5 rounded-lg bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[10px] font-black uppercase tracking-wider dark:text-white"
-                                                title="Open this store's full profile — where it is, its history, and its edit form"
-                                            >Open</button>
+                                                title="Open this store in the edit form, inside its own folder, so you can change its data"
+                                            >Edit</button>
                                             <button
                                                 onClick={() => handleDeleteDuplicate(m, g)}
                                                 className="px-2.5 py-1.5 rounded-lg bg-red-700/90 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider"

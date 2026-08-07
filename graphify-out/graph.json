@@ -1449,8 +1449,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "src_app_kpminventoryapp",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "kpminventoryapp()"
     },
     {
@@ -1460,8 +1460,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1471,8 +1471,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1482,8 +1482,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_eodreconciliationview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "eodreconciliationview.jsx"
     },
     {
@@ -1493,8 +1493,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1559,8 +1559,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_journeyview",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "journeyview.jsx"
     },
     {
@@ -1570,8 +1570,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_journeyview_createjourneyclustericon",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "createjourneyclustericon()"
     },
     {
@@ -1581,8 +1581,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_journeyview_storeiconcache",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "storeiconcache"
     },
     {
@@ -1592,8 +1592,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_journeyview_getstoreicon",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getstoreicon()"
     },
     {
@@ -1603,8 +1603,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_journeyview_userlocationicon",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "userlocationicon"
     },
     {
@@ -1625,8 +1625,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "src_journeyview_locationcontroller",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "locationcontroller()"
     },
     {
@@ -1636,8 +1636,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "src_journeyview_mapeditcontroller",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "mapeditcontroller()"
     },
     {
@@ -1647,8 +1647,8 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "src_journeyview_ispointinpolygon",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -1658,8 +1658,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "src_journeyview_checkpointingeojson",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -1669,8 +1669,8 @@
       "source_location": "L207",
       "_origin": "ast",
       "id": "src_journeyview_getstorehierarchy",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getstorehierarchy()"
     },
     {
@@ -1680,8 +1680,8 @@
       "source_location": "L220",
       "_origin": "ast",
       "id": "src_journeyview_agent_colors",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "agent_colors"
     },
     {
@@ -1691,8 +1691,8 @@
       "source_location": "L221",
       "_origin": "ast",
       "id": "src_journeyview_gethashcolor",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "gethashcolor()"
     },
     {
@@ -1702,8 +1702,8 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "src_journeyview_journeyview",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 29,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "journeyview()"
     },
     {
@@ -1900,8 +1900,8 @@
       "source_location": "L1050",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -1922,8 +1922,8 @@
       "source_location": "L1797",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_mapmissioncontrol",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "mapmissioncontrol()"
     },
     {
@@ -1933,8 +1933,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_merchantsalesview",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "merchantsalesview.jsx"
     },
     {
@@ -1944,8 +1944,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_merchantsalesview_merchantsalesview",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "merchantsalesview()"
     },
     {
@@ -2307,8 +2307,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "customermanager.jsx"
     },
     {
@@ -2318,8 +2318,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -2329,8 +2329,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -2340,8 +2340,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "customerdetailview()"
     },
     {
@@ -2351,8 +2351,8 @@
       "source_location": "L202",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "customermanagement()"
     },
     {
@@ -2439,8 +2439,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -2450,8 +2450,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "historyreportview()"
     },
     {
@@ -2604,8 +2604,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -2615,8 +2615,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -2626,8 +2626,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -2637,8 +2637,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "samplingcartview()"
     },
     {
@@ -2648,8 +2648,8 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -2659,8 +2659,8 @@
       "source_location": "L511",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -2956,8 +2956,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "daystats.selfcheck.mjs"
     },
     {
@@ -2967,8 +2967,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_at",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "at()"
     },
     {
@@ -2978,8 +2978,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_tx",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "tx()"
     },
     {
@@ -2989,8 +2989,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_now",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "now"
     },
     {
@@ -3000,8 +3000,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_rows",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "rows"
     },
     {
@@ -3011,8 +3011,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_s",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "s"
     },
     {
@@ -3022,8 +3022,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_shuffled",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "shuffled"
     },
     {
@@ -3033,8 +3033,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_withreturn",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "withreturn"
     },
     {
@@ -3044,8 +3044,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justafterlocalmidnight",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "justafterlocalmidnight"
     },
     {
@@ -3055,8 +3055,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justbeforelocalmidnight",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "justbeforelocalmidnight"
     },
     {
@@ -3066,8 +3066,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "findduplicates.selfcheck.mjs"
     },
     {
@@ -3088,8 +3088,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_near",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "near()"
     },
     {
@@ -3550,8 +3550,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "mixedunits.selfcheck.mjs"
     },
     {
@@ -3561,8 +3561,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_bksperunit",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bksperunit()"
     },
     {
@@ -3572,8 +3572,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_savepacking",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "savepacking()"
     },
     {
@@ -3583,8 +3583,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_totalbks",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "totalbks()"
     },
     {
@@ -3594,8 +3594,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_d",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "d"
     },
     {
@@ -3605,8 +3605,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_custom",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "custom"
     },
     {
@@ -3616,8 +3616,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_real",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "real"
     },
     {
@@ -3627,8 +3627,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_cello",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "cello"
     },
     {
@@ -3638,8 +3638,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_back",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "back()"
     },
     {
@@ -3693,8 +3693,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_nextstop_selfcheck_store",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "store()"
     },
     {
@@ -3891,8 +3891,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_config_permissions_translatelegacyrole",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "translatelegacyrole()"
     },
     {
@@ -3913,8 +3913,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -3946,8 +3946,8 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "src_config_permissions_hasclearance",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "hasclearance()"
     },
     {
@@ -3968,8 +3968,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -4364,8 +4364,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio",
-      "community": 36,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "stubaudio"
     },
     {
@@ -4375,8 +4375,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_constructor",
-      "community": 36,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".constructor()"
     },
     {
@@ -4386,8 +4386,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_play",
-      "community": 36,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".play()"
     },
     {
@@ -4397,8 +4397,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_pause",
-      "community": 36,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".pause()"
     },
     {
@@ -4463,8 +4463,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_bordercache",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "bordercache.js"
     },
     {
@@ -4474,8 +4474,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_utils_bordercache_opencachedb",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "opencachedb()"
     },
     {
@@ -4485,8 +4485,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_utils_bordercache_savebordercache",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "savebordercache()"
     },
     {
@@ -4496,8 +4496,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_utils_bordercache_loadbordercache",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "loadbordercache()"
     },
     {
@@ -4507,8 +4507,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_utils_bordercache_clearbordercache",
-      "community": 1,
-      "community_name": "MapMissionControl.jsx",
+      "community": 30,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "clearbordercache()"
     },
     {
@@ -4540,8 +4540,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_customerbrief_key",
-      "community": 23,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "key()"
     },
     {
@@ -4573,8 +4573,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "daystats.js"
     },
     {
@@ -4584,8 +4584,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "txseconds()"
     },
     {
@@ -4595,8 +4595,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "daystats()"
     },
     {
@@ -4606,8 +4606,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_utils_daystats_agolabel",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "agolabel()"
     },
     {
@@ -4617,8 +4617,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_findduplicates",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "findduplicates.js"
     },
     {
@@ -4628,8 +4628,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_utils_findduplicates_normalisename",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "normalisename()"
     },
     {
@@ -4639,8 +4639,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_findduplicates_metresbetween",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "metresbetween()"
     },
     {
@@ -4650,30 +4650,41 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_findduplicates_hascoords",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "hascoords()"
+    },
+    {
+      "label": "groupKey()",
+      "file_type": "code",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "src_utils_findduplicates_groupkey",
+      "community": 3,
+      "community_name": "permissions.js",
+      "norm_label": "groupkey()"
     },
     {
       "label": "createdMillis()",
       "file_type": "code",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L46",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_findduplicates_createdmillis",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "createdmillis()"
     },
     {
       "label": "findDuplicates()",
       "file_type": "code",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L62",
+      "source_location": "L73",
       "_origin": "ast",
       "id": "src_utils_findduplicates_findduplicates",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "findduplicates()"
     },
     {
@@ -4683,8 +4694,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "helpers.js"
     },
     {
@@ -4727,8 +4738,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 33,
-      "community_name": "hasClearance",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -4738,8 +4749,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_utils_helpers_getlocaldaykey",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getlocaldaykey()"
     },
     {
@@ -4771,8 +4782,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "splittounits()"
     },
     {
@@ -4793,8 +4804,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_utils_helpers_converttobks",
-      "community": 32,
-      "community_name": "MerchantSalesView",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "converttobks()"
     },
     {
@@ -4848,8 +4859,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "nextstop.js"
     },
     {
@@ -4859,8 +4870,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "km()"
     },
     {
@@ -4870,8 +4881,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "mine()"
     },
     {
@@ -4881,8 +4892,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -4892,8 +4903,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "nextstop()"
     },
     {
@@ -4903,8 +4914,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_utils_nextstop_directionsurl",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "directionsurl()"
     },
     {
@@ -4914,8 +4925,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_nextstop_metreslabel",
-      "community": 34,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "metreslabel()"
     },
     {
@@ -4966,7 +4977,7 @@
       "label": "\u25b6 DO THIS NEXT",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L22",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "claude_progress_do_this_next",
       "community": 26,
@@ -4977,7 +4988,7 @@
       "label": "Where things live \u2014 never search for these",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L39",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "claude_progress_where_things_live_never_search_for_these",
       "community": 26,
@@ -4988,7 +4999,7 @@
       "label": "First command of every session",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L63",
+      "source_location": "L69",
       "_origin": "ast",
       "id": "claude_progress_first_command_of_every_session",
       "community": 26,
@@ -4999,7 +5010,7 @@
       "label": "NOW",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L74",
+      "source_location": "L80",
       "_origin": "ast",
       "id": "claude_progress_now",
       "community": 26,
@@ -5010,7 +5021,7 @@
       "label": "\u23f0 SCHEDULED TASKS DO NOT WORK HERE \u2014 DON'T OFFER ONE AGAIN",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L97",
+      "source_location": "L105",
       "_origin": "ast",
       "id": "claude_progress_scheduled_tasks_do_not_work_here_don_t_offer_one_again",
       "community": 26,
@@ -5021,7 +5032,7 @@
       "label": "WAITING ON ALDI \u2014 do not re-derive these, just ask",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L111",
+      "source_location": "L119",
       "_origin": "ast",
       "id": "claude_progress_waiting_on_aldi_do_not_re_derive_these_just_ask",
       "community": 26,
@@ -5032,7 +5043,7 @@
       "label": "\ud83d\udeab DO NOT open a PR or merge to main yet",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L172",
+      "source_location": "L180",
       "_origin": "ast",
       "id": "claude_progress_do_not_open_a_pr_or_merge_to_main_yet",
       "community": 26,
@@ -5043,7 +5054,7 @@
       "label": "NEXT, once testing is done \u2014 he has not chosen",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L182",
+      "source_location": "L190",
       "_origin": "ast",
       "id": "claude_progress_next_once_testing_is_done_he_has_not_chosen",
       "community": 26,
@@ -5054,7 +5065,7 @@
       "label": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L190",
+      "source_location": "L198",
       "_origin": "ast",
       "id": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
       "community": 26,
@@ -5062,10 +5073,43 @@
       "norm_label": "log \u2014 newest first, older entries live in `git log` for this file"
     },
     {
+      "label": "2026-08-07 23:0x WIB \u2014 \ud83d\udd34 THE LIMIT THAT MATTERS IS THE 5-HOUR PLAN QUOTA, NOT CONTEXT",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L200",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_23_0x_wib_the_limit_that_matters_is_the_5_hour_plan_quota_not_context",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 23:0x wib \u2014 \ud83d\udd34 the limit that matters is the 5-hour plan quota, not context"
+    },
+    {
+      "label": "2026-08-07 22:5x WIB \u2014 the context meter is ALSO broken, but this is NOT what blocked him",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L226",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_22_5x_wib_the_context_meter_is_also_broken_but_this_is_not_what_blocked_him",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 22:5x wib \u2014 the context meter is also broken, but this is not what blocked him"
+    },
+    {
+      "label": "2026-08-07 22:4x WIB \u2014 duplicate panel: Open goes to the wrong place, dismiss is HALF-BUILT",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L245",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_22_4x_wib_duplicate_panel_open_goes_to_the_wrong_place_dismiss_is_half_built",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 22:4x wib \u2014 duplicate panel: open goes to the wrong place, dismiss is half-built"
+    },
+    {
       "label": "2026-08-07 22:20 WIB \u2014 the finder found a false positive before it found duplicates",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L192",
+      "source_location": "L270",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_22_20_wib_the_finder_found_a_false_positive_before_it_found_duplicates",
       "community": 26,
@@ -5076,7 +5120,7 @@
       "label": "2026-08-07 21:39 WIB \u2014 the end-of-window stop is now a HOOK, not a promise",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L221",
+      "source_location": "L299",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_21_39_wib_the_end_of_window_stop_is_now_a_hook_not_a_promise",
       "community": 26,
@@ -5087,7 +5131,7 @@
       "label": "2026-08-07 20:1x WIB \u2014 duplicate finder shipped, plus an 8-bit test logger",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L239",
+      "source_location": "L317",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_20_1x_wib_duplicate_finder_shipped_plus_an_8_bit_test_logger",
       "community": 26,
@@ -5098,23 +5142,12 @@
       "label": "2026-08-07 19:5x WIB \u2014 the tier-spelling fix is BUILT (Aldi: \"you can do both fix bro\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L261",
+      "source_location": "L339",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_19_5x_wib_the_tier_spelling_fix_is_built_aldi_you_can_do_both_fix_bro",
       "community": 26,
       "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "2026-08-07 19:5x wib \u2014 the tier-spelling fix is built (aldi: \"you can do both fix bro\")"
-    },
-    {
-      "label": "2026-08-07 19:2x WIB \u2014 duplicate/invisible customers: root cause found (investigation)",
-      "file_type": "document",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L306",
-      "_origin": "ast",
-      "id": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "2026-08-07 19:2x wib \u2014 duplicate/invisible customers: root cause found (investigation)"
     },
     {
       "label": "pre-compact-context.md",
@@ -12396,6 +12429,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager",
+      "target": "src_utils_findduplicates_groupkey",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -12480,12 +12525,24 @@
       "target": "src_utils_bordercache_savebordercache"
     },
     {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L700",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager_customermanagement",
+      "target": "src_utils_customerbrief_key"
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L731",
+      "source_location": "L784",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
@@ -12497,11 +12554,23 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/CustomerManager.jsx",
-      "source_location": "L668",
+      "source_location": "L684",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_customermanager_customermanagement",
       "target": "src_utils_findduplicates_findduplicates"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/CustomerManager.jsx",
+      "source_location": "L689",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_customermanager_customermanagement",
+      "target": "src_utils_findduplicates_groupkey"
     },
     {
       "relation": "calls",
@@ -13901,6 +13970,18 @@
       "_origin": "ast",
       "source": "src_config_findduplicates_selfcheck",
       "target": "src_utils_findduplicates_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/findDuplicates.selfcheck.mjs",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_findduplicates_selfcheck",
+      "target": "src_utils_findduplicates_groupkey",
       "confidence_score": 1.0
     },
     {
@@ -15806,7 +15887,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L82",
+      "source_location": "L93",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -15861,7 +15942,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L46",
+      "source_location": "L57",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates",
@@ -15872,11 +15953,22 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L62",
+      "source_location": "L73",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates",
       "target": "src_utils_findduplicates_findduplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/findDuplicates.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_findduplicates",
+      "target": "src_utils_findduplicates_groupkey",
       "confidence_score": 1.0
     },
     {
@@ -15917,7 +16009,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L80",
+      "source_location": "L91",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -15929,7 +16021,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L95",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -15941,7 +16033,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L90",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -15953,7 +16045,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/findDuplicates.js",
-      "source_location": "L122",
+      "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_findduplicates_findduplicates",
@@ -16243,7 +16335,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L172",
+      "source_location": "L180",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16254,7 +16346,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L22",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16265,7 +16357,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L63",
+      "source_location": "L69",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16276,7 +16368,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L190",
+      "source_location": "L198",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16287,7 +16379,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L182",
+      "source_location": "L190",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16298,7 +16390,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L74",
+      "source_location": "L80",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16309,7 +16401,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L97",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16320,7 +16412,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L111",
+      "source_location": "L119",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16331,7 +16423,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L39",
+      "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -16342,18 +16434,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L306",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
-      "target": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L261",
+      "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16364,7 +16445,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L239",
+      "source_location": "L317",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16375,7 +16456,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L221",
+      "source_location": "L299",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16386,11 +16467,44 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L192",
+      "source_location": "L270",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
       "target": "claude_progress_2026_08_07_22_20_wib_the_finder_found_a_false_positive_before_it_found_duplicates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L245",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_22_4x_wib_duplicate_panel_open_goes_to_the_wrong_place_dismiss_is_half_built",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L226",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_22_5x_wib_the_context_meter_is_also_broken_but_this_is_not_what_blocked_him",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L200",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_23_0x_wib_the_limit_that_matters_is_the_5_hour_plan_quota_not_context",
       "confidence_score": 1.0
     },
     {
@@ -17165,5 +17279,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a60069dd351244f80d3b30cf21bda48742b41a1f"
+  "built_at_commit": "012ae21be950663173fb1a434c5fc4f5453f3059"
 }
