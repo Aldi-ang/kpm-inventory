@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 20:14 WIB** · branch `phase0-solid-ground` · last commit `87156f8`
+**Updated: 2026-08-07 20:14 WIB** · branch `phase0-solid-ground` · last commit `f1394f3`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -41,7 +41,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | What | Exact path |
 |---|---|
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
-| The 133-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The 143-check audit — run before anything | `src/config/integration.audit.mjs` |
 | The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
 | Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
 | Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
@@ -62,14 +62,14 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-133 checks over the built output. One turn, small result. If it passes, the terminal is
+143 checks over the built output. One turn, small result. If it passes, the terminal is
 intact — do **not** re-read source to confirm it.
 
 ---
 
 ## NOW
 
-Sales terminal redesign is **built and passing 133/133**. Design work is CLOSED.
+Sales terminal redesign is **built and passing 143/143**. Design work is CLOSED.
 Aldi is hand-testing it group by group and reporting **BROKEN / UGLY / AWKWARD**.
 He got through groups A and B; four fixes from that pass are already committed.
 
