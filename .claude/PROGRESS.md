@@ -69,6 +69,20 @@ Alongside that: cutting token cost. Root cause was measured, not guessed —
 cost = context size x turns taken, and the 60% incident was a *search* for progress
 data in the wrong folder. This file exists to end that.
 
+## ⏰ A SCHEDULED SESSION MAY HAVE ALREADY DONE WORK — CHECK BEFORE STARTING ANYTHING
+
+**Set 2026-08-07 17:49 WIB to fire at 17:59 WIB, once.** Task id `kpm-convert-prompt-dialogs`,
+stored at `C:\Users\ASUS\.claude\scheduled-tasks\kpm-convert-prompt-dialogs\SKILL.md`.
+
+It converts the **12 `prompt()` calls only** — Aldi picked that scope over the full 192-site
+sweep. It is told to commit, never push, and to update this file when it finishes.
+
+**So before doing anything: run `git log --oneline -5`.** If a commit about prompt dialogs is
+there, that work is DONE — do not redo it. If this section is still here but the LOG has no entry
+for it, the task either has not fired yet or it failed; check
+`C:\Users\ASUS\.claude\scheduled-tasks\kpm-convert-prompt-dialogs\` and ask Aldi before repeating
+the work. **Delete this whole section once its result is folded into the LOG.**
+
 ## WAITING ON ALDI — do not re-derive these, just ask
 
 - 🔴 **180 `alert(` and 12 `prompt(` calls across src/ — the SAME bug class, not yet fixed and
